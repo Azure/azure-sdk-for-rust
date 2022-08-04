@@ -106,6 +106,12 @@ pub mod clusters {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the specified cluster."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `cluster_name`: The name of the cluster."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -119,6 +125,13 @@ pub mod clusters {
                 cluster_name: cluster_name.into(),
             }
         }
+        #[doc = "Creates a new HDInsight cluster with the specified parameters."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `cluster_name`: The name of the cluster."]
+        #[doc = "* `parameters`: The cluster create request."]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -134,6 +147,13 @@ pub mod clusters {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Patch HDInsight cluster with the specified parameters."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `cluster_name`: The name of the cluster."]
+        #[doc = "* `parameters`: The cluster patch request."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -149,6 +169,12 @@ pub mod clusters {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Deletes the specified HDInsight cluster."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `cluster_name`: The name of the cluster."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -162,6 +188,11 @@ pub mod clusters {
                 cluster_name: cluster_name.into(),
             }
         }
+        #[doc = "Lists the HDInsight clusters in a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -173,6 +204,14 @@ pub mod clusters {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Resizes the specified HDInsight cluster to the specified size."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `cluster_name`: The name of the cluster."]
+        #[doc = "* `role_name`: The constant value for the roleName"]
+        #[doc = "* `parameters`: The parameters for the resize operation."]
         pub fn resize(
             &self,
             subscription_id: impl Into<String>,
@@ -190,6 +229,14 @@ pub mod clusters {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Updates the Autoscale Configuration for HDInsight cluster."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `cluster_name`: The name of the cluster."]
+        #[doc = "* `role_name`: The constant value for the roleName"]
+        #[doc = "* `parameters`: The parameters for the update autoscale configuration operation."]
         pub fn update_auto_scale_configuration(
             &self,
             subscription_id: impl Into<String>,
@@ -207,12 +254,23 @@ pub mod clusters {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Lists all the HDInsight clusters under the subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Rotate disk encryption key of the specified HDInsight cluster."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `cluster_name`: The name of the cluster."]
+        #[doc = "* `parameters`: The parameters for the disk encryption operation."]
         pub fn rotate_disk_encryption_key(
             &self,
             subscription_id: impl Into<String>,
@@ -228,6 +286,12 @@ pub mod clusters {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Gets the gateway settings for the specified cluster."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `cluster_name`: The name of the cluster."]
         pub fn get_gateway_settings(
             &self,
             subscription_id: impl Into<String>,
@@ -241,6 +305,13 @@ pub mod clusters {
                 cluster_name: cluster_name.into(),
             }
         }
+        #[doc = "Configures the gateway settings on the specified cluster."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `cluster_name`: The name of the cluster."]
+        #[doc = "* `parameters`: The cluster configurations."]
         pub fn update_gateway_settings(
             &self,
             subscription_id: impl Into<String>,
@@ -256,6 +327,13 @@ pub mod clusters {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "The the async operation status."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `cluster_name`: The name of the cluster."]
+        #[doc = "* `operation_id`: The long running operation id."]
         pub fn get_azure_async_operation_status(
             &self,
             subscription_id: impl Into<String>,
@@ -271,6 +349,13 @@ pub mod clusters {
                 operation_id: operation_id.into(),
             }
         }
+        #[doc = "Updates the cluster identity certificate."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `cluster_name`: The name of the cluster."]
+        #[doc = "* `parameters`: The cluster configurations."]
         pub fn update_identity_certificate(
             &self,
             subscription_id: impl Into<String>,
@@ -286,6 +371,13 @@ pub mod clusters {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Executes script actions on the specified HDInsight cluster."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `cluster_name`: The name of the cluster."]
+        #[doc = "* `parameters`: The parameters for executing script actions."]
         pub fn execute_script_actions(
             &self,
             subscription_id: impl Into<String>,
@@ -1115,6 +1207,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all of the available HDInsight REST API operations."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -1194,6 +1287,13 @@ pub mod script_actions {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Deletes a specified persisted script action of the cluster."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `cluster_name`: The name of the cluster."]
+        #[doc = "* `script_name`: The name of the script."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1209,6 +1309,12 @@ pub mod script_actions {
                 script_name: script_name.into(),
             }
         }
+        #[doc = "Lists all the persisted script actions for the specified cluster."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `cluster_name`: The name of the cluster."]
         pub fn list_by_cluster(
             &self,
             subscription_id: impl Into<String>,
@@ -1222,6 +1328,13 @@ pub mod script_actions {
                 cluster_name: cluster_name.into(),
             }
         }
+        #[doc = "Gets the script execution detail for the given script execution ID."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `cluster_name`: The name of the cluster."]
+        #[doc = "* `script_execution_id`: The script execution Id"]
         pub fn get_execution_detail(
             &self,
             subscription_id: impl Into<String>,
@@ -1237,6 +1350,13 @@ pub mod script_actions {
                 script_execution_id: script_execution_id.into(),
             }
         }
+        #[doc = "Gets the async operation status of execution operation."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `cluster_name`: The name of the cluster."]
+        #[doc = "* `operation_id`: The long running operation id."]
         pub fn get_execution_async_operation_status(
             &self,
             subscription_id: impl Into<String>,
@@ -1492,6 +1612,12 @@ pub mod script_execution_history {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all scripts' execution history for the specified cluster."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `cluster_name`: The name of the cluster."]
         pub fn list_by_cluster(
             &self,
             subscription_id: impl Into<String>,
@@ -1505,6 +1631,13 @@ pub mod script_execution_history {
                 cluster_name: cluster_name.into(),
             }
         }
+        #[doc = "Promotes the specified ad-hoc script execution to a persisted script."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `cluster_name`: The name of the cluster."]
+        #[doc = "* `script_execution_id`: The script execution Id"]
         pub fn promote(
             &self,
             subscription_id: impl Into<String>,
@@ -1648,6 +1781,12 @@ pub mod applications {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all of the applications for the HDInsight cluster."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `cluster_name`: The name of the cluster."]
         pub fn list_by_cluster(
             &self,
             subscription_id: impl Into<String>,
@@ -1661,6 +1800,13 @@ pub mod applications {
                 cluster_name: cluster_name.into(),
             }
         }
+        #[doc = "Gets properties of the specified application."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `cluster_name`: The name of the cluster."]
+        #[doc = "* `application_name`: The constant value for the application name."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1676,6 +1822,14 @@ pub mod applications {
                 application_name: application_name.into(),
             }
         }
+        #[doc = "Creates applications for the HDInsight cluster."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `cluster_name`: The name of the cluster."]
+        #[doc = "* `application_name`: The constant value for the application name."]
+        #[doc = "* `parameters`: The application create request."]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -1693,6 +1847,13 @@ pub mod applications {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Deletes the specified application on the HDInsight cluster."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `cluster_name`: The name of the cluster."]
+        #[doc = "* `application_name`: The constant value for the application name."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1708,6 +1869,14 @@ pub mod applications {
                 application_name: application_name.into(),
             }
         }
+        #[doc = "Gets the async operation status."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `cluster_name`: The name of the cluster."]
+        #[doc = "* `application_name`: The constant value for the application name."]
+        #[doc = "* `operation_id`: The long running operation id."]
         pub fn get_azure_async_operation_status(
             &self,
             subscription_id: impl Into<String>,
@@ -2026,6 +2195,11 @@ pub mod locations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the capabilities for the specified location."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `location`: The Azure location (region) for which to make the request."]
         pub fn get_capabilities(&self, subscription_id: impl Into<String>, location: impl Into<String>) -> get_capabilities::Builder {
             get_capabilities::Builder {
                 client: self.0.clone(),
@@ -2033,6 +2207,11 @@ pub mod locations {
                 location: location.into(),
             }
         }
+        #[doc = "Lists the usages for the specified location."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `location`: The Azure location (region) for which to make the request."]
         pub fn list_usages(&self, subscription_id: impl Into<String>, location: impl Into<String>) -> list_usages::Builder {
             list_usages::Builder {
                 client: self.0.clone(),
@@ -2040,6 +2219,11 @@ pub mod locations {
                 location: location.into(),
             }
         }
+        #[doc = "Lists the billingSpecs for the specified subscription and location."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `location`: The Azure location (region) for which to make the request."]
         pub fn list_billing_specs(&self, subscription_id: impl Into<String>, location: impl Into<String>) -> list_billing_specs::Builder {
             list_billing_specs::Builder {
                 client: self.0.clone(),
@@ -2047,6 +2231,12 @@ pub mod locations {
                 location: location.into(),
             }
         }
+        #[doc = "Get the async operation status."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `location`: The Azure location (region) for which to make the request."]
+        #[doc = "* `operation_id`: The long running operation id."]
         pub fn get_azure_async_operation_status(
             &self,
             subscription_id: impl Into<String>,
@@ -2060,6 +2250,11 @@ pub mod locations {
                 operation_id: operation_id.into(),
             }
         }
+        #[doc = "Check the cluster name is available or not."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `location`: The Azure location (region) for which to make the request."]
         pub fn check_name_availability(
             &self,
             subscription_id: impl Into<String>,
@@ -2073,6 +2268,11 @@ pub mod locations {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Validate the cluster create request spec is valid or not."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `location`: The Azure location (region) for which to make the request."]
         pub fn validate_cluster_create_request(
             &self,
             subscription_id: impl Into<String>,
@@ -2398,6 +2598,12 @@ pub mod configurations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets all configuration information for an HDI cluster."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `cluster_name`: The name of the cluster."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -2411,6 +2617,13 @@ pub mod configurations {
                 cluster_name: cluster_name.into(),
             }
         }
+        #[doc = "The configuration object for the specified cluster. This API is not recommended and might be removed in the future. Please consider using List configurations API instead."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `cluster_name`: The name of the cluster."]
+        #[doc = "* `configuration_name`: The name of the cluster configuration."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -2426,6 +2639,14 @@ pub mod configurations {
                 configuration_name: configuration_name.into(),
             }
         }
+        #[doc = "Configures the HTTP settings on the specified cluster. This API is deprecated, please use UpdateGatewaySettings in cluster endpoint instead."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `cluster_name`: The name of the cluster."]
+        #[doc = "* `configuration_name`: The name of the cluster configuration."]
+        #[doc = "* `parameters`: The cluster configurations."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -2616,6 +2837,12 @@ pub mod extensions {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the status of Operations Management Suite (OMS) on the HDInsight cluster."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `cluster_name`: The name of the cluster."]
         pub fn get_monitoring_status(
             &self,
             subscription_id: impl Into<String>,
@@ -2629,6 +2856,13 @@ pub mod extensions {
                 cluster_name: cluster_name.into(),
             }
         }
+        #[doc = "Enables the Operations Management Suite (OMS) on the HDInsight cluster."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `cluster_name`: The name of the cluster."]
+        #[doc = "* `parameters`: The Operations Management Suite (OMS) workspace parameters."]
         pub fn enable_monitoring(
             &self,
             subscription_id: impl Into<String>,
@@ -2644,6 +2878,12 @@ pub mod extensions {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Disables the Operations Management Suite (OMS) on the HDInsight cluster."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `cluster_name`: The name of the cluster."]
         pub fn disable_monitoring(
             &self,
             subscription_id: impl Into<String>,
@@ -2657,6 +2897,12 @@ pub mod extensions {
                 cluster_name: cluster_name.into(),
             }
         }
+        #[doc = "Gets the status of Azure Monitor on the HDInsight cluster."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `cluster_name`: The name of the cluster."]
         pub fn get_azure_monitor_status(
             &self,
             subscription_id: impl Into<String>,
@@ -2670,6 +2916,13 @@ pub mod extensions {
                 cluster_name: cluster_name.into(),
             }
         }
+        #[doc = "Enables the Azure Monitor on the HDInsight cluster."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `cluster_name`: The name of the cluster."]
+        #[doc = "* `parameters`: The Log Analytics workspace parameters."]
         pub fn enable_azure_monitor(
             &self,
             subscription_id: impl Into<String>,
@@ -2685,6 +2938,12 @@ pub mod extensions {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Disables the Azure Monitor on the HDInsight cluster."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `cluster_name`: The name of the cluster."]
         pub fn disable_azure_monitor(
             &self,
             subscription_id: impl Into<String>,
@@ -2698,6 +2957,13 @@ pub mod extensions {
                 cluster_name: cluster_name.into(),
             }
         }
+        #[doc = "Gets the extension properties for the specified HDInsight cluster extension."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `cluster_name`: The name of the cluster."]
+        #[doc = "* `extension_name`: The name of the cluster extension."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -2713,6 +2979,14 @@ pub mod extensions {
                 extension_name: extension_name.into(),
             }
         }
+        #[doc = "Creates an HDInsight cluster extension."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `cluster_name`: The name of the cluster."]
+        #[doc = "* `extension_name`: The name of the cluster extension."]
+        #[doc = "* `parameters`: The cluster extensions create request."]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -2730,6 +3004,13 @@ pub mod extensions {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Deletes the specified extension for HDInsight cluster."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `cluster_name`: The name of the cluster."]
+        #[doc = "* `extension_name`: The name of the cluster extension."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -2745,6 +3026,14 @@ pub mod extensions {
                 extension_name: extension_name.into(),
             }
         }
+        #[doc = "Gets the async operation status."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `cluster_name`: The name of the cluster."]
+        #[doc = "* `extension_name`: The name of the cluster extension."]
+        #[doc = "* `operation_id`: The long running operation id."]
         pub fn get_azure_async_operation_status(
             &self,
             subscription_id: impl Into<String>,
@@ -3314,6 +3603,12 @@ pub mod virtual_machines {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists the HDInsight clusters hosts"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `cluster_name`: The name of the cluster."]
         pub fn list_hosts(
             &self,
             subscription_id: impl Into<String>,
@@ -3327,6 +3622,13 @@ pub mod virtual_machines {
                 cluster_name: cluster_name.into(),
             }
         }
+        #[doc = "Restarts the specified HDInsight cluster hosts."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `cluster_name`: The name of the cluster."]
+        #[doc = "* `hosts`: The list of hosts to restart"]
         pub fn restart_hosts(
             &self,
             subscription_id: impl Into<String>,
@@ -3342,6 +3644,13 @@ pub mod virtual_machines {
                 hosts: hosts.into(),
             }
         }
+        #[doc = "Gets the async operation status."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `cluster_name`: The name of the cluster."]
+        #[doc = "* `operation_id`: The long running operation id."]
         pub fn get_async_operation_status(
             &self,
             subscription_id: impl Into<String>,

@@ -106,6 +106,13 @@ pub mod functions {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets details about the specified function."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `job_name`: The name of the streaming job."]
+        #[doc = "* `function_name`: The name of the function."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -121,6 +128,14 @@ pub mod functions {
                 function_name: function_name.into(),
             }
         }
+        #[doc = "Creates a function or replaces an already existing function under an existing streaming job."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `function`: The definition of the function that will be used to create a new function or replace the existing one under the streaming job."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `job_name`: The name of the streaming job."]
+        #[doc = "* `function_name`: The name of the function."]
         pub fn create_or_replace(
             &self,
             function: impl Into<models::Function>,
@@ -140,6 +155,14 @@ pub mod functions {
                 if_none_match: None,
             }
         }
+        #[doc = "Updates an existing function under an existing streaming job. This can be used to partially update (ie. update one or two properties) a function without affecting the rest the job or function definition."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `function`: A function object. The properties specified here will overwrite the corresponding properties in the existing function (ie. Those properties will be updated). Any properties that are set to null here will mean that the corresponding property in the existing function will remain the same and not change as a result of this PATCH operation."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `job_name`: The name of the streaming job."]
+        #[doc = "* `function_name`: The name of the function."]
         pub fn update(
             &self,
             function: impl Into<models::Function>,
@@ -158,6 +181,13 @@ pub mod functions {
                 if_match: None,
             }
         }
+        #[doc = "Deletes a function from the streaming job."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `job_name`: The name of the streaming job."]
+        #[doc = "* `function_name`: The name of the function."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -173,6 +203,12 @@ pub mod functions {
                 function_name: function_name.into(),
             }
         }
+        #[doc = "Lists all of the functions under the specified streaming job."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `job_name`: The name of the streaming job."]
         pub fn list_by_streaming_job(
             &self,
             subscription_id: impl Into<String>,
@@ -187,6 +223,13 @@ pub mod functions {
                 select: None,
             }
         }
+        #[doc = "Tests if the information provided for a function is valid. This can range from testing the connection to the underlying web service behind the function or making sure the function code provided is syntactically correct."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `job_name`: The name of the streaming job."]
+        #[doc = "* `function_name`: The name of the function."]
         pub fn test(
             &self,
             subscription_id: impl Into<String>,
@@ -203,6 +246,13 @@ pub mod functions {
                 function: None,
             }
         }
+        #[doc = "Retrieves the default definition of a function based on the parameters specified."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `job_name`: The name of the streaming job."]
+        #[doc = "* `function_name`: The name of the function."]
         pub fn retrieve_default_definition(
             &self,
             subscription_id: impl Into<String>,
@@ -293,10 +343,12 @@ pub mod functions {
             pub(crate) if_none_match: Option<String>,
         }
         impl Builder {
+            #[doc = "The ETag of the function. Omit this value to always overwrite the current function. Specify the last-seen ETag value to prevent accidentally overwriting concurrent changes."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
             }
+            #[doc = "Set to '*' to allow a new function to be created, but to prevent updating an existing function. Other values will result in a 412 Pre-condition Failed response."]
             pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
                 self.if_none_match = Some(if_none_match.into());
                 self
@@ -369,6 +421,7 @@ pub mod functions {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "The ETag of the function. Omit this value to always overwrite the current function. Specify the last-seen ETag value to prevent accidentally overwriting concurrent changes."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -486,6 +539,7 @@ pub mod functions {
             pub(crate) select: Option<String>,
         }
         impl Builder {
+            #[doc = "The $select OData query parameter. This is a comma-separated list of structural properties to include in the response, or \"*\" to include all properties. By default, all properties are returned except diagnostics. Currently only accepts '*' as a valid value."]
             pub fn select(mut self, select: impl Into<String>) -> Self {
                 self.select = Some(select.into());
                 self
@@ -577,6 +631,7 @@ pub mod functions {
             pub(crate) function: Option<models::Function>,
         }
         impl Builder {
+            #[doc = "If the function specified does not already exist, this parameter must contain the full function definition intended to be tested. If the function specified already exists, this parameter can be left null to test the existing function as is or if specified, the properties specified will overwrite the corresponding properties in the existing function (exactly like a PATCH operation) and the resulting function will be tested."]
             pub fn function(mut self, function: impl Into<models::Function>) -> Self {
                 self.function = Some(function.into());
                 self
@@ -643,6 +698,7 @@ pub mod functions {
             pub(crate) function_retrieve_default_definition_parameters: Option<models::FunctionRetrieveDefaultDefinitionParameters>,
         }
         impl Builder {
+            #[doc = "Parameters used to specify the type of function to retrieve the default definition for."]
             pub fn function_retrieve_default_definition_parameters(
                 mut self,
                 function_retrieve_default_definition_parameters: impl Into<models::FunctionRetrieveDefaultDefinitionParameters>,
@@ -697,6 +753,13 @@ pub mod inputs {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets details about the specified input."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `job_name`: The name of the streaming job."]
+        #[doc = "* `input_name`: The name of the input."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -712,6 +775,14 @@ pub mod inputs {
                 input_name: input_name.into(),
             }
         }
+        #[doc = "Creates an input or replaces an already existing input under an existing streaming job."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `input`: The definition of the input that will be used to create a new input or replace the existing one under the streaming job."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `job_name`: The name of the streaming job."]
+        #[doc = "* `input_name`: The name of the input."]
         pub fn create_or_replace(
             &self,
             input: impl Into<models::Input>,
@@ -731,6 +802,14 @@ pub mod inputs {
                 if_none_match: None,
             }
         }
+        #[doc = "Updates an existing input under an existing streaming job. This can be used to partially update (ie. update one or two properties) an input without affecting the rest the job or input definition."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `input`: An Input object. The properties specified here will overwrite the corresponding properties in the existing input (ie. Those properties will be updated). Any properties that are set to null here will mean that the corresponding property in the existing input will remain the same and not change as a result of this PATCH operation."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `job_name`: The name of the streaming job."]
+        #[doc = "* `input_name`: The name of the input."]
         pub fn update(
             &self,
             input: impl Into<models::Input>,
@@ -749,6 +828,13 @@ pub mod inputs {
                 if_match: None,
             }
         }
+        #[doc = "Deletes an input from the streaming job."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `job_name`: The name of the streaming job."]
+        #[doc = "* `input_name`: The name of the input."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -764,6 +850,12 @@ pub mod inputs {
                 input_name: input_name.into(),
             }
         }
+        #[doc = "Lists all of the inputs under the specified streaming job."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `job_name`: The name of the streaming job."]
         pub fn list_by_streaming_job(
             &self,
             subscription_id: impl Into<String>,
@@ -778,6 +870,13 @@ pub mod inputs {
                 select: None,
             }
         }
+        #[doc = "Tests whether an input’s datasource is reachable and usable by the Azure Stream Analytics service."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `job_name`: The name of the streaming job."]
+        #[doc = "* `input_name`: The name of the input."]
         pub fn test(
             &self,
             subscription_id: impl Into<String>,
@@ -868,10 +967,12 @@ pub mod inputs {
             pub(crate) if_none_match: Option<String>,
         }
         impl Builder {
+            #[doc = "The ETag of the input. Omit this value to always overwrite the current input. Specify the last-seen ETag value to prevent accidentally overwriting concurrent changes."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
             }
+            #[doc = "Set to '*' to allow a new input to be created, but to prevent updating an existing input. Other values will result in a 412 Pre-condition Failed response."]
             pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
                 self.if_none_match = Some(if_none_match.into());
                 self
@@ -944,6 +1045,7 @@ pub mod inputs {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "The ETag of the input. Omit this value to always overwrite the current input. Specify the last-seen ETag value to prevent accidentally overwriting concurrent changes."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -1061,6 +1163,7 @@ pub mod inputs {
             pub(crate) select: Option<String>,
         }
         impl Builder {
+            #[doc = "The $select OData query parameter. This is a comma-separated list of structural properties to include in the response, or \"*\" to include all properties. By default, all properties are returned except diagnostics. Currently only accepts '*' as a valid value."]
             pub fn select(mut self, select: impl Into<String>) -> Self {
                 self.select = Some(select.into());
                 self
@@ -1152,6 +1255,7 @@ pub mod inputs {
             pub(crate) input: Option<models::Input>,
         }
         impl Builder {
+            #[doc = "If the input specified does not already exist, this parameter must contain the full input definition intended to be tested. If the input specified already exists, this parameter can be left null to test the existing input as is or if specified, the properties specified will overwrite the corresponding properties in the existing input (exactly like a PATCH operation) and the resulting input will be tested."]
             pub fn input(mut self, input: impl Into<models::Input>) -> Self {
                 self.input = Some(input.into());
                 self
@@ -1210,6 +1314,13 @@ pub mod outputs {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets details about the specified output."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `job_name`: The name of the streaming job."]
+        #[doc = "* `output_name`: The name of the output."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1225,6 +1336,14 @@ pub mod outputs {
                 output_name: output_name.into(),
             }
         }
+        #[doc = "Creates an output or replaces an already existing output under an existing streaming job."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `output`: The definition of the output that will be used to create a new output or replace the existing one under the streaming job."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `job_name`: The name of the streaming job."]
+        #[doc = "* `output_name`: The name of the output."]
         pub fn create_or_replace(
             &self,
             output: impl Into<models::Output>,
@@ -1244,6 +1363,14 @@ pub mod outputs {
                 if_none_match: None,
             }
         }
+        #[doc = "Updates an existing output under an existing streaming job. This can be used to partially update (ie. update one or two properties) an output without affecting the rest the job or output definition."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `output`: An Output object. The properties specified here will overwrite the corresponding properties in the existing output (ie. Those properties will be updated). Any properties that are set to null here will mean that the corresponding property in the existing output will remain the same and not change as a result of this PATCH operation."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `job_name`: The name of the streaming job."]
+        #[doc = "* `output_name`: The name of the output."]
         pub fn update(
             &self,
             output: impl Into<models::Output>,
@@ -1262,6 +1389,13 @@ pub mod outputs {
                 if_match: None,
             }
         }
+        #[doc = "Deletes an output from the streaming job."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `job_name`: The name of the streaming job."]
+        #[doc = "* `output_name`: The name of the output."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1277,6 +1411,12 @@ pub mod outputs {
                 output_name: output_name.into(),
             }
         }
+        #[doc = "Lists all of the outputs under the specified streaming job."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `job_name`: The name of the streaming job."]
         pub fn list_by_streaming_job(
             &self,
             subscription_id: impl Into<String>,
@@ -1291,6 +1431,13 @@ pub mod outputs {
                 select: None,
             }
         }
+        #[doc = "Tests whether an output’s datasource is reachable and usable by the Azure Stream Analytics service."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `job_name`: The name of the streaming job."]
+        #[doc = "* `output_name`: The name of the output."]
         pub fn test(
             &self,
             subscription_id: impl Into<String>,
@@ -1381,10 +1528,12 @@ pub mod outputs {
             pub(crate) if_none_match: Option<String>,
         }
         impl Builder {
+            #[doc = "The ETag of the output. Omit this value to always overwrite the current output. Specify the last-seen ETag value to prevent accidentally overwriting concurrent changes."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
             }
+            #[doc = "Set to '*' to allow a new output to be created, but to prevent updating an existing output. Other values will result in a 412 Pre-condition Failed response."]
             pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
                 self.if_none_match = Some(if_none_match.into());
                 self
@@ -1457,6 +1606,7 @@ pub mod outputs {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "The ETag of the output. Omit this value to always overwrite the current output. Specify the last-seen ETag value to prevent accidentally overwriting concurrent changes."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -1574,6 +1724,7 @@ pub mod outputs {
             pub(crate) select: Option<String>,
         }
         impl Builder {
+            #[doc = "The $select OData query parameter. This is a comma-separated list of structural properties to include in the response, or \"*\" to include all properties. By default, all properties are returned except diagnostics. Currently only accepts '*' as a valid value."]
             pub fn select(mut self, select: impl Into<String>) -> Self {
                 self.select = Some(select.into());
                 self
@@ -1665,6 +1816,7 @@ pub mod outputs {
             pub(crate) output: Option<models::Output>,
         }
         impl Builder {
+            #[doc = "If the output specified does not already exist, this parameter must contain the full output definition intended to be tested. If the output specified already exists, this parameter can be left null to test the existing output as is or if specified, the properties specified will overwrite the corresponding properties in the existing output (exactly like a PATCH operation) and the resulting output will be tested."]
             pub fn output(mut self, output: impl Into<models::Output>) -> Self {
                 self.output = Some(output.into());
                 self
@@ -1723,6 +1875,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all of the available Stream Analytics related operations."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -1804,6 +1957,12 @@ pub mod streaming_jobs {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets details about the specified streaming job."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `job_name`: The name of the streaming job."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1818,6 +1977,13 @@ pub mod streaming_jobs {
                 expand: None,
             }
         }
+        #[doc = "Creates a streaming job or replaces an already existing streaming job."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `streaming_job`: The definition of the streaming job that will be used to create a new streaming job or replace the existing one."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `job_name`: The name of the streaming job."]
         pub fn create_or_replace(
             &self,
             streaming_job: impl Into<models::StreamingJob>,
@@ -1835,6 +2001,13 @@ pub mod streaming_jobs {
                 if_none_match: None,
             }
         }
+        #[doc = "Updates an existing streaming job. This can be used to partially update (ie. update one or two properties) a streaming job without affecting the rest the job definition."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `streaming_job`: A streaming job object. The properties specified here will overwrite the corresponding properties in the existing streaming job (ie. Those properties will be updated). Any properties that are set to null here will mean that the corresponding property in the existing input will remain the same and not change as a result of this PATCH operation."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `job_name`: The name of the streaming job."]
         pub fn update(
             &self,
             streaming_job: impl Into<models::StreamingJob>,
@@ -1851,6 +2024,12 @@ pub mod streaming_jobs {
                 if_match: None,
             }
         }
+        #[doc = "Deletes a streaming job."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `job_name`: The name of the streaming job."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1864,6 +2043,11 @@ pub mod streaming_jobs {
                 job_name: job_name.into(),
             }
         }
+        #[doc = "Lists all of the streaming jobs in the specified resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -1876,6 +2060,10 @@ pub mod streaming_jobs {
                 expand: None,
             }
         }
+        #[doc = "Lists all of the streaming jobs in the given subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -1883,6 +2071,12 @@ pub mod streaming_jobs {
                 expand: None,
             }
         }
+        #[doc = "Starts a streaming job. Once a job is started it will start processing input events and produce output."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `job_name`: The name of the streaming job."]
         pub fn start(
             &self,
             subscription_id: impl Into<String>,
@@ -1897,6 +2091,12 @@ pub mod streaming_jobs {
                 start_job_parameters: None,
             }
         }
+        #[doc = "Stops a running streaming job. This will cause a running streaming job to stop processing input events and producing output."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `job_name`: The name of the streaming job."]
         pub fn stop(
             &self,
             subscription_id: impl Into<String>,
@@ -1910,6 +2110,12 @@ pub mod streaming_jobs {
                 job_name: job_name.into(),
             }
         }
+        #[doc = "Scales a streaming job when the job is running."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `job_name`: The name of the streaming job."]
         pub fn scale(
             &self,
             subscription_id: impl Into<String>,
@@ -1937,6 +2143,7 @@ pub mod streaming_jobs {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "The $expand OData query parameter. This is a comma-separated list of additional streaming job properties to include in the response, beyond the default set returned when this parameter is absent. The default set is all streaming job properties other than 'inputs', 'transformation', 'outputs', and 'functions'."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -2003,10 +2210,12 @@ pub mod streaming_jobs {
             pub(crate) if_none_match: Option<String>,
         }
         impl Builder {
+            #[doc = "The ETag of the streaming job. Omit this value to always overwrite the current record set. Specify the last-seen ETag value to prevent accidentally overwriting concurrent changes."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
             }
+            #[doc = "Set to '*' to allow a new streaming job to be created, but to prevent updating an existing record set. Other values will result in a 412 Pre-condition Failed response."]
             pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
                 self.if_none_match = Some(if_none_match.into());
                 self
@@ -2078,6 +2287,7 @@ pub mod streaming_jobs {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "The ETag of the streaming job. Omit this value to always overwrite the current record set. Specify the last-seen ETag value to prevent accidentally overwriting concurrent changes."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -2194,6 +2404,7 @@ pub mod streaming_jobs {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "The $expand OData query parameter. This is a comma-separated list of additional streaming job properties to include in the response, beyond the default set returned when this parameter is absent. The default set is all streaming job properties other than 'inputs', 'transformation', 'outputs', and 'functions'."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -2277,6 +2488,7 @@ pub mod streaming_jobs {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "The $expand OData query parameter. This is a comma-separated list of additional streaming job properties to include in the response, beyond the default set returned when this parameter is absent. The default set is all streaming job properties other than 'inputs', 'transformation', 'outputs', and 'functions'."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -2365,6 +2577,7 @@ pub mod streaming_jobs {
             pub(crate) start_job_parameters: Option<models::StartStreamingJobParameters>,
         }
         impl Builder {
+            #[doc = "Parameters applicable to a start streaming job operation."]
             pub fn start_job_parameters(mut self, start_job_parameters: impl Into<models::StartStreamingJobParameters>) -> Self {
                 self.start_job_parameters = Some(start_job_parameters.into());
                 self
@@ -2480,6 +2693,7 @@ pub mod streaming_jobs {
             pub(crate) scale_job_parameters: Option<models::ScaleStreamingJobParameters>,
         }
         impl Builder {
+            #[doc = "Parameters applicable to a scale streaming job operation."]
             pub fn scale_job_parameters(mut self, scale_job_parameters: impl Into<models::ScaleStreamingJobParameters>) -> Self {
                 self.scale_job_parameters = Some(scale_job_parameters.into());
                 self
@@ -2532,6 +2746,13 @@ pub mod transformations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets details about the specified transformation."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `job_name`: The name of the streaming job."]
+        #[doc = "* `transformation_name`: The name of the transformation."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -2547,6 +2768,14 @@ pub mod transformations {
                 transformation_name: transformation_name.into(),
             }
         }
+        #[doc = "Creates a transformation or replaces an already existing transformation under an existing streaming job."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `transformation`: The definition of the transformation that will be used to create a new transformation or replace the existing one under the streaming job."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `job_name`: The name of the streaming job."]
+        #[doc = "* `transformation_name`: The name of the transformation."]
         pub fn create_or_replace(
             &self,
             transformation: impl Into<models::Transformation>,
@@ -2566,6 +2795,14 @@ pub mod transformations {
                 if_none_match: None,
             }
         }
+        #[doc = "Updates an existing transformation under an existing streaming job. This can be used to partially update (ie. update one or two properties) a transformation without affecting the rest the job or transformation definition."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `transformation`: A Transformation object. The properties specified here will overwrite the corresponding properties in the existing transformation (ie. Those properties will be updated). Any properties that are set to null here will mean that the corresponding property in the existing transformation will remain the same and not change as a result of this PATCH operation."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `job_name`: The name of the streaming job."]
+        #[doc = "* `transformation_name`: The name of the transformation."]
         pub fn update(
             &self,
             transformation: impl Into<models::Transformation>,
@@ -2658,10 +2895,12 @@ pub mod transformations {
             pub(crate) if_none_match: Option<String>,
         }
         impl Builder {
+            #[doc = "The ETag of the transformation. Omit this value to always overwrite the current transformation. Specify the last-seen ETag value to prevent accidentally overwriting concurrent changes."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
             }
+            #[doc = "Set to '*' to allow a new transformation to be created, but to prevent updating an existing transformation. Other values will result in a 412 Pre-condition Failed response."]
             pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
                 self.if_none_match = Some(if_none_match.into());
                 self
@@ -2734,6 +2973,7 @@ pub mod transformations {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "The ETag of the transformation. Omit this value to always overwrite the current transformation. Specify the last-seen ETag value to prevent accidentally overwriting concurrent changes."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -2789,6 +3029,11 @@ pub mod subscriptions {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieves the subscription's current quota information in a particular region."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `location`: The region to which the request is sent. You can find out which regions Azure Stream Analytics is supported in here: https://azure.microsoft.com/en-us/regions/"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_quotas(&self, location: impl Into<String>, subscription_id: impl Into<String>) -> list_quotas::Builder {
             list_quotas::Builder {
                 client: self.0.clone(),
@@ -2796,6 +3041,12 @@ pub mod subscriptions {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Test the Stream Analytics query on a sample input."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `test_query`: The query testing object that defines the input, output, and transformation for the query testing."]
+        #[doc = "* `location`: The region to which the request is sent. You can find out which regions Azure Stream Analytics is supported in here: https://azure.microsoft.com/en-us/regions/"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn test_query(
             &self,
             test_query: impl Into<models::TestQuery>,
@@ -2809,6 +3060,12 @@ pub mod subscriptions {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Compile the Stream Analytics query."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `compile_query`: The query compilation object which defines the input, output, and transformation for the query compilation."]
+        #[doc = "* `location`: The region to which the request is sent. You can find out which regions Azure Stream Analytics is supported in here: https://azure.microsoft.com/en-us/regions/"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn compile_query(
             &self,
             compile_query: impl Into<models::CompileQuery>,
@@ -2822,6 +3079,12 @@ pub mod subscriptions {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Sample the Stream Analytics input data."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `sample_input`: Defines the necessary parameters for sampling the Stream Analytics input data."]
+        #[doc = "* `location`: The region to which the request is sent. You can find out which regions Azure Stream Analytics is supported in here: https://azure.microsoft.com/en-us/regions/"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn sample_input(
             &self,
             sample_input: impl Into<models::SampleInput>,
@@ -2835,6 +3098,12 @@ pub mod subscriptions {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Test the Stream Analytics input."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `test_input`: Defines the necessary parameters for testing the Stream Analytics input."]
+        #[doc = "* `location`: The region to which the request is sent. You can find out which regions Azure Stream Analytics is supported in here: https://azure.microsoft.com/en-us/regions/"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn test_input(
             &self,
             test_input: impl Into<models::TestInput>,
@@ -2848,6 +3117,12 @@ pub mod subscriptions {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Test the Stream Analytics output."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `test_output`: Defines the necessary parameters for testing the Stream Analytics output."]
+        #[doc = "* `location`: The region to which the request is sent. You can find out which regions Azure Stream Analytics is supported in here: https://azure.microsoft.com/en-us/regions/"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn test_output(
             &self,
             test_output: impl Into<models::TestOutput>,
@@ -3186,6 +3461,12 @@ pub mod clusters {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets information about the specified cluster."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `cluster_name`: The name of the cluster."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -3199,6 +3480,13 @@ pub mod clusters {
                 cluster_name: cluster_name.into(),
             }
         }
+        #[doc = "Creates a Stream Analytics Cluster or replaces an already existing cluster."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `cluster`: The definition of the cluster that will be used to create a new cluster or replace the existing one."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `cluster_name`: The name of the cluster."]
         pub fn create_or_update(
             &self,
             cluster: impl Into<models::Cluster>,
@@ -3216,6 +3504,13 @@ pub mod clusters {
                 if_none_match: None,
             }
         }
+        #[doc = "Updates an existing cluster. This can be used to partially update (ie. update one or two properties) a cluster without affecting the rest of the cluster definition."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `cluster`: The properties specified here will overwrite the corresponding properties in the existing cluster (ie. Those properties will be updated)."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `cluster_name`: The name of the cluster."]
         pub fn update(
             &self,
             cluster: impl Into<models::Cluster>,
@@ -3232,6 +3527,12 @@ pub mod clusters {
                 if_match: None,
             }
         }
+        #[doc = "Deletes the specified cluster."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `cluster_name`: The name of the cluster."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -3245,12 +3546,21 @@ pub mod clusters {
                 cluster_name: cluster_name.into(),
             }
         }
+        #[doc = "Lists all of the clusters in the given subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists all of the clusters in the given resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -3262,6 +3572,12 @@ pub mod clusters {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Lists all of the streaming jobs in the given cluster."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `cluster_name`: The name of the cluster."]
         pub fn list_streaming_jobs(
             &self,
             subscription_id: impl Into<String>,
@@ -3346,10 +3662,12 @@ pub mod clusters {
             pub(crate) if_none_match: Option<String>,
         }
         impl Builder {
+            #[doc = "The ETag of the resource. Omit this value to always overwrite the current record set. Specify the last-seen ETag value to prevent accidentally overwriting concurrent changes."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
             }
+            #[doc = "Set to '*' to allow a new resource to be created, but to prevent updating an existing record set. Other values will result in a 412 Pre-condition Failed response."]
             pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
                 self.if_none_match = Some(if_none_match.into());
                 self
@@ -3425,6 +3743,7 @@ pub mod clusters {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "The ETag of the resource. Omit this value to always overwrite the current record set. Specify the last-seen ETag value to prevent accidentally overwriting concurrent changes."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -3766,6 +4085,13 @@ pub mod private_endpoints {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets information about the specified Private Endpoint."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `cluster_name`: The name of the cluster."]
+        #[doc = "* `private_endpoint_name`: The name of the private endpoint."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -3781,6 +4107,14 @@ pub mod private_endpoints {
                 private_endpoint_name: private_endpoint_name.into(),
             }
         }
+        #[doc = "Creates a Stream Analytics Private Endpoint or replaces an already existing Private Endpoint."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `private_endpoint`: The definition of the private endpoint that will be used to create a new cluster or replace the existing one."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `cluster_name`: The name of the cluster."]
+        #[doc = "* `private_endpoint_name`: The name of the private endpoint."]
         pub fn create_or_update(
             &self,
             private_endpoint: impl Into<models::PrivateEndpoint>,
@@ -3800,6 +4134,13 @@ pub mod private_endpoints {
                 if_none_match: None,
             }
         }
+        #[doc = "Delete the specified private endpoint."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `cluster_name`: The name of the cluster."]
+        #[doc = "* `private_endpoint_name`: The name of the private endpoint."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -3815,6 +4156,12 @@ pub mod private_endpoints {
                 private_endpoint_name: private_endpoint_name.into(),
             }
         }
+        #[doc = "Lists the private endpoints in the cluster."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `cluster_name`: The name of the cluster."]
         pub fn list_by_cluster(
             &self,
             subscription_id: impl Into<String>,
@@ -3902,10 +4249,12 @@ pub mod private_endpoints {
             pub(crate) if_none_match: Option<String>,
         }
         impl Builder {
+            #[doc = "The ETag of the resource. Omit this value to always overwrite the current record set. Specify the last-seen ETag value to prevent accidentally overwriting concurrent changes."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
             }
+            #[doc = "Set to '*' to allow a new resource to be created, but to prevent updating an existing record set. Other values will result in a 412 Pre-condition Failed response."]
             pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
                 self.if_none_match = Some(if_none_match.into());
                 self

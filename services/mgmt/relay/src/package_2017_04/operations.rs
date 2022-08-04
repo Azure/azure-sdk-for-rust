@@ -91,6 +91,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all available Relay REST API operations."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -169,6 +170,11 @@ pub mod namespaces {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Check the specified namespace name availability."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `parameters`: Parameters to check availability of the specified namespace name."]
         pub fn check_name_availability(
             &self,
             subscription_id: impl Into<String>,
@@ -180,12 +186,21 @@ pub mod namespaces {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Lists all the available namespaces within the subscription regardless of the resourceGroups."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists all the available namespaces within the ResourceGroup."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the Resource group within the Azure subscription."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_resource_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -197,6 +212,12 @@ pub mod namespaces {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Returns the description for the specified namespace."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the Resource group within the Azure subscription."]
+        #[doc = "* `namespace_name`: The namespace name"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -210,6 +231,13 @@ pub mod namespaces {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Create Azure Relay namespace."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the Resource group within the Azure subscription."]
+        #[doc = "* `namespace_name`: The namespace name"]
+        #[doc = "* `parameters`: Parameters supplied to create a namespace resource."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -225,6 +253,13 @@ pub mod namespaces {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates a namespace. Once created, this namespace's resource manifest is immutable. This operation is idempotent."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the Resource group within the Azure subscription."]
+        #[doc = "* `namespace_name`: The namespace name"]
+        #[doc = "* `parameters`: Parameters for updating a namespace resource."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -240,6 +275,12 @@ pub mod namespaces {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes an existing namespace. This operation also removes all associated resources under the namespace."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the Resource group within the Azure subscription."]
+        #[doc = "* `namespace_name`: The namespace name"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -253,6 +294,12 @@ pub mod namespaces {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Authorization rules for a namespace."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the Resource group within the Azure subscription."]
+        #[doc = "* `namespace_name`: The namespace name"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_authorization_rules(
             &self,
             resource_group_name: impl Into<String>,
@@ -266,6 +313,13 @@ pub mod namespaces {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Authorization rule for a namespace by name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the Resource group within the Azure subscription."]
+        #[doc = "* `namespace_name`: The namespace name"]
+        #[doc = "* `authorization_rule_name`: The authorization rule name."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get_authorization_rule(
             &self,
             resource_group_name: impl Into<String>,
@@ -281,6 +335,14 @@ pub mod namespaces {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates an authorization rule for a namespace."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the Resource group within the Azure subscription."]
+        #[doc = "* `namespace_name`: The namespace name"]
+        #[doc = "* `authorization_rule_name`: The authorization rule name."]
+        #[doc = "* `parameters`: The authorization rule parameters."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update_authorization_rule(
             &self,
             resource_group_name: impl Into<String>,
@@ -298,6 +360,13 @@ pub mod namespaces {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes a namespace authorization rule."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the Resource group within the Azure subscription."]
+        #[doc = "* `namespace_name`: The namespace name"]
+        #[doc = "* `authorization_rule_name`: The authorization rule name."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete_authorization_rule(
             &self,
             resource_group_name: impl Into<String>,
@@ -313,6 +382,13 @@ pub mod namespaces {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Primary and secondary connection strings to the namespace."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the Resource group within the Azure subscription."]
+        #[doc = "* `namespace_name`: The namespace name"]
+        #[doc = "* `authorization_rule_name`: The authorization rule name."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_keys(
             &self,
             resource_group_name: impl Into<String>,
@@ -328,6 +404,14 @@ pub mod namespaces {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Regenerates the primary or secondary connection strings to the namespace."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the Resource group within the Azure subscription."]
+        #[doc = "* `namespace_name`: The namespace name"]
+        #[doc = "* `authorization_rule_name`: The authorization rule name."]
+        #[doc = "* `parameters`: Parameters supplied to regenerate authorization rule."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn regenerate_keys(
             &self,
             resource_group_name: impl Into<String>,
@@ -1133,6 +1217,12 @@ pub mod hybrid_connections {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists the hybrid connection within the namespace."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the Resource group within the Azure subscription."]
+        #[doc = "* `namespace_name`: The namespace name"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_namespace(
             &self,
             resource_group_name: impl Into<String>,
@@ -1146,6 +1236,13 @@ pub mod hybrid_connections {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Returns the description for the specified hybrid connection."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the Resource group within the Azure subscription."]
+        #[doc = "* `namespace_name`: The namespace name"]
+        #[doc = "* `hybrid_connection_name`: The hybrid connection name."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -1161,6 +1258,14 @@ pub mod hybrid_connections {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates a service hybrid connection. This operation is idempotent."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the Resource group within the Azure subscription."]
+        #[doc = "* `namespace_name`: The namespace name"]
+        #[doc = "* `hybrid_connection_name`: The hybrid connection name."]
+        #[doc = "* `parameters`: Parameters supplied to create a hybrid connection."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -1178,6 +1283,13 @@ pub mod hybrid_connections {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes a hybrid connection."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the Resource group within the Azure subscription."]
+        #[doc = "* `namespace_name`: The namespace name"]
+        #[doc = "* `hybrid_connection_name`: The hybrid connection name."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -1193,6 +1305,13 @@ pub mod hybrid_connections {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Authorization rules for a hybrid connection."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the Resource group within the Azure subscription."]
+        #[doc = "* `namespace_name`: The namespace name"]
+        #[doc = "* `hybrid_connection_name`: The hybrid connection name."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_authorization_rules(
             &self,
             resource_group_name: impl Into<String>,
@@ -1208,6 +1327,14 @@ pub mod hybrid_connections {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Hybrid connection authorization rule for a hybrid connection by name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the Resource group within the Azure subscription."]
+        #[doc = "* `namespace_name`: The namespace name"]
+        #[doc = "* `hybrid_connection_name`: The hybrid connection name."]
+        #[doc = "* `authorization_rule_name`: The authorization rule name."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get_authorization_rule(
             &self,
             resource_group_name: impl Into<String>,
@@ -1225,6 +1352,15 @@ pub mod hybrid_connections {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates an authorization rule for a hybrid connection."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the Resource group within the Azure subscription."]
+        #[doc = "* `namespace_name`: The namespace name"]
+        #[doc = "* `hybrid_connection_name`: The hybrid connection name."]
+        #[doc = "* `authorization_rule_name`: The authorization rule name."]
+        #[doc = "* `parameters`: The authorization rule parameters."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update_authorization_rule(
             &self,
             resource_group_name: impl Into<String>,
@@ -1244,6 +1380,14 @@ pub mod hybrid_connections {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes a hybrid connection authorization rule."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the Resource group within the Azure subscription."]
+        #[doc = "* `namespace_name`: The namespace name"]
+        #[doc = "* `hybrid_connection_name`: The hybrid connection name."]
+        #[doc = "* `authorization_rule_name`: The authorization rule name."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete_authorization_rule(
             &self,
             resource_group_name: impl Into<String>,
@@ -1261,6 +1405,14 @@ pub mod hybrid_connections {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Primary and secondary connection strings to the hybrid connection."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the Resource group within the Azure subscription."]
+        #[doc = "* `namespace_name`: The namespace name"]
+        #[doc = "* `hybrid_connection_name`: The hybrid connection name."]
+        #[doc = "* `authorization_rule_name`: The authorization rule name."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_keys(
             &self,
             resource_group_name: impl Into<String>,
@@ -1278,6 +1430,15 @@ pub mod hybrid_connections {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Regenerates the primary or secondary connection strings to the hybrid connection."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the Resource group within the Azure subscription."]
+        #[doc = "* `namespace_name`: The namespace name"]
+        #[doc = "* `hybrid_connection_name`: The hybrid connection name."]
+        #[doc = "* `authorization_rule_name`: The authorization rule name."]
+        #[doc = "* `parameters`: Parameters supplied to regenerate authorization rule."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn regenerate_keys(
             &self,
             resource_group_name: impl Into<String>,
@@ -1865,6 +2026,12 @@ pub mod wcf_relays {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists the WCF relays within the namespace."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the Resource group within the Azure subscription."]
+        #[doc = "* `namespace_name`: The namespace name"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_namespace(
             &self,
             resource_group_name: impl Into<String>,
@@ -1878,6 +2045,13 @@ pub mod wcf_relays {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Returns the description for the specified WCF relay."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the Resource group within the Azure subscription."]
+        #[doc = "* `namespace_name`: The namespace name"]
+        #[doc = "* `relay_name`: The relay name."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -1893,6 +2067,14 @@ pub mod wcf_relays {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates a WCF relay. This operation is idempotent."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the Resource group within the Azure subscription."]
+        #[doc = "* `namespace_name`: The namespace name"]
+        #[doc = "* `relay_name`: The relay name."]
+        #[doc = "* `parameters`: Parameters supplied to create a WCF relay."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -1910,6 +2092,13 @@ pub mod wcf_relays {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes a WCF relay."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the Resource group within the Azure subscription."]
+        #[doc = "* `namespace_name`: The namespace name"]
+        #[doc = "* `relay_name`: The relay name."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -1925,6 +2114,13 @@ pub mod wcf_relays {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Authorization rules for a WCF relay."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the Resource group within the Azure subscription."]
+        #[doc = "* `namespace_name`: The namespace name"]
+        #[doc = "* `relay_name`: The relay name."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_authorization_rules(
             &self,
             resource_group_name: impl Into<String>,
@@ -1940,6 +2136,14 @@ pub mod wcf_relays {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get authorizationRule for a WCF relay by name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the Resource group within the Azure subscription."]
+        #[doc = "* `namespace_name`: The namespace name"]
+        #[doc = "* `relay_name`: The relay name."]
+        #[doc = "* `authorization_rule_name`: The authorization rule name."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get_authorization_rule(
             &self,
             resource_group_name: impl Into<String>,
@@ -1957,6 +2161,15 @@ pub mod wcf_relays {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates an authorization rule for a WCF relay."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the Resource group within the Azure subscription."]
+        #[doc = "* `namespace_name`: The namespace name"]
+        #[doc = "* `relay_name`: The relay name."]
+        #[doc = "* `authorization_rule_name`: The authorization rule name."]
+        #[doc = "* `parameters`: The authorization rule parameters."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update_authorization_rule(
             &self,
             resource_group_name: impl Into<String>,
@@ -1976,6 +2189,14 @@ pub mod wcf_relays {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes a WCF relay authorization rule."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the Resource group within the Azure subscription."]
+        #[doc = "* `namespace_name`: The namespace name"]
+        #[doc = "* `relay_name`: The relay name."]
+        #[doc = "* `authorization_rule_name`: The authorization rule name."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete_authorization_rule(
             &self,
             resource_group_name: impl Into<String>,
@@ -1993,6 +2214,14 @@ pub mod wcf_relays {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Primary and secondary connection strings to the WCF relay."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the Resource group within the Azure subscription."]
+        #[doc = "* `namespace_name`: The namespace name"]
+        #[doc = "* `relay_name`: The relay name."]
+        #[doc = "* `authorization_rule_name`: The authorization rule name."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_keys(
             &self,
             resource_group_name: impl Into<String>,
@@ -2010,6 +2239,15 @@ pub mod wcf_relays {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Regenerates the primary or secondary connection strings to the WCF relay."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the Resource group within the Azure subscription."]
+        #[doc = "* `namespace_name`: The namespace name"]
+        #[doc = "* `relay_name`: The relay name."]
+        #[doc = "* `authorization_rule_name`: The authorization rule name."]
+        #[doc = "* `parameters`: Parameters supplied to regenerate authorization rule."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn regenerate_keys(
             &self,
             resource_group_name: impl Into<String>,

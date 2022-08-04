@@ -124,6 +124,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List all of the available operations the Desktop Virtualization resource provider supports."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -205,6 +206,12 @@ pub mod workspaces {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get a workspace."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -218,6 +225,13 @@ pub mod workspaces {
                 workspace_name: workspace_name.into(),
             }
         }
+        #[doc = "Create or update a workspace."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace"]
+        #[doc = "* `workspace`: Object containing Workspace definitions."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -233,6 +247,12 @@ pub mod workspaces {
                 workspace: workspace.into(),
             }
         }
+        #[doc = "Update a workspace."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace"]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -247,6 +267,12 @@ pub mod workspaces {
                 workspace: None,
             }
         }
+        #[doc = "Remove a workspace."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -260,6 +286,11 @@ pub mod workspaces {
                 workspace_name: workspace_name.into(),
             }
         }
+        #[doc = "List workspaces."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -271,6 +302,10 @@ pub mod workspaces {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "List workspaces in subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
@@ -405,6 +440,7 @@ pub mod workspaces {
             pub(crate) workspace: Option<models::WorkspacePatch>,
         }
         impl Builder {
+            #[doc = "Object containing Workspace definitions."]
             pub fn workspace(mut self, workspace: impl Into<models::WorkspacePatch>) -> Self {
                 self.workspace = Some(workspace.into());
                 self
@@ -663,6 +699,12 @@ pub mod scaling_plans {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get a scaling plan."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `scaling_plan_name`: The name of the scaling plan."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -676,6 +718,13 @@ pub mod scaling_plans {
                 scaling_plan_name: scaling_plan_name.into(),
             }
         }
+        #[doc = "Create or update a scaling plan."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `scaling_plan_name`: The name of the scaling plan."]
+        #[doc = "* `scaling_plan`: Object containing scaling plan definitions."]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -691,6 +740,12 @@ pub mod scaling_plans {
                 scaling_plan: scaling_plan.into(),
             }
         }
+        #[doc = "Update a scaling plan."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `scaling_plan_name`: The name of the scaling plan."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -705,6 +760,12 @@ pub mod scaling_plans {
                 scaling_plan: None,
             }
         }
+        #[doc = "Remove a scaling plan."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `scaling_plan_name`: The name of the scaling plan."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -718,6 +779,11 @@ pub mod scaling_plans {
                 scaling_plan_name: scaling_plan_name.into(),
             }
         }
+        #[doc = "List scaling plans."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -729,12 +795,22 @@ pub mod scaling_plans {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "List scaling plans in subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "List scaling plan associated with hostpool."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `host_pool_name`: The name of the host pool within the specified resource group"]
         pub fn list_by_host_pool(
             &self,
             subscription_id: impl Into<String>,
@@ -876,6 +952,7 @@ pub mod scaling_plans {
             pub(crate) scaling_plan: Option<models::ScalingPlanPatch>,
         }
         impl Builder {
+            #[doc = "Object containing scaling plan definitions."]
             pub fn scaling_plan(mut self, scaling_plan: impl Into<models::ScalingPlanPatch>) -> Self {
                 self.scaling_plan = Some(scaling_plan.into());
                 self
@@ -1212,6 +1289,13 @@ pub mod scaling_plan_pooled_schedules {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get a ScalingPlanPooledSchedule."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `scaling_plan_name`: The name of the scaling plan."]
+        #[doc = "* `scaling_plan_schedule_name`: The name of the ScalingPlanSchedule"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1227,6 +1311,14 @@ pub mod scaling_plan_pooled_schedules {
                 scaling_plan_schedule_name: scaling_plan_schedule_name.into(),
             }
         }
+        #[doc = "Create or update a ScalingPlanPooledSchedule."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `scaling_plan_name`: The name of the scaling plan."]
+        #[doc = "* `scaling_plan_schedule_name`: The name of the ScalingPlanSchedule"]
+        #[doc = "* `scaling_plan_schedule`: Object containing ScalingPlanPooledSchedule definitions."]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -1244,6 +1336,13 @@ pub mod scaling_plan_pooled_schedules {
                 scaling_plan_schedule: scaling_plan_schedule.into(),
             }
         }
+        #[doc = "Update a ScalingPlanPooledSchedule."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `scaling_plan_name`: The name of the scaling plan."]
+        #[doc = "* `scaling_plan_schedule_name`: The name of the ScalingPlanSchedule"]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -1260,6 +1359,13 @@ pub mod scaling_plan_pooled_schedules {
                 scaling_plan_schedule: None,
             }
         }
+        #[doc = "Remove a ScalingPlanPooledSchedule."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `scaling_plan_name`: The name of the scaling plan."]
+        #[doc = "* `scaling_plan_schedule_name`: The name of the ScalingPlanSchedule"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1275,6 +1381,12 @@ pub mod scaling_plan_pooled_schedules {
                 scaling_plan_schedule_name: scaling_plan_schedule_name.into(),
             }
         }
+        #[doc = "List ScalingPlanPooledSchedules."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `scaling_plan_name`: The name of the scaling plan."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -1407,6 +1519,7 @@ pub mod scaling_plan_pooled_schedules {
             pub(crate) scaling_plan_schedule: Option<models::ScalingPlanPooledSchedulePatch>,
         }
         impl Builder {
+            #[doc = "Object containing ScalingPlanPooledSchedule definitions."]
             pub fn scaling_plan_schedule(mut self, scaling_plan_schedule: impl Into<models::ScalingPlanPooledSchedulePatch>) -> Self {
                 self.scaling_plan_schedule = Some(scaling_plan_schedule.into());
                 self
@@ -1576,6 +1689,12 @@ pub mod application_groups {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get an application group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `application_group_name`: The name of the application group"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1589,6 +1708,13 @@ pub mod application_groups {
                 application_group_name: application_group_name.into(),
             }
         }
+        #[doc = "Create or update an applicationGroup."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `application_group_name`: The name of the application group"]
+        #[doc = "* `application_group`: Object containing ApplicationGroup definitions."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -1604,6 +1730,12 @@ pub mod application_groups {
                 application_group: application_group.into(),
             }
         }
+        #[doc = "Update an applicationGroup."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `application_group_name`: The name of the application group"]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -1618,6 +1750,12 @@ pub mod application_groups {
                 application_group: None,
             }
         }
+        #[doc = "Remove an applicationGroup."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `application_group_name`: The name of the application group"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1631,6 +1769,11 @@ pub mod application_groups {
                 application_group_name: application_group_name.into(),
             }
         }
+        #[doc = "List applicationGroups."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -1643,6 +1786,10 @@ pub mod application_groups {
                 filter: None,
             }
         }
+        #[doc = "List applicationGroups in subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
@@ -1778,6 +1925,7 @@ pub mod application_groups {
             pub(crate) application_group: Option<models::ApplicationGroupPatch>,
         }
         impl Builder {
+            #[doc = "Object containing ApplicationGroup definitions."]
             pub fn application_group(mut self, application_group: impl Into<models::ApplicationGroupPatch>) -> Self {
                 self.application_group = Some(application_group.into());
                 self
@@ -1892,6 +2040,7 @@ pub mod application_groups {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "OData filter expression. Valid properties for filtering are applicationGroupType."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -1975,6 +2124,7 @@ pub mod application_groups {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "OData filter expression. Valid properties for filtering are applicationGroupType."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -2052,6 +2202,12 @@ pub mod start_menu_items {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List start menu items in the given application group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `application_group_name`: The name of the application group"]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -2143,6 +2299,13 @@ pub mod applications {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get an application."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `application_group_name`: The name of the application group"]
+        #[doc = "* `application_name`: The name of the application within the specified application group"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -2158,6 +2321,14 @@ pub mod applications {
                 application_name: application_name.into(),
             }
         }
+        #[doc = "Create or update an application."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `application_group_name`: The name of the application group"]
+        #[doc = "* `application_name`: The name of the application within the specified application group"]
+        #[doc = "* `application`: Object containing Application definitions."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -2175,6 +2346,13 @@ pub mod applications {
                 application: application.into(),
             }
         }
+        #[doc = "Update an application."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `application_group_name`: The name of the application group"]
+        #[doc = "* `application_name`: The name of the application within the specified application group"]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -2191,6 +2369,13 @@ pub mod applications {
                 application: None,
             }
         }
+        #[doc = "Remove an application."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `application_group_name`: The name of the application group"]
+        #[doc = "* `application_name`: The name of the application within the specified application group"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -2206,6 +2391,12 @@ pub mod applications {
                 application_name: application_name.into(),
             }
         }
+        #[doc = "List applications."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `application_group_name`: The name of the application group"]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -2338,6 +2529,7 @@ pub mod applications {
             pub(crate) application: Option<models::ApplicationPatch>,
         }
         impl Builder {
+            #[doc = "Object containing Application definitions."]
             pub fn application(mut self, application: impl Into<models::ApplicationPatch>) -> Self {
                 self.application = Some(application.into());
                 self
@@ -2507,6 +2699,13 @@ pub mod desktops {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get a desktop."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `application_group_name`: The name of the application group"]
+        #[doc = "* `desktop_name`: The name of the desktop within the specified desktop group"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -2522,6 +2721,13 @@ pub mod desktops {
                 desktop_name: desktop_name.into(),
             }
         }
+        #[doc = "Update a desktop."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `application_group_name`: The name of the application group"]
+        #[doc = "* `desktop_name`: The name of the desktop within the specified desktop group"]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -2538,6 +2744,12 @@ pub mod desktops {
                 desktop: None,
             }
         }
+        #[doc = "List desktops."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `application_group_name`: The name of the application group"]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -2612,6 +2824,7 @@ pub mod desktops {
             pub(crate) desktop: Option<models::DesktopPatch>,
         }
         impl Builder {
+            #[doc = "Object containing Desktop definitions."]
             pub fn desktop(mut self, desktop: impl Into<models::DesktopPatch>) -> Self {
                 self.desktop = Some(desktop.into());
                 self
@@ -2739,6 +2952,12 @@ pub mod host_pools {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get a host pool."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `host_pool_name`: The name of the host pool within the specified resource group"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -2752,6 +2971,13 @@ pub mod host_pools {
                 host_pool_name: host_pool_name.into(),
             }
         }
+        #[doc = "Create or update a host pool."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `host_pool_name`: The name of the host pool within the specified resource group"]
+        #[doc = "* `host_pool`: Object containing HostPool definitions."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -2767,6 +2993,12 @@ pub mod host_pools {
                 host_pool: host_pool.into(),
             }
         }
+        #[doc = "Update a host pool."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `host_pool_name`: The name of the host pool within the specified resource group"]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -2781,6 +3013,12 @@ pub mod host_pools {
                 host_pool: None,
             }
         }
+        #[doc = "Remove a host pool."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `host_pool_name`: The name of the host pool within the specified resource group"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -2795,6 +3033,11 @@ pub mod host_pools {
                 force: None,
             }
         }
+        #[doc = "List hostPools."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -2806,12 +3049,22 @@ pub mod host_pools {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "List hostPools in subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Registration token of the host pool."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `host_pool_name`: The name of the host pool within the specified resource group"]
         pub fn retrieve_registration_token(
             &self,
             subscription_id: impl Into<String>,
@@ -2953,6 +3206,7 @@ pub mod host_pools {
             pub(crate) host_pool: Option<models::HostPoolPatch>,
         }
         impl Builder {
+            #[doc = "Object containing HostPool definitions."]
             pub fn host_pool(mut self, host_pool: impl Into<models::HostPoolPatch>) -> Self {
                 self.host_pool = Some(host_pool.into());
                 self
@@ -3019,6 +3273,7 @@ pub mod host_pools {
             pub(crate) force: Option<bool>,
         }
         impl Builder {
+            #[doc = "Force flag to delete sessionHost."]
             pub fn force(mut self, force: bool) -> Self {
                 self.force = Some(force);
                 self
@@ -3266,6 +3521,12 @@ pub mod user_sessions {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List userSessions."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `host_pool_name`: The name of the host pool within the specified resource group"]
         pub fn list_by_host_pool(
             &self,
             subscription_id: impl Into<String>,
@@ -3280,6 +3541,14 @@ pub mod user_sessions {
                 filter: None,
             }
         }
+        #[doc = "Get a userSession."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `host_pool_name`: The name of the host pool within the specified resource group"]
+        #[doc = "* `session_host_name`: The name of the session host within the specified host pool"]
+        #[doc = "* `user_session_id`: The name of the user session within the specified session host"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -3297,6 +3566,14 @@ pub mod user_sessions {
                 user_session_id: user_session_id.into(),
             }
         }
+        #[doc = "Remove a userSession."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `host_pool_name`: The name of the host pool within the specified resource group"]
+        #[doc = "* `session_host_name`: The name of the session host within the specified host pool"]
+        #[doc = "* `user_session_id`: The name of the user session within the specified session host"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -3315,6 +3592,13 @@ pub mod user_sessions {
                 force: None,
             }
         }
+        #[doc = "List userSessions."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `host_pool_name`: The name of the host pool within the specified resource group"]
+        #[doc = "* `session_host_name`: The name of the session host within the specified host pool"]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -3330,6 +3614,14 @@ pub mod user_sessions {
                 session_host_name: session_host_name.into(),
             }
         }
+        #[doc = "Disconnect a userSession."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `host_pool_name`: The name of the host pool within the specified resource group"]
+        #[doc = "* `session_host_name`: The name of the session host within the specified host pool"]
+        #[doc = "* `user_session_id`: The name of the user session within the specified session host"]
         pub fn disconnect(
             &self,
             subscription_id: impl Into<String>,
@@ -3347,6 +3639,14 @@ pub mod user_sessions {
                 user_session_id: user_session_id.into(),
             }
         }
+        #[doc = "Send a message to a user."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `host_pool_name`: The name of the host pool within the specified resource group"]
+        #[doc = "* `session_host_name`: The name of the session host within the specified host pool"]
+        #[doc = "* `user_session_id`: The name of the user session within the specified session host"]
         pub fn send_message(
             &self,
             subscription_id: impl Into<String>,
@@ -3378,6 +3678,7 @@ pub mod user_sessions {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "OData filter expression. Valid properties for filtering are userprincipalname and sessionstate."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -3518,6 +3819,7 @@ pub mod user_sessions {
             pub(crate) force: Option<bool>,
         }
         impl Builder {
+            #[doc = "Force flag to login off userSession."]
             pub fn force(mut self, force: bool) -> Self {
                 self.force = Some(force);
                 self
@@ -3689,6 +3991,7 @@ pub mod user_sessions {
             pub(crate) send_message: Option<models::SendMessage>,
         }
         impl Builder {
+            #[doc = "Object containing message includes title and message body"]
             pub fn send_message(mut self, send_message: impl Into<models::SendMessage>) -> Self {
                 self.send_message = Some(send_message.into());
                 self
@@ -3734,6 +4037,13 @@ pub mod session_hosts {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get a session host."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `host_pool_name`: The name of the host pool within the specified resource group"]
+        #[doc = "* `session_host_name`: The name of the session host within the specified host pool"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -3749,6 +4059,13 @@ pub mod session_hosts {
                 session_host_name: session_host_name.into(),
             }
         }
+        #[doc = "Update a session host."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `host_pool_name`: The name of the host pool within the specified resource group"]
+        #[doc = "* `session_host_name`: The name of the session host within the specified host pool"]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -3766,6 +4083,13 @@ pub mod session_hosts {
                 force: None,
             }
         }
+        #[doc = "Remove a SessionHost."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `host_pool_name`: The name of the host pool within the specified resource group"]
+        #[doc = "* `session_host_name`: The name of the session host within the specified host pool"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -3782,6 +4106,12 @@ pub mod session_hosts {
                 force: None,
             }
         }
+        #[doc = "List sessionHosts."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `host_pool_name`: The name of the host pool within the specified resource group"]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -3864,10 +4194,12 @@ pub mod session_hosts {
             pub(crate) force: Option<bool>,
         }
         impl Builder {
+            #[doc = "Object containing SessionHost definitions."]
             pub fn session_host(mut self, session_host: impl Into<models::SessionHostPatch>) -> Self {
                 self.session_host = Some(session_host.into());
                 self
             }
+            #[doc = "Force flag to update assign, unassign or reassign personal desktop."]
             pub fn force(mut self, force: bool) -> Self {
                 self.force = Some(force);
                 self
@@ -3939,6 +4271,7 @@ pub mod session_hosts {
             pub(crate) force: Option<bool>,
         }
         impl Builder {
+            #[doc = "Force flag to force sessionHost deletion even when userSession exists."]
             pub fn force(mut self, force: bool) -> Self {
                 self.force = Some(force);
                 self
@@ -4068,6 +4401,13 @@ pub mod msix_packages {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get a msixpackage."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `host_pool_name`: The name of the host pool within the specified resource group"]
+        #[doc = "* `msix_package_full_name`: The version specific package full name of the MSIX package within specified hostpool"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -4083,6 +4423,14 @@ pub mod msix_packages {
                 msix_package_full_name: msix_package_full_name.into(),
             }
         }
+        #[doc = "Create or update a MSIX package."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `host_pool_name`: The name of the host pool within the specified resource group"]
+        #[doc = "* `msix_package_full_name`: The version specific package full name of the MSIX package within specified hostpool"]
+        #[doc = "* `msix_package`: Object containing  MSIX Package definitions."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -4100,6 +4448,13 @@ pub mod msix_packages {
                 msix_package: msix_package.into(),
             }
         }
+        #[doc = "Update an  MSIX Package."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `host_pool_name`: The name of the host pool within the specified resource group"]
+        #[doc = "* `msix_package_full_name`: The version specific package full name of the MSIX package within specified hostpool"]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -4116,6 +4471,13 @@ pub mod msix_packages {
                 msix_package: None,
             }
         }
+        #[doc = "Remove an MSIX Package."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `host_pool_name`: The name of the host pool within the specified resource group"]
+        #[doc = "* `msix_package_full_name`: The version specific package full name of the MSIX package within specified hostpool"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -4131,6 +4493,12 @@ pub mod msix_packages {
                 msix_package_full_name: msix_package_full_name.into(),
             }
         }
+        #[doc = "List MSIX packages in hostpool."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `host_pool_name`: The name of the host pool within the specified resource group"]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -4277,6 +4645,7 @@ pub mod msix_packages {
             pub(crate) msix_package: Option<models::MsixPackagePatch>,
         }
         impl Builder {
+            #[doc = "Object containing MSIX Package definitions."]
             pub fn msix_package(mut self, msix_package: impl Into<models::MsixPackagePatch>) -> Self {
                 self.msix_package = Some(msix_package.into());
                 self
@@ -4466,6 +4835,13 @@ pub mod msix_images {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Expands and Lists MSIX packages in an Image, given the Image Path."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `host_pool_name`: The name of the host pool within the specified resource group"]
+        #[doc = "* `msix_image_uri`: Object containing URI to MSIX Image"]
         pub fn expand(
             &self,
             subscription_id: impl Into<String>,
@@ -4567,6 +4943,12 @@ pub mod private_endpoint_connections {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List private endpoint connections associated with hostpool."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `host_pool_name`: The name of the host pool within the specified resource group"]
         pub fn list_by_host_pool(
             &self,
             subscription_id: impl Into<String>,
@@ -4580,6 +4962,13 @@ pub mod private_endpoint_connections {
                 host_pool_name: host_pool_name.into(),
             }
         }
+        #[doc = "Get a private endpoint connection."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `host_pool_name`: The name of the host pool within the specified resource group"]
+        #[doc = "* `private_endpoint_connection_name`: The name of the private endpoint connection associated with the Azure resource"]
         pub fn get_by_host_pool(
             &self,
             subscription_id: impl Into<String>,
@@ -4595,6 +4984,14 @@ pub mod private_endpoint_connections {
                 private_endpoint_connection_name: private_endpoint_connection_name.into(),
             }
         }
+        #[doc = "Approve or reject a private endpoint connection."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `host_pool_name`: The name of the host pool within the specified resource group"]
+        #[doc = "* `private_endpoint_connection_name`: The name of the private endpoint connection associated with the Azure resource"]
+        #[doc = "* `connection`: Object containing the updated connection."]
         pub fn update_by_host_pool(
             &self,
             subscription_id: impl Into<String>,
@@ -4612,6 +5009,13 @@ pub mod private_endpoint_connections {
                 connection: connection.into(),
             }
         }
+        #[doc = "Remove a connection."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `host_pool_name`: The name of the host pool within the specified resource group"]
+        #[doc = "* `private_endpoint_connection_name`: The name of the private endpoint connection associated with the Azure resource"]
         pub fn delete_by_host_pool(
             &self,
             subscription_id: impl Into<String>,
@@ -4627,6 +5031,12 @@ pub mod private_endpoint_connections {
                 private_endpoint_connection_name: private_endpoint_connection_name.into(),
             }
         }
+        #[doc = "List private endpoint connections."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace"]
         pub fn list_by_workspace(
             &self,
             subscription_id: impl Into<String>,
@@ -4640,6 +5050,13 @@ pub mod private_endpoint_connections {
                 workspace_name: workspace_name.into(),
             }
         }
+        #[doc = "Get a private endpoint connection."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace"]
+        #[doc = "* `private_endpoint_connection_name`: The name of the private endpoint connection associated with the Azure resource"]
         pub fn get_by_workspace(
             &self,
             subscription_id: impl Into<String>,
@@ -4655,6 +5072,14 @@ pub mod private_endpoint_connections {
                 private_endpoint_connection_name: private_endpoint_connection_name.into(),
             }
         }
+        #[doc = "Approve or reject a private endpoint connection."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace"]
+        #[doc = "* `private_endpoint_connection_name`: The name of the private endpoint connection associated with the Azure resource"]
+        #[doc = "* `connection`: Object containing the updated connection."]
         pub fn update_by_workspace(
             &self,
             subscription_id: impl Into<String>,
@@ -4672,6 +5097,13 @@ pub mod private_endpoint_connections {
                 connection: connection.into(),
             }
         }
+        #[doc = "Remove a connection."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace"]
+        #[doc = "* `private_endpoint_connection_name`: The name of the private endpoint connection associated with the Azure resource"]
         pub fn delete_by_workspace(
             &self,
             subscription_id: impl Into<String>,
@@ -5127,6 +5559,12 @@ pub mod private_link_resources {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List the private link resources available for this hostpool."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `host_pool_name`: The name of the host pool within the specified resource group"]
         pub fn list_by_host_pool(
             &self,
             subscription_id: impl Into<String>,
@@ -5140,6 +5578,12 @@ pub mod private_link_resources {
                 host_pool_name: host_pool_name.into(),
             }
         }
+        #[doc = "List the private link resources available for this workspace."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace"]
         pub fn list_by_workspace(
             &self,
             subscription_id: impl Into<String>,

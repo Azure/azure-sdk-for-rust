@@ -94,6 +94,13 @@ pub mod extensions {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get installed extension details by extension id."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `extension_id`: Id of extension resource."]
+        #[doc = "* `farm_beats_resource_name`: FarmBeats resource name."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn get(
             &self,
             extension_id: impl Into<String>,
@@ -109,6 +116,13 @@ pub mod extensions {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Install extension."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `extension_id`: Id of extension resource."]
+        #[doc = "* `farm_beats_resource_name`: FarmBeats resource name."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn create(
             &self,
             extension_id: impl Into<String>,
@@ -124,6 +138,13 @@ pub mod extensions {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Upgrade to latest extension."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `extension_id`: Id of extension resource."]
+        #[doc = "* `farm_beats_resource_name`: FarmBeats resource name."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn update(
             &self,
             extension_id: impl Into<String>,
@@ -139,6 +160,13 @@ pub mod extensions {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Uninstall extension."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `extension_id`: Id of extension resource."]
+        #[doc = "* `farm_beats_resource_name`: FarmBeats resource name."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn delete(
             &self,
             extension_id: impl Into<String>,
@@ -154,6 +182,12 @@ pub mod extensions {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get installed extensions details."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `farm_beats_resource_name`: FarmBeats resource name."]
         pub fn list_by_farm_beats(
             &self,
             resource_group_name: impl Into<String>,
@@ -404,18 +438,22 @@ pub mod extensions {
             pub(crate) skip_token: Option<String>,
         }
         impl Builder {
+            #[doc = "Installed extension ids."]
             pub fn extension_ids(mut self, extension_ids: Vec<String>) -> Self {
                 self.extension_ids = extension_ids;
                 self
             }
+            #[doc = "Installed extension categories."]
             pub fn extension_categories(mut self, extension_categories: Vec<String>) -> Self {
                 self.extension_categories = extension_categories;
                 self
             }
+            #[doc = "Maximum number of items needed (inclusive).\r\nMinimum = 10, Maximum = 1000, Default value = 50."]
             pub fn max_page_size(mut self, max_page_size: i32) -> Self {
                 self.max_page_size = Some(max_page_size);
                 self
             }
+            #[doc = "Skip token for getting next set of results."]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());
                 self
@@ -508,6 +546,7 @@ pub mod farm_beats_extensions {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get list of farmBeats extension."]
         pub fn list(&self) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -518,6 +557,10 @@ pub mod farm_beats_extensions {
                 max_page_size: None,
             }
         }
+        #[doc = "Get farmBeats extension."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `farm_beats_extension_id`: farmBeatsExtensionId to be queried."]
         pub fn get(&self, farm_beats_extension_id: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -538,22 +581,27 @@ pub mod farm_beats_extensions {
             pub(crate) max_page_size: Option<i32>,
         }
         impl Builder {
+            #[doc = "FarmBeatsExtension ids."]
             pub fn farm_beats_extension_ids(mut self, farm_beats_extension_ids: Vec<String>) -> Self {
                 self.farm_beats_extension_ids = farm_beats_extension_ids;
                 self
             }
+            #[doc = "FarmBeats extension names."]
             pub fn farm_beats_extension_names(mut self, farm_beats_extension_names: Vec<String>) -> Self {
                 self.farm_beats_extension_names = farm_beats_extension_names;
                 self
             }
+            #[doc = "Extension categories."]
             pub fn extension_categories(mut self, extension_categories: Vec<String>) -> Self {
                 self.extension_categories = extension_categories;
                 self
             }
+            #[doc = "Publisher ids."]
             pub fn publisher_ids(mut self, publisher_ids: Vec<String>) -> Self {
                 self.publisher_ids = publisher_ids;
                 self
             }
+            #[doc = "Maximum number of items needed (inclusive).\r\nMinimum = 10, Maximum = 1000, Default value = 50."]
             pub fn max_page_size(mut self, max_page_size: i32) -> Self {
                 self.max_page_size = Some(max_page_size);
                 self
@@ -696,6 +744,12 @@ pub mod farm_beats_models {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get FarmBeats resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `farm_beats_resource_name`: FarmBeats resource name."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -709,6 +763,13 @@ pub mod farm_beats_models {
                 farm_beats_resource_name: farm_beats_resource_name.into(),
             }
         }
+        #[doc = "Create or update FarmBeats resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `farm_beats_resource_name`: FarmBeats resource name."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `body`: FarmBeats resource create or update request object."]
         pub fn create_or_update(
             &self,
             farm_beats_resource_name: impl Into<String>,
@@ -724,6 +785,13 @@ pub mod farm_beats_models {
                 body: body.into(),
             }
         }
+        #[doc = "Update a FarmBeats resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `farm_beats_resource_name`: FarmBeats resource name."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `body`: Request object."]
         pub fn update(
             &self,
             farm_beats_resource_name: impl Into<String>,
@@ -739,6 +807,12 @@ pub mod farm_beats_models {
                 body: body.into(),
             }
         }
+        #[doc = "Delete a FarmBeats resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `farm_beats_resource_name`: FarmBeats resource name."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -752,6 +826,10 @@ pub mod farm_beats_models {
                 farm_beats_resource_name: farm_beats_resource_name.into(),
             }
         }
+        #[doc = "Lists the FarmBeats instances for a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
@@ -760,6 +838,11 @@ pub mod farm_beats_models {
                 skip_token: None,
             }
         }
+        #[doc = "Lists the FarmBeats instances for a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_by_resource_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -1007,10 +1090,12 @@ pub mod farm_beats_models {
             pub(crate) skip_token: Option<String>,
         }
         impl Builder {
+            #[doc = "Maximum number of items needed (inclusive).\r\nMinimum = 10, Maximum = 1000, Default value = 50."]
             pub fn max_page_size(mut self, max_page_size: i32) -> Self {
                 self.max_page_size = Some(max_page_size);
                 self
             }
+            #[doc = "Skip token for getting next set of results."]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());
                 self
@@ -1100,10 +1185,12 @@ pub mod farm_beats_models {
             pub(crate) skip_token: Option<String>,
         }
         impl Builder {
+            #[doc = "Maximum number of items needed (inclusive).\r\nMinimum = 10, Maximum = 1000, Default value = 50."]
             pub fn max_page_size(mut self, max_page_size: i32) -> Self {
                 self.max_page_size = Some(max_page_size);
                 self
             }
+            #[doc = "Continuation token for getting next set of results."]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());
                 self
@@ -1187,6 +1274,11 @@ pub mod locations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Checks the name availability of the resource with requested resource name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `body`: NameAvailabilityRequest object."]
         pub fn check_name_availability(
             &self,
             subscription_id: impl Into<String>,
@@ -1254,6 +1346,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists the available operations of Microsoft.AgFoodPlatform resource provider."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }

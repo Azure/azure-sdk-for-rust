@@ -107,6 +107,11 @@ pub mod monitors {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "List the resources currently being monitored by the Logz monitor resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `monitor_name`: Monitor resource name"]
         pub fn list_monitored_resources(
             &self,
             subscription_id: impl Into<String>,
@@ -121,6 +126,9 @@ pub mod monitors {
             }
         }
         #[doc = "List all monitors under the specified subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
@@ -128,6 +136,10 @@ pub mod monitors {
             }
         }
         #[doc = "List all monitors under the specified resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -140,6 +152,11 @@ pub mod monitors {
             }
         }
         #[doc = "Get the properties of a specific monitor resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `monitor_name`: Monitor resource name"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -154,6 +171,11 @@ pub mod monitors {
             }
         }
         #[doc = "Create a monitor resource. This create operation can take upto 10 minutes to complete."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `monitor_name`: Monitor resource name"]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -169,6 +191,11 @@ pub mod monitors {
             }
         }
         #[doc = "Update a monitor resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `monitor_name`: Monitor resource name"]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -184,6 +211,11 @@ pub mod monitors {
             }
         }
         #[doc = "Delete a monitor resource. This delete operation can take upto 10 minutes to complete."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `monitor_name`: Monitor resource name"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -198,6 +230,11 @@ pub mod monitors {
             }
         }
         #[doc = "List the user's roles configured on Logz.io side for the account corresponding to the monitor resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `monitor_name`: Monitor resource name"]
         pub fn list_user_roles(
             &self,
             subscription_id: impl Into<String>,
@@ -857,6 +894,11 @@ pub mod tag_rules {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "List the tag rules for a given monitor resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `monitor_name`: Monitor resource name"]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -871,6 +913,11 @@ pub mod tag_rules {
             }
         }
         #[doc = "Get a tag rule set for a given monitor resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `monitor_name`: Monitor resource name"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -887,6 +934,11 @@ pub mod tag_rules {
             }
         }
         #[doc = "Create or update a tag rule set for a given monitor resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `monitor_name`: Monitor resource name"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -904,6 +956,11 @@ pub mod tag_rules {
             }
         }
         #[doc = "Delete a tag rule set for a given monitor resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `monitor_name`: Monitor resource name"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1179,6 +1236,11 @@ pub mod single_sign_on {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "List the single sign-on configurations for a given monitor resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `monitor_name`: Monitor resource name"]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -1193,6 +1255,11 @@ pub mod single_sign_on {
             }
         }
         #[doc = "Gets the Logz single sign-on resource for the given Monitor."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `monitor_name`: Monitor resource name"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1209,6 +1276,11 @@ pub mod single_sign_on {
             }
         }
         #[doc = "Configures single-sign-on for this resource. This operation can take upto 10 minutes to complete."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `monitor_name`: Monitor resource name"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -1438,6 +1510,11 @@ pub mod sub_account {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "List the sub account under a given monitor resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `monitor_name`: Monitor resource name"]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -1452,6 +1529,12 @@ pub mod sub_account {
             }
         }
         #[doc = "Get a sub account under a given monitor resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `monitor_name`: Monitor resource name"]
+        #[doc = "* `sub_account_name`: Sub Account resource name"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1468,6 +1551,12 @@ pub mod sub_account {
             }
         }
         #[doc = "Create sub account under a given monitor resource. This create operation can take upto 10 minutes to complete."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `monitor_name`: Monitor resource name"]
+        #[doc = "* `sub_account_name`: Sub Account resource name"]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -1485,6 +1574,12 @@ pub mod sub_account {
             }
         }
         #[doc = "Update a monitor resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `monitor_name`: Monitor resource name"]
+        #[doc = "* `sub_account_name`: Sub Account resource name"]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -1502,6 +1597,12 @@ pub mod sub_account {
             }
         }
         #[doc = "Delete a sub account resource. This delete operation can take upto 10 minutes to complete."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `monitor_name`: Monitor resource name"]
+        #[doc = "* `sub_account_name`: Sub Account resource name"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1518,6 +1619,12 @@ pub mod sub_account {
             }
         }
         #[doc = "List the resources currently being monitored by the Logz sub account resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `monitor_name`: Monitor resource name"]
+        #[doc = "* `sub_account_name`: Sub Account resource name"]
         pub fn list_monitored_resources(
             &self,
             subscription_id: impl Into<String>,
@@ -1534,6 +1641,12 @@ pub mod sub_account {
             }
         }
         #[doc = "Returns the payload that needs to be passed as a request for installing Logz.io agent on a VM."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `monitor_name`: Monitor resource name"]
+        #[doc = "* `sub_account_name`: Sub Account resource name"]
         pub fn vm_host_payload(
             &self,
             subscription_id: impl Into<String>,
@@ -1550,6 +1663,12 @@ pub mod sub_account {
             }
         }
         #[doc = "Sending request to update the collection when Logz.io agent has been installed on a VM for a given monitor."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `monitor_name`: Monitor resource name"]
+        #[doc = "* `sub_account_name`: Sub Account resource name"]
         pub fn list_vm_host_update(
             &self,
             subscription_id: impl Into<String>,
@@ -1567,6 +1686,12 @@ pub mod sub_account {
             }
         }
         #[doc = "List the compute resources currently being monitored by the Logz sub account resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `monitor_name`: Monitor resource name"]
+        #[doc = "* `sub_account_name`: Sub Account resource name"]
         pub fn list_vm_hosts(
             &self,
             subscription_id: impl Into<String>,
@@ -2060,6 +2185,7 @@ pub mod sub_account {
             pub(crate) body: Option<models::VmHostUpdateRequest>,
         }
         impl Builder {
+            #[doc = "Request body to update the collection for agent installed in the given monitor."]
             pub fn body(mut self, body: impl Into<models::VmHostUpdateRequest>) -> Self {
                 self.body = Some(body.into());
                 self
@@ -2224,6 +2350,12 @@ pub mod sub_account_tag_rules {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "List the tag rules for a given sub account resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `monitor_name`: Monitor resource name"]
+        #[doc = "* `sub_account_name`: Sub Account resource name"]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -2240,6 +2372,12 @@ pub mod sub_account_tag_rules {
             }
         }
         #[doc = "Get a tag rule set for a given monitor resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `monitor_name`: Monitor resource name"]
+        #[doc = "* `sub_account_name`: Sub Account resource name"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -2258,6 +2396,12 @@ pub mod sub_account_tag_rules {
             }
         }
         #[doc = "Create or update a tag rule set for a given sub account resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `monitor_name`: Monitor resource name"]
+        #[doc = "* `sub_account_name`: Sub Account resource name"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -2277,6 +2421,12 @@ pub mod sub_account_tag_rules {
             }
         }
         #[doc = "Delete a tag rule set for a given monitor resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `monitor_name`: Monitor resource name"]
+        #[doc = "* `sub_account_name`: Sub Account resource name"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -2562,6 +2712,11 @@ pub mod metrics_source {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "List the metrics accounts under a given monitor resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `monitor_name`: Monitor resource name"]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -2576,6 +2731,12 @@ pub mod metrics_source {
             }
         }
         #[doc = "Get a metrics account under a given monitor resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `monitor_name`: Monitor resource name"]
+        #[doc = "* `metrics_source_name`: Metrics Account resource name"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -2592,6 +2753,12 @@ pub mod metrics_source {
             }
         }
         #[doc = "Create metrics account under a given monitor resource. This create operation can take upto 10 minutes to complete."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `monitor_name`: Monitor resource name"]
+        #[doc = "* `metrics_source_name`: Metrics Account resource name"]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -2609,6 +2776,12 @@ pub mod metrics_source {
             }
         }
         #[doc = "Update a metrics resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `monitor_name`: Monitor resource name"]
+        #[doc = "* `metrics_source_name`: Metrics Account resource name"]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -2626,6 +2799,12 @@ pub mod metrics_source {
             }
         }
         #[doc = "Delete a metrics account resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `monitor_name`: Monitor resource name"]
+        #[doc = "* `metrics_source_name`: Metrics Account resource name"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -2976,6 +3155,12 @@ pub mod metrics_source_tag_rules {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "List the tag rules for a given metrics resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `monitor_name`: Monitor resource name"]
+        #[doc = "* `metrics_source_name`: Metrics Account resource name"]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -2992,6 +3177,12 @@ pub mod metrics_source_tag_rules {
             }
         }
         #[doc = "Get a tag rule set for a given metrics resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `monitor_name`: Monitor resource name"]
+        #[doc = "* `metrics_source_name`: Metrics Account resource name"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -3010,6 +3201,12 @@ pub mod metrics_source_tag_rules {
             }
         }
         #[doc = "Create or update a tag rule set for a given metrics resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `monitor_name`: Monitor resource name"]
+        #[doc = "* `metrics_source_name`: Metrics Account resource name"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -3029,6 +3226,12 @@ pub mod metrics_source_tag_rules {
             }
         }
         #[doc = "Delete a tag rule set for a given metrics resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `monitor_name`: Monitor resource name"]
+        #[doc = "* `metrics_source_name`: Metrics Account resource name"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -3314,6 +3517,11 @@ pub mod monitor {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Returns the payload that needs to be passed in the request body for installing Logz.io agent on a VM."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `monitor_name`: Monitor resource name"]
         pub fn vm_host_payload(
             &self,
             subscription_id: impl Into<String>,
@@ -3328,6 +3536,11 @@ pub mod monitor {
             }
         }
         #[doc = "Sending request to update the collection when Logz.io agent has been installed on a VM for a given monitor."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `monitor_name`: Monitor resource name"]
         pub fn list_vm_host_update(
             &self,
             subscription_id: impl Into<String>,
@@ -3343,6 +3556,11 @@ pub mod monitor {
             }
         }
         #[doc = "List the compute resources currently being monitored by the Logz main account resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `monitor_name`: Monitor resource name"]
         pub fn list_vm_hosts(
             &self,
             subscription_id: impl Into<String>,
@@ -3422,6 +3640,7 @@ pub mod monitor {
             pub(crate) body: Option<models::VmHostUpdateRequest>,
         }
         impl Builder {
+            #[doc = "Request body to update the collection for agent installed in the given monitor."]
             pub fn body(mut self, body: impl Into<models::VmHostUpdateRequest>) -> Self {
                 self.body = Some(body.into());
                 self

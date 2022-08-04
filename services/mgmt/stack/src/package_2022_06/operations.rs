@@ -97,6 +97,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Returns the list of supported REST operations."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -176,9 +177,14 @@ pub mod cloud_manifest_file {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Returns a cloud specific manifest JSON file with latest version."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
+        #[doc = "Returns a cloud specific manifest JSON file."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `verification_version`: Signing verification key version."]
         pub fn get(&self, verification_version: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -243,6 +249,7 @@ pub mod cloud_manifest_file {
             pub(crate) version_creation_date: Option<String>,
         }
         impl Builder {
+            #[doc = "Signing verification key version creation date."]
             pub fn version_creation_date(mut self, version_creation_date: impl Into<String>) -> Self {
                 self.version_creation_date = Some(version_creation_date.into());
                 self
@@ -296,6 +303,11 @@ pub mod deployment_license {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Creates a license that can be used to deploy an Azure Stack device."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `deployment_license_request`: Request body for creating a deployment license."]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -363,6 +375,12 @@ pub mod customer_subscriptions {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Returns a list of products."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group`: Name of the resource group."]
+        #[doc = "* `registration_name`: Name of the Azure Stack registration."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -376,6 +394,13 @@ pub mod customer_subscriptions {
                 registration_name: registration_name.into(),
             }
         }
+        #[doc = "Returns the specified product."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group`: Name of the resource group."]
+        #[doc = "* `registration_name`: Name of the Azure Stack registration."]
+        #[doc = "* `customer_subscription_name`: Name of the product."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -391,6 +416,14 @@ pub mod customer_subscriptions {
                 customer_subscription_name: customer_subscription_name.into(),
             }
         }
+        #[doc = "Creates a new customer subscription under a registration."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group`: Name of the resource group."]
+        #[doc = "* `registration_name`: Name of the Azure Stack registration."]
+        #[doc = "* `customer_subscription_name`: Name of the product."]
+        #[doc = "* `customer_creation_parameters`: Parameters use to create a customer subscription."]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -408,6 +441,13 @@ pub mod customer_subscriptions {
                 customer_creation_parameters: customer_creation_parameters.into(),
             }
         }
+        #[doc = "Deletes a customer subscription under a registration."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group`: Name of the resource group."]
+        #[doc = "* `registration_name`: Name of the Azure Stack registration."]
+        #[doc = "* `customer_subscription_name`: Name of the product."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -651,6 +691,12 @@ pub mod products {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Returns a list of products."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group`: Name of the resource group."]
+        #[doc = "* `registration_name`: Name of the Azure Stack registration."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -664,6 +710,13 @@ pub mod products {
                 registration_name: registration_name.into(),
             }
         }
+        #[doc = "Returns the specified product."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group`: Name of the resource group."]
+        #[doc = "* `registration_name`: Name of the Azure Stack registration."]
+        #[doc = "* `product_name`: Name of the product."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -679,6 +732,13 @@ pub mod products {
                 product_name: product_name.into(),
             }
         }
+        #[doc = "Returns the extended properties of a product."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group`: Name of the resource group."]
+        #[doc = "* `registration_name`: Name of the Azure Stack registration."]
+        #[doc = "* `product_name`: Name of the product."]
         pub fn list_details(
             &self,
             subscription_id: impl Into<String>,
@@ -694,6 +754,13 @@ pub mod products {
                 product_name: product_name.into(),
             }
         }
+        #[doc = "Returns a list of products."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group`: Name of the resource group."]
+        #[doc = "* `registration_name`: Name of the Azure Stack registration."]
+        #[doc = "* `product_name`: Name of the product."]
         pub fn list_products(
             &self,
             subscription_id: impl Into<String>,
@@ -710,6 +777,13 @@ pub mod products {
                 device_configuration: None,
             }
         }
+        #[doc = "Returns a list of products."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group`: Name of the resource group."]
+        #[doc = "* `registration_name`: Name of the Azure Stack registration."]
+        #[doc = "* `product_name`: Name of the product."]
         pub fn get_products(
             &self,
             subscription_id: impl Into<String>,
@@ -726,6 +800,13 @@ pub mod products {
                 device_configuration: None,
             }
         }
+        #[doc = "Returns the specified product."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group`: Name of the resource group."]
+        #[doc = "* `registration_name`: Name of the Azure Stack registration."]
+        #[doc = "* `product_name`: Name of the product."]
         pub fn get_product(
             &self,
             subscription_id: impl Into<String>,
@@ -742,6 +823,13 @@ pub mod products {
                 device_configuration: None,
             }
         }
+        #[doc = "Returns the specified product."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group`: Name of the resource group."]
+        #[doc = "* `registration_name`: Name of the Azure Stack registration."]
+        #[doc = "* `product_name`: Name of the product."]
         pub fn upload_log(
             &self,
             subscription_id: impl Into<String>,
@@ -959,6 +1047,7 @@ pub mod products {
             pub(crate) device_configuration: Option<models::DeviceConfiguration>,
         }
         impl Builder {
+            #[doc = "Device configuration."]
             pub fn device_configuration(mut self, device_configuration: impl Into<models::DeviceConfiguration>) -> Self {
                 self.device_configuration = Some(device_configuration.into());
                 self
@@ -1016,6 +1105,7 @@ pub mod products {
             pub(crate) device_configuration: Option<models::DeviceConfiguration>,
         }
         impl Builder {
+            #[doc = "Device configuration."]
             pub fn device_configuration(mut self, device_configuration: impl Into<models::DeviceConfiguration>) -> Self {
                 self.device_configuration = Some(device_configuration.into());
                 self
@@ -1080,6 +1170,7 @@ pub mod products {
             pub(crate) device_configuration: Option<models::DeviceConfiguration>,
         }
         impl Builder {
+            #[doc = "Device configuration."]
             pub fn device_configuration(mut self, device_configuration: impl Into<models::DeviceConfiguration>) -> Self {
                 self.device_configuration = Some(device_configuration.into());
                 self
@@ -1144,6 +1235,7 @@ pub mod products {
             pub(crate) marketplace_product_log_update: Option<models::MarketplaceProductLogUpdate>,
         }
         impl Builder {
+            #[doc = "Update details for product log."]
             pub fn marketplace_product_log_update(
                 mut self,
                 marketplace_product_log_update: impl Into<models::MarketplaceProductLogUpdate>,
@@ -1196,6 +1288,11 @@ pub mod registrations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Returns a list of all registrations."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group`: Name of the resource group."]
         pub fn list(&self, subscription_id: impl Into<String>, resource_group: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -1203,12 +1300,22 @@ pub mod registrations {
                 resource_group: resource_group.into(),
             }
         }
+        #[doc = "Returns a list of all registrations under current subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Returns the properties of an Azure Stack registration."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group`: Name of the resource group."]
+        #[doc = "* `registration_name`: Name of the Azure Stack registration."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1222,6 +1329,13 @@ pub mod registrations {
                 registration_name: registration_name.into(),
             }
         }
+        #[doc = "Create or update an Azure Stack registration."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group`: Name of the resource group."]
+        #[doc = "* `registration_name`: Name of the Azure Stack registration."]
+        #[doc = "* `token`: Registration token"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -1237,6 +1351,13 @@ pub mod registrations {
                 token: token.into(),
             }
         }
+        #[doc = "Patch an Azure Stack registration."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group`: Name of the resource group."]
+        #[doc = "* `registration_name`: Name of the Azure Stack registration."]
+        #[doc = "* `token`: Registration token"]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -1252,6 +1373,12 @@ pub mod registrations {
                 token: token.into(),
             }
         }
+        #[doc = "Delete the requested Azure Stack registration."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group`: Name of the resource group."]
+        #[doc = "* `registration_name`: Name of the Azure Stack registration."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1265,6 +1392,12 @@ pub mod registrations {
                 registration_name: registration_name.into(),
             }
         }
+        #[doc = "Returns Azure Stack Activation Key."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group`: Name of the resource group."]
+        #[doc = "* `registration_name`: Name of the Azure Stack registration."]
         pub fn get_activation_key(
             &self,
             subscription_id: impl Into<String>,
@@ -1278,6 +1411,12 @@ pub mod registrations {
                 registration_name: registration_name.into(),
             }
         }
+        #[doc = "Enables remote management for device under the Azure Stack registration."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group`: Name of the resource group."]
+        #[doc = "* `registration_name`: Name of the Azure Stack registration."]
         pub fn enable_remote_management(
             &self,
             subscription_id: impl Into<String>,

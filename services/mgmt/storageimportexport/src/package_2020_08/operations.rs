@@ -91,12 +91,17 @@ pub mod locations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Returns a list of locations to which you can ship the disks associated with an import or export job. A location is a Microsoft data center region."]
         pub fn list(&self) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
                 accept_language: None,
             }
         }
+        #[doc = "Returns the details about a location to which you can ship the disks associated with an import or export job. A location is an Azure region."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `location_name`: The name of the location. For example, West US or westus."]
         pub fn get(&self, location_name: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -114,6 +119,7 @@ pub mod locations {
             pub(crate) accept_language: Option<String>,
         }
         impl Builder {
+            #[doc = "Specifies the preferred language for the response."]
             pub fn accept_language(mut self, accept_language: impl Into<String>) -> Self {
                 self.accept_language = Some(accept_language.into());
                 self
@@ -168,6 +174,7 @@ pub mod locations {
             pub(crate) accept_language: Option<String>,
         }
         impl Builder {
+            #[doc = "Specifies the preferred language for the response."]
             pub fn accept_language(mut self, accept_language: impl Into<String>) -> Self {
                 self.accept_language = Some(accept_language.into());
                 self
@@ -219,6 +226,10 @@ pub mod jobs {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Returns all active and completed jobs in a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID for the Azure user."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
@@ -228,6 +239,11 @@ pub mod jobs {
                 accept_language: None,
             }
         }
+        #[doc = "Returns all active and completed jobs in a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID for the Azure user."]
+        #[doc = "* `resource_group_name`: The resource group name uniquely identifies the resource group within the user subscription."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -242,6 +258,12 @@ pub mod jobs {
                 accept_language: None,
             }
         }
+        #[doc = "Gets information about an existing job."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `job_name`: The name of the import/export job."]
+        #[doc = "* `subscription_id`: The subscription ID for the Azure user."]
+        #[doc = "* `resource_group_name`: The resource group name uniquely identifies the resource group within the user subscription."]
         pub fn get(
             &self,
             job_name: impl Into<String>,
@@ -256,6 +278,13 @@ pub mod jobs {
                 accept_language: None,
             }
         }
+        #[doc = "Creates a new job or updates an existing job in the specified subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `job_name`: The name of the import/export job."]
+        #[doc = "* `subscription_id`: The subscription ID for the Azure user."]
+        #[doc = "* `resource_group_name`: The resource group name uniquely identifies the resource group within the user subscription."]
+        #[doc = "* `body`: The parameters used for creating the job"]
         pub fn create(
             &self,
             job_name: impl Into<String>,
@@ -273,6 +302,13 @@ pub mod jobs {
                 x_ms_client_tenant_id: None,
             }
         }
+        #[doc = "Updates specific properties of a job. You can call this operation to notify the Import/Export service that the hard drives comprising the import or export job have been shipped to the Microsoft data center. It can also be used to cancel an existing job."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `job_name`: The name of the import/export job."]
+        #[doc = "* `subscription_id`: The subscription ID for the Azure user."]
+        #[doc = "* `resource_group_name`: The resource group name uniquely identifies the resource group within the user subscription."]
+        #[doc = "* `body`: The parameters to update in the job"]
         pub fn update(
             &self,
             job_name: impl Into<String>,
@@ -289,6 +325,12 @@ pub mod jobs {
                 accept_language: None,
             }
         }
+        #[doc = "Deletes an existing job. Only jobs in the Creating or Completed states can be deleted."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `job_name`: The name of the import/export job."]
+        #[doc = "* `subscription_id`: The subscription ID for the Azure user."]
+        #[doc = "* `resource_group_name`: The resource group name uniquely identifies the resource group within the user subscription."]
         pub fn delete(
             &self,
             job_name: impl Into<String>,
@@ -316,14 +358,17 @@ pub mod jobs {
             pub(crate) accept_language: Option<String>,
         }
         impl Builder {
+            #[doc = "An integer value that specifies how many jobs at most should be returned. The value cannot exceed 100."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Can be used to restrict the results to certain conditions."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Specifies the preferred language for the response."]
             pub fn accept_language(mut self, accept_language: impl Into<String>) -> Self {
                 self.accept_language = Some(accept_language.into());
                 self
@@ -415,14 +460,17 @@ pub mod jobs {
             pub(crate) accept_language: Option<String>,
         }
         impl Builder {
+            #[doc = "An integer value that specifies how many jobs at most should be returned. The value cannot exceed 100."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Can be used to restrict the results to certain conditions."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Specifies the preferred language for the response."]
             pub fn accept_language(mut self, accept_language: impl Into<String>) -> Self {
                 self.accept_language = Some(accept_language.into());
                 self
@@ -514,6 +562,7 @@ pub mod jobs {
             pub(crate) accept_language: Option<String>,
         }
         impl Builder {
+            #[doc = "Specifies the preferred language for the response."]
             pub fn accept_language(mut self, accept_language: impl Into<String>) -> Self {
                 self.accept_language = Some(accept_language.into());
                 self
@@ -580,10 +629,12 @@ pub mod jobs {
             pub(crate) x_ms_client_tenant_id: Option<String>,
         }
         impl Builder {
+            #[doc = "Specifies the preferred language for the response."]
             pub fn accept_language(mut self, accept_language: impl Into<String>) -> Self {
                 self.accept_language = Some(accept_language.into());
                 self
             }
+            #[doc = "The tenant ID of the client making the request."]
             pub fn x_ms_client_tenant_id(mut self, x_ms_client_tenant_id: impl Into<String>) -> Self {
                 self.x_ms_client_tenant_id = Some(x_ms_client_tenant_id.into());
                 self
@@ -654,6 +705,7 @@ pub mod jobs {
             pub(crate) accept_language: Option<String>,
         }
         impl Builder {
+            #[doc = "Specifies the preferred language for the response."]
             pub fn accept_language(mut self, accept_language: impl Into<String>) -> Self {
                 self.accept_language = Some(accept_language.into());
                 self
@@ -715,6 +767,7 @@ pub mod jobs {
             pub(crate) accept_language: Option<String>,
         }
         impl Builder {
+            #[doc = "Specifies the preferred language for the response."]
             pub fn accept_language(mut self, accept_language: impl Into<String>) -> Self {
                 self.accept_language = Some(accept_language.into());
                 self
@@ -764,6 +817,12 @@ pub mod bit_locker_keys {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Returns the BitLocker Keys for all drives in the specified job."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `job_name`: The name of the import/export job."]
+        #[doc = "* `subscription_id`: The subscription ID for the Azure user."]
+        #[doc = "* `resource_group_name`: The resource group name uniquely identifies the resource group within the user subscription."]
         pub fn list(
             &self,
             job_name: impl Into<String>,
@@ -791,6 +850,7 @@ pub mod bit_locker_keys {
             pub(crate) accept_language: Option<String>,
         }
         impl Builder {
+            #[doc = "Specifies the preferred language for the response."]
             pub fn accept_language(mut self, accept_language: impl Into<String>) -> Self {
                 self.accept_language = Some(accept_language.into());
                 self
@@ -846,6 +906,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Returns the list of operations supported by the import/export resource provider."]
         pub fn list(&self) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -862,6 +923,7 @@ pub mod operations {
             pub(crate) accept_language: Option<String>,
         }
         impl Builder {
+            #[doc = "Specifies the preferred language for the response."]
             pub fn accept_language(mut self, accept_language: impl Into<String>) -> Self {
                 self.accept_language = Some(accept_language.into());
                 self

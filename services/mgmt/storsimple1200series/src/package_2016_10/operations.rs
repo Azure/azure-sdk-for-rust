@@ -124,12 +124,21 @@ pub mod managers {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieves all the managers in a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id"]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Retrieves all the managers in a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id"]
+        #[doc = "* `resource_group_name`: The resource group name"]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -141,6 +150,12 @@ pub mod managers {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Returns the properties of the specified manager name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id"]
+        #[doc = "* `resource_group_name`: The resource group name"]
+        #[doc = "* `manager_name`: The manager name"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -154,6 +169,13 @@ pub mod managers {
                 manager_name: manager_name.into(),
             }
         }
+        #[doc = "Creates or updates the manager."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `manager`: The manager."]
+        #[doc = "* `subscription_id`: The subscription id"]
+        #[doc = "* `resource_group_name`: The resource group name"]
+        #[doc = "* `manager_name`: The manager name"]
         pub fn create_or_update(
             &self,
             manager: impl Into<models::Manager>,
@@ -169,6 +191,13 @@ pub mod managers {
                 manager_name: manager_name.into(),
             }
         }
+        #[doc = "Updates the StorSimple Manager."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `parameters`: The manager update parameters."]
+        #[doc = "* `subscription_id`: The subscription id"]
+        #[doc = "* `resource_group_name`: The resource group name"]
+        #[doc = "* `manager_name`: The manager name"]
         pub fn update(
             &self,
             parameters: impl Into<models::ManagerPatch>,
@@ -184,6 +213,12 @@ pub mod managers {
                 manager_name: manager_name.into(),
             }
         }
+        #[doc = "Deletes the manager."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id"]
+        #[doc = "* `resource_group_name`: The resource group name"]
+        #[doc = "* `manager_name`: The manager name"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -197,6 +232,14 @@ pub mod managers {
                 manager_name: manager_name.into(),
             }
         }
+        #[doc = "Upload Vault Cred Certificate.\r\nReturns UploadCertificateResponse"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `certificate_name`: Certificate Name"]
+        #[doc = "* `upload_certificate_requestrequest`: UploadCertificateRequest Request"]
+        #[doc = "* `subscription_id`: The subscription id"]
+        #[doc = "* `resource_group_name`: The resource group name"]
+        #[doc = "* `manager_name`: The manager name"]
         pub fn upload_registration_certificate(
             &self,
             certificate_name: impl Into<String>,
@@ -214,6 +257,12 @@ pub mod managers {
                 manager_name: manager_name.into(),
             }
         }
+        #[doc = "Returns the encryption settings of the manager."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id"]
+        #[doc = "* `resource_group_name`: The resource group name"]
+        #[doc = "* `manager_name`: The manager name"]
         pub fn get_encryption_settings(
             &self,
             subscription_id: impl Into<String>,
@@ -227,6 +276,12 @@ pub mod managers {
                 manager_name: manager_name.into(),
             }
         }
+        #[doc = "Returns the extended information of the specified manager name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id"]
+        #[doc = "* `resource_group_name`: The resource group name"]
+        #[doc = "* `manager_name`: The manager name"]
         pub fn get_extended_info(
             &self,
             subscription_id: impl Into<String>,
@@ -240,6 +295,13 @@ pub mod managers {
                 manager_name: manager_name.into(),
             }
         }
+        #[doc = "Creates the extended info of the manager."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `manager_extended_info`: The manager extended information."]
+        #[doc = "* `subscription_id`: The subscription id"]
+        #[doc = "* `resource_group_name`: The resource group name"]
+        #[doc = "* `manager_name`: The manager name"]
         pub fn create_extended_info(
             &self,
             manager_extended_info: impl Into<models::ManagerExtendedInfo>,
@@ -255,6 +317,14 @@ pub mod managers {
                 manager_name: manager_name.into(),
             }
         }
+        #[doc = "Updates the extended info of the manager."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `manager_extended_info`: The manager extended information."]
+        #[doc = "* `subscription_id`: The subscription id"]
+        #[doc = "* `resource_group_name`: The resource group name"]
+        #[doc = "* `manager_name`: The manager name"]
+        #[doc = "* `if_match`: Pass the ETag of ExtendedInfo fetched from GET call"]
         pub fn update_extended_info(
             &self,
             manager_extended_info: impl Into<models::ManagerExtendedInfo>,
@@ -272,6 +342,12 @@ pub mod managers {
                 if_match: if_match.into(),
             }
         }
+        #[doc = "Deletes the extended info of the manager."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id"]
+        #[doc = "* `resource_group_name`: The resource group name"]
+        #[doc = "* `manager_name`: The manager name"]
         pub fn delete_extended_info(
             &self,
             subscription_id: impl Into<String>,
@@ -285,6 +361,12 @@ pub mod managers {
                 manager_name: manager_name.into(),
             }
         }
+        #[doc = "Returns the symmetric encryption key of the manager."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id"]
+        #[doc = "* `resource_group_name`: The resource group name"]
+        #[doc = "* `manager_name`: The manager name"]
         pub fn get_encryption_key(
             &self,
             subscription_id: impl Into<String>,
@@ -298,6 +380,12 @@ pub mod managers {
                 manager_name: manager_name.into(),
             }
         }
+        #[doc = "Gets the  manager metrics"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id"]
+        #[doc = "* `resource_group_name`: The resource group name"]
+        #[doc = "* `manager_name`: The manager name"]
         pub fn list_metrics(
             &self,
             subscription_id: impl Into<String>,
@@ -312,6 +400,12 @@ pub mod managers {
                 filter: None,
             }
         }
+        #[doc = "Retrieves metric definition of all metrics aggregated at manager."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id"]
+        #[doc = "* `resource_group_name`: The resource group name"]
+        #[doc = "* `manager_name`: The manager name"]
         pub fn list_metric_definition(
             &self,
             subscription_id: impl Into<String>,
@@ -1007,6 +1101,7 @@ pub mod managers {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "OData Filter options"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -1114,6 +1209,7 @@ pub mod available_provider_operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List of AvailableProviderOperations"]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -1193,6 +1289,12 @@ pub mod access_control_records {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieves all the access control records in a manager."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id"]
+        #[doc = "* `resource_group_name`: The resource group name"]
+        #[doc = "* `manager_name`: The manager name"]
         pub fn list_by_manager(
             &self,
             subscription_id: impl Into<String>,
@@ -1206,6 +1308,13 @@ pub mod access_control_records {
                 manager_name: manager_name.into(),
             }
         }
+        #[doc = "Returns the properties of the specified access control record name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `access_control_record_name`: Name of access control record to be fetched."]
+        #[doc = "* `subscription_id`: The subscription id"]
+        #[doc = "* `resource_group_name`: The resource group name"]
+        #[doc = "* `manager_name`: The manager name"]
         pub fn get(
             &self,
             access_control_record_name: impl Into<String>,
@@ -1221,6 +1330,14 @@ pub mod access_control_records {
                 manager_name: manager_name.into(),
             }
         }
+        #[doc = "Creates or Updates an access control record."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `access_control_record_name`: The name of the access control record."]
+        #[doc = "* `access_control_record`: The access control record to be added or updated."]
+        #[doc = "* `subscription_id`: The subscription id"]
+        #[doc = "* `resource_group_name`: The resource group name"]
+        #[doc = "* `manager_name`: The manager name"]
         pub fn create_or_update(
             &self,
             access_control_record_name: impl Into<String>,
@@ -1238,6 +1355,13 @@ pub mod access_control_records {
                 manager_name: manager_name.into(),
             }
         }
+        #[doc = "Deletes the access control record."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `access_control_record_name`: The name of the access control record to delete."]
+        #[doc = "* `subscription_id`: The subscription id"]
+        #[doc = "* `resource_group_name`: The resource group name"]
+        #[doc = "* `manager_name`: The manager name"]
         pub fn delete(
             &self,
             access_control_record_name: impl Into<String>,
@@ -1484,6 +1608,12 @@ pub mod alerts {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieves all the alerts in a manager."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id"]
+        #[doc = "* `resource_group_name`: The resource group name"]
+        #[doc = "* `manager_name`: The manager name"]
         pub fn list_by_manager(
             &self,
             subscription_id: impl Into<String>,
@@ -1498,6 +1628,13 @@ pub mod alerts {
                 filter: None,
             }
         }
+        #[doc = "Clear the alerts."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `request`: The clear alert request."]
+        #[doc = "* `subscription_id`: The subscription id"]
+        #[doc = "* `resource_group_name`: The resource group name"]
+        #[doc = "* `manager_name`: The manager name"]
         pub fn clear(
             &self,
             request: impl Into<models::ClearAlertRequest>,
@@ -1513,6 +1650,14 @@ pub mod alerts {
                 manager_name: manager_name.into(),
             }
         }
+        #[doc = "Sends a test alert email."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The device name."]
+        #[doc = "* `request`: The send test alert email request."]
+        #[doc = "* `subscription_id`: The subscription id"]
+        #[doc = "* `resource_group_name`: The resource group name"]
+        #[doc = "* `manager_name`: The manager name"]
         pub fn send_test_email(
             &self,
             device_name: impl Into<String>,
@@ -1543,6 +1688,7 @@ pub mod alerts {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "OData Filter options"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -1717,6 +1863,12 @@ pub mod backups {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieves all the backups in a manager."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id"]
+        #[doc = "* `resource_group_name`: The resource group name"]
+        #[doc = "* `manager_name`: The manager name"]
         pub fn list_by_manager(
             &self,
             subscription_id: impl Into<String>,
@@ -1731,6 +1883,13 @@ pub mod backups {
                 filter: None,
             }
         }
+        #[doc = "Retrieves all the backups in a device. Can be used to get the backups for failover also."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The device name."]
+        #[doc = "* `subscription_id`: The subscription id"]
+        #[doc = "* `resource_group_name`: The resource group name"]
+        #[doc = "* `manager_name`: The manager name"]
         pub fn list_by_device(
             &self,
             device_name: impl Into<String>,
@@ -1748,6 +1907,14 @@ pub mod backups {
                 filter: None,
             }
         }
+        #[doc = "Deletes the backup."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The device name."]
+        #[doc = "* `backup_name`: The backup name."]
+        #[doc = "* `subscription_id`: The subscription id"]
+        #[doc = "* `resource_group_name`: The resource group name"]
+        #[doc = "* `manager_name`: The manager name"]
         pub fn delete(
             &self,
             device_name: impl Into<String>,
@@ -1765,6 +1932,16 @@ pub mod backups {
                 manager_name: manager_name.into(),
             }
         }
+        #[doc = "Clones the given backup element to a new disk or share with given details."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The device name."]
+        #[doc = "* `backup_name`: The backup name."]
+        #[doc = "* `element_name`: The backup element name."]
+        #[doc = "* `clone_request`: The clone request."]
+        #[doc = "* `subscription_id`: The subscription id"]
+        #[doc = "* `resource_group_name`: The resource group name"]
+        #[doc = "* `manager_name`: The manager name"]
         pub fn clone(
             &self,
             device_name: impl Into<String>,
@@ -1799,6 +1976,7 @@ pub mod backups {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "OData Filter options"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -1887,10 +2065,12 @@ pub mod backups {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "Set to true if you need backups which can be used for failover."]
             pub fn for_failover(mut self, for_failover: bool) -> Self {
                 self.for_failover = Some(for_failover);
                 self
             }
+            #[doc = "OData Filter options"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -2087,6 +2267,12 @@ pub mod devices {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieves all the devices in a manager."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id"]
+        #[doc = "* `resource_group_name`: The resource group name"]
+        #[doc = "* `manager_name`: The manager name"]
         pub fn list_by_manager(
             &self,
             subscription_id: impl Into<String>,
@@ -2101,6 +2287,13 @@ pub mod devices {
                 expand: None,
             }
         }
+        #[doc = "Returns the properties of the specified device name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The device name."]
+        #[doc = "* `subscription_id`: The subscription id"]
+        #[doc = "* `resource_group_name`: The resource group name"]
+        #[doc = "* `manager_name`: The manager name"]
         pub fn get(
             &self,
             device_name: impl Into<String>,
@@ -2117,6 +2310,14 @@ pub mod devices {
                 expand: None,
             }
         }
+        #[doc = "Patches the device."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The device Name."]
+        #[doc = "* `device_patch`: Patch representation of the device."]
+        #[doc = "* `subscription_id`: The subscription id"]
+        #[doc = "* `resource_group_name`: The resource group name"]
+        #[doc = "* `manager_name`: The manager name"]
         pub fn patch(
             &self,
             device_name: impl Into<String>,
@@ -2134,6 +2335,13 @@ pub mod devices {
                 manager_name: manager_name.into(),
             }
         }
+        #[doc = "Deletes the device."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The device name."]
+        #[doc = "* `subscription_id`: The subscription id"]
+        #[doc = "* `resource_group_name`: The resource group name"]
+        #[doc = "* `manager_name`: The manager name"]
         pub fn delete(
             &self,
             device_name: impl Into<String>,
@@ -2149,6 +2357,13 @@ pub mod devices {
                 manager_name: manager_name.into(),
             }
         }
+        #[doc = "Returns the alert settings of the specified device name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The device name."]
+        #[doc = "* `subscription_id`: The subscription id"]
+        #[doc = "* `resource_group_name`: The resource group name"]
+        #[doc = "* `manager_name`: The manager name"]
         pub fn get_alert_settings(
             &self,
             device_name: impl Into<String>,
@@ -2164,6 +2379,14 @@ pub mod devices {
                 manager_name: manager_name.into(),
             }
         }
+        #[doc = "Creates or updates the alert settings"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The device name."]
+        #[doc = "* `alert_settings`: The alert settings."]
+        #[doc = "* `subscription_id`: The subscription id"]
+        #[doc = "* `resource_group_name`: The resource group name"]
+        #[doc = "* `manager_name`: The manager name"]
         pub fn create_or_update_alert_settings(
             &self,
             device_name: impl Into<String>,
@@ -2181,6 +2404,13 @@ pub mod devices {
                 manager_name: manager_name.into(),
             }
         }
+        #[doc = "Deactivates the device."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The device name."]
+        #[doc = "* `subscription_id`: The subscription id"]
+        #[doc = "* `resource_group_name`: The resource group name"]
+        #[doc = "* `manager_name`: The manager name"]
         pub fn deactivate(
             &self,
             device_name: impl Into<String>,
@@ -2196,6 +2426,13 @@ pub mod devices {
                 manager_name: manager_name.into(),
             }
         }
+        #[doc = "Downloads updates on the device."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The device name."]
+        #[doc = "* `subscription_id`: The subscription id"]
+        #[doc = "* `resource_group_name`: The resource group name"]
+        #[doc = "* `manager_name`: The manager name"]
         pub fn download_updates(
             &self,
             device_name: impl Into<String>,
@@ -2211,6 +2448,14 @@ pub mod devices {
                 manager_name: manager_name.into(),
             }
         }
+        #[doc = "Fails over the device to another device."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The device name."]
+        #[doc = "* `failover_request`: The failover request."]
+        #[doc = "* `subscription_id`: The subscription id"]
+        #[doc = "* `resource_group_name`: The resource group name"]
+        #[doc = "* `manager_name`: The manager name"]
         pub fn failover(
             &self,
             device_name: impl Into<String>,
@@ -2228,6 +2473,13 @@ pub mod devices {
                 manager_name: manager_name.into(),
             }
         }
+        #[doc = "Retrieves all the devices which can be used as failover targets for the given device."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The device name."]
+        #[doc = "* `subscription_id`: The subscription id"]
+        #[doc = "* `resource_group_name`: The resource group name"]
+        #[doc = "* `manager_name`: The manager name"]
         pub fn list_failover_target(
             &self,
             device_name: impl Into<String>,
@@ -2244,6 +2496,13 @@ pub mod devices {
                 expand: None,
             }
         }
+        #[doc = "Installs the updates on the device."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The device name."]
+        #[doc = "* `subscription_id`: The subscription id"]
+        #[doc = "* `resource_group_name`: The resource group name"]
+        #[doc = "* `manager_name`: The manager name"]
         pub fn install_updates(
             &self,
             device_name: impl Into<String>,
@@ -2259,6 +2518,13 @@ pub mod devices {
                 manager_name: manager_name.into(),
             }
         }
+        #[doc = "Retrieves the device metrics."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The name of the appliance."]
+        #[doc = "* `subscription_id`: The subscription id"]
+        #[doc = "* `resource_group_name`: The resource group name"]
+        #[doc = "* `manager_name`: The manager name"]
         pub fn list_metrics(
             &self,
             device_name: impl Into<String>,
@@ -2275,6 +2541,13 @@ pub mod devices {
                 filter: None,
             }
         }
+        #[doc = "Retrieves metric definition of all metrics aggregated at device."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The name of the appliance."]
+        #[doc = "* `subscription_id`: The subscription id"]
+        #[doc = "* `resource_group_name`: The resource group name"]
+        #[doc = "* `manager_name`: The manager name"]
         pub fn list_metric_definition(
             &self,
             device_name: impl Into<String>,
@@ -2290,6 +2563,13 @@ pub mod devices {
                 manager_name: manager_name.into(),
             }
         }
+        #[doc = "Returns the network settings of the specified device name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The device name."]
+        #[doc = "* `subscription_id`: The subscription id"]
+        #[doc = "* `resource_group_name`: The resource group name"]
+        #[doc = "* `manager_name`: The manager name"]
         pub fn get_network_settings(
             &self,
             device_name: impl Into<String>,
@@ -2305,6 +2585,13 @@ pub mod devices {
                 manager_name: manager_name.into(),
             }
         }
+        #[doc = "Scans for updates on the device."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The device name."]
+        #[doc = "* `subscription_id`: The subscription id"]
+        #[doc = "* `resource_group_name`: The resource group name"]
+        #[doc = "* `manager_name`: The manager name"]
         pub fn scan_for_updates(
             &self,
             device_name: impl Into<String>,
@@ -2320,6 +2607,14 @@ pub mod devices {
                 manager_name: manager_name.into(),
             }
         }
+        #[doc = "Creates or updates the security settings."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The device name."]
+        #[doc = "* `security_settings`: The security settings."]
+        #[doc = "* `subscription_id`: The subscription id"]
+        #[doc = "* `resource_group_name`: The resource group name"]
+        #[doc = "* `manager_name`: The manager name"]
         pub fn create_or_update_security_settings(
             &self,
             device_name: impl Into<String>,
@@ -2337,6 +2632,13 @@ pub mod devices {
                 manager_name: manager_name.into(),
             }
         }
+        #[doc = "Returns the time settings of the specified device name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The device name."]
+        #[doc = "* `subscription_id`: The subscription id"]
+        #[doc = "* `resource_group_name`: The resource group name"]
+        #[doc = "* `manager_name`: The manager name"]
         pub fn get_time_settings(
             &self,
             device_name: impl Into<String>,
@@ -2352,6 +2654,13 @@ pub mod devices {
                 manager_name: manager_name.into(),
             }
         }
+        #[doc = "Returns the update summary of the specified device name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The device name."]
+        #[doc = "* `subscription_id`: The subscription id"]
+        #[doc = "* `resource_group_name`: The resource group name"]
+        #[doc = "* `manager_name`: The manager name"]
         pub fn get_update_summary(
             &self,
             device_name: impl Into<String>,
@@ -2380,6 +2689,7 @@ pub mod devices {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "Specify $expand=details to populate additional fields related to the device."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -2442,6 +2752,7 @@ pub mod devices {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "Specify $expand=details to populate additional fields related to the device."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -2896,6 +3207,7 @@ pub mod devices {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "Specify $expand=details to populate additional fields related to the device."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -3016,6 +3328,7 @@ pub mod devices {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "OData Filter options"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -3368,6 +3681,13 @@ pub mod backup_schedule_groups {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieves all the backup schedule groups in a device."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The name of the device."]
+        #[doc = "* `subscription_id`: The subscription id"]
+        #[doc = "* `resource_group_name`: The resource group name"]
+        #[doc = "* `manager_name`: The manager name"]
         pub fn list_by_device(
             &self,
             device_name: impl Into<String>,
@@ -3383,6 +3703,14 @@ pub mod backup_schedule_groups {
                 manager_name: manager_name.into(),
             }
         }
+        #[doc = "Returns the properties of the specified backup schedule group name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The name of the device."]
+        #[doc = "* `schedule_group_name`: The name of the schedule group."]
+        #[doc = "* `subscription_id`: The subscription id"]
+        #[doc = "* `resource_group_name`: The resource group name"]
+        #[doc = "* `manager_name`: The manager name"]
         pub fn get(
             &self,
             device_name: impl Into<String>,
@@ -3400,6 +3728,15 @@ pub mod backup_schedule_groups {
                 manager_name: manager_name.into(),
             }
         }
+        #[doc = "Creates or Updates the backup schedule Group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The name of the device."]
+        #[doc = "* `schedule_group_name`: The name of the schedule group."]
+        #[doc = "* `schedule_group`: The schedule group to be created"]
+        #[doc = "* `subscription_id`: The subscription id"]
+        #[doc = "* `resource_group_name`: The resource group name"]
+        #[doc = "* `manager_name`: The manager name"]
         pub fn create_or_update(
             &self,
             device_name: impl Into<String>,
@@ -3419,6 +3756,14 @@ pub mod backup_schedule_groups {
                 manager_name: manager_name.into(),
             }
         }
+        #[doc = "Deletes the backup schedule group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The name of the device."]
+        #[doc = "* `schedule_group_name`: The name of the schedule group."]
+        #[doc = "* `subscription_id`: The subscription id"]
+        #[doc = "* `resource_group_name`: The resource group name"]
+        #[doc = "* `manager_name`: The manager name"]
         pub fn delete(
             &self,
             device_name: impl Into<String>,
@@ -3644,6 +3989,13 @@ pub mod chap_settings {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieves all the chap settings in a device."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The name of the device."]
+        #[doc = "* `subscription_id`: The subscription id"]
+        #[doc = "* `resource_group_name`: The resource group name"]
+        #[doc = "* `manager_name`: The manager name"]
         pub fn list_by_device(
             &self,
             device_name: impl Into<String>,
@@ -3659,6 +4011,14 @@ pub mod chap_settings {
                 manager_name: manager_name.into(),
             }
         }
+        #[doc = "Returns the properties of the specified chap setting name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The device name."]
+        #[doc = "* `chap_user_name`: The user name of chap to be fetched."]
+        #[doc = "* `subscription_id`: The subscription id"]
+        #[doc = "* `resource_group_name`: The resource group name"]
+        #[doc = "* `manager_name`: The manager name"]
         pub fn get(
             &self,
             device_name: impl Into<String>,
@@ -3676,6 +4036,15 @@ pub mod chap_settings {
                 manager_name: manager_name.into(),
             }
         }
+        #[doc = "Creates or updates the chap setting."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The device name."]
+        #[doc = "* `chap_user_name`: The chap user name."]
+        #[doc = "* `chap_setting`: The chap setting to be added or updated."]
+        #[doc = "* `subscription_id`: The subscription id"]
+        #[doc = "* `resource_group_name`: The resource group name"]
+        #[doc = "* `manager_name`: The manager name"]
         pub fn create_or_update(
             &self,
             device_name: impl Into<String>,
@@ -3695,6 +4064,14 @@ pub mod chap_settings {
                 manager_name: manager_name.into(),
             }
         }
+        #[doc = "Deletes the chap setting."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The device name."]
+        #[doc = "* `chap_user_name`: The chap user name."]
+        #[doc = "* `subscription_id`: The subscription id"]
+        #[doc = "* `resource_group_name`: The resource group name"]
+        #[doc = "* `manager_name`: The manager name"]
         pub fn delete(
             &self,
             device_name: impl Into<String>,
@@ -3951,6 +4328,13 @@ pub mod iscsi_disks {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieves all the iSCSI disks in a device."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The device name."]
+        #[doc = "* `subscription_id`: The subscription id"]
+        #[doc = "* `resource_group_name`: The resource group name"]
+        #[doc = "* `manager_name`: The manager name"]
         pub fn list_by_device(
             &self,
             device_name: impl Into<String>,
@@ -3966,6 +4350,14 @@ pub mod iscsi_disks {
                 manager_name: manager_name.into(),
             }
         }
+        #[doc = "Retrieves all the disks in a iSCSI server."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The device name."]
+        #[doc = "* `iscsi_server_name`: The iSCSI server name."]
+        #[doc = "* `subscription_id`: The subscription id"]
+        #[doc = "* `resource_group_name`: The resource group name"]
+        #[doc = "* `manager_name`: The manager name"]
         pub fn list_by_iscsi_server(
             &self,
             device_name: impl Into<String>,
@@ -3983,6 +4375,15 @@ pub mod iscsi_disks {
                 manager_name: manager_name.into(),
             }
         }
+        #[doc = "Returns the properties of the specified iSCSI disk name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The device name."]
+        #[doc = "* `iscsi_server_name`: The iSCSI server name."]
+        #[doc = "* `disk_name`: The disk name."]
+        #[doc = "* `subscription_id`: The subscription id"]
+        #[doc = "* `resource_group_name`: The resource group name"]
+        #[doc = "* `manager_name`: The manager name"]
         pub fn get(
             &self,
             device_name: impl Into<String>,
@@ -4002,6 +4403,16 @@ pub mod iscsi_disks {
                 manager_name: manager_name.into(),
             }
         }
+        #[doc = "Creates or updates the iSCSI disk."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The device name."]
+        #[doc = "* `iscsi_server_name`: The iSCSI server name."]
+        #[doc = "* `disk_name`: The disk name."]
+        #[doc = "* `iscsi_disk`: The iSCSI disk."]
+        #[doc = "* `subscription_id`: The subscription id"]
+        #[doc = "* `resource_group_name`: The resource group name"]
+        #[doc = "* `manager_name`: The manager name"]
         pub fn create_or_update(
             &self,
             device_name: impl Into<String>,
@@ -4023,6 +4434,15 @@ pub mod iscsi_disks {
                 manager_name: manager_name.into(),
             }
         }
+        #[doc = "Deletes the iSCSI disk."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The device name."]
+        #[doc = "* `iscsi_server_name`: The iSCSI server name."]
+        #[doc = "* `disk_name`: The disk name."]
+        #[doc = "* `subscription_id`: The subscription id"]
+        #[doc = "* `resource_group_name`: The resource group name"]
+        #[doc = "* `manager_name`: The manager name"]
         pub fn delete(
             &self,
             device_name: impl Into<String>,
@@ -4042,6 +4462,15 @@ pub mod iscsi_disks {
                 manager_name: manager_name.into(),
             }
         }
+        #[doc = "Gets the iSCSI disk metrics"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The device name."]
+        #[doc = "* `iscsi_server_name`: The iSCSI server name."]
+        #[doc = "* `disk_name`: The iSCSI disk name."]
+        #[doc = "* `subscription_id`: The subscription id"]
+        #[doc = "* `resource_group_name`: The resource group name"]
+        #[doc = "* `manager_name`: The manager name"]
         pub fn list_metrics(
             &self,
             device_name: impl Into<String>,
@@ -4062,6 +4491,15 @@ pub mod iscsi_disks {
                 filter: None,
             }
         }
+        #[doc = "Retrieves metric definitions for all metric aggregated at the iSCSI disk."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The device name."]
+        #[doc = "* `iscsi_server_name`: The iSCSI server name."]
+        #[doc = "* `disk_name`: The iSCSI disk name."]
+        #[doc = "* `subscription_id`: The subscription id"]
+        #[doc = "* `resource_group_name`: The resource group name"]
+        #[doc = "* `manager_name`: The manager name"]
         pub fn list_metric_definition(
             &self,
             device_name: impl Into<String>,
@@ -4358,6 +4796,7 @@ pub mod iscsi_disks {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "OData Filter options"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -4456,6 +4895,13 @@ pub mod file_servers {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieves all the file servers in a device."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The device name."]
+        #[doc = "* `subscription_id`: The subscription id"]
+        #[doc = "* `resource_group_name`: The resource group name"]
+        #[doc = "* `manager_name`: The manager name"]
         pub fn list_by_device(
             &self,
             device_name: impl Into<String>,
@@ -4471,6 +4917,14 @@ pub mod file_servers {
                 manager_name: manager_name.into(),
             }
         }
+        #[doc = "Returns the properties of the specified file server name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The device name."]
+        #[doc = "* `file_server_name`: The file server name."]
+        #[doc = "* `subscription_id`: The subscription id"]
+        #[doc = "* `resource_group_name`: The resource group name"]
+        #[doc = "* `manager_name`: The manager name"]
         pub fn get(
             &self,
             device_name: impl Into<String>,
@@ -4488,6 +4942,15 @@ pub mod file_servers {
                 manager_name: manager_name.into(),
             }
         }
+        #[doc = "Creates or updates the file server."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The device name."]
+        #[doc = "* `file_server_name`: The file server name."]
+        #[doc = "* `file_server`: The file server."]
+        #[doc = "* `subscription_id`: The subscription id"]
+        #[doc = "* `resource_group_name`: The resource group name"]
+        #[doc = "* `manager_name`: The manager name"]
         pub fn create_or_update(
             &self,
             device_name: impl Into<String>,
@@ -4507,6 +4970,14 @@ pub mod file_servers {
                 manager_name: manager_name.into(),
             }
         }
+        #[doc = "Deletes the file server."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The device name."]
+        #[doc = "* `file_server_name`: The file server name."]
+        #[doc = "* `subscription_id`: The subscription id"]
+        #[doc = "* `resource_group_name`: The resource group name"]
+        #[doc = "* `manager_name`: The manager name"]
         pub fn delete(
             &self,
             device_name: impl Into<String>,
@@ -4524,6 +4995,14 @@ pub mod file_servers {
                 manager_name: manager_name.into(),
             }
         }
+        #[doc = "Backup the file server now."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The device name."]
+        #[doc = "* `file_server_name`: The file server name."]
+        #[doc = "* `subscription_id`: The subscription id"]
+        #[doc = "* `resource_group_name`: The resource group name"]
+        #[doc = "* `manager_name`: The manager name"]
         pub fn backup_now(
             &self,
             device_name: impl Into<String>,
@@ -4541,6 +5020,14 @@ pub mod file_servers {
                 manager_name: manager_name.into(),
             }
         }
+        #[doc = "Gets the file server metrics."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The name of the device."]
+        #[doc = "* `file_server_name`: The name of the file server name."]
+        #[doc = "* `subscription_id`: The subscription id"]
+        #[doc = "* `resource_group_name`: The resource group name"]
+        #[doc = "* `manager_name`: The manager name"]
         pub fn list_metrics(
             &self,
             device_name: impl Into<String>,
@@ -4559,6 +5046,14 @@ pub mod file_servers {
                 filter: None,
             }
         }
+        #[doc = "Retrieves metric definitions of all metrics aggregated at the file server."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The name of the device."]
+        #[doc = "* `file_server_name`: The name of the file server."]
+        #[doc = "* `subscription_id`: The subscription id"]
+        #[doc = "* `resource_group_name`: The resource group name"]
+        #[doc = "* `manager_name`: The manager name"]
         pub fn list_metric_definition(
             &self,
             device_name: impl Into<String>,
@@ -4576,6 +5071,12 @@ pub mod file_servers {
                 manager_name: manager_name.into(),
             }
         }
+        #[doc = "Retrieves all the file servers in a manager."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id"]
+        #[doc = "* `resource_group_name`: The resource group name"]
+        #[doc = "* `manager_name`: The manager name"]
         pub fn list_by_manager(
             &self,
             subscription_id: impl Into<String>,
@@ -4888,6 +5389,7 @@ pub mod file_servers {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "OData Filter options"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -5038,6 +5540,14 @@ pub mod file_shares {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieves all the file shares in a file server."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The device name."]
+        #[doc = "* `file_server_name`: The file server name."]
+        #[doc = "* `subscription_id`: The subscription id"]
+        #[doc = "* `resource_group_name`: The resource group name"]
+        #[doc = "* `manager_name`: The manager name"]
         pub fn list_by_file_server(
             &self,
             device_name: impl Into<String>,
@@ -5055,6 +5565,15 @@ pub mod file_shares {
                 manager_name: manager_name.into(),
             }
         }
+        #[doc = "Returns the properties of the specified file share name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The device name."]
+        #[doc = "* `file_server_name`: The file server name."]
+        #[doc = "* `share_name`: The file share name."]
+        #[doc = "* `subscription_id`: The subscription id"]
+        #[doc = "* `resource_group_name`: The resource group name"]
+        #[doc = "* `manager_name`: The manager name"]
         pub fn get(
             &self,
             device_name: impl Into<String>,
@@ -5074,6 +5593,16 @@ pub mod file_shares {
                 manager_name: manager_name.into(),
             }
         }
+        #[doc = "Creates or updates the file share."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The device name."]
+        #[doc = "* `file_server_name`: The file server name."]
+        #[doc = "* `share_name`: The file share name."]
+        #[doc = "* `file_share`: The file share."]
+        #[doc = "* `subscription_id`: The subscription id"]
+        #[doc = "* `resource_group_name`: The resource group name"]
+        #[doc = "* `manager_name`: The manager name"]
         pub fn create_or_update(
             &self,
             device_name: impl Into<String>,
@@ -5095,6 +5624,15 @@ pub mod file_shares {
                 manager_name: manager_name.into(),
             }
         }
+        #[doc = "Deletes the file share."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The device name."]
+        #[doc = "* `file_server_name`: The file server name."]
+        #[doc = "* `share_name`: The file share Name"]
+        #[doc = "* `subscription_id`: The subscription id"]
+        #[doc = "* `resource_group_name`: The resource group name"]
+        #[doc = "* `manager_name`: The manager name"]
         pub fn delete(
             &self,
             device_name: impl Into<String>,
@@ -5114,6 +5652,15 @@ pub mod file_shares {
                 manager_name: manager_name.into(),
             }
         }
+        #[doc = "Gets the file share metrics"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The device name."]
+        #[doc = "* `file_server_name`: The file server name."]
+        #[doc = "* `share_name`: The file share name."]
+        #[doc = "* `subscription_id`: The subscription id"]
+        #[doc = "* `resource_group_name`: The resource group name"]
+        #[doc = "* `manager_name`: The manager name"]
         pub fn list_metrics(
             &self,
             device_name: impl Into<String>,
@@ -5134,6 +5681,15 @@ pub mod file_shares {
                 filter: None,
             }
         }
+        #[doc = "Retrieves metric definitions of all metrics aggregated at the file share."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The device name."]
+        #[doc = "* `file_server_name`: The file server name."]
+        #[doc = "* `share_name`: The file share name."]
+        #[doc = "* `subscription_id`: The subscription id"]
+        #[doc = "* `resource_group_name`: The resource group name"]
+        #[doc = "* `manager_name`: The manager name"]
         pub fn list_metric_definition(
             &self,
             device_name: impl Into<String>,
@@ -5153,6 +5709,13 @@ pub mod file_shares {
                 manager_name: manager_name.into(),
             }
         }
+        #[doc = "Retrieves all the file shares in a device."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The device name."]
+        #[doc = "* `subscription_id`: The subscription id"]
+        #[doc = "* `resource_group_name`: The resource group name"]
+        #[doc = "* `manager_name`: The manager name"]
         pub fn list_by_device(
             &self,
             device_name: impl Into<String>,
@@ -5390,6 +5953,7 @@ pub mod file_shares {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "OData Filter options"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -5543,6 +6107,13 @@ pub mod iscsi_servers {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieves all the iSCSI in a device."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The device name."]
+        #[doc = "* `subscription_id`: The subscription id"]
+        #[doc = "* `resource_group_name`: The resource group name"]
+        #[doc = "* `manager_name`: The manager name"]
         pub fn list_by_device(
             &self,
             device_name: impl Into<String>,
@@ -5558,6 +6129,14 @@ pub mod iscsi_servers {
                 manager_name: manager_name.into(),
             }
         }
+        #[doc = "Returns the properties of the specified iSCSI server name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The device name."]
+        #[doc = "* `iscsi_server_name`: The iSCSI server name."]
+        #[doc = "* `subscription_id`: The subscription id"]
+        #[doc = "* `resource_group_name`: The resource group name"]
+        #[doc = "* `manager_name`: The manager name"]
         pub fn get(
             &self,
             device_name: impl Into<String>,
@@ -5575,6 +6154,15 @@ pub mod iscsi_servers {
                 manager_name: manager_name.into(),
             }
         }
+        #[doc = "Creates or updates the iSCSI server."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The device name."]
+        #[doc = "* `iscsi_server_name`: The iSCSI server name."]
+        #[doc = "* `iscsi_server`: The iSCSI server."]
+        #[doc = "* `subscription_id`: The subscription id"]
+        #[doc = "* `resource_group_name`: The resource group name"]
+        #[doc = "* `manager_name`: The manager name"]
         pub fn create_or_update(
             &self,
             device_name: impl Into<String>,
@@ -5594,6 +6182,14 @@ pub mod iscsi_servers {
                 manager_name: manager_name.into(),
             }
         }
+        #[doc = "Deletes the iSCSI server."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The device name."]
+        #[doc = "* `iscsi_server_name`: The iSCSI server name."]
+        #[doc = "* `subscription_id`: The subscription id"]
+        #[doc = "* `resource_group_name`: The resource group name"]
+        #[doc = "* `manager_name`: The manager name"]
         pub fn delete(
             &self,
             device_name: impl Into<String>,
@@ -5611,6 +6207,14 @@ pub mod iscsi_servers {
                 manager_name: manager_name.into(),
             }
         }
+        #[doc = "Backup the iSCSI server now."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The device name."]
+        #[doc = "* `iscsi_server_name`: The iSCSI server name."]
+        #[doc = "* `subscription_id`: The subscription id"]
+        #[doc = "* `resource_group_name`: The resource group name"]
+        #[doc = "* `manager_name`: The manager name"]
         pub fn backup_now(
             &self,
             device_name: impl Into<String>,
@@ -5628,6 +6232,14 @@ pub mod iscsi_servers {
                 manager_name: manager_name.into(),
             }
         }
+        #[doc = "Gets the iSCSI server metrics"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The device name."]
+        #[doc = "* `iscsi_server_name`: The iSCSI server name."]
+        #[doc = "* `subscription_id`: The subscription id"]
+        #[doc = "* `resource_group_name`: The resource group name"]
+        #[doc = "* `manager_name`: The manager name"]
         pub fn list_metrics(
             &self,
             device_name: impl Into<String>,
@@ -5646,6 +6258,14 @@ pub mod iscsi_servers {
                 filter: None,
             }
         }
+        #[doc = "Retrieves metric definitions for all metrics aggregated at iSCSI server."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The device name."]
+        #[doc = "* `iscsi_server_name`: The iSCSI server name."]
+        #[doc = "* `subscription_id`: The subscription id"]
+        #[doc = "* `resource_group_name`: The resource group name"]
+        #[doc = "* `manager_name`: The manager name"]
         pub fn list_metric_definition(
             &self,
             device_name: impl Into<String>,
@@ -5663,6 +6283,12 @@ pub mod iscsi_servers {
                 manager_name: manager_name.into(),
             }
         }
+        #[doc = "Retrieves all the iSCSI servers in a manager."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id"]
+        #[doc = "* `resource_group_name`: The resource group name"]
+        #[doc = "* `manager_name`: The manager name"]
         pub fn list_by_manager(
             &self,
             subscription_id: impl Into<String>,
@@ -5975,6 +6601,7 @@ pub mod iscsi_servers {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "OData Filter options"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -6125,6 +6752,13 @@ pub mod jobs {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieves all the jobs in a device."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The device name."]
+        #[doc = "* `subscription_id`: The subscription id"]
+        #[doc = "* `resource_group_name`: The resource group name"]
+        #[doc = "* `manager_name`: The manager name"]
         pub fn list_by_device(
             &self,
             device_name: impl Into<String>,
@@ -6141,6 +6775,14 @@ pub mod jobs {
                 filter: None,
             }
         }
+        #[doc = "Returns the properties of the specified job name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The device name."]
+        #[doc = "* `job_name`: The job name."]
+        #[doc = "* `subscription_id`: The subscription id"]
+        #[doc = "* `resource_group_name`: The resource group name"]
+        #[doc = "* `manager_name`: The manager name"]
         pub fn get(
             &self,
             device_name: impl Into<String>,
@@ -6158,6 +6800,12 @@ pub mod jobs {
                 manager_name: manager_name.into(),
             }
         }
+        #[doc = "Retrieves all the jobs in a manager."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id"]
+        #[doc = "* `resource_group_name`: The resource group name"]
+        #[doc = "* `manager_name`: The manager name"]
         pub fn list_by_manager(
             &self,
             subscription_id: impl Into<String>,
@@ -6186,6 +6834,7 @@ pub mod jobs {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "OData Filter options"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -6329,6 +6978,7 @@ pub mod jobs {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "OData Filter options"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -6408,6 +7058,12 @@ pub mod storage_account_credentials {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieves all the storage account credentials in a manager."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id"]
+        #[doc = "* `resource_group_name`: The resource group name"]
+        #[doc = "* `manager_name`: The manager name"]
         pub fn list_by_manager(
             &self,
             subscription_id: impl Into<String>,
@@ -6421,6 +7077,13 @@ pub mod storage_account_credentials {
                 manager_name: manager_name.into(),
             }
         }
+        #[doc = "Returns the properties of the specified storage account credential name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `credential_name`: The name of storage account credential to be fetched."]
+        #[doc = "* `subscription_id`: The subscription id"]
+        #[doc = "* `resource_group_name`: The resource group name"]
+        #[doc = "* `manager_name`: The manager name"]
         pub fn get(
             &self,
             credential_name: impl Into<String>,
@@ -6436,6 +7099,14 @@ pub mod storage_account_credentials {
                 manager_name: manager_name.into(),
             }
         }
+        #[doc = "Creates or updates the storage account credential"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `credential_name`: The credential name."]
+        #[doc = "* `storage_account`: The storage account credential to be added or updated."]
+        #[doc = "* `subscription_id`: The subscription id"]
+        #[doc = "* `resource_group_name`: The resource group name"]
+        #[doc = "* `manager_name`: The manager name"]
         pub fn create_or_update(
             &self,
             credential_name: impl Into<String>,
@@ -6453,6 +7124,13 @@ pub mod storage_account_credentials {
                 manager_name: manager_name.into(),
             }
         }
+        #[doc = "Deletes the storage account credential"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `credential_name`: The name of the storage account credential."]
+        #[doc = "* `subscription_id`: The subscription id"]
+        #[doc = "* `resource_group_name`: The resource group name"]
+        #[doc = "* `manager_name`: The manager name"]
         pub fn delete(
             &self,
             credential_name: impl Into<String>,
@@ -6699,6 +7377,12 @@ pub mod storage_domains {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieves all the storage domains in a manager."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id"]
+        #[doc = "* `resource_group_name`: The resource group name"]
+        #[doc = "* `manager_name`: The manager name"]
         pub fn list_by_manager(
             &self,
             subscription_id: impl Into<String>,
@@ -6712,6 +7396,13 @@ pub mod storage_domains {
                 manager_name: manager_name.into(),
             }
         }
+        #[doc = "Returns the properties of the specified storage domain name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `storage_domain_name`: The storage domain name."]
+        #[doc = "* `subscription_id`: The subscription id"]
+        #[doc = "* `resource_group_name`: The resource group name"]
+        #[doc = "* `manager_name`: The manager name"]
         pub fn get(
             &self,
             storage_domain_name: impl Into<String>,
@@ -6727,6 +7418,14 @@ pub mod storage_domains {
                 manager_name: manager_name.into(),
             }
         }
+        #[doc = "Creates or updates the storage domain."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `storage_domain_name`: The storage domain name."]
+        #[doc = "* `storage_domain`: The storageDomain."]
+        #[doc = "* `subscription_id`: The subscription id"]
+        #[doc = "* `resource_group_name`: The resource group name"]
+        #[doc = "* `manager_name`: The manager name"]
         pub fn create_or_update(
             &self,
             storage_domain_name: impl Into<String>,
@@ -6744,6 +7443,13 @@ pub mod storage_domains {
                 manager_name: manager_name.into(),
             }
         }
+        #[doc = "Deletes the storage domain."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `storage_domain_name`: The storage domain name."]
+        #[doc = "* `subscription_id`: The subscription id"]
+        #[doc = "* `resource_group_name`: The resource group name"]
+        #[doc = "* `manager_name`: The manager name"]
         pub fn delete(
             &self,
             storage_domain_name: impl Into<String>,

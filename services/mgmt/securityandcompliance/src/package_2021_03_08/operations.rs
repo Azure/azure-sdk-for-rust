@@ -144,6 +144,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all of the available SecurityAndCompliance REST API operations."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -225,6 +226,12 @@ pub mod operation_results {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get the operation result for a long running operation."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `location_name`: The location of the operation."]
+        #[doc = "* `operation_result_id`: The ID of the operation result to get."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -296,6 +303,12 @@ pub mod private_link_services_for_edm_upload {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get the metadata of a privateLinkServicesForEDMUpload resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the service instance."]
+        #[doc = "* `resource_name`: The name of the service instance."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -309,6 +322,13 @@ pub mod private_link_services_for_edm_upload {
                 resource_name: resource_name.into(),
             }
         }
+        #[doc = "Create or update the metadata of a privateLinkServicesForEDMUpload instance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the service instance."]
+        #[doc = "* `resource_name`: The name of the service instance."]
+        #[doc = "* `private_link_services_for_edm_upload_description`: The service instance metadata."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -324,6 +344,13 @@ pub mod private_link_services_for_edm_upload {
                 private_link_services_for_edm_upload_description: private_link_services_for_edm_upload_description.into(),
             }
         }
+        #[doc = "Update the metadata of a privateLinkServicesForEDMUpload instance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the service instance."]
+        #[doc = "* `resource_name`: The name of the service instance."]
+        #[doc = "* `service_patch_description`: The service instance metadata and security metadata."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -339,12 +366,21 @@ pub mod private_link_services_for_edm_upload {
                 service_patch_description: service_patch_description.into(),
             }
         }
+        #[doc = "Get all the privateLinkServicesForEDMUpload instances in a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get all the service instances in a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the service instance."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -671,6 +707,12 @@ pub mod services {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Delete a service instance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the service instance."]
+        #[doc = "* `resource_name`: The name of the service instance."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -740,6 +782,12 @@ pub mod private_endpoint_connections_for_edm {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all private endpoint connections for a service."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the service instance."]
+        #[doc = "* `resource_name`: The name of the service instance."]
         pub fn list_by_service(
             &self,
             subscription_id: impl Into<String>,
@@ -753,6 +801,13 @@ pub mod private_endpoint_connections_for_edm {
                 resource_name: resource_name.into(),
             }
         }
+        #[doc = "Gets the specified private endpoint connection associated with the service."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the service instance."]
+        #[doc = "* `resource_name`: The name of the service instance."]
+        #[doc = "* `private_endpoint_connection_name`: The name of the private endpoint connection associated with the Azure resource"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -768,6 +823,14 @@ pub mod private_endpoint_connections_for_edm {
                 private_endpoint_connection_name: private_endpoint_connection_name.into(),
             }
         }
+        #[doc = "Update the state of the specified private endpoint connection associated with the service."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the service instance."]
+        #[doc = "* `resource_name`: The name of the service instance."]
+        #[doc = "* `private_endpoint_connection_name`: The name of the private endpoint connection associated with the Azure resource"]
+        #[doc = "* `properties`: The private endpoint connection properties."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -785,6 +848,13 @@ pub mod private_endpoint_connections_for_edm {
                 properties: properties.into(),
             }
         }
+        #[doc = "Deletes a private endpoint connection."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the service instance."]
+        #[doc = "* `resource_name`: The name of the service instance."]
+        #[doc = "* `private_endpoint_connection_name`: The name of the private endpoint connection associated with the Azure resource"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1035,6 +1105,12 @@ pub mod private_link_resources {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the private link resources that need to be created for a service."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the service instance."]
+        #[doc = "* `resource_name`: The name of the service instance."]
         pub fn list_by_service(
             &self,
             subscription_id: impl Into<String>,
@@ -1048,6 +1124,13 @@ pub mod private_link_resources {
                 resource_name: resource_name.into(),
             }
         }
+        #[doc = "Gets a private link resource that need to be created for a service."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the service instance."]
+        #[doc = "* `resource_name`: The name of the service instance."]
+        #[doc = "* `group_name`: The name of the private link resource group."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1162,6 +1245,12 @@ pub mod private_link_services_for_m365_compliance_center {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get the metadata of a privateLinkServicesForM365ComplianceCenter resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the service instance."]
+        #[doc = "* `resource_name`: The name of the service instance."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1175,6 +1264,13 @@ pub mod private_link_services_for_m365_compliance_center {
                 resource_name: resource_name.into(),
             }
         }
+        #[doc = "Create or update the metadata of a privateLinkServicesForM365ComplianceCenter instance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the service instance."]
+        #[doc = "* `resource_name`: The name of the service instance."]
+        #[doc = "* `private_link_services_for_m365_compliance_center_description`: The service instance metadata."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -1193,6 +1289,13 @@ pub mod private_link_services_for_m365_compliance_center {
                     .into(),
             }
         }
+        #[doc = "Update the metadata of a privateLinkServicesForM365ComplianceCenter instance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the service instance."]
+        #[doc = "* `resource_name`: The name of the service instance."]
+        #[doc = "* `service_patch_description`: The service instance metadata and security metadata."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -1208,6 +1311,12 @@ pub mod private_link_services_for_m365_compliance_center {
                 service_patch_description: service_patch_description.into(),
             }
         }
+        #[doc = "Delete a service instance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the service instance."]
+        #[doc = "* `resource_name`: The name of the service instance."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1221,12 +1330,21 @@ pub mod private_link_services_for_m365_compliance_center {
                 resource_name: resource_name.into(),
             }
         }
+        #[doc = "Get all the privateLinkServicesForM365ComplianceCenter instances in a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get all the service instances in a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the service instance."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -1609,6 +1727,12 @@ pub mod private_endpoint_connections_comp {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all private endpoint connections for a service."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the service instance."]
+        #[doc = "* `resource_name`: The name of the service instance."]
         pub fn list_by_service(
             &self,
             subscription_id: impl Into<String>,
@@ -1622,6 +1746,13 @@ pub mod private_endpoint_connections_comp {
                 resource_name: resource_name.into(),
             }
         }
+        #[doc = "Gets the specified private endpoint connection associated with the service."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the service instance."]
+        #[doc = "* `resource_name`: The name of the service instance."]
+        #[doc = "* `private_endpoint_connection_name`: The name of the private endpoint connection associated with the Azure resource"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1637,6 +1768,14 @@ pub mod private_endpoint_connections_comp {
                 private_endpoint_connection_name: private_endpoint_connection_name.into(),
             }
         }
+        #[doc = "Update the state of the specified private endpoint connection associated with the service."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the service instance."]
+        #[doc = "* `resource_name`: The name of the service instance."]
+        #[doc = "* `private_endpoint_connection_name`: The name of the private endpoint connection associated with the Azure resource"]
+        #[doc = "* `properties`: The private endpoint connection properties."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -1654,6 +1793,13 @@ pub mod private_endpoint_connections_comp {
                 properties: properties.into(),
             }
         }
+        #[doc = "Deletes a private endpoint connection."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the service instance."]
+        #[doc = "* `resource_name`: The name of the service instance."]
+        #[doc = "* `private_endpoint_connection_name`: The name of the private endpoint connection associated with the Azure resource"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1904,6 +2050,12 @@ pub mod private_link_resources_comp {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the private link resources that need to be created for a service."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the service instance."]
+        #[doc = "* `resource_name`: The name of the service instance."]
         pub fn list_by_service(
             &self,
             subscription_id: impl Into<String>,
@@ -1917,6 +2069,13 @@ pub mod private_link_resources_comp {
                 resource_name: resource_name.into(),
             }
         }
+        #[doc = "Gets a private link resource that need to be created for a service."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the service instance."]
+        #[doc = "* `resource_name`: The name of the service instance."]
+        #[doc = "* `group_name`: The name of the private link resource group."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -2031,6 +2190,12 @@ pub mod private_link_services_for_m365_security_center {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get the metadata of a privateLinkServicesForM365SecurityCenter resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the service instance."]
+        #[doc = "* `resource_name`: The name of the service instance."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -2044,6 +2209,13 @@ pub mod private_link_services_for_m365_security_center {
                 resource_name: resource_name.into(),
             }
         }
+        #[doc = "Create or update the metadata of a privateLinkServicesForM365SecurityCenter instance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the service instance."]
+        #[doc = "* `resource_name`: The name of the service instance."]
+        #[doc = "* `private_link_services_for_m365_security_center_description`: The service instance metadata."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -2060,6 +2232,13 @@ pub mod private_link_services_for_m365_security_center {
                     .into(),
             }
         }
+        #[doc = "Update the metadata of a privateLinkServicesForM365SecurityCenter instance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the service instance."]
+        #[doc = "* `resource_name`: The name of the service instance."]
+        #[doc = "* `service_patch_description`: The service instance metadata and security metadata."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -2075,6 +2254,12 @@ pub mod private_link_services_for_m365_security_center {
                 service_patch_description: service_patch_description.into(),
             }
         }
+        #[doc = "Delete a service instance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the service instance."]
+        #[doc = "* `resource_name`: The name of the service instance."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -2088,12 +2273,21 @@ pub mod private_link_services_for_m365_security_center {
                 resource_name: resource_name.into(),
             }
         }
+        #[doc = "Get all the privateLinkServicesForM365SecurityCenter instances in a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get all the service instances in a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the service instance."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -2476,6 +2670,12 @@ pub mod private_endpoint_connections_sec {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all private endpoint connections for a service."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the service instance."]
+        #[doc = "* `resource_name`: The name of the service instance."]
         pub fn list_by_service(
             &self,
             subscription_id: impl Into<String>,
@@ -2489,6 +2689,13 @@ pub mod private_endpoint_connections_sec {
                 resource_name: resource_name.into(),
             }
         }
+        #[doc = "Gets the specified private endpoint connection associated with the service."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the service instance."]
+        #[doc = "* `resource_name`: The name of the service instance."]
+        #[doc = "* `private_endpoint_connection_name`: The name of the private endpoint connection associated with the Azure resource"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -2504,6 +2711,14 @@ pub mod private_endpoint_connections_sec {
                 private_endpoint_connection_name: private_endpoint_connection_name.into(),
             }
         }
+        #[doc = "Update the state of the specified private endpoint connection associated with the service."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the service instance."]
+        #[doc = "* `resource_name`: The name of the service instance."]
+        #[doc = "* `private_endpoint_connection_name`: The name of the private endpoint connection associated with the Azure resource"]
+        #[doc = "* `properties`: The private endpoint connection properties."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -2521,6 +2736,13 @@ pub mod private_endpoint_connections_sec {
                 properties: properties.into(),
             }
         }
+        #[doc = "Deletes a private endpoint connection."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the service instance."]
+        #[doc = "* `resource_name`: The name of the service instance."]
+        #[doc = "* `private_endpoint_connection_name`: The name of the private endpoint connection associated with the Azure resource"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -2771,6 +2993,12 @@ pub mod private_link_resources_sec {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the private link resources that need to be created for a service."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the service instance."]
+        #[doc = "* `resource_name`: The name of the service instance."]
         pub fn list_by_service(
             &self,
             subscription_id: impl Into<String>,
@@ -2784,6 +3012,13 @@ pub mod private_link_resources_sec {
                 resource_name: resource_name.into(),
             }
         }
+        #[doc = "Gets a private link resource that need to be created for a service."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the service instance."]
+        #[doc = "* `resource_name`: The name of the service instance."]
+        #[doc = "* `group_name`: The name of the private link resource group."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -2898,6 +3133,12 @@ pub mod private_link_services_for_o365_management_activity_api {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get the metadata of a privateLinkServicesForO365ManagementActivityAPI resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the service instance."]
+        #[doc = "* `resource_name`: The name of the service instance."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -2911,6 +3152,13 @@ pub mod private_link_services_for_o365_management_activity_api {
                 resource_name: resource_name.into(),
             }
         }
+        #[doc = "Create or update the metadata of a privateLinkServicesForO365ManagementActivityAPI instance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the service instance."]
+        #[doc = "* `resource_name`: The name of the service instance."]
+        #[doc = "* `private_link_services_for_o365_management_activity_api_description`: The service instance metadata."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -2929,6 +3177,13 @@ pub mod private_link_services_for_o365_management_activity_api {
                     private_link_services_for_o365_management_activity_api_description.into(),
             }
         }
+        #[doc = "Update the metadata of a privateLinkServicesForO365ManagementActivityAPI instance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the service instance."]
+        #[doc = "* `resource_name`: The name of the service instance."]
+        #[doc = "* `service_patch_description`: The service instance metadata and security metadata."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -2944,6 +3199,12 @@ pub mod private_link_services_for_o365_management_activity_api {
                 service_patch_description: service_patch_description.into(),
             }
         }
+        #[doc = "Delete a service instance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the service instance."]
+        #[doc = "* `resource_name`: The name of the service instance."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -2957,12 +3218,21 @@ pub mod private_link_services_for_o365_management_activity_api {
                 resource_name: resource_name.into(),
             }
         }
+        #[doc = "Get all the privateLinkServicesForO365ManagementActivityAPI instances in a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get all the service instances in a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the service instance."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -3345,6 +3615,12 @@ pub mod private_endpoint_connections_adt_api {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all private endpoint connections for a service."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the service instance."]
+        #[doc = "* `resource_name`: The name of the service instance."]
         pub fn list_by_service(
             &self,
             subscription_id: impl Into<String>,
@@ -3358,6 +3634,13 @@ pub mod private_endpoint_connections_adt_api {
                 resource_name: resource_name.into(),
             }
         }
+        #[doc = "Gets the specified private endpoint connection associated with the service."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the service instance."]
+        #[doc = "* `resource_name`: The name of the service instance."]
+        #[doc = "* `private_endpoint_connection_name`: The name of the private endpoint connection associated with the Azure resource"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -3373,6 +3656,14 @@ pub mod private_endpoint_connections_adt_api {
                 private_endpoint_connection_name: private_endpoint_connection_name.into(),
             }
         }
+        #[doc = "Update the state of the specified private endpoint connection associated with the service."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the service instance."]
+        #[doc = "* `resource_name`: The name of the service instance."]
+        #[doc = "* `private_endpoint_connection_name`: The name of the private endpoint connection associated with the Azure resource"]
+        #[doc = "* `properties`: The private endpoint connection properties."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -3390,6 +3681,13 @@ pub mod private_endpoint_connections_adt_api {
                 properties: properties.into(),
             }
         }
+        #[doc = "Deletes a private endpoint connection."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the service instance."]
+        #[doc = "* `resource_name`: The name of the service instance."]
+        #[doc = "* `private_endpoint_connection_name`: The name of the private endpoint connection associated with the Azure resource"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -3640,6 +3938,12 @@ pub mod private_link_resources_adt_api {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the private link resources that need to be created for a service."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the service instance."]
+        #[doc = "* `resource_name`: The name of the service instance."]
         pub fn list_by_service(
             &self,
             subscription_id: impl Into<String>,
@@ -3653,6 +3957,13 @@ pub mod private_link_resources_adt_api {
                 resource_name: resource_name.into(),
             }
         }
+        #[doc = "Gets a private link resource that need to be created for a service."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the service instance."]
+        #[doc = "* `resource_name`: The name of the service instance."]
+        #[doc = "* `group_name`: The name of the private link resource group."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -3767,6 +4078,12 @@ pub mod private_link_services_for_scc_powershell {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get the metadata of a privateLinkServicesForSCCPowershell resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the service instance."]
+        #[doc = "* `resource_name`: The name of the service instance."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -3780,6 +4097,13 @@ pub mod private_link_services_for_scc_powershell {
                 resource_name: resource_name.into(),
             }
         }
+        #[doc = "Create or update the metadata of a privateLinkServicesForSCCPowershell instance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the service instance."]
+        #[doc = "* `resource_name`: The name of the service instance."]
+        #[doc = "* `private_link_services_for_scc_powershell_description`: The service instance metadata."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -3795,6 +4119,13 @@ pub mod private_link_services_for_scc_powershell {
                 private_link_services_for_scc_powershell_description: private_link_services_for_scc_powershell_description.into(),
             }
         }
+        #[doc = "Update the metadata of a privateLinkServicesForSCCPowershell instance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the service instance."]
+        #[doc = "* `resource_name`: The name of the service instance."]
+        #[doc = "* `service_patch_description`: The service instance metadata and security metadata."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -3810,6 +4141,12 @@ pub mod private_link_services_for_scc_powershell {
                 service_patch_description: service_patch_description.into(),
             }
         }
+        #[doc = "Delete a service instance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the service instance."]
+        #[doc = "* `resource_name`: The name of the service instance."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -3823,12 +4160,21 @@ pub mod private_link_services_for_scc_powershell {
                 resource_name: resource_name.into(),
             }
         }
+        #[doc = "Get all the privateLinkServicesForSCCPowershell instances in a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get all the service instances in a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the service instance."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -4205,6 +4551,12 @@ pub mod private_endpoint_connections_for_scc_powershell {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all private endpoint connections for a service."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the service instance."]
+        #[doc = "* `resource_name`: The name of the service instance."]
         pub fn list_by_service(
             &self,
             subscription_id: impl Into<String>,
@@ -4218,6 +4570,13 @@ pub mod private_endpoint_connections_for_scc_powershell {
                 resource_name: resource_name.into(),
             }
         }
+        #[doc = "Gets the specified private endpoint connection associated with the service."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the service instance."]
+        #[doc = "* `resource_name`: The name of the service instance."]
+        #[doc = "* `private_endpoint_connection_name`: The name of the private endpoint connection associated with the Azure resource"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -4233,6 +4592,14 @@ pub mod private_endpoint_connections_for_scc_powershell {
                 private_endpoint_connection_name: private_endpoint_connection_name.into(),
             }
         }
+        #[doc = "Update the state of the specified private endpoint connection associated with the service."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the service instance."]
+        #[doc = "* `resource_name`: The name of the service instance."]
+        #[doc = "* `private_endpoint_connection_name`: The name of the private endpoint connection associated with the Azure resource"]
+        #[doc = "* `properties`: The private endpoint connection properties."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -4250,6 +4617,13 @@ pub mod private_endpoint_connections_for_scc_powershell {
                 properties: properties.into(),
             }
         }
+        #[doc = "Deletes a private endpoint connection."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the service instance."]
+        #[doc = "* `resource_name`: The name of the service instance."]
+        #[doc = "* `private_endpoint_connection_name`: The name of the private endpoint connection associated with the Azure resource"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -4500,6 +4874,12 @@ pub mod private_link_resources_for_scc_powershell {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the private link resources that need to be created for a service."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the service instance."]
+        #[doc = "* `resource_name`: The name of the service instance."]
         pub fn list_by_service(
             &self,
             subscription_id: impl Into<String>,
@@ -4513,6 +4893,13 @@ pub mod private_link_resources_for_scc_powershell {
                 resource_name: resource_name.into(),
             }
         }
+        #[doc = "Gets a private link resource that need to be created for a service."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the service instance."]
+        #[doc = "* `resource_name`: The name of the service instance."]
+        #[doc = "* `group_name`: The name of the private link resource group."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -4627,6 +5014,12 @@ pub mod private_link_services_for_mip_policy_sync {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get the metadata of a privateLinkServicesForMIPPolicySync resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the service instance."]
+        #[doc = "* `resource_name`: The name of the service instance."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -4640,6 +5033,13 @@ pub mod private_link_services_for_mip_policy_sync {
                 resource_name: resource_name.into(),
             }
         }
+        #[doc = "Create or update the metadata of a privateLinkServicesForMIPPolicySync instance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the service instance."]
+        #[doc = "* `resource_name`: The name of the service instance."]
+        #[doc = "* `private_link_services_for_mip_policy_sync_description`: The service instance metadata."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -4655,6 +5055,13 @@ pub mod private_link_services_for_mip_policy_sync {
                 private_link_services_for_mip_policy_sync_description: private_link_services_for_mip_policy_sync_description.into(),
             }
         }
+        #[doc = "Update the metadata of a privateLinkServicesForMIPPolicySync instance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the service instance."]
+        #[doc = "* `resource_name`: The name of the service instance."]
+        #[doc = "* `service_patch_description`: The service instance metadata and security metadata."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -4670,6 +5077,12 @@ pub mod private_link_services_for_mip_policy_sync {
                 service_patch_description: service_patch_description.into(),
             }
         }
+        #[doc = "Delete a service instance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the service instance."]
+        #[doc = "* `resource_name`: The name of the service instance."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -4683,12 +5096,21 @@ pub mod private_link_services_for_mip_policy_sync {
                 resource_name: resource_name.into(),
             }
         }
+        #[doc = "Get all the privateLinkServicesForMIPPolicySync instances in a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get all the service instances in a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the service instance."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -5065,6 +5487,12 @@ pub mod private_endpoint_connections_for_mip_policy_sync {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all private endpoint connections for a service."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the service instance."]
+        #[doc = "* `resource_name`: The name of the service instance."]
         pub fn list_by_service(
             &self,
             subscription_id: impl Into<String>,
@@ -5078,6 +5506,13 @@ pub mod private_endpoint_connections_for_mip_policy_sync {
                 resource_name: resource_name.into(),
             }
         }
+        #[doc = "Gets the specified private endpoint connection associated with the service."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the service instance."]
+        #[doc = "* `resource_name`: The name of the service instance."]
+        #[doc = "* `private_endpoint_connection_name`: The name of the private endpoint connection associated with the Azure resource"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -5093,6 +5528,14 @@ pub mod private_endpoint_connections_for_mip_policy_sync {
                 private_endpoint_connection_name: private_endpoint_connection_name.into(),
             }
         }
+        #[doc = "Update the state of the specified private endpoint connection associated with the service."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the service instance."]
+        #[doc = "* `resource_name`: The name of the service instance."]
+        #[doc = "* `private_endpoint_connection_name`: The name of the private endpoint connection associated with the Azure resource"]
+        #[doc = "* `properties`: The private endpoint connection properties."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -5110,6 +5553,13 @@ pub mod private_endpoint_connections_for_mip_policy_sync {
                 properties: properties.into(),
             }
         }
+        #[doc = "Deletes a private endpoint connection."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the service instance."]
+        #[doc = "* `resource_name`: The name of the service instance."]
+        #[doc = "* `private_endpoint_connection_name`: The name of the private endpoint connection associated with the Azure resource"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -5360,6 +5810,12 @@ pub mod private_link_resources_for_mip_policy_sync {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the private link resources that need to be created for a service."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the service instance."]
+        #[doc = "* `resource_name`: The name of the service instance."]
         pub fn list_by_service(
             &self,
             subscription_id: impl Into<String>,
@@ -5373,6 +5829,13 @@ pub mod private_link_resources_for_mip_policy_sync {
                 resource_name: resource_name.into(),
             }
         }
+        #[doc = "Gets a private link resource that need to be created for a service."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the service instance."]
+        #[doc = "* `resource_name`: The name of the service instance."]
+        #[doc = "* `group_name`: The name of the private link resource group."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,

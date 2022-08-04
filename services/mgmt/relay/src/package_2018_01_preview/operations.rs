@@ -91,6 +91,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all available Relay REST API operations."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -169,6 +170,11 @@ pub mod namespaces {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Check the specified namespace name availability."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `parameters`: Parameters to check availability of the specified namespace name."]
         pub fn check_name_availability(
             &self,
             subscription_id: impl Into<String>,
@@ -180,12 +186,21 @@ pub mod namespaces {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Lists all the available namespaces within the subscription regardless of the resourceGroups."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists all the available namespaces within the ResourceGroup."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the Resource group within the Azure subscription."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_resource_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -197,6 +212,12 @@ pub mod namespaces {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Returns the description for the specified namespace."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the Resource group within the Azure subscription."]
+        #[doc = "* `namespace_name`: The namespace name"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -210,6 +231,13 @@ pub mod namespaces {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Create Azure Relay namespace."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the Resource group within the Azure subscription."]
+        #[doc = "* `namespace_name`: The namespace name"]
+        #[doc = "* `parameters`: Parameters supplied to create a namespace resource."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -225,6 +253,13 @@ pub mod namespaces {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates a namespace. Once created, this namespace's resource manifest is immutable. This operation is idempotent."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the Resource group within the Azure subscription."]
+        #[doc = "* `namespace_name`: The namespace name"]
+        #[doc = "* `parameters`: Parameters for updating a namespace resource."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -240,6 +275,12 @@ pub mod namespaces {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes an existing namespace. This operation also removes all associated resources under the namespace."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the Resource group within the Azure subscription."]
+        #[doc = "* `namespace_name`: The namespace name"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -253,6 +294,12 @@ pub mod namespaces {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets NetworkRuleSet for a Namespace."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the Resource group within the Azure subscription."]
+        #[doc = "* `namespace_name`: The namespace name"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get_network_rule_set(
             &self,
             resource_group_name: impl Into<String>,
@@ -266,6 +313,13 @@ pub mod namespaces {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Create or update NetworkRuleSet for a Namespace."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the Resource group within the Azure subscription."]
+        #[doc = "* `namespace_name`: The namespace name"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `parameters`: The Namespace IpFilterRule."]
         pub fn create_or_update_network_rule_set(
             &self,
             resource_group_name: impl Into<String>,
@@ -828,6 +882,12 @@ pub mod private_endpoint_connections {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all Private Endpoint Connections for the Relay namespace."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the Resource group within the Azure subscription."]
+        #[doc = "* `namespace_name`: The namespace name"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_namespace(
             &self,
             resource_group_name: impl Into<String>,
@@ -841,6 +901,13 @@ pub mod private_endpoint_connections {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the specified private endpoint connection associated with the Relay Namespace."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the Resource group within the Azure subscription."]
+        #[doc = "* `namespace_name`: The namespace name"]
+        #[doc = "* `private_endpoint_connection_name`: The PrivateEndpointConnection name."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -856,6 +923,14 @@ pub mod private_endpoint_connections {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates the specified private endpoint connection associated with the Relay namespace."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Name of the Resource group within the Azure subscription."]
+        #[doc = "* `namespace_name`: The namespace name"]
+        #[doc = "* `private_endpoint_connection_name`: The PrivateEndpointConnection name."]
+        #[doc = "* `parameters`: The intended state of private endpoint connection."]
         pub fn put(
             &self,
             subscription_id: impl Into<String>,
@@ -873,6 +948,13 @@ pub mod private_endpoint_connections {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Deletes the specified private endpoint connection associated with the relay namespace."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the Resource group within the Azure subscription."]
+        #[doc = "* `namespace_name`: The namespace name"]
+        #[doc = "* `private_endpoint_connection_name`: The PrivateEndpointConnection name."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -1143,6 +1225,14 @@ pub mod operation_status_private_endpoint_connections {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the Operation status of private endpoint connection associated with Relay namespace."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the Resource group within the Azure subscription."]
+        #[doc = "* `namespace_name`: The namespace name"]
+        #[doc = "* `private_endpoint_connection_name`: The PrivateEndpointConnection name."]
+        #[doc = "* `operation_type`: Client API version."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -1213,6 +1303,12 @@ pub mod operation_status_private_endpoint_connections {
     }
 }
 impl Client {
+    #[doc = "Gets the private link resources supported for the Relay namespace"]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `resource_group_name`: Name of the Resource group within the Azure subscription."]
+    #[doc = "* `namespace_name`: The namespace name"]
+    #[doc = "* `subscription_id`: Subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
     pub fn private_link_resources_get(
         &self,
         resource_group_name: impl Into<String>,

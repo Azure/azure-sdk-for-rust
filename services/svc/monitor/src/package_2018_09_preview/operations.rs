@@ -82,6 +82,18 @@ pub mod metrics {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "**Post the metric values for a resource**."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `content_type`: Supports application/json and application/x-ndjson"]
+        #[doc = "* `content_length`: Content length of the payload"]
+        #[doc = "* `authorization`: Authorization token issue for issued for audience \"https:\\\\monitoring.azure.com\\\""]
+        #[doc = "* `subscription_id`: The azure subscription id"]
+        #[doc = "* `resource_group_name`: The ARM resource group name"]
+        #[doc = "* `resource_provider`: The ARM resource provider name"]
+        #[doc = "* `resource_type_name`: The ARM resource type name"]
+        #[doc = "* `resource_name`: The ARM resource name"]
+        #[doc = "* `body`: The Azure metrics document json payload"]
         pub fn create(
             &self,
             content_type: impl Into<String>,

@@ -91,6 +91,13 @@ pub mod availability_group_listeners {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets an availability group listener."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `sql_virtual_machine_group_name`: Name of the SQL virtual machine group."]
+        #[doc = "* `availability_group_listener_name`: Name of the availability group listener."]
+        #[doc = "* `subscription_id`: Subscription ID that identifies an Azure subscription."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -106,6 +113,14 @@ pub mod availability_group_listeners {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates an availability group listener."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `sql_virtual_machine_group_name`: Name of the SQL virtual machine group."]
+        #[doc = "* `availability_group_listener_name`: Name of the availability group listener."]
+        #[doc = "* `parameters`: The availability group listener."]
+        #[doc = "* `subscription_id`: Subscription ID that identifies an Azure subscription."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -123,6 +138,13 @@ pub mod availability_group_listeners {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes an availability group listener."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `sql_virtual_machine_group_name`: Name of the SQL virtual machine group."]
+        #[doc = "* `availability_group_listener_name`: Name of the availability group listener."]
+        #[doc = "* `subscription_id`: Subscription ID that identifies an Azure subscription."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -138,6 +160,12 @@ pub mod availability_group_listeners {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists all availability group listeners in a SQL virtual machine group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `sql_virtual_machine_group_name`: Name of the SQL virtual machine group."]
+        #[doc = "* `subscription_id`: Subscription ID that identifies an Azure subscription."]
         pub fn list_by_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -386,6 +414,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all of the available SQL Rest API operations."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -467,6 +496,12 @@ pub mod sql_virtual_machine_groups {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a SQL virtual machine group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `sql_virtual_machine_group_name`: Name of the SQL virtual machine group."]
+        #[doc = "* `subscription_id`: Subscription ID that identifies an Azure subscription."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -480,6 +515,13 @@ pub mod sql_virtual_machine_groups {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates a SQL virtual machine group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `sql_virtual_machine_group_name`: Name of the SQL virtual machine group."]
+        #[doc = "* `parameters`: The SQL virtual machine group."]
+        #[doc = "* `subscription_id`: Subscription ID that identifies an Azure subscription."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -495,6 +537,13 @@ pub mod sql_virtual_machine_groups {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates SQL virtual machine group tags."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `sql_virtual_machine_group_name`: Name of the SQL virtual machine group."]
+        #[doc = "* `parameters`: The SQL virtual machine group."]
+        #[doc = "* `subscription_id`: Subscription ID that identifies an Azure subscription."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -510,6 +559,12 @@ pub mod sql_virtual_machine_groups {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes a SQL virtual machine group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `sql_virtual_machine_group_name`: Name of the SQL virtual machine group."]
+        #[doc = "* `subscription_id`: Subscription ID that identifies an Azure subscription."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -523,6 +578,11 @@ pub mod sql_virtual_machine_groups {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets all SQL virtual machine groups in a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `subscription_id`: Subscription ID that identifies an Azure subscription."]
         pub fn list_by_resource_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -534,6 +594,10 @@ pub mod sql_virtual_machine_groups {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets all SQL virtual machine groups in a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription ID that identifies an Azure subscription."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -923,6 +987,12 @@ pub mod sql_virtual_machines {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the list of sql virtual machines in a SQL virtual machine group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `sql_virtual_machine_group_name`: Name of the SQL virtual machine group."]
+        #[doc = "* `subscription_id`: Subscription ID that identifies an Azure subscription."]
         pub fn list_by_sql_vm_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -936,12 +1006,22 @@ pub mod sql_virtual_machines {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets all SQL virtual machines in a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription ID that identifies an Azure subscription."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets a SQL virtual machine."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `sql_virtual_machine_name`: Name of the SQL virtual machine."]
+        #[doc = "* `subscription_id`: Subscription ID that identifies an Azure subscription."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -956,6 +1036,13 @@ pub mod sql_virtual_machines {
                 expand: None,
             }
         }
+        #[doc = "Creates or updates a SQL virtual machine."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `sql_virtual_machine_name`: Name of the SQL virtual machine."]
+        #[doc = "* `parameters`: The SQL virtual machine."]
+        #[doc = "* `subscription_id`: Subscription ID that identifies an Azure subscription."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -971,6 +1058,13 @@ pub mod sql_virtual_machines {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates a SQL virtual machine."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `sql_virtual_machine_name`: Name of the SQL virtual machine."]
+        #[doc = "* `parameters`: The SQL virtual machine."]
+        #[doc = "* `subscription_id`: Subscription ID that identifies an Azure subscription."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -986,6 +1080,12 @@ pub mod sql_virtual_machines {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes a SQL virtual machine."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `sql_virtual_machine_name`: Name of the SQL virtual machine."]
+        #[doc = "* `subscription_id`: Subscription ID that identifies an Azure subscription."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -999,6 +1099,11 @@ pub mod sql_virtual_machines {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets all SQL virtual machines in a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `subscription_id`: Subscription ID that identifies an Azure subscription."]
         pub fn list_by_resource_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -1169,6 +1274,7 @@ pub mod sql_virtual_machines {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "The child resources to include in the response."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self

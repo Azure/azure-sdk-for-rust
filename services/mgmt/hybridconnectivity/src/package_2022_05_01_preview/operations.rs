@@ -85,6 +85,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists the available Hybrid Connectivity REST API operations."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -166,12 +167,21 @@ pub mod endpoints {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List of endpoints to the target resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_uri`: The fully qualified Azure Resource manager identifier of the resource to be connected."]
         pub fn list(&self, resource_uri: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
                 resource_uri: resource_uri.into(),
             }
         }
+        #[doc = "Gets the endpoint to the resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_uri`: The fully qualified Azure Resource manager identifier of the resource to be connected."]
+        #[doc = "* `endpoint_name`: The endpoint name."]
         pub fn get(&self, resource_uri: impl Into<String>, endpoint_name: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -179,6 +189,12 @@ pub mod endpoints {
                 endpoint_name: endpoint_name.into(),
             }
         }
+        #[doc = "Create or update the endpoint to the target resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_uri`: The fully qualified Azure Resource manager identifier of the resource to be connected."]
+        #[doc = "* `endpoint_name`: The endpoint name."]
+        #[doc = "* `endpoint_resource`: Endpoint details"]
         pub fn create_or_update(
             &self,
             resource_uri: impl Into<String>,
@@ -192,6 +208,12 @@ pub mod endpoints {
                 endpoint_resource: endpoint_resource.into(),
             }
         }
+        #[doc = "Update the endpoint to the target resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_uri`: The fully qualified Azure Resource manager identifier of the resource to be connected."]
+        #[doc = "* `endpoint_name`: The endpoint name."]
+        #[doc = "* `endpoint_resource`: Endpoint details"]
         pub fn update(
             &self,
             resource_uri: impl Into<String>,
@@ -205,6 +227,11 @@ pub mod endpoints {
                 endpoint_resource: endpoint_resource.into(),
             }
         }
+        #[doc = "Deletes the endpoint access to the target resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_uri`: The fully qualified Azure Resource manager identifier of the resource to be connected."]
+        #[doc = "* `endpoint_name`: The endpoint name."]
         pub fn delete(&self, resource_uri: impl Into<String>, endpoint_name: impl Into<String>) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),
@@ -212,6 +239,11 @@ pub mod endpoints {
                 endpoint_name: endpoint_name.into(),
             }
         }
+        #[doc = "Gets the endpoint access credentials to the resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_uri`: The fully qualified Azure Resource manager identifier of the resource to be connected."]
+        #[doc = "* `endpoint_name`: The endpoint name."]
         pub fn list_credentials(&self, resource_uri: impl Into<String>, endpoint_name: impl Into<String>) -> list_credentials::Builder {
             list_credentials::Builder {
                 client: self.0.clone(),
@@ -220,6 +252,12 @@ pub mod endpoints {
                 expiresin: None,
             }
         }
+        #[doc = "Fetches the managed proxy details "]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_uri`: The fully qualified Azure Resource manager identifier of the resource to be connected."]
+        #[doc = "* `endpoint_name`: The endpoint name."]
+        #[doc = "* `managed_proxy_request`: Object of type ManagedProxyRequest"]
         pub fn list_managed_proxy_details(
             &self,
             resource_uri: impl Into<String>,
@@ -524,6 +562,7 @@ pub mod endpoints {
             pub(crate) expiresin: Option<i64>,
         }
         impl Builder {
+            #[doc = "The is how long the endpoint access token is valid (in seconds)."]
             pub fn expiresin(mut self, expiresin: i64) -> Self {
                 self.expiresin = Some(expiresin);
                 self

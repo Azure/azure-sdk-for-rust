@@ -107,6 +107,10 @@ pub mod assets {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "List Assets in a share."]
+        #[doc = "List assets on a sent share"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `sent_share_name`: The name of the sent share"]
         pub fn list(&self, sent_share_name: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -117,6 +121,11 @@ pub mod assets {
             }
         }
         #[doc = "Get asset in a sentShare."]
+        #[doc = "Get an asset on a sent share"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `sent_share_name`: The name of the sent share"]
+        #[doc = "* `asset_name`: The name of the asset"]
         pub fn get(&self, sent_share_name: impl Into<String>, asset_name: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -125,6 +134,12 @@ pub mod assets {
             }
         }
         #[doc = "Adds a new asset to an existing share."]
+        #[doc = "Create an asset on a sent share"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `sent_share_name`: The name of the sent share"]
+        #[doc = "* `asset_name`: The name of the asset"]
+        #[doc = "* `asset`: The asset payload to be created."]
         pub fn create(
             &self,
             sent_share_name: impl Into<String>,
@@ -139,6 +154,11 @@ pub mod assets {
             }
         }
         #[doc = "Delete asset in a sentShare."]
+        #[doc = "Delete an asset on a sent share"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `sent_share_name`: The name of the sent share"]
+        #[doc = "* `asset_name`: The name of the asset"]
         pub fn delete(&self, sent_share_name: impl Into<String>, asset_name: impl Into<String>) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),
@@ -159,14 +179,17 @@ pub mod assets {
             pub(crate) orderby: Option<String>,
         }
         impl Builder {
+            #[doc = "The continuation token to list the next page"]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());
                 self
             }
+            #[doc = "Filters the results using OData syntax"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Sorts the results using OData syntax"]
             pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
                 self.orderby = Some(orderby.into());
                 self
@@ -398,6 +421,10 @@ pub mod asset_mappings {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "List AssetMappings in a received share."]
+        #[doc = "List asset mappings for a received share"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `received_share_name`: The name of the received share"]
         pub fn list(&self, received_share_name: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -408,6 +435,11 @@ pub mod asset_mappings {
             }
         }
         #[doc = "Get AssetMapping in a receivedShare."]
+        #[doc = "Get an asset mapping for a received share"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `received_share_name`: The name of the received share"]
+        #[doc = "* `asset_mapping_name`: The name of the asset mapping"]
         pub fn get(&self, received_share_name: impl Into<String>, asset_mapping_name: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -416,6 +448,12 @@ pub mod asset_mappings {
             }
         }
         #[doc = "Maps a source asset in the sent share to a destination asset in the received share."]
+        #[doc = "Create an asset mapping on a received share"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `received_share_name`: The name of the received share"]
+        #[doc = "* `asset_mapping_name`: The name of the asset mapping"]
+        #[doc = "* `asset_mapping`: The asset mapping payload."]
         pub fn create(
             &self,
             received_share_name: impl Into<String>,
@@ -430,6 +468,11 @@ pub mod asset_mappings {
             }
         }
         #[doc = "Delete AssetMapping in a receivedShare."]
+        #[doc = "Delete an asset mapping for a received share"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `received_share_name`: The name of the received share"]
+        #[doc = "* `asset_mapping_name`: The name of the asset mapping"]
         pub fn delete(&self, received_share_name: impl Into<String>, asset_mapping_name: impl Into<String>) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),
@@ -450,14 +493,17 @@ pub mod asset_mappings {
             pub(crate) orderby: Option<String>,
         }
         impl Builder {
+            #[doc = "The continuation token to list the next page"]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());
                 self
             }
+            #[doc = "Filters the results using OData syntax"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Sorts the results using OData syntax"]
             pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
                 self.orderby = Some(orderby.into());
                 self
@@ -701,6 +747,7 @@ pub mod received_invitations {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Lists the received invitations."]
+        #[doc = "List received invitations"]
         pub fn list(&self) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -710,6 +757,10 @@ pub mod received_invitations {
             }
         }
         #[doc = "Gets the received invitation identified by name"]
+        #[doc = "Get a received invitation"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `received_invitation_name`: Name of the received invitation"]
         pub fn get(&self, received_invitation_name: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -717,6 +768,11 @@ pub mod received_invitations {
             }
         }
         #[doc = "Rejects the received invitation identified by name"]
+        #[doc = "Reject a received invitation"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `received_invitation_name`: Name of the received invitation"]
+        #[doc = "* `received_invitation`: The received invitation to reject"]
         pub fn reject(
             &self,
             received_invitation_name: impl Into<String>,
@@ -741,14 +797,17 @@ pub mod received_invitations {
             pub(crate) orderby: Option<String>,
         }
         impl Builder {
+            #[doc = "The continuation token to list the next page"]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());
                 self
             }
+            #[doc = "Filters the results using OData syntax"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Sorts the results using OData syntax"]
             pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
                 self.orderby = Some(orderby.into());
                 self
@@ -882,6 +941,7 @@ pub mod received_invitations {
             pub(crate) repeatability_request_id: Option<String>,
         }
         impl Builder {
+            #[doc = "If specified, the client directs that the request is repeatable; that is, that the client can make the request multiple times with the same Repeatability-Request-Id and get back an appropriate response without the server executing the request multiple times. The value of the Repeatability-Request-Id is an opaque string representing a client-generated, globally unique for all time, identifier for the request. It is recommended to use version 4 (random) UUIDs."]
             pub fn repeatability_request_id(mut self, repeatability_request_id: impl Into<String>) -> Self {
                 self.repeatability_request_id = Some(repeatability_request_id.into());
                 self
@@ -935,6 +995,7 @@ pub mod received_shares {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get a list of received shares."]
+        #[doc = "List received shares"]
         pub fn list(&self) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -944,6 +1005,10 @@ pub mod received_shares {
             }
         }
         #[doc = "Get a received share by name."]
+        #[doc = "Get a received share"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `received_share_name`: The name of the received share"]
         pub fn get(&self, received_share_name: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -951,6 +1016,11 @@ pub mod received_shares {
             }
         }
         #[doc = "Create a received share in the given account."]
+        #[doc = "Create a received share"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `received_share_name`: The name of the received share"]
+        #[doc = "* `received_share`: The received share to create."]
         pub fn create(&self, received_share_name: impl Into<String>, received_share: impl Into<models::ReceivedShare>) -> create::Builder {
             create::Builder {
                 client: self.0.clone(),
@@ -959,6 +1029,10 @@ pub mod received_shares {
             }
         }
         #[doc = "Deletes a received share"]
+        #[doc = "Delete a received share"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `received_share_name`: The name of the received share"]
         pub fn delete(&self, received_share_name: impl Into<String>) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),
@@ -977,14 +1051,17 @@ pub mod received_shares {
             pub(crate) orderby: Option<String>,
         }
         impl Builder {
+            #[doc = "The continuation token to list the next page"]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());
                 self
             }
+            #[doc = "Filters the results using OData syntax"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Sorts the results using OData syntax"]
             pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
                 self.orderby = Some(orderby.into());
                 self
@@ -1199,6 +1276,10 @@ pub mod received_assets {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "List source asset of a received share."]
+        #[doc = "List received assets for a received share"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `received_share_name`: The name of the received share"]
         pub fn list(&self, received_share_name: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -1217,6 +1298,7 @@ pub mod received_assets {
             pub(crate) skip_token: Option<String>,
         }
         impl Builder {
+            #[doc = "The continuation token to list the next page"]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());
                 self
@@ -1295,6 +1377,7 @@ pub mod sent_shares {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get list of sent shares in the given Purview account."]
+        #[doc = "Get list of sent shares"]
         pub fn list(&self) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -1304,6 +1387,10 @@ pub mod sent_shares {
             }
         }
         #[doc = "Get a sent share in the given Purview account."]
+        #[doc = "Get a sent share"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `sent_share_name`: The name of the sent share"]
         pub fn get(&self, sent_share_name: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -1311,6 +1398,11 @@ pub mod sent_shares {
             }
         }
         #[doc = "Create a sent share in the given Purview account."]
+        #[doc = "Create a sent share"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `sent_share_name`: The name of the sent share"]
+        #[doc = "* `sent_share`: The sent share payload"]
         pub fn create_or_update(
             &self,
             sent_share_name: impl Into<String>,
@@ -1323,6 +1415,10 @@ pub mod sent_shares {
             }
         }
         #[doc = "Deletes a sent share"]
+        #[doc = "Delete a sent share"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `sent_share_name`: The name of the sent share"]
         pub fn delete(&self, sent_share_name: impl Into<String>) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),
@@ -1341,14 +1437,17 @@ pub mod sent_shares {
             pub(crate) orderby: Option<String>,
         }
         impl Builder {
+            #[doc = "The continuation token to list the next page"]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());
                 self
             }
+            #[doc = "Filters the results using OData syntax"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Sorts the results using OData syntax"]
             pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
                 self.orderby = Some(orderby.into());
                 self
@@ -1569,6 +1668,10 @@ pub mod accepted_sent_shares {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "List of accepted shares for the current sent share."]
+        #[doc = "Get list of accepted sent shares"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `sent_share_name`: The name of the sent share"]
         pub fn list(&self, sent_share_name: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -1577,6 +1680,11 @@ pub mod accepted_sent_shares {
             }
         }
         #[doc = "Get an accepted share with acceptedSentShareName to a particular sent share."]
+        #[doc = "Get an accepted sent share"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `sent_share_name`: The name of the sent share"]
+        #[doc = "* `accepted_sent_share_name`: The name of the accepted sent share"]
         pub fn get(&self, sent_share_name: impl Into<String>, accepted_sent_share_name: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -1585,6 +1693,12 @@ pub mod accepted_sent_shares {
             }
         }
         #[doc = "Reinstate a revoked accepted sent share."]
+        #[doc = "Reinstate a revoked accepted sent share"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `sent_share_name`: The name of the sent share"]
+        #[doc = "* `accepted_sent_share_name`: The name of the accepted sent share"]
+        #[doc = "* `accepted_sent_share`: The accepted sent share payload"]
         pub fn reinstate(
             &self,
             sent_share_name: impl Into<String>,
@@ -1600,6 +1714,11 @@ pub mod accepted_sent_shares {
             }
         }
         #[doc = "Revoke an accepted sent share's access"]
+        #[doc = "Revoke an accepted sent share"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `sent_share_name`: The name of the sent share"]
+        #[doc = "* `accepted_sent_share_name`: The name of the accepted sent share"]
         pub fn revoke(&self, sent_share_name: impl Into<String>, accepted_sent_share_name: impl Into<String>) -> revoke::Builder {
             revoke::Builder {
                 client: self.0.clone(),
@@ -1609,6 +1728,12 @@ pub mod accepted_sent_shares {
             }
         }
         #[doc = "Update the expiration date of an active accepted sent share."]
+        #[doc = "Update the expiration date of an accepted sent share"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `sent_share_name`: The name of the sent share"]
+        #[doc = "* `accepted_sent_share_name`: The name of the accepted sent share"]
+        #[doc = "* `accepted_sent_share`: The accepted sent share payload"]
         pub fn update_expiration(
             &self,
             sent_share_name: impl Into<String>,
@@ -1634,6 +1759,7 @@ pub mod accepted_sent_shares {
             pub(crate) skip_token: Option<String>,
         }
         impl Builder {
+            #[doc = "The continuation token to list the next page"]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());
                 self
@@ -1768,6 +1894,7 @@ pub mod accepted_sent_shares {
             pub(crate) repeatability_request_id: Option<String>,
         }
         impl Builder {
+            #[doc = "If specified, the client directs that the request is repeatable; that is, that the client can make the request multiple times with the same Repeatability-Request-Id and get back an appropriate response without the server executing the request multiple times. The value of the Repeatability-Request-Id is an opaque string representing a client-generated, globally unique for all time, identifier for the request. It is recommended to use version 4 (random) UUIDs."]
             pub fn repeatability_request_id(mut self, repeatability_request_id: impl Into<String>) -> Self {
                 self.repeatability_request_id = Some(repeatability_request_id.into());
                 self
@@ -1828,6 +1955,7 @@ pub mod accepted_sent_shares {
             pub(crate) repeatability_request_id: Option<String>,
         }
         impl Builder {
+            #[doc = "If specified, the client directs that the request is repeatable; that is, that the client can make the request multiple times with the same Repeatability-Request-Id and get back an appropriate response without the server executing the request multiple times. The value of the Repeatability-Request-Id is an opaque string representing a client-generated, globally unique for all time, identifier for the request. It is recommended to use version 4 (random) UUIDs."]
             pub fn repeatability_request_id(mut self, repeatability_request_id: impl Into<String>) -> Self {
                 self.repeatability_request_id = Some(repeatability_request_id.into());
                 self
@@ -1889,6 +2017,7 @@ pub mod accepted_sent_shares {
             pub(crate) repeatability_request_id: Option<String>,
         }
         impl Builder {
+            #[doc = "If specified, the client directs that the request is repeatable; that is, that the client can make the request multiple times with the same Repeatability-Request-Id and get back an appropriate response without the server executing the request multiple times. The value of the Repeatability-Request-Id is an opaque string representing a client-generated, globally unique for all time, identifier for the request. It is recommended to use version 4 (random) UUIDs."]
             pub fn repeatability_request_id(mut self, repeatability_request_id: impl Into<String>) -> Self {
                 self.repeatability_request_id = Some(repeatability_request_id.into());
                 self
@@ -1944,6 +2073,10 @@ pub mod sent_share_invitations {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "List all Invitations in a share."]
+        #[doc = "List sent share invitations"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `sent_share_name`: The name of the sent share"]
         pub fn list(&self, sent_share_name: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -1954,6 +2087,11 @@ pub mod sent_share_invitations {
             }
         }
         #[doc = "Get Invitation for a given share."]
+        #[doc = "Get a sent share invitation"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `sent_share_name`: The name of the sent share"]
+        #[doc = "* `sent_share_invitation_name`: Name of the sent invitation"]
         pub fn get(&self, sent_share_name: impl Into<String>, sent_share_invitation_name: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -1962,6 +2100,12 @@ pub mod sent_share_invitations {
             }
         }
         #[doc = "Create/Update a sent share invitation in the given account."]
+        #[doc = "Create a sent share invitation"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `sent_share_name`: The name of the sent share"]
+        #[doc = "* `sent_share_invitation_name`: Name of the sent invitation"]
+        #[doc = "* `sent_share_invitation`: The sent share invitation to create"]
         pub fn create_or_update(
             &self,
             sent_share_name: impl Into<String>,
@@ -1976,6 +2120,11 @@ pub mod sent_share_invitations {
             }
         }
         #[doc = "Delete Invitation in a share."]
+        #[doc = "Delete a sent share invitation"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `sent_share_name`: The name of the sent share"]
+        #[doc = "* `sent_share_invitation_name`: Name of the sent invitation"]
         pub fn delete(&self, sent_share_name: impl Into<String>, sent_share_invitation_name: impl Into<String>) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),
@@ -1996,14 +2145,17 @@ pub mod sent_share_invitations {
             pub(crate) orderby: Option<String>,
         }
         impl Builder {
+            #[doc = "The continuation token to list the next page"]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());
                 self
             }
+            #[doc = "Filters the results using OData syntax"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Sorts the results using OData syntax"]
             pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
                 self.orderby = Some(orderby.into());
                 self
@@ -2245,6 +2397,10 @@ pub mod email_registration {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Activates the tenant and email combination using the activation code received."]
+        #[doc = "Activates the email registration for current tenant"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `tenant_email_registration`: The tenant email registration payload"]
         pub fn activate(&self, tenant_email_registration: impl Into<models::TenantEmailRegistration>) -> activate::Builder {
             activate::Builder {
                 client: self.0.clone(),
@@ -2253,6 +2409,7 @@ pub mod email_registration {
             }
         }
         #[doc = "Registers the tenant and email combination for activation."]
+        #[doc = "Register an email for the current tenant"]
         pub fn register(&self) -> register::Builder {
             register::Builder {
                 client: self.0.clone(),
@@ -2270,6 +2427,7 @@ pub mod email_registration {
             pub(crate) repeatability_request_id: Option<String>,
         }
         impl Builder {
+            #[doc = "If specified, the client directs that the request is repeatable; that is, that the client can make the request multiple times with the same Repeatability-Request-Id and get back an appropriate response without the server executing the request multiple times. The value of the Repeatability-Request-Id is an opaque string representing a client-generated, globally unique for all time, identifier for the request. It is recommended to use version 4 (random) UUIDs."]
             pub fn repeatability_request_id(mut self, repeatability_request_id: impl Into<String>) -> Self {
                 self.repeatability_request_id = Some(repeatability_request_id.into());
                 self
@@ -2322,6 +2480,7 @@ pub mod email_registration {
             pub(crate) repeatability_request_id: Option<String>,
         }
         impl Builder {
+            #[doc = "If specified, the client directs that the request is repeatable; that is, that the client can make the request multiple times with the same Repeatability-Request-Id and get back an appropriate response without the server executing the request multiple times. The value of the Repeatability-Request-Id is an opaque string representing a client-generated, globally unique for all time, identifier for the request. It is recommended to use version 4 (random) UUIDs."]
             pub fn repeatability_request_id(mut self, repeatability_request_id: impl Into<String>) -> Self {
                 self.repeatability_request_id = Some(repeatability_request_id.into());
                 self

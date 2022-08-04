@@ -89,6 +89,11 @@ pub mod container_host_mappings {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Returns container host mapping object for a container host resource ID if an associated controller exists."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure subscription ID."]
+        #[doc = "* `resource_group_name`: Resource group to which the resource belongs."]
+        #[doc = "* `location`: Location of the container host."]
         pub fn get_container_host_mapping(
             &self,
             container_host_mapping: impl Into<models::ContainerHostMapping>,
@@ -170,6 +175,7 @@ pub mod operations {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Lists operations for the resource provider."]
+        #[doc = "Lists all the supported operations by the Microsoft.DevSpaces resource provider along with their description."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -250,6 +256,12 @@ pub mod controllers {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets an Azure Dev Spaces Controller."]
+        #[doc = "Gets the properties for an Azure Dev Spaces Controller."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure subscription ID."]
+        #[doc = "* `resource_group_name`: Resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the resource."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -264,6 +276,13 @@ pub mod controllers {
             }
         }
         #[doc = "Creates an Azure Dev Spaces Controller."]
+        #[doc = "Creates an Azure Dev Spaces Controller with the specified create parameters."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure subscription ID."]
+        #[doc = "* `resource_group_name`: Resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the resource."]
+        #[doc = "* `controller`: Controller create parameters."]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -280,6 +299,13 @@ pub mod controllers {
             }
         }
         #[doc = "Updates an Azure Dev Spaces Controller."]
+        #[doc = "Updates the properties of an existing Azure Dev Spaces Controller with the specified update parameters."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure subscription ID."]
+        #[doc = "* `resource_group_name`: Resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the resource."]
+        #[doc = "* `controller_update_parameters`: Parameters for updating the Azure Dev Spaces Controller."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -296,6 +322,12 @@ pub mod controllers {
             }
         }
         #[doc = "Deletes an Azure Dev Spaces Controller."]
+        #[doc = "Deletes an existing Azure Dev Spaces Controller."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure subscription ID."]
+        #[doc = "* `resource_group_name`: Resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the resource."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -310,6 +342,11 @@ pub mod controllers {
             }
         }
         #[doc = "Lists the Azure Dev Spaces Controllers in a resource group."]
+        #[doc = "Lists all the Azure Dev Spaces Controllers with their properties in the specified resource group and subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure subscription ID."]
+        #[doc = "* `resource_group_name`: Resource group to which the resource belongs."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -322,6 +359,10 @@ pub mod controllers {
             }
         }
         #[doc = "Lists the Azure Dev Spaces Controllers in a subscription."]
+        #[doc = "Lists all the Azure Dev Spaces Controllers with their properties in the subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure subscription ID."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -329,6 +370,13 @@ pub mod controllers {
             }
         }
         #[doc = "Lists connection details for an Azure Dev Spaces Controller."]
+        #[doc = "Lists connection details for the underlying container resources of an Azure Dev Spaces Controller."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure subscription ID."]
+        #[doc = "* `resource_group_name`: Resource group to which the resource belongs."]
+        #[doc = "* `name`: Name of the resource."]
+        #[doc = "* `list_connection_details_parameters`: Parameters for listing connection details of Azure Dev Spaces Controller."]
         pub fn list_connection_details(
             &self,
             subscription_id: impl Into<String>,

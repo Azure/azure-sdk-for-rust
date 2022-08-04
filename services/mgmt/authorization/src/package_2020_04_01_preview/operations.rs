@@ -103,6 +103,10 @@ pub mod classic_administrators {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets service administrator, account administrator, and co-administrators for the subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -189,6 +193,7 @@ pub mod global_administrator {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Elevates access for a Global Administrator."]
         pub fn elevate_access(&self) -> elevate_access::Builder {
             elevate_access::Builder { client: self.0.clone() }
         }
@@ -241,6 +246,10 @@ pub mod provider_operations_metadata {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets provider operations metadata for the specified resource provider."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_provider_namespace`: The namespace of the resource provider."]
         pub fn get(&self, resource_provider_namespace: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -248,6 +257,7 @@ pub mod provider_operations_metadata {
                 expand: None,
             }
         }
+        #[doc = "Gets provider operations metadata for all resource providers."]
         pub fn list(&self) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -265,6 +275,7 @@ pub mod provider_operations_metadata {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "Specifies whether to expand the values."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -320,6 +331,7 @@ pub mod provider_operations_metadata {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "Specifies whether to expand the values."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -396,12 +408,21 @@ pub mod role_definitions {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a role definition by ID."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `role_id`: The fully qualified role definition ID. Use the format, /subscriptions/{guid}/providers/Microsoft.Authorization/roleDefinitions/{roleDefinitionId} for subscription level role definitions, or /providers/Microsoft.Authorization/roleDefinitions/{roleDefinitionId} for tenant level role definitions."]
         pub fn get_by_id(&self, role_id: impl Into<String>) -> get_by_id::Builder {
             get_by_id::Builder {
                 client: self.0.clone(),
                 role_id: role_id.into(),
             }
         }
+        #[doc = "Get role definition by name (GUID)."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `scope`: The scope of the role definition."]
+        #[doc = "* `role_definition_id`: The ID of the role definition."]
         pub fn get(&self, scope: impl Into<String>, role_definition_id: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -409,6 +430,12 @@ pub mod role_definitions {
                 role_definition_id: role_definition_id.into(),
             }
         }
+        #[doc = "Creates or updates a role definition."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `scope`: The scope of the role definition."]
+        #[doc = "* `role_definition_id`: The ID of the role definition."]
+        #[doc = "* `role_definition`: The values for the role definition."]
         pub fn create_or_update(
             &self,
             scope: impl Into<String>,
@@ -422,6 +449,11 @@ pub mod role_definitions {
                 role_definition: role_definition.into(),
             }
         }
+        #[doc = "Deletes a role definition."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `scope`: The scope of the role definition."]
+        #[doc = "* `role_definition_id`: The ID of the role definition to delete."]
         pub fn delete(&self, scope: impl Into<String>, role_definition_id: impl Into<String>) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),
@@ -429,6 +461,10 @@ pub mod role_definitions {
                 role_definition_id: role_definition_id.into(),
             }
         }
+        #[doc = "Get all role definitions that are applicable at scope and above."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `scope`: The scope of the role definition."]
         pub fn list(&self, scope: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -648,6 +684,7 @@ pub mod role_definitions {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the operation. Use atScopeAndBelow filter to search below the given scope as well."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -725,6 +762,11 @@ pub mod permissions {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets all permissions the caller has for a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_for_resource_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -736,6 +778,15 @@ pub mod permissions {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets all permissions the caller has for a resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `resource_provider_namespace`: The namespace of the resource provider."]
+        #[doc = "* `parent_resource_path`: The parent resource identity."]
+        #[doc = "* `resource_type`: The resource type of the resource."]
+        #[doc = "* `resource_name`: The name of the resource to get the permissions for."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_for_resource(
             &self,
             resource_group_name: impl Into<String>,
@@ -921,6 +972,15 @@ pub mod deny_assignments {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets deny assignments for a resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `resource_provider_namespace`: The namespace of the resource provider."]
+        #[doc = "* `parent_resource_path`: The parent resource identity."]
+        #[doc = "* `resource_type`: The resource type of the resource."]
+        #[doc = "* `resource_name`: The name of the resource to get deny assignments for."]
         pub fn list_for_resource(
             &self,
             subscription_id: impl Into<String>,
@@ -941,6 +1001,11 @@ pub mod deny_assignments {
                 filter: None,
             }
         }
+        #[doc = "Gets deny assignments for a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
         pub fn list_for_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -953,6 +1018,10 @@ pub mod deny_assignments {
                 filter: None,
             }
         }
+        #[doc = "Gets all deny assignments for the subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -960,6 +1029,11 @@ pub mod deny_assignments {
                 filter: None,
             }
         }
+        #[doc = "Get the specified deny assignment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `scope`: The scope of the deny assignment."]
+        #[doc = "* `deny_assignment_id`: The ID of the deny assignment to get."]
         pub fn get(&self, scope: impl Into<String>, deny_assignment_id: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -967,12 +1041,20 @@ pub mod deny_assignments {
                 deny_assignment_id: deny_assignment_id.into(),
             }
         }
+        #[doc = "Gets a deny assignment by ID."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `deny_assignment_id`: The fully qualified deny assignment ID. For example, use the format, /subscriptions/{guid}/providers/Microsoft.Authorization/denyAssignments/{denyAssignmentId} for subscription level deny assignments, or /providers/Microsoft.Authorization/denyAssignments/{denyAssignmentId} for tenant level deny assignments."]
         pub fn get_by_id(&self, deny_assignment_id: impl Into<String>) -> get_by_id::Builder {
             get_by_id::Builder {
                 client: self.0.clone(),
                 deny_assignment_id: deny_assignment_id.into(),
             }
         }
+        #[doc = "Gets deny assignments for a scope."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `scope`: The scope of the deny assignments."]
         pub fn list_for_scope(&self, scope: impl Into<String>) -> list_for_scope::Builder {
             list_for_scope::Builder {
                 client: self.0.clone(),
@@ -996,6 +1078,7 @@ pub mod deny_assignments {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the operation. Use $filter=atScope() to return all deny assignments at or above the scope. Use $filter=denyAssignmentName eq '{name}' to search deny assignments by name at specified scope. Use $filter=principalId eq '{id}' to return all deny assignments at, above and below the scope for the specified principal. Use $filter=gdprExportPrincipalId eq '{id}' to return all deny assignments at, above and below the scope for the specified principal. This filter is different from the principalId filter as it returns not only those deny assignments that contain the specified principal is the Principals list but also those deny assignments that contain the specified principal is the ExcludePrincipals list. Additionally, when gdprExportPrincipalId filter is used, only the deny assignment name and description properties are returned."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -1084,6 +1167,7 @@ pub mod deny_assignments {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the operation. Use $filter=atScope() to return all deny assignments at or above the scope. Use $filter=denyAssignmentName eq '{name}' to search deny assignments by name at specified scope. Use $filter=principalId eq '{id}' to return all deny assignments at, above and below the scope for the specified principal. Use $filter=gdprExportPrincipalId eq '{id}' to return all deny assignments at, above and below the scope for the specified principal. This filter is different from the principalId filter as it returns not only those deny assignments that contain the specified principal is the Principals list but also those deny assignments that contain the specified principal is the ExcludePrincipals list. Additionally, when gdprExportPrincipalId filter is used, only the deny assignment name and description properties are returned."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -1167,6 +1251,7 @@ pub mod deny_assignments {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the operation. Use $filter=atScope() to return all deny assignments at or above the scope. Use $filter=denyAssignmentName eq '{name}' to search deny assignments by name at specified scope. Use $filter=principalId eq '{id}' to return all deny assignments at, above and below the scope for the specified principal. Use $filter=gdprExportPrincipalId eq '{id}' to return all deny assignments at, above and below the scope for the specified principal. This filter is different from the principalId filter as it returns not only those deny assignments that contain the specified principal is the Principals list but also those deny assignments that contain the specified principal is the ExcludePrincipals list. Additionally, when gdprExportPrincipalId filter is used, only the deny assignment name and description properties are returned."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -1343,6 +1428,7 @@ pub mod deny_assignments {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the operation. Use $filter=atScope() to return all deny assignments at or above the scope. Use $filter=denyAssignmentName eq '{name}' to search deny assignments by name at specified scope. Use $filter=principalId eq '{id}' to return all deny assignments at, above and below the scope for the specified principal. Use $filter=gdprExportPrincipalId eq '{id}' to return all deny assignments at, above and below the scope for the specified principal. This filter is different from the principalId filter as it returns not only those deny assignments that contain the specified principal is the Principals list but also those deny assignments that contain the specified principal is the ExcludePrincipals list. Additionally, when gdprExportPrincipalId filter is used, only the deny assignment name and description properties are returned."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -1420,6 +1506,10 @@ pub mod role_assignment_metrics {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get role assignment usage metrics for a subscription"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn get_metrics_for_subscription(&self, subscription_id: impl Into<String>) -> get_metrics_for_subscription::Builder {
             get_metrics_for_subscription::Builder {
                 client: self.0.clone(),
@@ -1480,6 +1570,15 @@ pub mod role_assignments {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List role assignments for a resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `resource_provider_namespace`: The namespace of the resource provider."]
+        #[doc = "* `parent_resource_path`: The parent resource identity."]
+        #[doc = "* `resource_type`: The resource type of the resource."]
+        #[doc = "* `resource_name`: The name of the resource to get role assignments for."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_for_resource(
             &self,
             resource_group_name: impl Into<String>,
@@ -1501,6 +1600,11 @@ pub mod role_assignments {
                 tenant_id: None,
             }
         }
+        #[doc = "List role assignments for a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_for_resource_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -1514,6 +1618,11 @@ pub mod role_assignments {
                 tenant_id: None,
             }
         }
+        #[doc = "Get the specified role assignment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `scope`: The scope of the role assignment."]
+        #[doc = "* `role_assignment_name`: The name of the role assignment to get."]
         pub fn get(&self, scope: impl Into<String>, role_assignment_name: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -1522,6 +1631,12 @@ pub mod role_assignments {
                 tenant_id: None,
             }
         }
+        #[doc = "Create a role assignment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `scope`: The scope of the role assignment to create. The scope can be any REST resource instance. For example, use '/subscriptions/{subscription-id}/' for a subscription, '/subscriptions/{subscription-id}/resourceGroups/{resource-group-name}' for a resource group, and '/subscriptions/{subscription-id}/resourceGroups/{resource-group-name}/providers/{resource-provider}/{resource-type}/{resource-name}' for a resource."]
+        #[doc = "* `role_assignment_name`: A GUID for the role assignment to create. The name must be unique and different for each role assignment."]
+        #[doc = "* `parameters`: Parameters for the role assignment."]
         pub fn create(
             &self,
             scope: impl Into<String>,
@@ -1535,6 +1650,11 @@ pub mod role_assignments {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Delete a role assignment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `scope`: The scope of the role assignment to delete."]
+        #[doc = "* `role_assignment_name`: The name of the role assignment to delete."]
         pub fn delete(&self, scope: impl Into<String>, role_assignment_name: impl Into<String>) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),
@@ -1543,6 +1663,10 @@ pub mod role_assignments {
                 tenant_id: None,
             }
         }
+        #[doc = "Gets a role assignment by ID."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `role_id`: The ID of the role assignment to get."]
         pub fn get_by_id(&self, role_id: impl Into<String>) -> get_by_id::Builder {
             get_by_id::Builder {
                 client: self.0.clone(),
@@ -1550,6 +1674,11 @@ pub mod role_assignments {
                 tenant_id: None,
             }
         }
+        #[doc = "Creates a role assignment by ID."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `role_id`: The ID of the role assignment to create."]
+        #[doc = "* `parameters`: Parameters for the role assignment."]
         pub fn create_by_id(
             &self,
             role_id: impl Into<String>,
@@ -1561,6 +1690,10 @@ pub mod role_assignments {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Delete a role assignment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `role_id`: The ID of the role assignment to delete."]
         pub fn delete_by_id(&self, role_id: impl Into<String>) -> delete_by_id::Builder {
             delete_by_id::Builder {
                 client: self.0.clone(),
@@ -1568,6 +1701,10 @@ pub mod role_assignments {
                 tenant_id: None,
             }
         }
+        #[doc = "Gets all role assignments for the subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -1576,6 +1713,10 @@ pub mod role_assignments {
                 tenant_id: None,
             }
         }
+        #[doc = "Gets role assignments for a scope."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `scope`: The scope of the role assignments."]
         pub fn list_for_scope(&self, scope: impl Into<String>) -> list_for_scope::Builder {
             list_for_scope::Builder {
                 client: self.0.clone(),
@@ -1601,10 +1742,12 @@ pub mod role_assignments {
             pub(crate) tenant_id: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the operation. Use $filter=atScope() to return all role assignments at or above the scope. Use $filter=principalId eq {id} to return all role assignments at, above or below the scope for the specified principal."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Tenant ID for cross-tenant request"]
             pub fn tenant_id(mut self, tenant_id: impl Into<String>) -> Self {
                 self.tenant_id = Some(tenant_id.into());
                 self
@@ -1697,10 +1840,12 @@ pub mod role_assignments {
             pub(crate) tenant_id: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the operation. Use $filter=atScope() to return all role assignments at or above the scope. Use $filter=principalId eq {id} to return all role assignments at, above or below the scope for the specified principal."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Tenant ID for cross-tenant request"]
             pub fn tenant_id(mut self, tenant_id: impl Into<String>) -> Self {
                 self.tenant_id = Some(tenant_id.into());
                 self
@@ -1788,6 +1933,7 @@ pub mod role_assignments {
             pub(crate) tenant_id: Option<String>,
         }
         impl Builder {
+            #[doc = "Tenant ID for cross-tenant request"]
             pub fn tenant_id(mut self, tenant_id: impl Into<String>) -> Self {
                 self.tenant_id = Some(tenant_id.into());
                 self
@@ -1902,6 +2048,7 @@ pub mod role_assignments {
             pub(crate) tenant_id: Option<String>,
         }
         impl Builder {
+            #[doc = "Tenant ID for cross-tenant request"]
             pub fn tenant_id(mut self, tenant_id: impl Into<String>) -> Self {
                 self.tenant_id = Some(tenant_id.into());
                 self
@@ -1960,6 +2107,7 @@ pub mod role_assignments {
             pub(crate) tenant_id: Option<String>,
         }
         impl Builder {
+            #[doc = "Tenant ID for cross-tenant request"]
             pub fn tenant_id(mut self, tenant_id: impl Into<String>) -> Self {
                 self.tenant_id = Some(tenant_id.into());
                 self
@@ -2062,6 +2210,7 @@ pub mod role_assignments {
             pub(crate) tenant_id: Option<String>,
         }
         impl Builder {
+            #[doc = "Tenant ID for cross-tenant request"]
             pub fn tenant_id(mut self, tenant_id: impl Into<String>) -> Self {
                 self.tenant_id = Some(tenant_id.into());
                 self
@@ -2116,10 +2265,12 @@ pub mod role_assignments {
             pub(crate) tenant_id: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the operation. Use $filter=atScope() to return all role assignments at or above the scope. Use $filter=principalId eq {id} to return all role assignments at, above or below the scope for the specified principal."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Tenant ID for cross-tenant request"]
             pub fn tenant_id(mut self, tenant_id: impl Into<String>) -> Self {
                 self.tenant_id = Some(tenant_id.into());
                 self
@@ -2206,10 +2357,12 @@ pub mod role_assignments {
             pub(crate) tenant_id: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the operation. Use $filter=atScope() to return all role assignments at or above the scope. Use $filter=principalId eq {id} to return all role assignments at, above or below the scope for the specified principal."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Tenant ID for cross-tenant request"]
             pub fn tenant_id(mut self, tenant_id: impl Into<String>) -> Self {
                 self.tenant_id = Some(tenant_id.into());
                 self

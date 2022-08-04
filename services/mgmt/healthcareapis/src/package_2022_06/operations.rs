@@ -118,6 +118,12 @@ pub mod services {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get the metadata of a service instance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the service instance."]
+        #[doc = "* `resource_name`: The name of the service instance."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -131,6 +137,13 @@ pub mod services {
                 resource_name: resource_name.into(),
             }
         }
+        #[doc = "Create or update the metadata of a service instance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the service instance."]
+        #[doc = "* `resource_name`: The name of the service instance."]
+        #[doc = "* `service_description`: The service instance metadata."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -146,6 +159,13 @@ pub mod services {
                 service_description: service_description.into(),
             }
         }
+        #[doc = "Update the metadata of a service instance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the service instance."]
+        #[doc = "* `resource_name`: The name of the service instance."]
+        #[doc = "* `service_patch_description`: The service instance metadata and security metadata."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -161,6 +181,12 @@ pub mod services {
                 service_patch_description: service_patch_description.into(),
             }
         }
+        #[doc = "Delete a service instance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the service instance."]
+        #[doc = "* `resource_name`: The name of the service instance."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -174,12 +200,21 @@ pub mod services {
                 resource_name: resource_name.into(),
             }
         }
+        #[doc = "Get all the service instances in a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get all the service instances in a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the service instance."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -191,6 +226,11 @@ pub mod services {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Check if a service instance name is available."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `check_name_availability_inputs`: Set the name parameter in the CheckNameAvailabilityParameters structure to the name of the service instance to check."]
         pub fn check_name_availability(
             &self,
             subscription_id: impl Into<String>,
@@ -633,6 +673,12 @@ pub mod private_endpoint_connections {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all private endpoint connections for a service."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the service instance."]
+        #[doc = "* `resource_name`: The name of the service instance."]
         pub fn list_by_service(
             &self,
             subscription_id: impl Into<String>,
@@ -646,6 +692,13 @@ pub mod private_endpoint_connections {
                 resource_name: resource_name.into(),
             }
         }
+        #[doc = "Gets the specified private endpoint connection associated with the service."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the service instance."]
+        #[doc = "* `resource_name`: The name of the service instance."]
+        #[doc = "* `private_endpoint_connection_name`: The name of the private endpoint connection associated with the Azure resource"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -661,6 +714,14 @@ pub mod private_endpoint_connections {
                 private_endpoint_connection_name: private_endpoint_connection_name.into(),
             }
         }
+        #[doc = "Update the state of the specified private endpoint connection associated with the service."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the service instance."]
+        #[doc = "* `resource_name`: The name of the service instance."]
+        #[doc = "* `private_endpoint_connection_name`: The name of the private endpoint connection associated with the Azure resource"]
+        #[doc = "* `properties`: The private endpoint connection properties."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -678,6 +739,13 @@ pub mod private_endpoint_connections {
                 properties: properties.into(),
             }
         }
+        #[doc = "Deletes a private endpoint connection."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the service instance."]
+        #[doc = "* `resource_name`: The name of the service instance."]
+        #[doc = "* `private_endpoint_connection_name`: The name of the private endpoint connection associated with the Azure resource"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -894,6 +962,12 @@ pub mod private_link_resources {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the private link resources that need to be created for a service."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the service instance."]
+        #[doc = "* `resource_name`: The name of the service instance."]
         pub fn list_by_service(
             &self,
             subscription_id: impl Into<String>,
@@ -907,6 +981,13 @@ pub mod private_link_resources {
                 resource_name: resource_name.into(),
             }
         }
+        #[doc = "Gets a private link resource that need to be created for a service."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the service instance."]
+        #[doc = "* `resource_name`: The name of the service instance."]
+        #[doc = "* `group_name`: The name of the private link resource group."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1034,12 +1115,21 @@ pub mod workspaces {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all the available workspaces under the specified subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists all the available workspaces under the specified resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the service instance."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -1051,6 +1141,12 @@ pub mod workspaces {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Gets the properties of the specified workspace."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the service instance."]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `workspace_name`: The name of workspace resource."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -1064,6 +1160,13 @@ pub mod workspaces {
                 workspace_name: workspace_name.into(),
             }
         }
+        #[doc = "Creates or updates a workspace resource with the specified parameters."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the service instance."]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `workspace_name`: The name of workspace resource."]
+        #[doc = "* `workspace`: The parameters for creating or updating a healthcare workspace."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -1079,6 +1182,13 @@ pub mod workspaces {
                 workspace: workspace.into(),
             }
         }
+        #[doc = "Patch workspace details."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the service instance."]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `workspace_name`: The name of workspace resource."]
+        #[doc = "* `workspace_patch_resource`: The parameters for updating a specified workspace."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -1094,6 +1204,12 @@ pub mod workspaces {
                 workspace_patch_resource: workspace_patch_resource.into(),
             }
         }
+        #[doc = "Deletes a specified workspace."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the service instance."]
+        #[doc = "* `workspace_name`: The name of workspace resource."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1505,6 +1621,12 @@ pub mod dicom_services {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all DICOM Services for the given workspace"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the service instance."]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `workspace_name`: The name of workspace resource."]
         pub fn list_by_workspace(
             &self,
             resource_group_name: impl Into<String>,
@@ -1518,6 +1640,13 @@ pub mod dicom_services {
                 workspace_name: workspace_name.into(),
             }
         }
+        #[doc = "Gets the properties of the specified DICOM Service."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the service instance."]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `workspace_name`: The name of workspace resource."]
+        #[doc = "* `dicom_service_name`: The name of DICOM Service resource."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -1533,6 +1662,14 @@ pub mod dicom_services {
                 dicom_service_name: dicom_service_name.into(),
             }
         }
+        #[doc = "Creates or updates a DICOM Service resource with the specified parameters."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the service instance."]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `workspace_name`: The name of workspace resource."]
+        #[doc = "* `dicom_service_name`: The name of DICOM Service resource."]
+        #[doc = "* `dicomservice`: The parameters for creating or updating a Dicom Service resource."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -1550,6 +1687,14 @@ pub mod dicom_services {
                 dicomservice: dicomservice.into(),
             }
         }
+        #[doc = "Patch DICOM Service details."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the service instance."]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `dicom_service_name`: The name of DICOM Service resource."]
+        #[doc = "* `workspace_name`: The name of workspace resource."]
+        #[doc = "* `dicomservice_patch_resource`: The parameters for updating a Dicom Service."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -1567,6 +1712,13 @@ pub mod dicom_services {
                 dicomservice_patch_resource: dicomservice_patch_resource.into(),
             }
         }
+        #[doc = "Deletes a DICOM Service."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the service instance."]
+        #[doc = "* `dicom_service_name`: The name of DICOM Service resource."]
+        #[doc = "* `workspace_name`: The name of workspace resource."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1916,6 +2068,12 @@ pub mod iot_connectors {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all IoT Connectors for the given workspace"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the service instance."]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `workspace_name`: The name of workspace resource."]
         pub fn list_by_workspace(
             &self,
             resource_group_name: impl Into<String>,
@@ -1929,6 +2087,13 @@ pub mod iot_connectors {
                 workspace_name: workspace_name.into(),
             }
         }
+        #[doc = "Gets the properties of the specified IoT Connector."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the service instance."]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `workspace_name`: The name of workspace resource."]
+        #[doc = "* `iot_connector_name`: The name of IoT Connector resource."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -1944,6 +2109,14 @@ pub mod iot_connectors {
                 iot_connector_name: iot_connector_name.into(),
             }
         }
+        #[doc = "Creates or updates an IoT Connector resource with the specified parameters."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the service instance."]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `workspace_name`: The name of workspace resource."]
+        #[doc = "* `iot_connector_name`: The name of IoT Connector resource."]
+        #[doc = "* `iot_connector`: The parameters for creating or updating an IoT Connectors resource."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -1961,6 +2134,14 @@ pub mod iot_connectors {
                 iot_connector: iot_connector.into(),
             }
         }
+        #[doc = "Patch an IoT Connector."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the service instance."]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `iot_connector_name`: The name of IoT Connector resource."]
+        #[doc = "* `workspace_name`: The name of workspace resource."]
+        #[doc = "* `iot_connector_patch_resource`: The parameters for updating an IoT Connector."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -1978,6 +2159,13 @@ pub mod iot_connectors {
                 iot_connector_patch_resource: iot_connector_patch_resource.into(),
             }
         }
+        #[doc = "Deletes an IoT Connector."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the service instance."]
+        #[doc = "* `iot_connector_name`: The name of IoT Connector resource."]
+        #[doc = "* `workspace_name`: The name of workspace resource."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -2327,6 +2515,13 @@ pub mod fhir_destinations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all FHIR destinations for the given IoT Connector"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the service instance."]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `workspace_name`: The name of workspace resource."]
+        #[doc = "* `iot_connector_name`: The name of IoT Connector resource."]
         pub fn list_by_iot_connector(
             &self,
             resource_group_name: impl Into<String>,
@@ -2421,6 +2616,14 @@ pub mod iot_connector_fhir_destination {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the properties of the specified Iot Connector FHIR destination."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the service instance."]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `workspace_name`: The name of workspace resource."]
+        #[doc = "* `iot_connector_name`: The name of IoT Connector resource."]
+        #[doc = "* `fhir_destination_name`: The name of IoT Connector FHIR destination resource."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -2438,6 +2641,15 @@ pub mod iot_connector_fhir_destination {
                 fhir_destination_name: fhir_destination_name.into(),
             }
         }
+        #[doc = "Creates or updates an IoT Connector FHIR destination resource with the specified parameters."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the service instance."]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `workspace_name`: The name of workspace resource."]
+        #[doc = "* `iot_connector_name`: The name of IoT Connector resource."]
+        #[doc = "* `fhir_destination_name`: The name of IoT Connector FHIR destination resource."]
+        #[doc = "* `iot_fhir_destination`: The parameters for creating or updating an IoT Connector FHIR destination resource."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -2457,6 +2669,14 @@ pub mod iot_connector_fhir_destination {
                 iot_fhir_destination: iot_fhir_destination.into(),
             }
         }
+        #[doc = "Deletes an IoT Connector FHIR destination."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the service instance."]
+        #[doc = "* `workspace_name`: The name of workspace resource."]
+        #[doc = "* `iot_connector_name`: The name of IoT Connector resource."]
+        #[doc = "* `fhir_destination_name`: The name of IoT Connector FHIR destination resource."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -2646,6 +2866,12 @@ pub mod fhir_services {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all FHIR Services for the given workspace"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the service instance."]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `workspace_name`: The name of workspace resource."]
         pub fn list_by_workspace(
             &self,
             resource_group_name: impl Into<String>,
@@ -2659,6 +2885,13 @@ pub mod fhir_services {
                 workspace_name: workspace_name.into(),
             }
         }
+        #[doc = "Gets the properties of the specified FHIR Service."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the service instance."]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `workspace_name`: The name of workspace resource."]
+        #[doc = "* `fhir_service_name`: The name of FHIR Service resource."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -2674,6 +2907,14 @@ pub mod fhir_services {
                 fhir_service_name: fhir_service_name.into(),
             }
         }
+        #[doc = "Creates or updates a FHIR Service resource with the specified parameters."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the service instance."]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `workspace_name`: The name of workspace resource."]
+        #[doc = "* `fhir_service_name`: The name of FHIR Service resource."]
+        #[doc = "* `fhirservice`: The parameters for creating or updating a Fhir Service resource."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -2691,6 +2932,14 @@ pub mod fhir_services {
                 fhirservice: fhirservice.into(),
             }
         }
+        #[doc = "Patch FHIR Service details."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the service instance."]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `fhir_service_name`: The name of FHIR Service resource."]
+        #[doc = "* `workspace_name`: The name of workspace resource."]
+        #[doc = "* `fhirservice_patch_resource`: The parameters for updating a Fhir Service."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -2708,6 +2957,13 @@ pub mod fhir_services {
                 fhirservice_patch_resource: fhirservice_patch_resource.into(),
             }
         }
+        #[doc = "Deletes a FHIR Service."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the service instance."]
+        #[doc = "* `fhir_service_name`: The name of FHIR Service resource."]
+        #[doc = "* `workspace_name`: The name of workspace resource."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -3057,6 +3313,12 @@ pub mod workspace_private_endpoint_connections {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all private endpoint connections for a workspace."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the service instance."]
+        #[doc = "* `workspace_name`: The name of workspace resource."]
         pub fn list_by_workspace(
             &self,
             subscription_id: impl Into<String>,
@@ -3070,6 +3332,13 @@ pub mod workspace_private_endpoint_connections {
                 workspace_name: workspace_name.into(),
             }
         }
+        #[doc = "Gets the specified private endpoint connection associated with the workspace."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the service instance."]
+        #[doc = "* `workspace_name`: The name of workspace resource."]
+        #[doc = "* `private_endpoint_connection_name`: The name of the private endpoint connection associated with the Azure resource"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -3085,6 +3354,14 @@ pub mod workspace_private_endpoint_connections {
                 private_endpoint_connection_name: private_endpoint_connection_name.into(),
             }
         }
+        #[doc = "Update the state of the specified private endpoint connection associated with the workspace."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the service instance."]
+        #[doc = "* `workspace_name`: The name of workspace resource."]
+        #[doc = "* `private_endpoint_connection_name`: The name of the private endpoint connection associated with the Azure resource"]
+        #[doc = "* `properties`: The private endpoint connection properties."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -3102,6 +3379,13 @@ pub mod workspace_private_endpoint_connections {
                 properties: properties.into(),
             }
         }
+        #[doc = "Deletes a private endpoint connection."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the service instance."]
+        #[doc = "* `workspace_name`: The name of workspace resource."]
+        #[doc = "* `private_endpoint_connection_name`: The name of the private endpoint connection associated with the Azure resource"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -3318,6 +3602,12 @@ pub mod workspace_private_link_resources {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the private link resources that need to be created for a workspace."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the service instance."]
+        #[doc = "* `workspace_name`: The name of workspace resource."]
         pub fn list_by_workspace(
             &self,
             subscription_id: impl Into<String>,
@@ -3331,6 +3621,13 @@ pub mod workspace_private_link_resources {
                 workspace_name: workspace_name.into(),
             }
         }
+        #[doc = "Gets a private link resource that need to be created for a workspace."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the service instance."]
+        #[doc = "* `workspace_name`: The name of workspace resource."]
+        #[doc = "* `group_name`: The name of the private link resource group."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -3452,6 +3749,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all of the available operations supported by Microsoft Healthcare resource provider."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -3531,6 +3829,12 @@ pub mod operation_results {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get the operation result for a long running operation."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `location_name`: The location of the operation."]
+        #[doc = "* `operation_result_id`: The ID of the operation result to get."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,

@@ -130,6 +130,10 @@ pub mod dev_centers {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all devcenters in a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Unique identifier of the Azure subscription. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
@@ -137,6 +141,11 @@ pub mod dev_centers {
                 top: None,
             }
         }
+        #[doc = "Lists all devcenters in a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Unique identifier of the Azure subscription. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
+        #[doc = "* `resource_group_name`: Name of the resource group within the Azure subscription."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -149,6 +158,12 @@ pub mod dev_centers {
                 top: None,
             }
         }
+        #[doc = "Gets a devcenter."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Unique identifier of the Azure subscription. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
+        #[doc = "* `resource_group_name`: Name of the resource group within the Azure subscription."]
+        #[doc = "* `dev_center_name`: The name of the devcenter."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -162,6 +177,13 @@ pub mod dev_centers {
                 dev_center_name: dev_center_name.into(),
             }
         }
+        #[doc = "Creates or updates a devcenter resource"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Unique identifier of the Azure subscription. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
+        #[doc = "* `resource_group_name`: Name of the resource group within the Azure subscription."]
+        #[doc = "* `dev_center_name`: The name of the devcenter."]
+        #[doc = "* `body`: Represents a devcenter."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -177,6 +199,13 @@ pub mod dev_centers {
                 body: body.into(),
             }
         }
+        #[doc = "Partially updates a devcenter."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Unique identifier of the Azure subscription. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
+        #[doc = "* `resource_group_name`: Name of the resource group within the Azure subscription."]
+        #[doc = "* `dev_center_name`: The name of the devcenter."]
+        #[doc = "* `body`: Updatable devcenter properties."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -192,6 +221,12 @@ pub mod dev_centers {
                 body: body.into(),
             }
         }
+        #[doc = "Deletes a devcenter"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Unique identifier of the Azure subscription. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
+        #[doc = "* `resource_group_name`: Name of the resource group within the Azure subscription."]
+        #[doc = "* `dev_center_name`: The name of the devcenter."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -216,6 +251,7 @@ pub mod dev_centers {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The maximum number of resources to return from the operation. Example: '$top=10'."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -299,6 +335,7 @@ pub mod dev_centers {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The maximum number of resources to return from the operation. Example: '$top=10'."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -609,6 +646,10 @@ pub mod projects {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all projects in the subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Unique identifier of the Azure subscription. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
@@ -616,6 +657,11 @@ pub mod projects {
                 top: None,
             }
         }
+        #[doc = "Lists all projects in the resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Unique identifier of the Azure subscription. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
+        #[doc = "* `resource_group_name`: Name of the resource group within the Azure subscription."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -628,6 +674,12 @@ pub mod projects {
                 top: None,
             }
         }
+        #[doc = "Gets a specific project."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Unique identifier of the Azure subscription. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
+        #[doc = "* `resource_group_name`: Name of the resource group within the Azure subscription."]
+        #[doc = "* `project_name`: The name of the project."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -641,6 +693,13 @@ pub mod projects {
                 project_name: project_name.into(),
             }
         }
+        #[doc = "Creates or updates a project."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Unique identifier of the Azure subscription. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
+        #[doc = "* `resource_group_name`: Name of the resource group within the Azure subscription."]
+        #[doc = "* `project_name`: The name of the project."]
+        #[doc = "* `body`: Represents a project."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -656,6 +715,13 @@ pub mod projects {
                 body: body.into(),
             }
         }
+        #[doc = "Partially updates a project."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Unique identifier of the Azure subscription. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
+        #[doc = "* `resource_group_name`: Name of the resource group within the Azure subscription."]
+        #[doc = "* `project_name`: The name of the project."]
+        #[doc = "* `body`: Updatable project properties."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -671,6 +737,12 @@ pub mod projects {
                 body: body.into(),
             }
         }
+        #[doc = "Deletes a project resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Unique identifier of the Azure subscription. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
+        #[doc = "* `resource_group_name`: Name of the resource group within the Azure subscription."]
+        #[doc = "* `project_name`: The name of the project."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -695,6 +767,7 @@ pub mod projects {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The maximum number of resources to return from the operation. Example: '$top=10'."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -778,6 +851,7 @@ pub mod projects {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The maximum number of resources to return from the operation. Example: '$top=10'."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -1088,6 +1162,12 @@ pub mod attached_networks {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists the attached NetworkConnections for a Project."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Unique identifier of the Azure subscription. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
+        #[doc = "* `resource_group_name`: Name of the resource group within the Azure subscription."]
+        #[doc = "* `project_name`: The name of the project."]
         pub fn list_by_project(
             &self,
             subscription_id: impl Into<String>,
@@ -1102,6 +1182,13 @@ pub mod attached_networks {
                 top: None,
             }
         }
+        #[doc = "Gets an attached NetworkConnection."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Unique identifier of the Azure subscription. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
+        #[doc = "* `resource_group_name`: Name of the resource group within the Azure subscription."]
+        #[doc = "* `project_name`: The name of the project."]
+        #[doc = "* `attached_network_connection_name`: The name of the attached NetworkConnection."]
         pub fn get_by_project(
             &self,
             subscription_id: impl Into<String>,
@@ -1117,6 +1204,12 @@ pub mod attached_networks {
                 attached_network_connection_name: attached_network_connection_name.into(),
             }
         }
+        #[doc = "Lists the attached NetworkConnections for a DevCenter."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Unique identifier of the Azure subscription. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
+        #[doc = "* `resource_group_name`: Name of the resource group within the Azure subscription."]
+        #[doc = "* `dev_center_name`: The name of the devcenter."]
         pub fn list_by_dev_center(
             &self,
             subscription_id: impl Into<String>,
@@ -1131,6 +1224,13 @@ pub mod attached_networks {
                 top: None,
             }
         }
+        #[doc = "Gets an attached NetworkConnection."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Unique identifier of the Azure subscription. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
+        #[doc = "* `resource_group_name`: Name of the resource group within the Azure subscription."]
+        #[doc = "* `dev_center_name`: The name of the devcenter."]
+        #[doc = "* `attached_network_connection_name`: The name of the attached NetworkConnection."]
         pub fn get_by_dev_center(
             &self,
             subscription_id: impl Into<String>,
@@ -1146,6 +1246,14 @@ pub mod attached_networks {
                 attached_network_connection_name: attached_network_connection_name.into(),
             }
         }
+        #[doc = "Creates or updates an attached NetworkConnection."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Unique identifier of the Azure subscription. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
+        #[doc = "* `resource_group_name`: Name of the resource group within the Azure subscription."]
+        #[doc = "* `dev_center_name`: The name of the devcenter."]
+        #[doc = "* `attached_network_connection_name`: The name of the attached NetworkConnection."]
+        #[doc = "* `body`: Represents an attached NetworkConnection."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -1163,6 +1271,13 @@ pub mod attached_networks {
                 body: body.into(),
             }
         }
+        #[doc = "Un-attach a NetworkConnection."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Unique identifier of the Azure subscription. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
+        #[doc = "* `resource_group_name`: Name of the resource group within the Azure subscription."]
+        #[doc = "* `dev_center_name`: The name of the devcenter."]
+        #[doc = "* `attached_network_connection_name`: The name of the attached NetworkConnection."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1191,6 +1306,7 @@ pub mod attached_networks {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The maximum number of resources to return from the operation. Example: '$top=10'."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -1331,6 +1447,7 @@ pub mod attached_networks {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The maximum number of resources to return from the operation. Example: '$top=10'."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -1579,6 +1696,12 @@ pub mod galleries {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists galleries for a devcenter."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Unique identifier of the Azure subscription. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
+        #[doc = "* `resource_group_name`: Name of the resource group within the Azure subscription."]
+        #[doc = "* `dev_center_name`: The name of the devcenter."]
         pub fn list_by_dev_center(
             &self,
             subscription_id: impl Into<String>,
@@ -1593,6 +1716,13 @@ pub mod galleries {
                 top: None,
             }
         }
+        #[doc = "Gets a gallery"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Unique identifier of the Azure subscription. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
+        #[doc = "* `resource_group_name`: Name of the resource group within the Azure subscription."]
+        #[doc = "* `dev_center_name`: The name of the devcenter."]
+        #[doc = "* `gallery_name`: The name of the gallery."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1608,6 +1738,14 @@ pub mod galleries {
                 gallery_name: gallery_name.into(),
             }
         }
+        #[doc = "Creates or updates a gallery."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Unique identifier of the Azure subscription. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
+        #[doc = "* `resource_group_name`: Name of the resource group within the Azure subscription."]
+        #[doc = "* `dev_center_name`: The name of the devcenter."]
+        #[doc = "* `gallery_name`: The name of the gallery."]
+        #[doc = "* `body`: Represents a gallery."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -1625,6 +1763,13 @@ pub mod galleries {
                 body: body.into(),
             }
         }
+        #[doc = "Deletes a gallery resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Unique identifier of the Azure subscription. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
+        #[doc = "* `resource_group_name`: Name of the resource group within the Azure subscription."]
+        #[doc = "* `dev_center_name`: The name of the devcenter."]
+        #[doc = "* `gallery_name`: The name of the gallery."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1653,6 +1798,7 @@ pub mod galleries {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The maximum number of resources to return from the operation. Example: '$top=10'."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -1901,6 +2047,12 @@ pub mod images {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists images for a devcenter."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Unique identifier of the Azure subscription. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
+        #[doc = "* `resource_group_name`: Name of the resource group within the Azure subscription."]
+        #[doc = "* `dev_center_name`: The name of the devcenter."]
         pub fn list_by_dev_center(
             &self,
             subscription_id: impl Into<String>,
@@ -1915,6 +2067,13 @@ pub mod images {
                 top: None,
             }
         }
+        #[doc = "Lists images for a gallery."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Unique identifier of the Azure subscription. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
+        #[doc = "* `resource_group_name`: Name of the resource group within the Azure subscription."]
+        #[doc = "* `dev_center_name`: The name of the devcenter."]
+        #[doc = "* `gallery_name`: The name of the gallery."]
         pub fn list_by_gallery(
             &self,
             subscription_id: impl Into<String>,
@@ -1931,6 +2090,14 @@ pub mod images {
                 top: None,
             }
         }
+        #[doc = "Gets a gallery image."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Unique identifier of the Azure subscription. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
+        #[doc = "* `resource_group_name`: Name of the resource group within the Azure subscription."]
+        #[doc = "* `dev_center_name`: The name of the devcenter."]
+        #[doc = "* `gallery_name`: The name of the gallery."]
+        #[doc = "* `image_name`: The name of the image."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1961,6 +2128,7 @@ pub mod images {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The maximum number of resources to return from the operation. Example: '$top=10'."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -2048,6 +2216,7 @@ pub mod images {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The maximum number of resources to return from the operation. Example: '$top=10'."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -2184,6 +2353,14 @@ pub mod image_versions {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists versions for an image."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Unique identifier of the Azure subscription. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
+        #[doc = "* `resource_group_name`: Name of the resource group within the Azure subscription."]
+        #[doc = "* `dev_center_name`: The name of the devcenter."]
+        #[doc = "* `gallery_name`: The name of the gallery."]
+        #[doc = "* `image_name`: The name of the image."]
         pub fn list_by_image(
             &self,
             subscription_id: impl Into<String>,
@@ -2201,6 +2378,15 @@ pub mod image_versions {
                 image_name: image_name.into(),
             }
         }
+        #[doc = "Gets an image version."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Unique identifier of the Azure subscription. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
+        #[doc = "* `resource_group_name`: Name of the resource group within the Azure subscription."]
+        #[doc = "* `dev_center_name`: The name of the devcenter."]
+        #[doc = "* `gallery_name`: The name of the gallery."]
+        #[doc = "* `image_name`: The name of the image."]
+        #[doc = "* `version_name`: The version of the image."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -2349,6 +2535,12 @@ pub mod catalogs {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists catalogs for a devcenter."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Unique identifier of the Azure subscription. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
+        #[doc = "* `resource_group_name`: Name of the resource group within the Azure subscription."]
+        #[doc = "* `dev_center_name`: The name of the devcenter."]
         pub fn list_by_dev_center(
             &self,
             subscription_id: impl Into<String>,
@@ -2363,6 +2555,13 @@ pub mod catalogs {
                 top: None,
             }
         }
+        #[doc = "Gets a catalog"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Unique identifier of the Azure subscription. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
+        #[doc = "* `resource_group_name`: Name of the resource group within the Azure subscription."]
+        #[doc = "* `dev_center_name`: The name of the devcenter."]
+        #[doc = "* `catalog_name`: The name of the Catalog."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -2378,6 +2577,14 @@ pub mod catalogs {
                 catalog_name: catalog_name.into(),
             }
         }
+        #[doc = "Creates or updates a catalog."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Unique identifier of the Azure subscription. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
+        #[doc = "* `resource_group_name`: Name of the resource group within the Azure subscription."]
+        #[doc = "* `dev_center_name`: The name of the devcenter."]
+        #[doc = "* `catalog_name`: The name of the Catalog."]
+        #[doc = "* `body`: Represents a catalog."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -2395,6 +2602,14 @@ pub mod catalogs {
                 body: body.into(),
             }
         }
+        #[doc = "Partially updates a catalog."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Unique identifier of the Azure subscription. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
+        #[doc = "* `resource_group_name`: Name of the resource group within the Azure subscription."]
+        #[doc = "* `dev_center_name`: The name of the devcenter."]
+        #[doc = "* `catalog_name`: The name of the Catalog."]
+        #[doc = "* `body`: Updatable catalog properties."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -2412,6 +2627,13 @@ pub mod catalogs {
                 body: body.into(),
             }
         }
+        #[doc = "Deletes a catalog resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Unique identifier of the Azure subscription. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
+        #[doc = "* `resource_group_name`: Name of the resource group within the Azure subscription."]
+        #[doc = "* `dev_center_name`: The name of the devcenter."]
+        #[doc = "* `catalog_name`: The name of the Catalog."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -2427,6 +2649,13 @@ pub mod catalogs {
                 catalog_name: catalog_name.into(),
             }
         }
+        #[doc = "Syncs templates for a template source."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Unique identifier of the Azure subscription. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
+        #[doc = "* `resource_group_name`: Name of the resource group within the Azure subscription."]
+        #[doc = "* `dev_center_name`: The name of the devcenter."]
+        #[doc = "* `catalog_name`: The name of the Catalog."]
         pub fn sync(
             &self,
             subscription_id: impl Into<String>,
@@ -2455,6 +2684,7 @@ pub mod catalogs {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The maximum number of resources to return from the operation. Example: '$top=10'."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -2817,6 +3047,12 @@ pub mod environment_types {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists environment types for the devcenter."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Unique identifier of the Azure subscription. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
+        #[doc = "* `resource_group_name`: Name of the resource group within the Azure subscription."]
+        #[doc = "* `dev_center_name`: The name of the devcenter."]
         pub fn list_by_dev_center(
             &self,
             subscription_id: impl Into<String>,
@@ -2831,6 +3067,13 @@ pub mod environment_types {
                 top: None,
             }
         }
+        #[doc = "Gets an environment type."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Unique identifier of the Azure subscription. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
+        #[doc = "* `resource_group_name`: Name of the resource group within the Azure subscription."]
+        #[doc = "* `dev_center_name`: The name of the devcenter."]
+        #[doc = "* `environment_type_name`: The name of the environment type."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -2846,6 +3089,14 @@ pub mod environment_types {
                 environment_type_name: environment_type_name.into(),
             }
         }
+        #[doc = "Creates or updates an environment type."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Unique identifier of the Azure subscription. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
+        #[doc = "* `resource_group_name`: Name of the resource group within the Azure subscription."]
+        #[doc = "* `dev_center_name`: The name of the devcenter."]
+        #[doc = "* `environment_type_name`: The name of the environment type."]
+        #[doc = "* `body`: Represents an Environment Type."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -2863,6 +3114,14 @@ pub mod environment_types {
                 body: body.into(),
             }
         }
+        #[doc = "Partially updates an environment type."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Unique identifier of the Azure subscription. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
+        #[doc = "* `resource_group_name`: Name of the resource group within the Azure subscription."]
+        #[doc = "* `dev_center_name`: The name of the devcenter."]
+        #[doc = "* `environment_type_name`: The name of the environment type."]
+        #[doc = "* `body`: Updatable environment type properties."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -2880,6 +3139,13 @@ pub mod environment_types {
                 body: body.into(),
             }
         }
+        #[doc = "Deletes an environment type."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Unique identifier of the Azure subscription. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
+        #[doc = "* `resource_group_name`: Name of the resource group within the Azure subscription."]
+        #[doc = "* `dev_center_name`: The name of the devcenter."]
+        #[doc = "* `environment_type_name`: The name of the environment type."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -2908,6 +3174,7 @@ pub mod environment_types {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The maximum number of resources to return from the operation. Example: '$top=10'."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -3208,6 +3475,12 @@ pub mod project_environment_types {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists environment types for a project."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Unique identifier of the Azure subscription. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
+        #[doc = "* `resource_group_name`: Name of the resource group within the Azure subscription."]
+        #[doc = "* `project_name`: The name of the project."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -3222,6 +3495,13 @@ pub mod project_environment_types {
                 top: None,
             }
         }
+        #[doc = "Gets a project environment type."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Unique identifier of the Azure subscription. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
+        #[doc = "* `resource_group_name`: Name of the resource group within the Azure subscription."]
+        #[doc = "* `project_name`: The name of the project."]
+        #[doc = "* `environment_type_name`: The name of the environment type."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -3237,6 +3517,14 @@ pub mod project_environment_types {
                 environment_type_name: environment_type_name.into(),
             }
         }
+        #[doc = "Creates or updates a project environment type."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Unique identifier of the Azure subscription. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
+        #[doc = "* `resource_group_name`: Name of the resource group within the Azure subscription."]
+        #[doc = "* `project_name`: The name of the project."]
+        #[doc = "* `environment_type_name`: The name of the environment type."]
+        #[doc = "* `body`: Represents a Project Environment Type."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -3254,6 +3542,14 @@ pub mod project_environment_types {
                 body: body.into(),
             }
         }
+        #[doc = "Partially updates a project environment type."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Unique identifier of the Azure subscription. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
+        #[doc = "* `resource_group_name`: Name of the resource group within the Azure subscription."]
+        #[doc = "* `project_name`: The name of the project."]
+        #[doc = "* `environment_type_name`: The name of the environment type."]
+        #[doc = "* `body`: Updatable project environment type properties."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -3271,6 +3567,13 @@ pub mod project_environment_types {
                 body: body.into(),
             }
         }
+        #[doc = "Deletes a project environment type."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Unique identifier of the Azure subscription. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
+        #[doc = "* `resource_group_name`: Name of the resource group within the Azure subscription."]
+        #[doc = "* `project_name`: The name of the project."]
+        #[doc = "* `environment_type_name`: The name of the environment type."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -3299,6 +3602,7 @@ pub mod project_environment_types {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The maximum number of resources to return from the operation. Example: '$top=10'."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -3599,6 +3903,12 @@ pub mod dev_box_definitions {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List Dev Box definitions for a devcenter."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Unique identifier of the Azure subscription. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
+        #[doc = "* `resource_group_name`: Name of the resource group within the Azure subscription."]
+        #[doc = "* `dev_center_name`: The name of the devcenter."]
         pub fn list_by_dev_center(
             &self,
             subscription_id: impl Into<String>,
@@ -3613,6 +3923,13 @@ pub mod dev_box_definitions {
                 top: None,
             }
         }
+        #[doc = "Gets a Dev Box definition"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Unique identifier of the Azure subscription. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
+        #[doc = "* `resource_group_name`: Name of the resource group within the Azure subscription."]
+        #[doc = "* `dev_center_name`: The name of the devcenter."]
+        #[doc = "* `dev_box_definition_name`: The name of the Dev Box definition."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -3628,6 +3945,14 @@ pub mod dev_box_definitions {
                 dev_box_definition_name: dev_box_definition_name.into(),
             }
         }
+        #[doc = "Creates or updates a Dev Box definition."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Unique identifier of the Azure subscription. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
+        #[doc = "* `resource_group_name`: Name of the resource group within the Azure subscription."]
+        #[doc = "* `dev_center_name`: The name of the devcenter."]
+        #[doc = "* `dev_box_definition_name`: The name of the Dev Box definition."]
+        #[doc = "* `body`: Represents a Dev Box definition."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -3645,6 +3970,14 @@ pub mod dev_box_definitions {
                 body: body.into(),
             }
         }
+        #[doc = "Partially updates a Dev Box definition."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Unique identifier of the Azure subscription. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
+        #[doc = "* `resource_group_name`: Name of the resource group within the Azure subscription."]
+        #[doc = "* `dev_center_name`: The name of the devcenter."]
+        #[doc = "* `dev_box_definition_name`: The name of the Dev Box definition."]
+        #[doc = "* `body`: Represents a Dev Box definition."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -3662,6 +3995,13 @@ pub mod dev_box_definitions {
                 body: body.into(),
             }
         }
+        #[doc = "Deletes a Dev Box definition"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Unique identifier of the Azure subscription. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
+        #[doc = "* `resource_group_name`: Name of the resource group within the Azure subscription."]
+        #[doc = "* `dev_center_name`: The name of the devcenter."]
+        #[doc = "* `dev_box_definition_name`: The name of the Dev Box definition."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -3677,6 +4017,12 @@ pub mod dev_box_definitions {
                 dev_box_definition_name: dev_box_definition_name.into(),
             }
         }
+        #[doc = "List Dev Box definitions configured for a project."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Unique identifier of the Azure subscription. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
+        #[doc = "* `resource_group_name`: Name of the resource group within the Azure subscription."]
+        #[doc = "* `project_name`: The name of the project."]
         pub fn list_by_project(
             &self,
             subscription_id: impl Into<String>,
@@ -3691,6 +4037,13 @@ pub mod dev_box_definitions {
                 top: None,
             }
         }
+        #[doc = "Gets a Dev Box definition configured for a project"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Unique identifier of the Azure subscription. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
+        #[doc = "* `resource_group_name`: Name of the resource group within the Azure subscription."]
+        #[doc = "* `project_name`: The name of the project."]
+        #[doc = "* `dev_box_definition_name`: The name of the Dev Box definition."]
         pub fn get_by_project(
             &self,
             subscription_id: impl Into<String>,
@@ -3719,6 +4072,7 @@ pub mod dev_box_definitions {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The maximum number of resources to return from the operation. Example: '$top=10'."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -4045,6 +4399,7 @@ pub mod dev_box_definitions {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The maximum number of resources to return from the operation. Example: '$top=10'."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -4178,6 +4533,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all of the available resource provider operations."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -4258,6 +4614,12 @@ pub mod operation_statuses {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get Operation Status"]
+        #[doc = "Gets the current status of an async operation."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Unique identifier of the Azure subscription. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
+        #[doc = "* `location`: The Azure region"]
+        #[doc = "* `operation_id`: The ID of an ongoing async operation"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -4338,6 +4700,11 @@ pub mod usages {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists the current usages and limits in this location for the provided subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Unique identifier of the Azure subscription. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
+        #[doc = "* `location`: The Azure region"]
         pub fn list_by_location(&self, subscription_id: impl Into<String>, location: impl Into<String>) -> list_by_location::Builder {
             list_by_location::Builder {
                 client: self.0.clone(),
@@ -4427,6 +4794,10 @@ pub mod skus {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists the Microsoft.DevCenter SKUs available in a subscription"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Unique identifier of the Azure subscription. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
@@ -4445,6 +4816,7 @@ pub mod skus {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The maximum number of resources to return from the operation. Example: '$top=10'."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -4522,6 +4894,12 @@ pub mod pools {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists pools for a project"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Unique identifier of the Azure subscription. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
+        #[doc = "* `resource_group_name`: Name of the resource group within the Azure subscription."]
+        #[doc = "* `project_name`: The name of the project."]
         pub fn list_by_project(
             &self,
             subscription_id: impl Into<String>,
@@ -4536,6 +4914,13 @@ pub mod pools {
                 top: None,
             }
         }
+        #[doc = "Gets a machine pool"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Unique identifier of the Azure subscription. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
+        #[doc = "* `resource_group_name`: Name of the resource group within the Azure subscription."]
+        #[doc = "* `project_name`: The name of the project."]
+        #[doc = "* `pool_name`: Name of the pool."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -4551,6 +4936,14 @@ pub mod pools {
                 pool_name: pool_name.into(),
             }
         }
+        #[doc = "Creates or updates a machine pool"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Unique identifier of the Azure subscription. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
+        #[doc = "* `resource_group_name`: Name of the resource group within the Azure subscription."]
+        #[doc = "* `project_name`: The name of the project."]
+        #[doc = "* `pool_name`: Name of the pool."]
+        #[doc = "* `body`: Represents a machine pool"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -4568,6 +4961,14 @@ pub mod pools {
                 body: body.into(),
             }
         }
+        #[doc = "Partially updates a machine pool"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Unique identifier of the Azure subscription. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
+        #[doc = "* `resource_group_name`: Name of the resource group within the Azure subscription."]
+        #[doc = "* `project_name`: The name of the project."]
+        #[doc = "* `pool_name`: Name of the pool."]
+        #[doc = "* `body`: Represents a machine pool"]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -4585,6 +4986,13 @@ pub mod pools {
                 body: body.into(),
             }
         }
+        #[doc = "Deletes a machine pool"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Unique identifier of the Azure subscription. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
+        #[doc = "* `resource_group_name`: Name of the resource group within the Azure subscription."]
+        #[doc = "* `project_name`: The name of the project."]
+        #[doc = "* `pool_name`: Name of the pool."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -4613,6 +5021,7 @@ pub mod pools {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The maximum number of resources to return from the operation. Example: '$top=10'."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -4932,6 +5341,13 @@ pub mod schedules {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists schedules for a pool"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Unique identifier of the Azure subscription. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
+        #[doc = "* `resource_group_name`: Name of the resource group within the Azure subscription."]
+        #[doc = "* `project_name`: The name of the project."]
+        #[doc = "* `pool_name`: Name of the pool."]
         pub fn list_by_pool(
             &self,
             subscription_id: impl Into<String>,
@@ -4948,6 +5364,14 @@ pub mod schedules {
                 top: None,
             }
         }
+        #[doc = "Gets a schedule resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Unique identifier of the Azure subscription. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
+        #[doc = "* `resource_group_name`: Name of the resource group within the Azure subscription."]
+        #[doc = "* `project_name`: The name of the project."]
+        #[doc = "* `pool_name`: Name of the pool."]
+        #[doc = "* `schedule_name`: The name of the schedule that uniquely identifies it."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -4966,6 +5390,15 @@ pub mod schedules {
                 top: None,
             }
         }
+        #[doc = "Creates or updates a Schedule."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Unique identifier of the Azure subscription. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
+        #[doc = "* `resource_group_name`: Name of the resource group within the Azure subscription."]
+        #[doc = "* `project_name`: The name of the project."]
+        #[doc = "* `pool_name`: Name of the pool."]
+        #[doc = "* `schedule_name`: The name of the schedule that uniquely identifies it."]
+        #[doc = "* `body`: Represents a scheduled task"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -4986,6 +5419,15 @@ pub mod schedules {
                 top: None,
             }
         }
+        #[doc = "Partially updates a Scheduled."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Unique identifier of the Azure subscription. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
+        #[doc = "* `resource_group_name`: Name of the resource group within the Azure subscription."]
+        #[doc = "* `project_name`: The name of the project."]
+        #[doc = "* `pool_name`: Name of the pool."]
+        #[doc = "* `schedule_name`: The name of the schedule that uniquely identifies it."]
+        #[doc = "* `body`: Represents a scheduled task."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -5006,6 +5448,14 @@ pub mod schedules {
                 top: None,
             }
         }
+        #[doc = "Deletes a Scheduled."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Unique identifier of the Azure subscription. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
+        #[doc = "* `resource_group_name`: Name of the resource group within the Azure subscription."]
+        #[doc = "* `project_name`: The name of the project."]
+        #[doc = "* `pool_name`: Name of the pool."]
+        #[doc = "* `schedule_name`: The name of the schedule that uniquely identifies it."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -5038,6 +5488,7 @@ pub mod schedules {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The maximum number of resources to return from the operation. Example: '$top=10'."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -5127,6 +5578,7 @@ pub mod schedules {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The maximum number of resources to return from the operation. Example: '$top=10'."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -5192,6 +5644,7 @@ pub mod schedules {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The maximum number of resources to return from the operation. Example: '$top=10'."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -5259,6 +5712,7 @@ pub mod schedules {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The maximum number of resources to return from the operation. Example: '$top=10'."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -5326,6 +5780,7 @@ pub mod schedules {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The maximum number of resources to return from the operation. Example: '$top=10'."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -5380,6 +5835,10 @@ pub mod network_connections {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists network connections in a subscription"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Unique identifier of the Azure subscription. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
@@ -5387,6 +5846,11 @@ pub mod network_connections {
                 top: None,
             }
         }
+        #[doc = "Lists network connections in a resource group"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Unique identifier of the Azure subscription. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
+        #[doc = "* `resource_group_name`: Name of the resource group within the Azure subscription."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -5399,6 +5863,12 @@ pub mod network_connections {
                 top: None,
             }
         }
+        #[doc = "Gets a network connection resource"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Unique identifier of the Azure subscription. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
+        #[doc = "* `resource_group_name`: Name of the resource group within the Azure subscription."]
+        #[doc = "* `network_connection_name`: Name of the Network Connection that can be applied to a Pool."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -5412,6 +5882,13 @@ pub mod network_connections {
                 network_connection_name: network_connection_name.into(),
             }
         }
+        #[doc = "Creates or updates a Network Connections resource"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Unique identifier of the Azure subscription. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
+        #[doc = "* `resource_group_name`: Name of the resource group within the Azure subscription."]
+        #[doc = "* `network_connection_name`: Name of the Network Connection that can be applied to a Pool."]
+        #[doc = "* `body`: Represents network connection"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -5427,6 +5904,13 @@ pub mod network_connections {
                 body: body.into(),
             }
         }
+        #[doc = "Partially updates a Network Connection"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Unique identifier of the Azure subscription. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
+        #[doc = "* `resource_group_name`: Name of the resource group within the Azure subscription."]
+        #[doc = "* `network_connection_name`: Name of the Network Connection that can be applied to a Pool."]
+        #[doc = "* `body`: Represents network connection"]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -5442,6 +5926,12 @@ pub mod network_connections {
                 body: body.into(),
             }
         }
+        #[doc = "Deletes a Network Connections resource"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Unique identifier of the Azure subscription. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
+        #[doc = "* `resource_group_name`: Name of the resource group within the Azure subscription."]
+        #[doc = "* `network_connection_name`: Name of the Network Connection that can be applied to a Pool."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -5455,6 +5945,12 @@ pub mod network_connections {
                 network_connection_name: network_connection_name.into(),
             }
         }
+        #[doc = "Lists health check status details"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Unique identifier of the Azure subscription. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
+        #[doc = "* `resource_group_name`: Name of the resource group within the Azure subscription."]
+        #[doc = "* `network_connection_name`: Name of the Network Connection that can be applied to a Pool."]
         pub fn list_health_details(
             &self,
             subscription_id: impl Into<String>,
@@ -5469,6 +5965,12 @@ pub mod network_connections {
                 top: None,
             }
         }
+        #[doc = "Gets health check status details."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Unique identifier of the Azure subscription. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
+        #[doc = "* `resource_group_name`: Name of the resource group within the Azure subscription."]
+        #[doc = "* `network_connection_name`: Name of the Network Connection that can be applied to a Pool."]
         pub fn get_health_details(
             &self,
             subscription_id: impl Into<String>,
@@ -5482,6 +5984,12 @@ pub mod network_connections {
                 network_connection_name: network_connection_name.into(),
             }
         }
+        #[doc = "Triggers a new health check run. The execution and health check result can be tracked via the network Connection health check details"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Unique identifier of the Azure subscription. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
+        #[doc = "* `resource_group_name`: Name of the resource group within the Azure subscription."]
+        #[doc = "* `network_connection_name`: Name of the Network Connection that can be applied to a Pool."]
         pub fn run_health_checks(
             &self,
             subscription_id: impl Into<String>,
@@ -5506,6 +6014,7 @@ pub mod network_connections {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The maximum number of resources to return from the operation. Example: '$top=10'."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -5589,6 +6098,7 @@ pub mod network_connections {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The maximum number of resources to return from the operation. Example: '$top=10'."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -5906,6 +6416,7 @@ pub mod network_connections {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The maximum number of resources to return from the operation. Example: '$top=10'."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self

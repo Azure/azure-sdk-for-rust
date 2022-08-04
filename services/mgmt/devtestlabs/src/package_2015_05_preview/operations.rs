@@ -118,6 +118,10 @@ pub mod lab {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List labs."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
@@ -127,6 +131,11 @@ pub mod lab {
                 order_by: None,
             }
         }
+        #[doc = "List labs."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -141,6 +150,12 @@ pub mod lab {
                 order_by: None,
             }
         }
+        #[doc = "Get lab."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `name`: The name of the lab."]
         pub fn get_resource(
             &self,
             subscription_id: impl Into<String>,
@@ -154,6 +169,12 @@ pub mod lab {
                 name: name.into(),
             }
         }
+        #[doc = "Create or replace an existing Lab. This operation can take a while to complete."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `name`: The name of the lab."]
         pub fn create_or_update_resource(
             &self,
             subscription_id: impl Into<String>,
@@ -169,6 +190,12 @@ pub mod lab {
                 lab: lab.into(),
             }
         }
+        #[doc = "Modify properties of labs."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `name`: The name of the lab."]
         pub fn patch_resource(
             &self,
             subscription_id: impl Into<String>,
@@ -184,6 +211,12 @@ pub mod lab {
                 lab: lab.into(),
             }
         }
+        #[doc = "Delete lab. This operation can take a while to complete."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `name`: The name of the lab."]
         pub fn delete_resource(
             &self,
             subscription_id: impl Into<String>,
@@ -197,6 +230,12 @@ pub mod lab {
                 name: name.into(),
             }
         }
+        #[doc = "Create virtual machines in a Lab. This operation can take a while to complete."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `name`: The name of the lab."]
         pub fn create_environment(
             &self,
             subscription_id: impl Into<String>,
@@ -212,6 +251,12 @@ pub mod lab {
                 lab_virtual_machine: lab_virtual_machine.into(),
             }
         }
+        #[doc = "Generate a URI for uploading custom disk images to a Lab."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `name`: The name of the lab."]
         pub fn generate_upload_uri(
             &self,
             subscription_id: impl Into<String>,
@@ -227,6 +272,12 @@ pub mod lab {
                 generate_upload_uri_parameter: generate_upload_uri_parameter.into(),
             }
         }
+        #[doc = "List disk images available for custom image creation."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `name`: The name of the lab."]
         pub fn list_vhds(
             &self,
             subscription_id: impl Into<String>,
@@ -253,6 +304,7 @@ pub mod lab {
             pub(crate) order_by: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the operation."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -352,6 +404,7 @@ pub mod lab {
             pub(crate) order_by: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the operation."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -857,6 +910,12 @@ pub mod artifact_source {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List artifact sources."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -873,6 +932,13 @@ pub mod artifact_source {
                 order_by: None,
             }
         }
+        #[doc = "Get artifact source."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `name`: The name of the artifact source."]
         pub fn get_resource(
             &self,
             subscription_id: impl Into<String>,
@@ -888,6 +954,13 @@ pub mod artifact_source {
                 name: name.into(),
             }
         }
+        #[doc = "Create or replace an existing artifact source."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `name`: The name of the artifact source."]
         pub fn create_or_update_resource(
             &self,
             subscription_id: impl Into<String>,
@@ -905,6 +978,13 @@ pub mod artifact_source {
                 artifact_source: artifact_source.into(),
             }
         }
+        #[doc = "Modify properties of artifact sources."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `name`: The name of the artifact source."]
         pub fn patch_resource(
             &self,
             subscription_id: impl Into<String>,
@@ -922,6 +1002,13 @@ pub mod artifact_source {
                 artifact_source: artifact_source.into(),
             }
         }
+        #[doc = "Delete artifact source."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `name`: The name of the artifact source."]
         pub fn delete_resource(
             &self,
             subscription_id: impl Into<String>,
@@ -952,6 +1039,7 @@ pub mod artifact_source {
             pub(crate) order_by: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the operation."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -1275,6 +1363,13 @@ pub mod artifact {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List artifacts."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `artifact_source_name`: The name of the artifact source."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -1293,6 +1388,14 @@ pub mod artifact {
                 order_by: None,
             }
         }
+        #[doc = "Get artifact."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `artifact_source_name`: The name of the artifact source."]
+        #[doc = "* `name`: The name of the artifact."]
         pub fn get_resource(
             &self,
             subscription_id: impl Into<String>,
@@ -1310,6 +1413,14 @@ pub mod artifact {
                 name: name.into(),
             }
         }
+        #[doc = "Generates an ARM template for the given artifact, uploads the required files to a storage account, and validates the generated artifact."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `artifact_source_name`: The name of the artifact source."]
+        #[doc = "* `name`: The name of the artifact."]
         pub fn generate_arm_template(
             &self,
             subscription_id: impl Into<String>,
@@ -1345,6 +1456,7 @@ pub mod artifact {
             pub(crate) order_by: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the operation."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -1545,6 +1657,12 @@ pub mod cost_insight {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List cost insights."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -1561,6 +1679,13 @@ pub mod cost_insight {
                 order_by: None,
             }
         }
+        #[doc = "Get cost insight."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `name`: The name of the cost insight."]
         pub fn get_resource(
             &self,
             subscription_id: impl Into<String>,
@@ -1576,6 +1701,13 @@ pub mod cost_insight {
                 name: name.into(),
             }
         }
+        #[doc = "Refresh Lab's Cost Insight Data. This operation can take a while to complete."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `name`: The name of the cost insight."]
         pub fn refresh_data(
             &self,
             subscription_id: impl Into<String>,
@@ -1606,6 +1738,7 @@ pub mod cost_insight {
             pub(crate) order_by: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the operation."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -1810,6 +1943,12 @@ pub mod cost {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List costs."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -1826,6 +1965,13 @@ pub mod cost {
                 order_by: None,
             }
         }
+        #[doc = "Get cost."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `name`: The name of the cost."]
         pub fn get_resource(
             &self,
             subscription_id: impl Into<String>,
@@ -1841,6 +1987,13 @@ pub mod cost {
                 name: name.into(),
             }
         }
+        #[doc = "Refresh Lab's Cost Data. This operation can take a while to complete."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `name`: The name of the cost."]
         pub fn refresh_data(
             &self,
             subscription_id: impl Into<String>,
@@ -1871,6 +2024,7 @@ pub mod cost {
             pub(crate) order_by: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the operation."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -2075,6 +2229,12 @@ pub mod custom_image {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List custom images."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -2091,6 +2251,13 @@ pub mod custom_image {
                 order_by: None,
             }
         }
+        #[doc = "Get custom image."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `name`: The name of the custom image."]
         pub fn get_resource(
             &self,
             subscription_id: impl Into<String>,
@@ -2106,6 +2273,13 @@ pub mod custom_image {
                 name: name.into(),
             }
         }
+        #[doc = "Create or replace an existing custom image. This operation can take a while to complete."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `name`: The name of the custom image."]
         pub fn create_or_update_resource(
             &self,
             subscription_id: impl Into<String>,
@@ -2123,6 +2297,13 @@ pub mod custom_image {
                 custom_image: custom_image.into(),
             }
         }
+        #[doc = "Delete custom image. This operation can take a while to complete."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `name`: The name of the custom image."]
         pub fn delete_resource(
             &self,
             subscription_id: impl Into<String>,
@@ -2153,6 +2334,7 @@ pub mod custom_image {
             pub(crate) order_by: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the operation."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -2422,6 +2604,12 @@ pub mod formula {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List formulas."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -2438,6 +2626,13 @@ pub mod formula {
                 order_by: None,
             }
         }
+        #[doc = "Get formula."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `name`: The name of the formula."]
         pub fn get_resource(
             &self,
             subscription_id: impl Into<String>,
@@ -2453,6 +2648,13 @@ pub mod formula {
                 name: name.into(),
             }
         }
+        #[doc = "Create or replace an existing Formula. This operation can take a while to complete."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `name`: The name of the formula."]
         pub fn create_or_update_resource(
             &self,
             subscription_id: impl Into<String>,
@@ -2470,6 +2672,13 @@ pub mod formula {
                 formula: formula.into(),
             }
         }
+        #[doc = "Delete formula."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `name`: The name of the formula."]
         pub fn delete_resource(
             &self,
             subscription_id: impl Into<String>,
@@ -2500,6 +2709,7 @@ pub mod formula {
             pub(crate) order_by: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the operation."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -2768,6 +2978,12 @@ pub mod gallery_image {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List gallery images."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -2799,6 +3015,7 @@ pub mod gallery_image {
             pub(crate) order_by: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the operation."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -2892,6 +3109,13 @@ pub mod policy_set {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Evaluates Lab Policy."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `name`: The name of the policy set."]
         pub fn evaluate_policies(
             &self,
             subscription_id: impl Into<String>,
@@ -2971,6 +3195,13 @@ pub mod policy {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List policies."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `policy_set_name`: The name of the policy set."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -2989,6 +3220,14 @@ pub mod policy {
                 order_by: None,
             }
         }
+        #[doc = "Get policy."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `policy_set_name`: The name of the policy set."]
+        #[doc = "* `name`: The name of the policy."]
         pub fn get_resource(
             &self,
             subscription_id: impl Into<String>,
@@ -3006,6 +3245,14 @@ pub mod policy {
                 name: name.into(),
             }
         }
+        #[doc = "Create or replace an existing policy."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `policy_set_name`: The name of the policy set."]
+        #[doc = "* `name`: The name of the policy."]
         pub fn create_or_update_resource(
             &self,
             subscription_id: impl Into<String>,
@@ -3025,6 +3272,14 @@ pub mod policy {
                 policy: policy.into(),
             }
         }
+        #[doc = "Modify properties of policies."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `policy_set_name`: The name of the policy set."]
+        #[doc = "* `name`: The name of the policy."]
         pub fn patch_resource(
             &self,
             subscription_id: impl Into<String>,
@@ -3044,6 +3299,14 @@ pub mod policy {
                 policy: policy.into(),
             }
         }
+        #[doc = "Delete policy."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `policy_set_name`: The name of the policy set."]
+        #[doc = "* `name`: The name of the policy."]
         pub fn delete_resource(
             &self,
             subscription_id: impl Into<String>,
@@ -3077,6 +3340,7 @@ pub mod policy {
             pub(crate) order_by: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the operation."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -3409,6 +3673,12 @@ pub mod schedule {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List schedules."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -3425,6 +3695,13 @@ pub mod schedule {
                 order_by: None,
             }
         }
+        #[doc = "Get schedule."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `name`: The name of the schedule."]
         pub fn get_resource(
             &self,
             subscription_id: impl Into<String>,
@@ -3440,6 +3717,13 @@ pub mod schedule {
                 name: name.into(),
             }
         }
+        #[doc = "Create or replace an existing schedule. This operation can take a while to complete."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `name`: The name of the schedule."]
         pub fn create_or_update_resource(
             &self,
             subscription_id: impl Into<String>,
@@ -3457,6 +3741,13 @@ pub mod schedule {
                 schedule: schedule.into(),
             }
         }
+        #[doc = "Modify properties of schedules."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `name`: The name of the schedule."]
         pub fn patch_resource(
             &self,
             subscription_id: impl Into<String>,
@@ -3474,6 +3765,13 @@ pub mod schedule {
                 schedule: schedule.into(),
             }
         }
+        #[doc = "Delete schedule. This operation can take a while to complete."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `name`: The name of the schedule."]
         pub fn delete_resource(
             &self,
             subscription_id: impl Into<String>,
@@ -3489,6 +3787,13 @@ pub mod schedule {
                 name: name.into(),
             }
         }
+        #[doc = "Execute a schedule. This operation can take a while to complete."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `name`: The name of the schedule."]
         pub fn execute(
             &self,
             subscription_id: impl Into<String>,
@@ -3519,6 +3824,7 @@ pub mod schedule {
             pub(crate) order_by: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the operation."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -3901,6 +4207,12 @@ pub mod virtual_machine {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List virtual machines."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -3917,6 +4229,13 @@ pub mod virtual_machine {
                 order_by: None,
             }
         }
+        #[doc = "Get virtual machine."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `name`: The name of the virtual Machine."]
         pub fn get_resource(
             &self,
             subscription_id: impl Into<String>,
@@ -3932,6 +4251,13 @@ pub mod virtual_machine {
                 name: name.into(),
             }
         }
+        #[doc = "Create or replace an existing Virtual Machine. This operation can take a while to complete."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `name`: The name of the virtual Machine."]
         pub fn create_or_update_resource(
             &self,
             subscription_id: impl Into<String>,
@@ -3949,6 +4275,13 @@ pub mod virtual_machine {
                 lab_virtual_machine: lab_virtual_machine.into(),
             }
         }
+        #[doc = "Modify properties of virtual machines."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `name`: The name of the virtual Machine."]
         pub fn patch_resource(
             &self,
             subscription_id: impl Into<String>,
@@ -3966,6 +4299,13 @@ pub mod virtual_machine {
                 lab_virtual_machine: lab_virtual_machine.into(),
             }
         }
+        #[doc = "Delete virtual machine. This operation can take a while to complete."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `name`: The name of the virtual Machine."]
         pub fn delete_resource(
             &self,
             subscription_id: impl Into<String>,
@@ -3981,6 +4321,13 @@ pub mod virtual_machine {
                 name: name.into(),
             }
         }
+        #[doc = "Apply artifacts to Lab VM. This operation can take a while to complete."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `name`: The name of the virtual Machine."]
         pub fn apply_artifacts(
             &self,
             subscription_id: impl Into<String>,
@@ -3998,6 +4345,13 @@ pub mod virtual_machine {
                 apply_artifacts_request: apply_artifacts_request.into(),
             }
         }
+        #[doc = "Start a Lab VM. This operation can take a while to complete."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `name`: The name of the virtual Machine."]
         pub fn start(
             &self,
             subscription_id: impl Into<String>,
@@ -4013,6 +4367,13 @@ pub mod virtual_machine {
                 name: name.into(),
             }
         }
+        #[doc = "Stop a Lab VM. This operation can take a while to complete."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `name`: The name of the virtual Machine."]
         pub fn stop(
             &self,
             subscription_id: impl Into<String>,
@@ -4043,6 +4404,7 @@ pub mod virtual_machine {
             pub(crate) order_by: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the operation."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -4533,6 +4895,12 @@ pub mod virtual_network {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List virtual networks."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -4549,6 +4917,13 @@ pub mod virtual_network {
                 order_by: None,
             }
         }
+        #[doc = "Get virtual network."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `name`: The name of the virtual network."]
         pub fn get_resource(
             &self,
             subscription_id: impl Into<String>,
@@ -4564,6 +4939,13 @@ pub mod virtual_network {
                 name: name.into(),
             }
         }
+        #[doc = "Create or replace an existing virtual network. This operation can take a while to complete."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `name`: The name of the virtual network."]
         pub fn create_or_update_resource(
             &self,
             subscription_id: impl Into<String>,
@@ -4581,6 +4963,13 @@ pub mod virtual_network {
                 virtual_network: virtual_network.into(),
             }
         }
+        #[doc = "Modify properties of virtual networks."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `name`: The name of the virtual network."]
         pub fn patch_resource(
             &self,
             subscription_id: impl Into<String>,
@@ -4598,6 +4987,13 @@ pub mod virtual_network {
                 virtual_network: virtual_network.into(),
             }
         }
+        #[doc = "Delete virtual network. This operation can take a while to complete."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `lab_name`: The name of the lab."]
+        #[doc = "* `name`: The name of the virtual network."]
         pub fn delete_resource(
             &self,
             subscription_id: impl Into<String>,
@@ -4628,6 +5024,7 @@ pub mod virtual_network {
             pub(crate) order_by: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the operation."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self

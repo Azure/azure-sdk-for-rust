@@ -131,6 +131,12 @@ pub mod edge_modules {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "List all existing edge module resources."]
+        #[doc = "List all existing edge module resources, along with their JSON representations."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: The Azure Video Analyzer account name."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -146,6 +152,13 @@ pub mod edge_modules {
             }
         }
         #[doc = "Retrieves an existing edge module resource."]
+        #[doc = "Retrieves an existing edge module resource with the given name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: The Azure Video Analyzer account name."]
+        #[doc = "* `edge_module_name`: The Edge Module name."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -162,6 +175,14 @@ pub mod edge_modules {
             }
         }
         #[doc = "Creates a new edge module or updates an existing one."]
+        #[doc = "Creates a new edge module or updates an existing one. An edge module resource enables a single instance of an Azure Video Analyzer IoT edge module to interact with the Video Analyzer Account. This is used for authorization and also to make sure that the particular edge module instance only has access to the data it requires from the Azure Video Analyzer service. A new edge module resource should be created for every new instance of an Azure Video Analyzer edge module deployed to you Azure IoT edge environment. Edge module resources can be deleted if the specific module is not in use anymore."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: The Azure Video Analyzer account name."]
+        #[doc = "* `edge_module_name`: The Edge Module name."]
+        #[doc = "* `parameters`: The request parameters"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -180,6 +201,13 @@ pub mod edge_modules {
             }
         }
         #[doc = "Deletes an existing edge module resource."]
+        #[doc = "Deletes an existing edge module resource. Deleting the edge module resource will prevent an Azure Video Analyzer IoT edge module which was previously initiated with the module provisioning token from communicating with the cloud."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: The Azure Video Analyzer account name."]
+        #[doc = "* `edge_module_name`: The Edge Module name."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -196,6 +224,14 @@ pub mod edge_modules {
             }
         }
         #[doc = "Creates a new provisioning token."]
+        #[doc = "Creates a new provisioning token. A provisioning token allows for a single instance of Azure Video analyzer IoT edge module to be initialized and authorized to the cloud account. The provisioning token itself is short lived and it is only used for the initial handshake between IoT edge module and the cloud. After the initial handshake, the IoT edge module will agree on a set of authentication keys which will be auto-rotated as long as the module is able to periodically connect to the cloud. A new provisioning token can be generated for the same IoT edge module in case the module state lost or reset."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: The Azure Video Analyzer account name."]
+        #[doc = "* `edge_module_name`: The Edge Module name."]
+        #[doc = "* `parameters`: The request parameters"]
         pub fn list_provisioning_token(
             &self,
             subscription_id: impl Into<String>,
@@ -226,6 +262,7 @@ pub mod edge_modules {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "Specifies a non-negative integer n that limits the number of items returned from a collection. The service returns the number of available items up to but not greater than the specified value n."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -529,6 +566,12 @@ pub mod pipeline_topologies {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Retrieves a list of pipeline topologies."]
+        #[doc = "Retrieves a list of pipeline topologies that have been added to the account, if any, along with their JSON representation."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: The Azure Video Analyzer account name."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -545,6 +588,13 @@ pub mod pipeline_topologies {
             }
         }
         #[doc = "Retrieves a specific pipeline topology by name."]
+        #[doc = "Retrieves a specific pipeline topology by name. If a topology with that name has been previously created, the call will return the JSON representation of that topology."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: The Azure Video Analyzer account name."]
+        #[doc = "* `pipeline_topology_name`: Pipeline topology unique identifier."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -561,6 +611,14 @@ pub mod pipeline_topologies {
             }
         }
         #[doc = "Creates or updates a pipeline topology."]
+        #[doc = "Creates a new pipeline topology or updates an existing one, with the given name. A pipeline topology describes the processing steps to be applied when processing content for a particular outcome. The topology should be defined according to the scenario to be achieved and can be reused across many pipeline instances which share the same processing characteristics."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: The Azure Video Analyzer account name."]
+        #[doc = "* `pipeline_topology_name`: Pipeline topology unique identifier."]
+        #[doc = "* `parameters`: The request parameters"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -579,6 +637,14 @@ pub mod pipeline_topologies {
             }
         }
         #[doc = "Updates an existing pipeline topology."]
+        #[doc = "Updates an existing pipeline topology with the given name. If the associated live pipelines or pipeline jobs are in active or processing state, respectively, then only the description can be updated. Else, the properties that can be updated include: description, parameter declarations, sources, processors, and sinks."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: The Azure Video Analyzer account name."]
+        #[doc = "* `pipeline_topology_name`: Pipeline topology unique identifier."]
+        #[doc = "* `parameters`: The request parameters"]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -597,6 +663,13 @@ pub mod pipeline_topologies {
             }
         }
         #[doc = "Deletes a pipeline topology."]
+        #[doc = "Deletes a pipeline topology with the given name. This method should be called after all instances of the topology have been stopped and deleted."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: The Azure Video Analyzer account name."]
+        #[doc = "* `pipeline_topology_name`: Pipeline topology unique identifier."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -626,10 +699,12 @@ pub mod pipeline_topologies {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "Restricts the set of items returned."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Specifies a non-negative integer n that limits the number of items returned from a collection. The service returns the number of available items up to but not greater than the specified value n."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -943,6 +1018,12 @@ pub mod live_pipelines {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Retrieves a list of live pipelines."]
+        #[doc = "Retrieves a list of live pipelines that have been created, along with their JSON representations."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: The Azure Video Analyzer account name."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -959,6 +1040,13 @@ pub mod live_pipelines {
             }
         }
         #[doc = "Retrieves a specific live pipeline by name."]
+        #[doc = "Retrieves a specific live pipeline by name. If a live pipeline with that name has been previously created, the call will return the JSON representation of that instance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: The Azure Video Analyzer account name."]
+        #[doc = "* `live_pipeline_name`: Live pipeline unique identifier."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -975,6 +1063,14 @@ pub mod live_pipelines {
             }
         }
         #[doc = "Creates or updates a live pipeline."]
+        #[doc = "Creates a new live pipeline or updates an existing one, with the given name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: The Azure Video Analyzer account name."]
+        #[doc = "* `live_pipeline_name`: Live pipeline unique identifier."]
+        #[doc = "* `parameters`: The request parameters"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -993,6 +1089,14 @@ pub mod live_pipelines {
             }
         }
         #[doc = "Updates an existing live pipeline."]
+        #[doc = "Updates an existing live pipeline with the given name. Properties that can be updated include: description, bitrateKbps, and parameter definitions. Only the description can be updated while the live pipeline is active."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: The Azure Video Analyzer account name."]
+        #[doc = "* `live_pipeline_name`: Live pipeline unique identifier."]
+        #[doc = "* `parameters`: The request parameters"]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -1011,6 +1115,13 @@ pub mod live_pipelines {
             }
         }
         #[doc = "Deletes a live pipeline."]
+        #[doc = "Deletes a live pipeline with the given name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: The Azure Video Analyzer account name."]
+        #[doc = "* `live_pipeline_name`: Live pipeline unique identifier."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1027,6 +1138,13 @@ pub mod live_pipelines {
             }
         }
         #[doc = "Activates a live pipeline."]
+        #[doc = "Activates a live pipeline with the given name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: The Azure Video Analyzer account name."]
+        #[doc = "* `live_pipeline_name`: Live pipeline unique identifier."]
         pub fn activate(
             &self,
             subscription_id: impl Into<String>,
@@ -1043,6 +1161,13 @@ pub mod live_pipelines {
             }
         }
         #[doc = "Deactivates a live pipeline."]
+        #[doc = "Deactivates a live pipeline with the given name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: The Azure Video Analyzer account name."]
+        #[doc = "* `live_pipeline_name`: Live pipeline unique identifier."]
         pub fn deactivate(
             &self,
             subscription_id: impl Into<String>,
@@ -1072,10 +1197,12 @@ pub mod live_pipelines {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "Restricts the set of items returned."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Specifies a non-negative integer n that limits the number of items returned from a collection. The service returns the number of available items up to but not greater than the specified value n."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -1503,6 +1630,12 @@ pub mod pipeline_jobs {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Retrieves a list of pipeline jobs."]
+        #[doc = "Retrieves a list of all live pipelines that have been created, along with their JSON representations."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: The Azure Video Analyzer account name."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -1519,6 +1652,13 @@ pub mod pipeline_jobs {
             }
         }
         #[doc = "Gets a specific pipeline job by name."]
+        #[doc = "Retrieves a specific pipeline job by name. If a pipeline job with that name has been previously created, the call will return the JSON representation of that instance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: The Azure Video Analyzer account name."]
+        #[doc = "* `pipeline_job_name`: The pipeline job name."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1535,6 +1675,14 @@ pub mod pipeline_jobs {
             }
         }
         #[doc = "Creates or updates a pipeline job."]
+        #[doc = "Creates a new pipeline job or updates an existing one, with the given name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: The Azure Video Analyzer account name."]
+        #[doc = "* `pipeline_job_name`: The pipeline job name."]
+        #[doc = "* `parameters`: The request parameters"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -1553,6 +1701,14 @@ pub mod pipeline_jobs {
             }
         }
         #[doc = "Updates an existing pipeline job."]
+        #[doc = "Updates an existing pipeline job with the given name. Properties that can be updated include: description."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: The Azure Video Analyzer account name."]
+        #[doc = "* `pipeline_job_name`: The pipeline job name."]
+        #[doc = "* `parameters`: The request parameters"]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -1571,6 +1727,13 @@ pub mod pipeline_jobs {
             }
         }
         #[doc = "Deletes a pipeline job."]
+        #[doc = "Deletes a pipeline job with the given name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: The Azure Video Analyzer account name."]
+        #[doc = "* `pipeline_job_name`: The pipeline job name."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1587,6 +1750,13 @@ pub mod pipeline_jobs {
             }
         }
         #[doc = "Cancels a pipeline job."]
+        #[doc = "Cancels a pipeline job with the given name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: The Azure Video Analyzer account name."]
+        #[doc = "* `pipeline_job_name`: The pipeline job name."]
         pub fn cancel(
             &self,
             subscription_id: impl Into<String>,
@@ -1616,10 +1786,12 @@ pub mod pipeline_jobs {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "Restricts the set of items returned."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Specifies a non-negative integer n that limits the number of items returned from a collection. The service returns the number of available items up to but not greater than the specified value n."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -1990,6 +2162,14 @@ pub mod live_pipeline_operation_statuses {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get the operation status"]
+        #[doc = "Get the operation status of a live pipeline."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: The Azure Video Analyzer account name."]
+        #[doc = "* `live_pipeline_name`: Live pipeline unique identifier."]
+        #[doc = "* `operation_id`: The operation ID."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -2062,6 +2242,14 @@ pub mod pipeline_job_operation_statuses {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get the operation statuses."]
+        #[doc = "Get the operation status of a pipeline job with the given operationId."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: The Azure Video Analyzer account name."]
+        #[doc = "* `pipeline_job_name`: The pipeline job name."]
+        #[doc = "* `operation_id`: The operation ID."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -2134,6 +2322,7 @@ pub mod operations {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "List Operations"]
+        #[doc = "Lists all the Media operations."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -2187,6 +2376,11 @@ pub mod video_analyzers {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "List Video Analyzer accounts"]
+        #[doc = "Lists the Video Analyzer accounts in the specified resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
         pub fn list(&self, subscription_id: impl Into<String>, resource_group_name: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -2195,6 +2389,12 @@ pub mod video_analyzers {
             }
         }
         #[doc = "Get a Video Analyzer account"]
+        #[doc = "Get the details of the specified Video Analyzer account"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: The Video Analyzer account name."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -2209,6 +2409,13 @@ pub mod video_analyzers {
             }
         }
         #[doc = "Create or update a Video Analyzer account"]
+        #[doc = "Create or update an instance of a Video Analyzer account"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: The Video Analyzer account name."]
+        #[doc = "* `parameters`: The request parameters"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -2225,6 +2432,13 @@ pub mod video_analyzers {
             }
         }
         #[doc = "Update a Video Analyzer account"]
+        #[doc = "Updates an existing instance of Video Analyzer account"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: The Video Analyzer account name."]
+        #[doc = "* `parameters`: The request parameters"]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -2241,6 +2455,12 @@ pub mod video_analyzers {
             }
         }
         #[doc = "Delete a Video Analyzer account."]
+        #[doc = "Delete the specified Video Analyzer account"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: The Video Analyzer account name."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -2255,6 +2475,10 @@ pub mod video_analyzers {
             }
         }
         #[doc = "List Video Analyzer accounts"]
+        #[doc = "List all Video Analyzer accounts in the specified subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
@@ -2590,6 +2814,12 @@ pub mod private_link_resources {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get list of group IDs."]
+        #[doc = "Get list of group IDs for video analyzer account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: The Video Analyzer account name."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -2604,6 +2834,13 @@ pub mod private_link_resources {
             }
         }
         #[doc = "Get group ID."]
+        #[doc = "Get group ID for video analyzer account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: The Video Analyzer account name."]
+        #[doc = "* `name`: Name of the private link resource (Group ID)."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -2732,6 +2969,12 @@ pub mod private_endpoint_connections {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get all private endpoint connections."]
+        #[doc = "Get all private endpoint connections under video analyzer account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: The Video Analyzer account name."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -2746,6 +2989,13 @@ pub mod private_endpoint_connections {
             }
         }
         #[doc = "Get private endpoint connection."]
+        #[doc = "Get private endpoint connection under video analyzer account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: The Video Analyzer account name."]
+        #[doc = "* `name`: Private endpoint connection name."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -2762,6 +3012,14 @@ pub mod private_endpoint_connections {
             }
         }
         #[doc = "Update private endpoint connection."]
+        #[doc = "Update private endpoint connection state under video analyzer account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: The Video Analyzer account name."]
+        #[doc = "* `name`: Private endpoint connection name."]
+        #[doc = "* `parameters`: The request parameters"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -2780,6 +3038,13 @@ pub mod private_endpoint_connections {
             }
         }
         #[doc = "Delete private endpoint connection."]
+        #[doc = "Delete private endpoint connection under video analyzer account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: The Video Analyzer account name."]
+        #[doc = "* `name`: Private endpoint connection name."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -2998,6 +3263,14 @@ pub mod operation_statuses {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get operation status."]
+        #[doc = "Get private endpoint connection operation status."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: The Video Analyzer account name."]
+        #[doc = "* `name`: Private endpoint connection name."]
+        #[doc = "* `operation_id`: Operation Id."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -3071,6 +3344,14 @@ pub mod operation_results {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get operation result."]
+        #[doc = "Get private endpoint connection operation result."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: The Video Analyzer account name."]
+        #[doc = "* `name`: Private endpoint connection name."]
+        #[doc = "* `operation_id`: Operation Id."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -3148,6 +3429,12 @@ pub mod video_analyzer_operation_statuses {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get operation status."]
+        #[doc = "Get video analyzer operation status."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `location_name`: Location name."]
+        #[doc = "* `operation_id`: Operation Id."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -3220,6 +3507,12 @@ pub mod video_analyzer_operation_results {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get operation result."]
+        #[doc = "Get video analyzer operation result."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `location_name`: Location name."]
+        #[doc = "* `operation_id`: Operation Id."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -3297,6 +3590,12 @@ pub mod locations {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Check Name Availability"]
+        #[doc = "Checks whether the Video Analyzer resource name is available."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `location_name`: Location Name."]
+        #[doc = "* `parameters`: The request parameters"]
         pub fn check_name_availability(
             &self,
             subscription_id: impl Into<String>,
@@ -3369,6 +3668,12 @@ pub mod videos {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Retrieves all existing video resources."]
+        #[doc = "Retrieves a list of video resources that have been created, along with their JSON representations."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: The Azure Video Analyzer account name."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -3384,6 +3689,13 @@ pub mod videos {
             }
         }
         #[doc = "Retrieves an existing video resource."]
+        #[doc = "Retrieves an existing video resource with the given name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: The Azure Video Analyzer account name."]
+        #[doc = "* `video_name`: The Video name."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -3400,6 +3712,14 @@ pub mod videos {
             }
         }
         #[doc = "Creates a new video resource or updates an existing one."]
+        #[doc = "Creates a new video resource or updates an existing video resource with the given name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: The Azure Video Analyzer account name."]
+        #[doc = "* `video_name`: The Video name."]
+        #[doc = "* `parameters`: The request parameters"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -3418,6 +3738,14 @@ pub mod videos {
             }
         }
         #[doc = "Updates individual properties of an existing video resource."]
+        #[doc = "Updates individual properties of an existing video resource with the given name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: The Azure Video Analyzer account name."]
+        #[doc = "* `video_name`: The Video name."]
+        #[doc = "* `parameters`: The request parameters"]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -3436,6 +3764,13 @@ pub mod videos {
             }
         }
         #[doc = "Deletes an existing video resource and its underlying data."]
+        #[doc = "Deletes an existing video resource and its underlying data. This operation is irreversible."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: The Azure Video Analyzer account name."]
+        #[doc = "* `video_name`: The Video name."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -3452,6 +3787,13 @@ pub mod videos {
             }
         }
         #[doc = "Generates a streaming token which can be used for accessing content from video content URLs."]
+        #[doc = "Generates a streaming token which can be used for accessing content from video content URLs, for a video resource with the given name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: The Azure Video Analyzer account name."]
+        #[doc = "* `video_name`: The Video name."]
         pub fn list_content_token(
             &self,
             subscription_id: impl Into<String>,
@@ -3480,6 +3822,7 @@ pub mod videos {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "Specifies a non-negative integer n that limits the number of items returned from a collection. The service returns the number of available items up to but not greater than the specified value n."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -3845,6 +4188,12 @@ pub mod access_policies {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "List all existing access policy resources."]
+        #[doc = "Retrieves all existing access policy resources, along with their JSON representations."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: The Azure Video Analyzer account name."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -3860,6 +4209,13 @@ pub mod access_policies {
             }
         }
         #[doc = "Retrieves an existing access policy resource."]
+        #[doc = "Retrieves an existing access policy resource with the given name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: The Azure Video Analyzer account name."]
+        #[doc = "* `access_policy_name`: The Access Policy name."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -3876,6 +4232,14 @@ pub mod access_policies {
             }
         }
         #[doc = "Creates a new access policy resource or updates an existing one."]
+        #[doc = "Creates a new access policy resource or updates an existing one with the given name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: The Azure Video Analyzer account name."]
+        #[doc = "* `access_policy_name`: The Access Policy name."]
+        #[doc = "* `parameters`: The request parameters"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -3894,6 +4258,14 @@ pub mod access_policies {
             }
         }
         #[doc = "Updates individual properties of an existing access policy resource."]
+        #[doc = "Updates individual properties of an existing access policy resource with the given name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: The Azure Video Analyzer account name."]
+        #[doc = "* `access_policy_name`: The Access Policy name."]
+        #[doc = "* `parameters`: The request parameters"]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -3912,6 +4284,13 @@ pub mod access_policies {
             }
         }
         #[doc = "Deletes an existing access policy resource."]
+        #[doc = "Deletes an existing access policy resource with the given name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: The Azure Video Analyzer account name."]
+        #[doc = "* `access_policy_name`: The Access Policy name."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -3940,6 +4319,7 @@ pub mod access_policies {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "Specifies a non-negative integer n that limits the number of items returned from a collection. The service returns the number of available items up to but not greater than the specified value n."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self

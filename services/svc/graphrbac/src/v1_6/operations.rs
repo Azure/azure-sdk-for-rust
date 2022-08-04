@@ -106,6 +106,11 @@ pub mod o_auth2_permission_grant {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the next page of OAuth2 permission grants"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `next_link`: Next link for the list operation."]
+        #[doc = "* `tenant_id`: The tenant ID."]
         pub fn list_next(&self, next_link: impl Into<String>, tenant_id: impl Into<String>) -> list_next::Builder {
             list_next::Builder {
                 client: self.0.clone(),
@@ -113,6 +118,10 @@ pub mod o_auth2_permission_grant {
                 tenant_id: tenant_id.into(),
             }
         }
+        #[doc = "Queries OAuth2 permissions grants for the relevant SP ObjectId of an app."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `tenant_id`: The tenant ID."]
         pub fn list(&self, tenant_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -120,6 +129,10 @@ pub mod o_auth2_permission_grant {
                 filter: None,
             }
         }
+        #[doc = "Grants OAuth2 permissions for the relevant resource Ids of an app."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `tenant_id`: The tenant ID."]
         pub fn create(&self, tenant_id: impl Into<String>) -> create::Builder {
             create::Builder {
                 client: self.0.clone(),
@@ -127,6 +140,11 @@ pub mod o_auth2_permission_grant {
                 body: None,
             }
         }
+        #[doc = "Delete a OAuth2 permission grant for the relevant resource Ids of an app."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `object_id`: The object ID of a permission grant."]
+        #[doc = "* `tenant_id`: The tenant ID."]
         pub fn delete(&self, object_id: impl Into<String>, tenant_id: impl Into<String>) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),
@@ -221,6 +239,7 @@ pub mod o_auth2_permission_grant {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "This is the Service Principal ObjectId associated with the app"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -300,6 +319,7 @@ pub mod o_auth2_permission_grant {
             pub(crate) body: Option<models::OAuth2PermissionGrant>,
         }
         impl Builder {
+            #[doc = "The relevant app Service Principal Object Id and the Service Principal Object Id you want to grant."]
             pub fn body(mut self, body: impl Into<models::OAuth2PermissionGrant>) -> Self {
                 self.body = Some(body.into());
                 self
@@ -396,6 +416,11 @@ pub mod signed_in_user {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get the list of directory objects that are owned by the user."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `next_link`: Next link for the list operation."]
+        #[doc = "* `tenant_id`: The tenant ID."]
         pub fn list_owned_objects_next(
             &self,
             next_link: impl Into<String>,
@@ -407,12 +432,20 @@ pub mod signed_in_user {
                 tenant_id: tenant_id.into(),
             }
         }
+        #[doc = "Gets the details for the currently logged-in user."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `tenant_id`: The tenant ID."]
         pub fn get(&self, tenant_id: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
                 tenant_id: tenant_id.into(),
             }
         }
+        #[doc = "Get the list of directory objects that are owned by the user."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `tenant_id`: The tenant ID."]
         pub fn list_owned_objects(&self, tenant_id: impl Into<String>) -> list_owned_objects::Builder {
             list_owned_objects::Builder {
                 client: self.0.clone(),
@@ -615,6 +648,11 @@ pub mod groups {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a list of groups for the current tenant."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `next_link`: Next link for the list operation."]
+        #[doc = "* `tenant_id`: The tenant ID."]
         pub fn list_next(&self, next_link: impl Into<String>, tenant_id: impl Into<String>) -> list_next::Builder {
             list_next::Builder {
                 client: self.0.clone(),
@@ -622,6 +660,11 @@ pub mod groups {
                 tenant_id: tenant_id.into(),
             }
         }
+        #[doc = "Gets the members of a group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `next_link`: Next link for the list operation."]
+        #[doc = "* `tenant_id`: The tenant ID."]
         pub fn get_group_members_next(
             &self,
             next_link: impl Into<String>,
@@ -633,6 +676,11 @@ pub mod groups {
                 tenant_id: tenant_id.into(),
             }
         }
+        #[doc = "Checks whether the specified user, group, contact, or service principal is a direct or transitive member of the specified group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `parameters`: The check group membership parameters."]
+        #[doc = "* `tenant_id`: The tenant ID."]
         pub fn is_member_of(
             &self,
             parameters: impl Into<models::CheckGroupMembershipParameters>,
@@ -644,6 +692,12 @@ pub mod groups {
                 tenant_id: tenant_id.into(),
             }
         }
+        #[doc = "Remove a member from a group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `group_object_id`: The object ID of the group from which to remove the member."]
+        #[doc = "* `member_object_id`: Member object id"]
+        #[doc = "* `tenant_id`: The tenant ID."]
         pub fn remove_member(
             &self,
             group_object_id: impl Into<String>,
@@ -657,6 +711,12 @@ pub mod groups {
                 tenant_id: tenant_id.into(),
             }
         }
+        #[doc = "Add a member to a group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `group_object_id`: The object ID of the group to which to add the member."]
+        #[doc = "* `parameters`: The URL of the member object, such as https://graph.windows.net/0b1f9851-1bf0-433f-aec3-cb9272f093dc/directoryObjects/f260bbc4-c254-447b-94cf-293b5ec434dd."]
+        #[doc = "* `tenant_id`: The tenant ID."]
         pub fn add_member(
             &self,
             group_object_id: impl Into<String>,
@@ -670,6 +730,10 @@ pub mod groups {
                 tenant_id: tenant_id.into(),
             }
         }
+        #[doc = "Gets list of groups for the current tenant."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `tenant_id`: The tenant ID."]
         pub fn list(&self, tenant_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -677,6 +741,11 @@ pub mod groups {
                 filter: None,
             }
         }
+        #[doc = "Create a group in the directory."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `parameters`: The parameters for the group to create."]
+        #[doc = "* `tenant_id`: The tenant ID."]
         pub fn create(&self, parameters: impl Into<models::GroupCreateParameters>, tenant_id: impl Into<String>) -> create::Builder {
             create::Builder {
                 client: self.0.clone(),
@@ -684,6 +753,11 @@ pub mod groups {
                 tenant_id: tenant_id.into(),
             }
         }
+        #[doc = "Gets the members of a group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `object_id`: The object ID of the group whose members should be retrieved."]
+        #[doc = "* `tenant_id`: The tenant ID."]
         pub fn get_group_members(&self, object_id: impl Into<String>, tenant_id: impl Into<String>) -> get_group_members::Builder {
             get_group_members::Builder {
                 client: self.0.clone(),
@@ -691,6 +765,11 @@ pub mod groups {
                 tenant_id: tenant_id.into(),
             }
         }
+        #[doc = "Gets group information from the directory."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `object_id`: The object ID of the user for which to get group information."]
+        #[doc = "* `tenant_id`: The tenant ID."]
         pub fn get(&self, object_id: impl Into<String>, tenant_id: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -698,6 +777,11 @@ pub mod groups {
                 tenant_id: tenant_id.into(),
             }
         }
+        #[doc = "Delete a group from the directory."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `object_id`: The object ID of the group to delete."]
+        #[doc = "* `tenant_id`: The tenant ID."]
         pub fn delete(&self, object_id: impl Into<String>, tenant_id: impl Into<String>) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),
@@ -705,6 +789,12 @@ pub mod groups {
                 tenant_id: tenant_id.into(),
             }
         }
+        #[doc = "Gets a collection of object IDs of groups of which the specified group is a member."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `object_id`: The object ID of the group for which to get group membership."]
+        #[doc = "* `parameters`: Group filtering parameters."]
+        #[doc = "* `tenant_id`: The tenant ID."]
         pub fn get_member_groups(
             &self,
             object_id: impl Into<String>,
@@ -719,6 +809,11 @@ pub mod groups {
             }
         }
         #[doc = "Directory objects that are owners of the group."]
+        #[doc = "The owners are a set of non-admin users who are allowed to modify this object."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `object_id`: The object ID of the group for which to get owners."]
+        #[doc = "* `tenant_id`: The tenant ID."]
         pub fn list_owners(&self, object_id: impl Into<String>, tenant_id: impl Into<String>) -> list_owners::Builder {
             list_owners::Builder {
                 client: self.0.clone(),
@@ -726,6 +821,12 @@ pub mod groups {
                 tenant_id: tenant_id.into(),
             }
         }
+        #[doc = "Add an owner to a group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `object_id`: The object ID of the application to which to add the owner."]
+        #[doc = "* `parameters`: The URL of the owner object, such as https://graph.windows.net/0b1f9851-1bf0-433f-aec3-cb9272f093dc/directoryObjects/f260bbc4-c254-447b-94cf-293b5ec434dd."]
+        #[doc = "* `tenant_id`: The tenant ID."]
         pub fn add_owner(
             &self,
             object_id: impl Into<String>,
@@ -739,6 +840,12 @@ pub mod groups {
                 tenant_id: tenant_id.into(),
             }
         }
+        #[doc = "Remove a member from owners."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `object_id`: The object ID of the group from which to remove the owner."]
+        #[doc = "* `owner_object_id`: Owner object id"]
+        #[doc = "* `tenant_id`: The tenant ID."]
         pub fn remove_owner(
             &self,
             object_id: impl Into<String>,
@@ -1057,6 +1164,7 @@ pub mod groups {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply to the operation."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -1573,6 +1681,11 @@ pub mod applications {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a list of applications from the current tenant."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `next_link`: Next link for the list operation."]
+        #[doc = "* `tenant_id`: The tenant ID."]
         pub fn list_next(&self, next_link: impl Into<String>, tenant_id: impl Into<String>) -> list_next::Builder {
             list_next::Builder {
                 client: self.0.clone(),
@@ -1580,6 +1693,10 @@ pub mod applications {
                 tenant_id: tenant_id.into(),
             }
         }
+        #[doc = "Lists applications by filter parameters."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `tenant_id`: The tenant ID."]
         pub fn list(&self, tenant_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -1587,6 +1704,11 @@ pub mod applications {
                 filter: None,
             }
         }
+        #[doc = "Create a new application."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `parameters`: The parameters for creating an application."]
+        #[doc = "* `tenant_id`: The tenant ID."]
         pub fn create(&self, parameters: impl Into<models::ApplicationCreateParameters>, tenant_id: impl Into<String>) -> create::Builder {
             create::Builder {
                 client: self.0.clone(),
@@ -1594,6 +1716,11 @@ pub mod applications {
                 tenant_id: tenant_id.into(),
             }
         }
+        #[doc = "Get an application by object ID."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `application_object_id`: Application object ID."]
+        #[doc = "* `tenant_id`: The tenant ID."]
         pub fn get(&self, application_object_id: impl Into<String>, tenant_id: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -1601,6 +1728,12 @@ pub mod applications {
                 tenant_id: tenant_id.into(),
             }
         }
+        #[doc = "Update an existing application."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `application_object_id`: Application object ID."]
+        #[doc = "* `parameters`: Parameters to update an existing application."]
+        #[doc = "* `tenant_id`: The tenant ID."]
         pub fn patch(
             &self,
             application_object_id: impl Into<String>,
@@ -1614,6 +1747,11 @@ pub mod applications {
                 tenant_id: tenant_id.into(),
             }
         }
+        #[doc = "Delete an application."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `application_object_id`: Application object ID."]
+        #[doc = "* `tenant_id`: The tenant ID."]
         pub fn delete(&self, application_object_id: impl Into<String>, tenant_id: impl Into<String>) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),
@@ -1622,6 +1760,11 @@ pub mod applications {
             }
         }
         #[doc = "Directory objects that are owners of the application."]
+        #[doc = "The owners are a set of non-admin users who are allowed to modify this object."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `application_object_id`: The object ID of the application for which to get owners."]
+        #[doc = "* `tenant_id`: The tenant ID."]
         pub fn list_owners(&self, application_object_id: impl Into<String>, tenant_id: impl Into<String>) -> list_owners::Builder {
             list_owners::Builder {
                 client: self.0.clone(),
@@ -1629,6 +1772,12 @@ pub mod applications {
                 tenant_id: tenant_id.into(),
             }
         }
+        #[doc = "Add an owner to an application."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `application_object_id`: The object ID of the application to which to add the owner."]
+        #[doc = "* `parameters`: The URL of the owner object, such as https://graph.windows.net/0b1f9851-1bf0-433f-aec3-cb9272f093dc/directoryObjects/f260bbc4-c254-447b-94cf-293b5ec434dd."]
+        #[doc = "* `tenant_id`: The tenant ID."]
         pub fn add_owner(
             &self,
             application_object_id: impl Into<String>,
@@ -1642,6 +1791,12 @@ pub mod applications {
                 tenant_id: tenant_id.into(),
             }
         }
+        #[doc = "Remove a member from owners."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `application_object_id`: The object ID of the application from which to remove the owner."]
+        #[doc = "* `owner_object_id`: Owner object id"]
+        #[doc = "* `tenant_id`: The tenant ID."]
         pub fn remove_owner(
             &self,
             application_object_id: impl Into<String>,
@@ -1655,6 +1810,11 @@ pub mod applications {
                 tenant_id: tenant_id.into(),
             }
         }
+        #[doc = "Get the keyCredentials associated with an application."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `application_object_id`: Application object ID."]
+        #[doc = "* `tenant_id`: The tenant ID."]
         pub fn list_key_credentials(
             &self,
             application_object_id: impl Into<String>,
@@ -1666,6 +1826,12 @@ pub mod applications {
                 tenant_id: tenant_id.into(),
             }
         }
+        #[doc = "Update the keyCredentials associated with an application."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `application_object_id`: Application object ID."]
+        #[doc = "* `parameters`: Parameters to update the keyCredentials of an existing application."]
+        #[doc = "* `tenant_id`: The tenant ID."]
         pub fn update_key_credentials(
             &self,
             application_object_id: impl Into<String>,
@@ -1679,6 +1845,11 @@ pub mod applications {
                 tenant_id: tenant_id.into(),
             }
         }
+        #[doc = "Get the passwordCredentials associated with an application."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `application_object_id`: Application object ID."]
+        #[doc = "* `tenant_id`: The tenant ID."]
         pub fn list_password_credentials(
             &self,
             application_object_id: impl Into<String>,
@@ -1690,6 +1861,12 @@ pub mod applications {
                 tenant_id: tenant_id.into(),
             }
         }
+        #[doc = "Update passwordCredentials associated with an application."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `application_object_id`: Application object ID."]
+        #[doc = "* `parameters`: Parameters to update passwordCredentials of an existing application."]
+        #[doc = "* `tenant_id`: The tenant ID."]
         pub fn update_password_credentials(
             &self,
             application_object_id: impl Into<String>,
@@ -1703,6 +1880,11 @@ pub mod applications {
                 tenant_id: tenant_id.into(),
             }
         }
+        #[doc = "Gets an object id for a given application id from the current tenant."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `tenant_id`: The tenant ID."]
+        #[doc = "* `application_id`: The application ID."]
         pub fn get_service_principals_id_by_app_id(
             &self,
             tenant_id: impl Into<String>,
@@ -1801,6 +1983,7 @@ pub mod applications {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "The filters to apply to the operation."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -2484,6 +2667,11 @@ pub mod deleted_applications {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a list of deleted applications in the directory."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `next_link`: Next link for the list operation."]
+        #[doc = "* `tenant_id`: The tenant ID."]
         pub fn list_next(&self, next_link: impl Into<String>, tenant_id: impl Into<String>) -> list_next::Builder {
             list_next::Builder {
                 client: self.0.clone(),
@@ -2491,6 +2679,11 @@ pub mod deleted_applications {
                 tenant_id: tenant_id.into(),
             }
         }
+        #[doc = "Restores the deleted application in the directory."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `object_id`: Application object ID."]
+        #[doc = "* `tenant_id`: The tenant ID."]
         pub fn restore(&self, object_id: impl Into<String>, tenant_id: impl Into<String>) -> restore::Builder {
             restore::Builder {
                 client: self.0.clone(),
@@ -2498,6 +2691,10 @@ pub mod deleted_applications {
                 tenant_id: tenant_id.into(),
             }
         }
+        #[doc = "Gets a list of deleted applications in the directory."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `tenant_id`: The tenant ID."]
         pub fn list(&self, tenant_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -2505,6 +2702,11 @@ pub mod deleted_applications {
                 filter: None,
             }
         }
+        #[doc = "Hard-delete an application."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `application_object_id`: Application object ID."]
+        #[doc = "* `tenant_id`: The tenant ID."]
         pub fn hard_delete(&self, application_object_id: impl Into<String>, tenant_id: impl Into<String>) -> hard_delete::Builder {
             hard_delete::Builder {
                 client: self.0.clone(),
@@ -2650,6 +2852,7 @@ pub mod deleted_applications {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply to the operation."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -2770,6 +2973,11 @@ pub mod service_principals {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a list of service principals from the current tenant."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `next_link`: Next link for the list operation."]
+        #[doc = "* `tenant_id`: The tenant ID."]
         pub fn list_next(&self, next_link: impl Into<String>, tenant_id: impl Into<String>) -> list_next::Builder {
             list_next::Builder {
                 client: self.0.clone(),
@@ -2777,6 +2985,10 @@ pub mod service_principals {
                 tenant_id: tenant_id.into(),
             }
         }
+        #[doc = "Gets a list of service principals from the current tenant."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `tenant_id`: The tenant ID."]
         pub fn list(&self, tenant_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -2784,6 +2996,11 @@ pub mod service_principals {
                 filter: None,
             }
         }
+        #[doc = "Creates a service principal in the directory."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `parameters`: Parameters to create a service principal."]
+        #[doc = "* `tenant_id`: The tenant ID."]
         pub fn create(
             &self,
             parameters: impl Into<models::ServicePrincipalCreateParameters>,
@@ -2795,6 +3012,11 @@ pub mod service_principals {
                 tenant_id: tenant_id.into(),
             }
         }
+        #[doc = "Gets service principal information from the directory. Query by objectId or pass a filter to query by appId"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `object_id`: The object ID of the service principal to get."]
+        #[doc = "* `tenant_id`: The tenant ID."]
         pub fn get(&self, object_id: impl Into<String>, tenant_id: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -2802,6 +3024,12 @@ pub mod service_principals {
                 tenant_id: tenant_id.into(),
             }
         }
+        #[doc = "Updates a service principal in the directory."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `object_id`: The object ID of the service principal to delete."]
+        #[doc = "* `parameters`: Parameters to update a service principal."]
+        #[doc = "* `tenant_id`: The tenant ID."]
         pub fn update(
             &self,
             object_id: impl Into<String>,
@@ -2815,6 +3043,11 @@ pub mod service_principals {
                 tenant_id: tenant_id.into(),
             }
         }
+        #[doc = "Deletes a service principal from the directory."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `object_id`: The object ID of the service principal to delete."]
+        #[doc = "* `tenant_id`: The tenant ID."]
         pub fn delete(&self, object_id: impl Into<String>, tenant_id: impl Into<String>) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),
@@ -2823,6 +3056,10 @@ pub mod service_principals {
             }
         }
         #[doc = "Principals (users, groups, and service principals) that are assigned to this service principal."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `object_id`: The object ID of the service principal for which to get owners."]
+        #[doc = "* `tenant_id`: The tenant ID."]
         pub fn list_app_role_assigned_to(
             &self,
             object_id: impl Into<String>,
@@ -2835,6 +3072,10 @@ pub mod service_principals {
             }
         }
         #[doc = "Applications that the service principal is assigned to."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `object_id`: The object ID of the service principal for which to get owners."]
+        #[doc = "* `tenant_id`: The tenant ID."]
         pub fn list_app_role_assignments(
             &self,
             object_id: impl Into<String>,
@@ -2847,6 +3088,11 @@ pub mod service_principals {
             }
         }
         #[doc = "Directory objects that are owners of this service principal."]
+        #[doc = "The owners are a set of non-admin users who are allowed to modify this object."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `object_id`: The object ID of the service principal for which to get owners."]
+        #[doc = "* `tenant_id`: The tenant ID."]
         pub fn list_owners(&self, object_id: impl Into<String>, tenant_id: impl Into<String>) -> list_owners::Builder {
             list_owners::Builder {
                 client: self.0.clone(),
@@ -2854,6 +3100,12 @@ pub mod service_principals {
                 tenant_id: tenant_id.into(),
             }
         }
+        #[doc = "Add an owner to a service principal."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `object_id`: The object ID of the service principal to which to add the owner."]
+        #[doc = "* `parameters`: The URL of the owner object, such as https://graph.windows.net/0b1f9851-1bf0-433f-aec3-cb9272f093dc/directoryObjects/f260bbc4-c254-447b-94cf-293b5ec434dd."]
+        #[doc = "* `tenant_id`: The tenant ID."]
         pub fn add_owner(
             &self,
             object_id: impl Into<String>,
@@ -2867,6 +3119,12 @@ pub mod service_principals {
                 tenant_id: tenant_id.into(),
             }
         }
+        #[doc = "Remove a member from owners."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `object_id`: The object ID of the service principal from which to remove the owner."]
+        #[doc = "* `owner_object_id`: Owner object id"]
+        #[doc = "* `tenant_id`: The tenant ID."]
         pub fn remove_owner(
             &self,
             object_id: impl Into<String>,
@@ -2880,6 +3138,11 @@ pub mod service_principals {
                 tenant_id: tenant_id.into(),
             }
         }
+        #[doc = "Get the keyCredentials associated with the specified service principal."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `object_id`: The object ID of the service principal for which to get keyCredentials."]
+        #[doc = "* `tenant_id`: The tenant ID."]
         pub fn list_key_credentials(&self, object_id: impl Into<String>, tenant_id: impl Into<String>) -> list_key_credentials::Builder {
             list_key_credentials::Builder {
                 client: self.0.clone(),
@@ -2887,6 +3150,12 @@ pub mod service_principals {
                 tenant_id: tenant_id.into(),
             }
         }
+        #[doc = "Update the keyCredentials associated with a service principal."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `object_id`: The object ID for which to get service principal information."]
+        #[doc = "* `parameters`: Parameters to update the keyCredentials of an existing service principal."]
+        #[doc = "* `tenant_id`: The tenant ID."]
         pub fn update_key_credentials(
             &self,
             object_id: impl Into<String>,
@@ -2900,6 +3169,11 @@ pub mod service_principals {
                 tenant_id: tenant_id.into(),
             }
         }
+        #[doc = "Gets the passwordCredentials associated with a service principal."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `object_id`: The object ID of the service principal."]
+        #[doc = "* `tenant_id`: The tenant ID."]
         pub fn list_password_credentials(
             &self,
             object_id: impl Into<String>,
@@ -2911,6 +3185,12 @@ pub mod service_principals {
                 tenant_id: tenant_id.into(),
             }
         }
+        #[doc = "Updates the passwordCredentials associated with a service principal."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `object_id`: The object ID of the service principal."]
+        #[doc = "* `parameters`: Parameters to update the passwordCredentials of an existing service principal."]
+        #[doc = "* `tenant_id`: The tenant ID."]
         pub fn update_password_credentials(
             &self,
             object_id: impl Into<String>,
@@ -3011,6 +3291,7 @@ pub mod service_principals {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply to the operation."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -3796,6 +4077,11 @@ pub mod users {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a list of users for the current tenant."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `next_link`: Next link for the list operation."]
+        #[doc = "* `tenant_id`: The tenant ID."]
         pub fn list_next(&self, next_link: impl Into<String>, tenant_id: impl Into<String>) -> list_next::Builder {
             list_next::Builder {
                 client: self.0.clone(),
@@ -3803,6 +4089,10 @@ pub mod users {
                 tenant_id: tenant_id.into(),
             }
         }
+        #[doc = "Gets list of users for the current tenant."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `tenant_id`: The tenant ID."]
         pub fn list(&self, tenant_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -3812,6 +4102,11 @@ pub mod users {
                 top: None,
             }
         }
+        #[doc = "Create a new user."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `parameters`: Parameters to create a user."]
+        #[doc = "* `tenant_id`: The tenant ID."]
         pub fn create(&self, parameters: impl Into<models::UserCreateParameters>, tenant_id: impl Into<String>) -> create::Builder {
             create::Builder {
                 client: self.0.clone(),
@@ -3819,6 +4114,11 @@ pub mod users {
                 tenant_id: tenant_id.into(),
             }
         }
+        #[doc = "Gets user information from the directory."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `upn_or_object_id`: The object ID or principal name of the user for which to get information."]
+        #[doc = "* `tenant_id`: The tenant ID."]
         pub fn get(&self, upn_or_object_id: impl Into<String>, tenant_id: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -3826,6 +4126,12 @@ pub mod users {
                 tenant_id: tenant_id.into(),
             }
         }
+        #[doc = "Updates a user."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `upn_or_object_id`: The object ID or principal name of the user to update."]
+        #[doc = "* `parameters`: Parameters to update an existing user."]
+        #[doc = "* `tenant_id`: The tenant ID."]
         pub fn update(
             &self,
             upn_or_object_id: impl Into<String>,
@@ -3839,6 +4145,11 @@ pub mod users {
                 tenant_id: tenant_id.into(),
             }
         }
+        #[doc = "Delete a user."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `upn_or_object_id`: The object ID or principal name of the user to delete."]
+        #[doc = "* `tenant_id`: The tenant ID."]
         pub fn delete(&self, upn_or_object_id: impl Into<String>, tenant_id: impl Into<String>) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),
@@ -3846,6 +4157,12 @@ pub mod users {
                 tenant_id: tenant_id.into(),
             }
         }
+        #[doc = "Gets a collection that contains the object IDs of the groups of which the user is a member."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `object_id`: The object ID of the user for which to get group membership."]
+        #[doc = "* `parameters`: User filtering parameters."]
+        #[doc = "* `tenant_id`: The tenant ID."]
         pub fn get_member_groups(
             &self,
             object_id: impl Into<String>,
@@ -3948,14 +4265,17 @@ pub mod users {
             pub(crate) top: Option<i64>,
         }
         impl Builder {
+            #[doc = "The filter to apply to the operation."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "The expand value for the operation result."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
             }
+            #[doc = "(Optional) Set the maximum number of results per response."]
             pub fn top(mut self, top: i64) -> Self {
                 self.top = Some(top);
                 self
@@ -4278,6 +4598,11 @@ pub mod objects {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets AD group membership for the specified AD object IDs."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `next_link`: Next link for the list operation."]
+        #[doc = "* `tenant_id`: The tenant ID."]
         pub fn get_objects_by_object_ids_next(
             &self,
             next_link: impl Into<String>,
@@ -4289,6 +4614,11 @@ pub mod objects {
                 tenant_id: tenant_id.into(),
             }
         }
+        #[doc = "Gets the directory objects specified in a list of object IDs. You can also specify which resource collections (users, groups, etc.) should be searched by specifying the optional types parameter."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `parameters`: Objects filtering parameters."]
+        #[doc = "* `tenant_id`: The tenant ID."]
         pub fn get_objects_by_object_ids(
             &self,
             parameters: impl Into<models::GetObjectsParameters>,
@@ -4456,6 +4786,10 @@ pub mod domains {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a list of domains for the current tenant."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `tenant_id`: The tenant ID."]
         pub fn list(&self, tenant_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -4463,6 +4797,11 @@ pub mod domains {
                 filter: None,
             }
         }
+        #[doc = "Gets a specific domain in the current tenant."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `domain_name`: name of the domain."]
+        #[doc = "* `tenant_id`: The tenant ID."]
         pub fn get(&self, domain_name: impl Into<String>, tenant_id: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -4481,6 +4820,7 @@ pub mod domains {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply to the operation."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self

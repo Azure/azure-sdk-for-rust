@@ -85,6 +85,12 @@ pub mod workspace_collections {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieves an existing Power BI Workspace Collection."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Azure resource group"]
+        #[doc = "* `workspace_collection_name`: Power BI Embedded Workspace Collection name"]
         pub fn get_by_name(
             &self,
             subscription_id: impl Into<String>,
@@ -98,6 +104,13 @@ pub mod workspace_collections {
                 workspace_collection_name: workspace_collection_name.into(),
             }
         }
+        #[doc = "Creates a new Power BI Workspace Collection with the specified properties. A Power BI Workspace Collection contains one or more workspaces, and can be used to provision keys that provide API access to those workspaces."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Azure resource group"]
+        #[doc = "* `workspace_collection_name`: Power BI Embedded Workspace Collection name"]
+        #[doc = "* `body`: Create workspace collection request"]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -113,6 +126,13 @@ pub mod workspace_collections {
                 body: body.into(),
             }
         }
+        #[doc = "Update an existing Power BI Workspace Collection with the specified properties."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Azure resource group"]
+        #[doc = "* `workspace_collection_name`: Power BI Embedded Workspace Collection name"]
+        #[doc = "* `body`: Update workspace collection request"]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -128,6 +148,12 @@ pub mod workspace_collections {
                 body: body.into(),
             }
         }
+        #[doc = "Delete a Power BI Workspace Collection."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Azure resource group"]
+        #[doc = "* `workspace_collection_name`: Power BI Embedded Workspace Collection name"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -141,6 +167,12 @@ pub mod workspace_collections {
                 workspace_collection_name: workspace_collection_name.into(),
             }
         }
+        #[doc = "Verify the specified Power BI Workspace Collection name is valid and not already in use."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `location`: Azure location"]
+        #[doc = "* `body`: Check name availability request"]
         pub fn check_name_availability(
             &self,
             subscription_id: impl Into<String>,
@@ -154,6 +186,11 @@ pub mod workspace_collections {
                 body: body.into(),
             }
         }
+        #[doc = "Retrieves all existing Power BI workspace collections in the specified resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Azure resource group"]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -165,12 +202,22 @@ pub mod workspace_collections {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Retrieves all existing Power BI workspace collections in the specified subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Retrieves the primary and secondary access keys for the specified Power BI Workspace Collection."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Azure resource group"]
+        #[doc = "* `workspace_collection_name`: Power BI Embedded Workspace Collection name"]
         pub fn get_access_keys(
             &self,
             subscription_id: impl Into<String>,
@@ -184,6 +231,13 @@ pub mod workspace_collections {
                 workspace_collection_name: workspace_collection_name.into(),
             }
         }
+        #[doc = "Regenerates the primary or secondary access key for the specified Power BI Workspace Collection."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Azure resource group"]
+        #[doc = "* `workspace_collection_name`: Power BI Embedded Workspace Collection name"]
+        #[doc = "* `body`: Access key to regenerate"]
         pub fn regenerate_key(
             &self,
             subscription_id: impl Into<String>,
@@ -199,6 +253,12 @@ pub mod workspace_collections {
                 body: body.into(),
             }
         }
+        #[doc = "Migrates an existing Power BI Workspace Collection to a different resource group and/or subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Azure resource group"]
+        #[doc = "* `body`: Workspace migration request"]
         pub fn migrate(
             &self,
             subscription_id: impl Into<String>,
@@ -731,6 +791,7 @@ pub mod workspace_collections {
     }
 }
 impl Client {
+    #[doc = "Indicates which operations can be performed by the Power BI Resource Provider."]
     pub fn get_available_operations(&self) -> get_available_operations::Builder {
         get_available_operations::Builder { client: self.clone() }
     }
@@ -782,6 +843,12 @@ pub mod workspaces {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieves all existing Power BI workspaces in the specified workspace collection."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Azure resource group"]
+        #[doc = "* `workspace_collection_name`: Power BI Embedded Workspace Collection name"]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,

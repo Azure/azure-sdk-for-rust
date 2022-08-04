@@ -88,6 +88,11 @@ pub mod locations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Checks the name availability of the resource with requested resource name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `body`: NameAvailabilityRequest object."]
         pub fn check_name_availability(
             &self,
             subscription_id: impl Into<String>,
@@ -152,6 +157,11 @@ pub mod energy_services {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Returns list of oep resources.."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -163,12 +173,22 @@ pub mod energy_services {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Lists a collection of oep resources under the given Azure Subscription ID."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Returns oep resource for a given name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `resource_name`: The resource name."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -182,6 +202,12 @@ pub mod energy_services {
                 resource_name: resource_name.into(),
             }
         }
+        #[doc = "Method that gets called if subscribed for ResourceCreationBegin trigger."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `resource_name`: The resource name."]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -196,6 +222,10 @@ pub mod energy_services {
                 body: None,
             }
         }
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `resource_name`: The resource name."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -210,6 +240,12 @@ pub mod energy_services {
                 body: None,
             }
         }
+        #[doc = "Deletes oep resource"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `resource_name`: The resource name."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -223,6 +259,12 @@ pub mod energy_services {
                 resource_name: resource_name.into(),
             }
         }
+        #[doc = "Method that gets called if new partition is to be added in a resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `resource_name`: The resource name."]
         pub fn add_partition(
             &self,
             subscription_id: impl Into<String>,
@@ -237,6 +279,12 @@ pub mod energy_services {
                 body: None,
             }
         }
+        #[doc = "Method that gets called if new partition is to be removed from a resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `resource_name`: The resource name."]
         pub fn remove_partition(
             &self,
             subscription_id: impl Into<String>,
@@ -251,6 +299,12 @@ pub mod energy_services {
                 body: None,
             }
         }
+        #[doc = "Method that gets called when list of partitions is requested."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `resource_name`: The resource name."]
         pub fn list_partitions(
             &self,
             subscription_id: impl Into<String>,
@@ -483,6 +537,7 @@ pub mod energy_services {
             pub(crate) body: Option<models::EnergyService>,
         }
         impl Builder {
+            #[doc = "Request body."]
             pub fn body(mut self, body: impl Into<models::EnergyService>) -> Self {
                 self.body = Some(body.into());
                 self
@@ -666,6 +721,7 @@ pub mod energy_services {
             pub(crate) body: Option<models::DataPartitionAddOrRemoveRequest>,
         }
         impl Builder {
+            #[doc = "add partition action payload"]
             pub fn body(mut self, body: impl Into<models::DataPartitionAddOrRemoveRequest>) -> Self {
                 self.body = Some(body.into());
                 self
@@ -729,6 +785,7 @@ pub mod energy_services {
             pub(crate) body: Option<models::DataPartitionAddOrRemoveRequest>,
         }
         impl Builder {
+            #[doc = "remove partition action payload"]
             pub fn body(mut self, body: impl Into<models::DataPartitionAddOrRemoveRequest>) -> Self {
                 self.body = Some(body.into());
                 self
@@ -832,6 +889,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists the available operations of Microsoft.OpenEnergyPlatform resource provider."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }

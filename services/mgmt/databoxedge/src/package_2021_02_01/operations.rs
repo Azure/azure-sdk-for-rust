@@ -220,6 +220,9 @@ pub mod available_skus {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "List all the available Skus and information related to them."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -306,6 +309,10 @@ pub mod devices {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets all the Data Box Edge/Data Box Gateway devices in a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
@@ -313,6 +320,11 @@ pub mod devices {
                 expand: None,
             }
         }
+        #[doc = "Gets all the Data Box Edge/Data Box Gateway devices in a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The resource group name."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -325,6 +337,12 @@ pub mod devices {
                 expand: None,
             }
         }
+        #[doc = "Gets the properties of the Data Box Edge/Data Box Gateway device."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The device name."]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The resource group name."]
         pub fn get(
             &self,
             device_name: impl Into<String>,
@@ -338,6 +356,13 @@ pub mod devices {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Creates or updates a Data Box Edge/Data Box Gateway resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The device name."]
+        #[doc = "* `data_box_edge_device`: The resource object."]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The resource group name."]
         pub fn create_or_update(
             &self,
             device_name: impl Into<String>,
@@ -353,6 +378,13 @@ pub mod devices {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Modifies a Data Box Edge/Data Box Gateway resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The device name."]
+        #[doc = "* `parameters`: The resource parameters."]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The resource group name."]
         pub fn update(
             &self,
             device_name: impl Into<String>,
@@ -368,6 +400,12 @@ pub mod devices {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Deletes the Data Box Edge/Data Box Gateway device."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The device name."]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The resource group name."]
         pub fn delete(
             &self,
             device_name: impl Into<String>,
@@ -382,6 +420,11 @@ pub mod devices {
             }
         }
         #[doc = "Downloads the updates on a Data Box Edge/Data Box Gateway device."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The device name."]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The resource group name."]
         pub fn download_updates(
             &self,
             device_name: impl Into<String>,
@@ -395,6 +438,12 @@ pub mod devices {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Generates certificate for activation key."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The device name."]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The resource group name."]
         pub fn generate_certificate(
             &self,
             device_name: impl Into<String>,
@@ -408,6 +457,12 @@ pub mod devices {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Gets additional information for the specified Azure Stack Edge/Data Box Gateway device."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The device name."]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The resource group name."]
         pub fn get_extended_information(
             &self,
             device_name: impl Into<String>,
@@ -422,6 +477,11 @@ pub mod devices {
             }
         }
         #[doc = "Installs the updates on the Data Box Edge/Data Box Gateway device."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The device name."]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The resource group name."]
         pub fn install_updates(
             &self,
             device_name: impl Into<String>,
@@ -435,6 +495,12 @@ pub mod devices {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Gets the network settings of the specified Data Box Edge/Data Box Gateway device."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The device name."]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The resource group name."]
         pub fn get_network_settings(
             &self,
             device_name: impl Into<String>,
@@ -449,6 +515,11 @@ pub mod devices {
             }
         }
         #[doc = "Scans for updates on a Data Box Edge/Data Box Gateway device."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The device name."]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The resource group name."]
         pub fn scan_for_updates(
             &self,
             device_name: impl Into<String>,
@@ -462,6 +533,13 @@ pub mod devices {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Updates the security settings on a Data Box Edge/Data Box Gateway device."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The device name."]
+        #[doc = "* `security_settings`: The security settings."]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The resource group name."]
         pub fn create_or_update_security_settings(
             &self,
             device_name: impl Into<String>,
@@ -477,6 +555,13 @@ pub mod devices {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Gets additional information for the specified Data Box Edge/Data Box Gateway device."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The device name."]
+        #[doc = "* `parameters`: The patch object."]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The resource group name."]
         pub fn update_extended_information(
             &self,
             device_name: impl Into<String>,
@@ -493,6 +578,11 @@ pub mod devices {
             }
         }
         #[doc = "Gets information about the availability of updates based on the last scan of the device. It also gets information about any ongoing download or install jobs on the device."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The device name."]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The resource group name."]
         pub fn get_update_summary(
             &self,
             device_name: impl Into<String>,
@@ -506,6 +596,13 @@ pub mod devices {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Uploads registration certificate for the device."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The device name."]
+        #[doc = "* `parameters`: The upload certificate request."]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The resource group name."]
         pub fn upload_certificate(
             &self,
             device_name: impl Into<String>,
@@ -532,6 +629,7 @@ pub mod devices {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "Specify $expand=details to populate additional fields related to the resource or Specify $skipToken=<token> to populate the next page in the list."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -615,6 +713,7 @@ pub mod devices {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "Specify $expand=details to populate additional fields related to the resource or Specify $skipToken=<token> to populate the next page in the list."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -1412,6 +1511,12 @@ pub mod alerts {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets all the alerts for a Data Box Edge/Data Box Gateway device."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The device name."]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The resource group name."]
         pub fn list_by_data_box_edge_device(
             &self,
             device_name: impl Into<String>,
@@ -1426,6 +1531,12 @@ pub mod alerts {
             }
         }
         #[doc = "Gets an alert by name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The device name."]
+        #[doc = "* `name`: The alert name."]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The resource group name."]
         pub fn get(
             &self,
             device_name: impl Into<String>,
@@ -1579,6 +1690,12 @@ pub mod bandwidth_schedules {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets all the bandwidth schedules for a Data Box Edge/Data Box Gateway device."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The device name."]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The resource group name."]
         pub fn list_by_data_box_edge_device(
             &self,
             device_name: impl Into<String>,
@@ -1592,6 +1709,13 @@ pub mod bandwidth_schedules {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Gets the properties of the specified bandwidth schedule."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The device name."]
+        #[doc = "* `name`: The bandwidth schedule name."]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The resource group name."]
         pub fn get(
             &self,
             device_name: impl Into<String>,
@@ -1607,6 +1731,14 @@ pub mod bandwidth_schedules {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Creates or updates a bandwidth schedule."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The device name."]
+        #[doc = "* `name`: The bandwidth schedule name which needs to be added/updated."]
+        #[doc = "* `parameters`: The bandwidth schedule to be added or updated."]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The resource group name."]
         pub fn create_or_update(
             &self,
             device_name: impl Into<String>,
@@ -1624,6 +1756,13 @@ pub mod bandwidth_schedules {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Deletes the specified bandwidth schedule."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The device name."]
+        #[doc = "* `name`: The bandwidth schedule name."]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The resource group name."]
         pub fn delete(
             &self,
             device_name: impl Into<String>,
@@ -1870,6 +2009,12 @@ pub mod diagnostic_settings {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the proactive log collection settings of the specified Data Box Edge/Data Box Gateway device."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The device name."]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The resource group name."]
         pub fn get_diagnostic_proactive_log_collection_settings(
             &self,
             device_name: impl Into<String>,
@@ -1883,6 +2028,13 @@ pub mod diagnostic_settings {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Updates the proactive log collection settings on a Data Box Edge/Data Box Gateway device."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The device name."]
+        #[doc = "* `proactive_log_collection_settings`: The proactive log collection settings."]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The resource group name."]
         pub fn update_diagnostic_proactive_log_collection_settings(
             &self,
             device_name: impl Into<String>,
@@ -1898,6 +2050,12 @@ pub mod diagnostic_settings {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Gets the diagnostic remote support settings of the specified Data Box Edge/Data Box Gateway device."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The device name."]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The resource group name."]
         pub fn get_diagnostic_remote_support_settings(
             &self,
             device_name: impl Into<String>,
@@ -1911,6 +2069,13 @@ pub mod diagnostic_settings {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Updates the diagnostic remote support settings on a Data Box Edge/Data Box Gateway device."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The device name."]
+        #[doc = "* `diagnostic_remote_support_settings`: The diagnostic remote support settings."]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The resource group name."]
         pub fn update_diagnostic_remote_support_settings(
             &self,
             device_name: impl Into<String>,
@@ -2125,6 +2290,12 @@ pub mod jobs {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets the details of a specified job on a Data Box Edge/Data Box Gateway device."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The device name."]
+        #[doc = "* `name`: The job name."]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The resource group name."]
         pub fn get(
             &self,
             device_name: impl Into<String>,
@@ -2200,6 +2371,12 @@ pub mod nodes {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets all the nodes currently configured under this Data Box Edge device"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The device name."]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The resource group name."]
         pub fn list_by_data_box_edge_device(
             &self,
             device_name: impl Into<String>,
@@ -2298,6 +2475,12 @@ pub mod operations_status {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets the details of a specified job on a Data Box Edge/Data Box Gateway device."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The device name."]
+        #[doc = "* `name`: The job name."]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The resource group name."]
         pub fn get(
             &self,
             device_name: impl Into<String>,
@@ -2367,6 +2550,11 @@ pub mod orders {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Lists all the orders related to a Data Box Edge/Data Box Gateway device."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The device name."]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The resource group name."]
         pub fn list_by_data_box_edge_device(
             &self,
             device_name: impl Into<String>,
@@ -2381,6 +2569,11 @@ pub mod orders {
             }
         }
         #[doc = "Gets a specific order by name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The device name."]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The resource group name."]
         pub fn get(
             &self,
             device_name: impl Into<String>,
@@ -2395,6 +2588,12 @@ pub mod orders {
             }
         }
         #[doc = "Creates or updates an order."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The order details of a device."]
+        #[doc = "* `order`: The order to be created or updated."]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The resource group name."]
         pub fn create_or_update(
             &self,
             device_name: impl Into<String>,
@@ -2411,6 +2610,11 @@ pub mod orders {
             }
         }
         #[doc = "Deletes the order related to the device."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The device name."]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The resource group name."]
         pub fn delete(
             &self,
             device_name: impl Into<String>,
@@ -2425,6 +2629,11 @@ pub mod orders {
             }
         }
         #[doc = "Gets the DCAccess Code"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The device name"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The resource group name."]
         pub fn list_dc_access_code(
             &self,
             device_name: impl Into<String>,
@@ -2737,6 +2946,12 @@ pub mod roles {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all the roles configured in a Data Box Edge/Data Box Gateway device."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The device name."]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The resource group name."]
         pub fn list_by_data_box_edge_device(
             &self,
             device_name: impl Into<String>,
@@ -2750,6 +2965,13 @@ pub mod roles {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Gets a specific role by name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The device name."]
+        #[doc = "* `name`: The role name."]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The resource group name."]
         pub fn get(
             &self,
             device_name: impl Into<String>,
@@ -2765,6 +2987,14 @@ pub mod roles {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Create or update a role."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The device name."]
+        #[doc = "* `name`: The role name."]
+        #[doc = "* `role`: The role properties."]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The resource group name."]
         pub fn create_or_update(
             &self,
             device_name: impl Into<String>,
@@ -2782,6 +3012,13 @@ pub mod roles {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Deletes the role on the device."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The device name."]
+        #[doc = "* `name`: The role name."]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The resource group name."]
         pub fn delete(
             &self,
             device_name: impl Into<String>,
@@ -3055,6 +3292,13 @@ pub mod addons {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all the addons configured in the role."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The device name."]
+        #[doc = "* `role_name`: The role name."]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The resource group name."]
         pub fn list_by_role(
             &self,
             device_name: impl Into<String>,
@@ -3070,6 +3314,14 @@ pub mod addons {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Gets a specific addon by name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The device name."]
+        #[doc = "* `role_name`: The role name."]
+        #[doc = "* `addon_name`: The addon name."]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The resource group name."]
         pub fn get(
             &self,
             device_name: impl Into<String>,
@@ -3087,6 +3339,15 @@ pub mod addons {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Create or update a addon."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The device name."]
+        #[doc = "* `role_name`: The role name."]
+        #[doc = "* `addon_name`: The addon name."]
+        #[doc = "* `addon`: The addon properties."]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The resource group name."]
         pub fn create_or_update(
             &self,
             device_name: impl Into<String>,
@@ -3106,6 +3367,14 @@ pub mod addons {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Deletes the addon on the device."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The device name."]
+        #[doc = "* `role_name`: The role name."]
+        #[doc = "* `addon_name`: The addon name."]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The resource group name."]
         pub fn delete(
             &self,
             device_name: impl Into<String>,
@@ -3366,6 +3635,12 @@ pub mod monitoring_config {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Lists metric configurations in a role."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The device name."]
+        #[doc = "* `role_name`: The role name."]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The resource group name."]
         pub fn list(
             &self,
             device_name: impl Into<String>,
@@ -3382,6 +3657,12 @@ pub mod monitoring_config {
             }
         }
         #[doc = "Gets a  metric configuration of a role."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The device name."]
+        #[doc = "* `role_name`: The role name."]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The resource group name."]
         pub fn get(
             &self,
             device_name: impl Into<String>,
@@ -3398,6 +3679,13 @@ pub mod monitoring_config {
             }
         }
         #[doc = "Creates a new metric configuration or updates an existing one for a role."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The device name."]
+        #[doc = "* `role_name`: The role name."]
+        #[doc = "* `monitoring_metric_configuration`: The metric configuration."]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The resource group name."]
         pub fn create_or_update(
             &self,
             device_name: impl Into<String>,
@@ -3416,6 +3704,12 @@ pub mod monitoring_config {
             }
         }
         #[doc = "deletes a new metric configuration for a role."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The device name."]
+        #[doc = "* `role_name`: The role name."]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The resource group name."]
         pub fn delete(
             &self,
             device_name: impl Into<String>,
@@ -3664,6 +3958,11 @@ pub mod shares {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Lists all the shares in a Data Box Edge/Data Box Gateway device."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The device name."]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The resource group name."]
         pub fn list_by_data_box_edge_device(
             &self,
             device_name: impl Into<String>,
@@ -3678,6 +3977,12 @@ pub mod shares {
             }
         }
         #[doc = "Gets a share by name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The device name."]
+        #[doc = "* `name`: The share name."]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The resource group name."]
         pub fn get(
             &self,
             device_name: impl Into<String>,
@@ -3694,6 +3999,13 @@ pub mod shares {
             }
         }
         #[doc = "Creates a new share or updates an existing share on the device."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The device name."]
+        #[doc = "* `name`: The share name."]
+        #[doc = "* `share`: The share properties."]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The resource group name."]
         pub fn create_or_update(
             &self,
             device_name: impl Into<String>,
@@ -3711,6 +4023,13 @@ pub mod shares {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Deletes the share on the Data Box Edge/Data Box Gateway device."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The device name."]
+        #[doc = "* `name`: The share name."]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The resource group name."]
         pub fn delete(
             &self,
             device_name: impl Into<String>,
@@ -3727,6 +4046,12 @@ pub mod shares {
             }
         }
         #[doc = "Refreshes the share metadata with the data from the cloud."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The device name."]
+        #[doc = "* `name`: The share name."]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The resource group name."]
         pub fn refresh(
             &self,
             device_name: impl Into<String>,
@@ -4058,6 +4383,11 @@ pub mod storage_account_credentials {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets all the storage account credentials in a Data Box Edge/Data Box Gateway device."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The device name."]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The resource group name."]
         pub fn list_by_data_box_edge_device(
             &self,
             device_name: impl Into<String>,
@@ -4071,6 +4401,13 @@ pub mod storage_account_credentials {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Gets the properties of the specified storage account credential."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The device name."]
+        #[doc = "* `name`: The storage account credential name."]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The resource group name."]
         pub fn get(
             &self,
             device_name: impl Into<String>,
@@ -4086,6 +4423,14 @@ pub mod storage_account_credentials {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Creates or updates the storage account credential."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The device name."]
+        #[doc = "* `name`: The storage account credential name."]
+        #[doc = "* `storage_account_credential`: The storage account credential."]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The resource group name."]
         pub fn create_or_update(
             &self,
             device_name: impl Into<String>,
@@ -4103,6 +4448,13 @@ pub mod storage_account_credentials {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Deletes the storage account credential."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The device name."]
+        #[doc = "* `name`: The storage account credential name."]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The resource group name."]
         pub fn delete(
             &self,
             device_name: impl Into<String>,
@@ -4350,6 +4702,11 @@ pub mod storage_accounts {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Lists all the StorageAccounts in a Data Box Edge/Data Box Gateway device."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The device name."]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The resource group name."]
         pub fn list_by_data_box_edge_device(
             &self,
             device_name: impl Into<String>,
@@ -4364,6 +4721,12 @@ pub mod storage_accounts {
             }
         }
         #[doc = "Gets a StorageAccount by name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The device name."]
+        #[doc = "* `storage_account_name`: The storage account name."]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The resource group name."]
         pub fn get(
             &self,
             device_name: impl Into<String>,
@@ -4380,6 +4743,13 @@ pub mod storage_accounts {
             }
         }
         #[doc = "Creates a new StorageAccount or updates an existing StorageAccount on the device."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The device name."]
+        #[doc = "* `storage_account_name`: The StorageAccount name."]
+        #[doc = "* `storage_account`: The StorageAccount properties."]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The resource group name."]
         pub fn create_or_update(
             &self,
             device_name: impl Into<String>,
@@ -4397,6 +4767,13 @@ pub mod storage_accounts {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Deletes the StorageAccount on the Data Box Edge/Data Box Gateway device."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The device name."]
+        #[doc = "* `storage_account_name`: The StorageAccount name."]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The resource group name."]
         pub fn delete(
             &self,
             device_name: impl Into<String>,
@@ -4648,6 +5025,12 @@ pub mod containers {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Lists all the containers of a storage Account in a Data Box Edge/Data Box Gateway device."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The device name."]
+        #[doc = "* `storage_account_name`: The storage Account name."]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The resource group name."]
         pub fn list_by_storage_account(
             &self,
             device_name: impl Into<String>,
@@ -4664,6 +5047,13 @@ pub mod containers {
             }
         }
         #[doc = "Gets a container by name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The device name."]
+        #[doc = "* `storage_account_name`: The Storage Account Name"]
+        #[doc = "* `container_name`: The container Name"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The resource group name."]
         pub fn get(
             &self,
             device_name: impl Into<String>,
@@ -4682,6 +5072,14 @@ pub mod containers {
             }
         }
         #[doc = "Creates a new container or updates an existing container on the device."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The device name."]
+        #[doc = "* `storage_account_name`: The Storage Account Name"]
+        #[doc = "* `container_name`: The container name."]
+        #[doc = "* `container`: The container properties."]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The resource group name."]
         pub fn create_or_update(
             &self,
             device_name: impl Into<String>,
@@ -4701,6 +5099,14 @@ pub mod containers {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Deletes the container on the Data Box Edge/Data Box Gateway device."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The device name."]
+        #[doc = "* `storage_account_name`: The Storage Account Name"]
+        #[doc = "* `container_name`: The container name."]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The resource group name."]
         pub fn delete(
             &self,
             device_name: impl Into<String>,
@@ -4719,6 +5125,13 @@ pub mod containers {
             }
         }
         #[doc = "Refreshes the container metadata with the data from the cloud."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The device name."]
+        #[doc = "* `storage_account_name`: The Storage Account Name"]
+        #[doc = "* `container_name`: The container name."]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The resource group name."]
         pub fn refresh(
             &self,
             device_name: impl Into<String>,
@@ -5020,6 +5433,12 @@ pub mod triggers {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all the triggers configured in the device."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The device name."]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The resource group name."]
         pub fn list_by_data_box_edge_device(
             &self,
             device_name: impl Into<String>,
@@ -5034,6 +5453,13 @@ pub mod triggers {
                 filter: None,
             }
         }
+        #[doc = "Get a specific trigger by name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The device name."]
+        #[doc = "* `name`: The trigger name."]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The resource group name."]
         pub fn get(
             &self,
             device_name: impl Into<String>,
@@ -5049,6 +5475,14 @@ pub mod triggers {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Creates or updates a trigger."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: Creates or updates a trigger"]
+        #[doc = "* `name`: The trigger name."]
+        #[doc = "* `trigger`: The trigger."]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The resource group name."]
         pub fn create_or_update(
             &self,
             device_name: impl Into<String>,
@@ -5066,6 +5500,13 @@ pub mod triggers {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Deletes the trigger on the gateway device."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The device name."]
+        #[doc = "* `name`: The trigger name."]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The resource group name."]
         pub fn delete(
             &self,
             device_name: impl Into<String>,
@@ -5094,6 +5535,7 @@ pub mod triggers {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "Specify $filter='CustomContextTag eq <tag>' to filter on custom context tag property"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -5348,6 +5790,12 @@ pub mod support_packages {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Triggers support package on the device"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The device name."]
+        #[doc = "* `trigger_support_package_request`: The trigger support package request object"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The resource group name."]
         pub fn trigger_support_package(
             &self,
             device_name: impl Into<String>,
@@ -5419,6 +5867,12 @@ pub mod users {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets all the users registered on a Data Box Edge/Data Box Gateway device."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The device name."]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The resource group name."]
         pub fn list_by_data_box_edge_device(
             &self,
             device_name: impl Into<String>,
@@ -5433,6 +5887,13 @@ pub mod users {
                 filter: None,
             }
         }
+        #[doc = "Gets the properties of the specified user."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The device name."]
+        #[doc = "* `name`: The user name."]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The resource group name."]
         pub fn get(
             &self,
             device_name: impl Into<String>,
@@ -5448,6 +5909,14 @@ pub mod users {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Creates a new user or updates an existing user's information on a Data Box Edge/Data Box Gateway device."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The device name."]
+        #[doc = "* `name`: The user name."]
+        #[doc = "* `user`: The user details."]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The resource group name."]
         pub fn create_or_update(
             &self,
             device_name: impl Into<String>,
@@ -5465,6 +5934,13 @@ pub mod users {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Deletes the user on a databox edge/gateway device."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `device_name`: The device name."]
+        #[doc = "* `name`: The user name."]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The resource group name."]
         pub fn delete(
             &self,
             device_name: impl Into<String>,
@@ -5493,6 +5969,7 @@ pub mod users {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "Specify $filter='Type eq <type>' to filter on user type property"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self

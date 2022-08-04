@@ -103,6 +103,12 @@ pub mod policy_tracked_resources {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Queries policy tracked resources under the management group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `management_groups_namespace`: The namespace for Microsoft Management RP; only \"Microsoft.Management\" is allowed."]
+        #[doc = "* `management_group_name`: Management group name."]
+        #[doc = "* `policy_tracked_resources_resource`: The name of the virtual resource under PolicyTrackedResources resource type; only \"default\" is allowed."]
         pub fn list_query_results_for_management_group(
             &self,
             management_groups_namespace: impl Into<String>,
@@ -118,6 +124,11 @@ pub mod policy_tracked_resources {
                 filter: None,
             }
         }
+        #[doc = "Queries policy tracked resources under the subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `policy_tracked_resources_resource`: The name of the virtual resource under PolicyTrackedResources resource type; only \"default\" is allowed."]
+        #[doc = "* `subscription_id`: Microsoft Azure subscription ID."]
         pub fn list_query_results_for_subscription(
             &self,
             policy_tracked_resources_resource: impl Into<String>,
@@ -131,6 +142,12 @@ pub mod policy_tracked_resources {
                 filter: None,
             }
         }
+        #[doc = "Queries policy tracked resources under the resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Resource group name."]
+        #[doc = "* `policy_tracked_resources_resource`: The name of the virtual resource under PolicyTrackedResources resource type; only \"default\" is allowed."]
+        #[doc = "* `subscription_id`: Microsoft Azure subscription ID."]
         pub fn list_query_results_for_resource_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -146,6 +163,11 @@ pub mod policy_tracked_resources {
                 filter: None,
             }
         }
+        #[doc = "Queries policy tracked resources under the resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_id`: Resource ID."]
+        #[doc = "* `policy_tracked_resources_resource`: The name of the virtual resource under PolicyTrackedResources resource type; only \"default\" is allowed."]
         pub fn list_query_results_for_resource(
             &self,
             resource_id: impl Into<String>,
@@ -173,10 +195,12 @@ pub mod policy_tracked_resources {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "Maximum number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "OData filter expression."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -267,10 +291,12 @@ pub mod policy_tracked_resources {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "Maximum number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "OData filter expression."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -361,10 +387,12 @@ pub mod policy_tracked_resources {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "Maximum number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "OData filter expression."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -449,10 +477,12 @@ pub mod policy_tracked_resources {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "Maximum number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "OData filter expression."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -535,6 +565,12 @@ pub mod remediations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets all deployments for a remediation at management group scope."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `management_groups_namespace`: The namespace for Microsoft Management RP; only \"Microsoft.Management\" is allowed."]
+        #[doc = "* `management_group_id`: Management group ID."]
+        #[doc = "* `remediation_name`: The name of the remediation."]
         pub fn list_deployments_at_management_group(
             &self,
             management_groups_namespace: impl Into<String>,
@@ -549,6 +585,12 @@ pub mod remediations {
                 top: None,
             }
         }
+        #[doc = "Cancels a remediation at management group scope."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `management_groups_namespace`: The namespace for Microsoft Management RP; only \"Microsoft.Management\" is allowed."]
+        #[doc = "* `management_group_id`: Management group ID."]
+        #[doc = "* `remediation_name`: The name of the remediation."]
         pub fn cancel_at_management_group(
             &self,
             management_groups_namespace: impl Into<String>,
@@ -562,6 +604,11 @@ pub mod remediations {
                 remediation_name: remediation_name.into(),
             }
         }
+        #[doc = "Gets all remediations for the management group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `management_groups_namespace`: The namespace for Microsoft Management RP; only \"Microsoft.Management\" is allowed."]
+        #[doc = "* `management_group_id`: Management group ID."]
         pub fn list_for_management_group(
             &self,
             management_groups_namespace: impl Into<String>,
@@ -575,6 +622,12 @@ pub mod remediations {
                 filter: None,
             }
         }
+        #[doc = "Gets an existing remediation at management group scope."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `management_groups_namespace`: The namespace for Microsoft Management RP; only \"Microsoft.Management\" is allowed."]
+        #[doc = "* `management_group_id`: Management group ID."]
+        #[doc = "* `remediation_name`: The name of the remediation."]
         pub fn get_at_management_group(
             &self,
             management_groups_namespace: impl Into<String>,
@@ -588,6 +641,13 @@ pub mod remediations {
                 remediation_name: remediation_name.into(),
             }
         }
+        #[doc = "Creates or updates a remediation at management group scope."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `management_groups_namespace`: The namespace for Microsoft Management RP; only \"Microsoft.Management\" is allowed."]
+        #[doc = "* `management_group_id`: Management group ID."]
+        #[doc = "* `remediation_name`: The name of the remediation."]
+        #[doc = "* `parameters`: The remediation parameters."]
         pub fn create_or_update_at_management_group(
             &self,
             management_groups_namespace: impl Into<String>,
@@ -603,6 +663,12 @@ pub mod remediations {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Deletes an existing remediation at management group scope."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `management_groups_namespace`: The namespace for Microsoft Management RP; only \"Microsoft.Management\" is allowed."]
+        #[doc = "* `management_group_id`: Management group ID."]
+        #[doc = "* `remediation_name`: The name of the remediation."]
         pub fn delete_at_management_group(
             &self,
             management_groups_namespace: impl Into<String>,
@@ -616,6 +682,11 @@ pub mod remediations {
                 remediation_name: remediation_name.into(),
             }
         }
+        #[doc = "Gets all deployments for a remediation at subscription scope."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Microsoft Azure subscription ID."]
+        #[doc = "* `remediation_name`: The name of the remediation."]
         pub fn list_deployments_at_subscription(
             &self,
             subscription_id: impl Into<String>,
@@ -628,6 +699,11 @@ pub mod remediations {
                 top: None,
             }
         }
+        #[doc = "Cancels a remediation at subscription scope."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Microsoft Azure subscription ID."]
+        #[doc = "* `remediation_name`: The name of the remediation."]
         pub fn cancel_at_subscription(
             &self,
             subscription_id: impl Into<String>,
@@ -639,6 +715,10 @@ pub mod remediations {
                 remediation_name: remediation_name.into(),
             }
         }
+        #[doc = "Gets all remediations for the subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Microsoft Azure subscription ID."]
         pub fn list_for_subscription(&self, subscription_id: impl Into<String>) -> list_for_subscription::Builder {
             list_for_subscription::Builder {
                 client: self.0.clone(),
@@ -647,6 +727,11 @@ pub mod remediations {
                 filter: None,
             }
         }
+        #[doc = "Gets an existing remediation at subscription scope."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Microsoft Azure subscription ID."]
+        #[doc = "* `remediation_name`: The name of the remediation."]
         pub fn get_at_subscription(
             &self,
             subscription_id: impl Into<String>,
@@ -658,6 +743,12 @@ pub mod remediations {
                 remediation_name: remediation_name.into(),
             }
         }
+        #[doc = "Creates or updates a remediation at subscription scope."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Microsoft Azure subscription ID."]
+        #[doc = "* `remediation_name`: The name of the remediation."]
+        #[doc = "* `parameters`: The remediation parameters."]
         pub fn create_or_update_at_subscription(
             &self,
             subscription_id: impl Into<String>,
@@ -671,6 +762,11 @@ pub mod remediations {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Deletes an existing remediation at subscription scope."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Microsoft Azure subscription ID."]
+        #[doc = "* `remediation_name`: The name of the remediation."]
         pub fn delete_at_subscription(
             &self,
             subscription_id: impl Into<String>,
@@ -682,6 +778,12 @@ pub mod remediations {
                 remediation_name: remediation_name.into(),
             }
         }
+        #[doc = "Gets all deployments for a remediation at resource group scope."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: Resource group name."]
+        #[doc = "* `remediation_name`: The name of the remediation."]
         pub fn list_deployments_at_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -696,6 +798,12 @@ pub mod remediations {
                 top: None,
             }
         }
+        #[doc = "Cancels a remediation at resource group scope."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: Resource group name."]
+        #[doc = "* `remediation_name`: The name of the remediation."]
         pub fn cancel_at_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -709,6 +817,11 @@ pub mod remediations {
                 remediation_name: remediation_name.into(),
             }
         }
+        #[doc = "Gets all remediations for the subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: Resource group name."]
         pub fn list_for_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -722,6 +835,12 @@ pub mod remediations {
                 filter: None,
             }
         }
+        #[doc = "Gets an existing remediation at resource group scope."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: Resource group name."]
+        #[doc = "* `remediation_name`: The name of the remediation."]
         pub fn get_at_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -735,6 +854,13 @@ pub mod remediations {
                 remediation_name: remediation_name.into(),
             }
         }
+        #[doc = "Creates or updates a remediation at resource group scope."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: Resource group name."]
+        #[doc = "* `remediation_name`: The name of the remediation."]
+        #[doc = "* `parameters`: The remediation parameters."]
         pub fn create_or_update_at_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -750,6 +876,12 @@ pub mod remediations {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Deletes an existing remediation at resource group scope."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: Resource group name."]
+        #[doc = "* `remediation_name`: The name of the remediation."]
         pub fn delete_at_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -763,6 +895,11 @@ pub mod remediations {
                 remediation_name: remediation_name.into(),
             }
         }
+        #[doc = "Gets all deployments for a remediation at resource scope."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_id`: Resource ID."]
+        #[doc = "* `remediation_name`: The name of the remediation."]
         pub fn list_deployments_at_resource(
             &self,
             resource_id: impl Into<String>,
@@ -775,6 +912,11 @@ pub mod remediations {
                 top: None,
             }
         }
+        #[doc = "Cancel a remediation at resource scope."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_id`: Resource ID."]
+        #[doc = "* `remediation_name`: The name of the remediation."]
         pub fn cancel_at_resource(
             &self,
             resource_id: impl Into<String>,
@@ -786,6 +928,10 @@ pub mod remediations {
                 remediation_name: remediation_name.into(),
             }
         }
+        #[doc = "Gets all remediations for a resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_id`: Resource ID."]
         pub fn list_for_resource(&self, resource_id: impl Into<String>) -> list_for_resource::Builder {
             list_for_resource::Builder {
                 client: self.0.clone(),
@@ -794,6 +940,11 @@ pub mod remediations {
                 filter: None,
             }
         }
+        #[doc = "Gets an existing remediation at resource scope."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_id`: Resource ID."]
+        #[doc = "* `remediation_name`: The name of the remediation."]
         pub fn get_at_resource(&self, resource_id: impl Into<String>, remediation_name: impl Into<String>) -> get_at_resource::Builder {
             get_at_resource::Builder {
                 client: self.0.clone(),
@@ -801,6 +952,12 @@ pub mod remediations {
                 remediation_name: remediation_name.into(),
             }
         }
+        #[doc = "Creates or updates a remediation at resource scope."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_id`: Resource ID."]
+        #[doc = "* `remediation_name`: The name of the remediation."]
+        #[doc = "* `parameters`: The remediation parameters."]
         pub fn create_or_update_at_resource(
             &self,
             resource_id: impl Into<String>,
@@ -814,6 +971,11 @@ pub mod remediations {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Deletes an existing remediation at individual resource scope."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_id`: Resource ID."]
+        #[doc = "* `remediation_name`: The name of the remediation."]
         pub fn delete_at_resource(
             &self,
             resource_id: impl Into<String>,
@@ -838,6 +1000,7 @@ pub mod remediations {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "Maximum number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -978,10 +1141,12 @@ pub mod remediations {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "Maximum number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "OData filter expression."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -1241,6 +1406,7 @@ pub mod remediations {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "Maximum number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -1377,10 +1543,12 @@ pub mod remediations {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "Maximum number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "OData filter expression."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -1634,6 +1802,7 @@ pub mod remediations {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "Maximum number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -1774,10 +1943,12 @@ pub mod remediations {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "Maximum number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "OData filter expression."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -2037,6 +2208,7 @@ pub mod remediations {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "Maximum number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -2173,10 +2345,12 @@ pub mod remediations {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "Maximum number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "OData filter expression."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -2423,6 +2597,10 @@ pub mod policy_events {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Subsequent post calls to the next link"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `next_link`: Next link for list operation."]
         pub fn next_link(&self, next_link: impl Into<String>) -> next_link::Builder {
             next_link::Builder {
                 client: self.0.clone(),
@@ -2430,6 +2608,12 @@ pub mod policy_events {
                 skiptoken: None,
             }
         }
+        #[doc = "Queries policy events for the resources under the management group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `policy_events_resource`: The name of the virtual resource under PolicyEvents resource type; only \"default\" is allowed."]
+        #[doc = "* `management_groups_namespace`: The namespace for Microsoft Management RP; only \"Microsoft.Management\" is allowed."]
+        #[doc = "* `management_group_name`: Management group name."]
         pub fn list_query_results_for_management_group(
             &self,
             policy_events_resource: impl Into<String>,
@@ -2451,6 +2635,11 @@ pub mod policy_events {
                 skiptoken: None,
             }
         }
+        #[doc = "Queries policy events for the resources under the subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `policy_events_resource`: The name of the virtual resource under PolicyEvents resource type; only \"default\" is allowed."]
+        #[doc = "* `subscription_id`: Microsoft Azure subscription ID."]
         pub fn list_query_results_for_subscription(
             &self,
             policy_events_resource: impl Into<String>,
@@ -2470,6 +2659,12 @@ pub mod policy_events {
                 skiptoken: None,
             }
         }
+        #[doc = "Queries policy events for the resources under the resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `policy_events_resource`: The name of the virtual resource under PolicyEvents resource type; only \"default\" is allowed."]
+        #[doc = "* `subscription_id`: Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: Resource group name."]
         pub fn list_query_results_for_resource_group(
             &self,
             policy_events_resource: impl Into<String>,
@@ -2491,6 +2686,11 @@ pub mod policy_events {
                 skiptoken: None,
             }
         }
+        #[doc = "Queries policy events for the resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `policy_events_resource`: The name of the virtual resource under PolicyEvents resource type; only \"default\" is allowed."]
+        #[doc = "* `resource_id`: Resource ID."]
         pub fn list_query_results_for_resource(
             &self,
             policy_events_resource: impl Into<String>,
@@ -2511,6 +2711,13 @@ pub mod policy_events {
                 skiptoken: None,
             }
         }
+        #[doc = "Queries policy events for the subscription level policy set definition."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `policy_events_resource`: The name of the virtual resource under PolicyEvents resource type; only \"default\" is allowed."]
+        #[doc = "* `subscription_id`: Microsoft Azure subscription ID."]
+        #[doc = "* `authorization_namespace`: The namespace for Microsoft Authorization resource provider; only \"Microsoft.Authorization\" is allowed."]
+        #[doc = "* `policy_set_definition_name`: Policy set definition name."]
         pub fn list_query_results_for_policy_set_definition(
             &self,
             policy_events_resource: impl Into<String>,
@@ -2534,6 +2741,13 @@ pub mod policy_events {
                 skiptoken: None,
             }
         }
+        #[doc = "Queries policy events for the subscription level policy definition."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `policy_events_resource`: The name of the virtual resource under PolicyEvents resource type; only \"default\" is allowed."]
+        #[doc = "* `subscription_id`: Microsoft Azure subscription ID."]
+        #[doc = "* `authorization_namespace`: The namespace for Microsoft Authorization resource provider; only \"Microsoft.Authorization\" is allowed."]
+        #[doc = "* `policy_definition_name`: Policy definition name."]
         pub fn list_query_results_for_policy_definition(
             &self,
             policy_events_resource: impl Into<String>,
@@ -2557,6 +2771,13 @@ pub mod policy_events {
                 skiptoken: None,
             }
         }
+        #[doc = "Queries policy events for the subscription level policy assignment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `policy_events_resource`: The name of the virtual resource under PolicyEvents resource type; only \"default\" is allowed."]
+        #[doc = "* `subscription_id`: Microsoft Azure subscription ID."]
+        #[doc = "* `authorization_namespace`: The namespace for Microsoft Authorization resource provider; only \"Microsoft.Authorization\" is allowed."]
+        #[doc = "* `policy_assignment_name`: Policy assignment name."]
         pub fn list_query_results_for_subscription_level_policy_assignment(
             &self,
             policy_events_resource: impl Into<String>,
@@ -2580,6 +2801,14 @@ pub mod policy_events {
                 skiptoken: None,
             }
         }
+        #[doc = "Queries policy events for the resource group level policy assignment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `policy_events_resource`: The name of the virtual resource under PolicyEvents resource type; only \"default\" is allowed."]
+        #[doc = "* `subscription_id`: Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: Resource group name."]
+        #[doc = "* `authorization_namespace`: The namespace for Microsoft Authorization resource provider; only \"Microsoft.Authorization\" is allowed."]
+        #[doc = "* `policy_assignment_name`: Policy assignment name."]
         pub fn list_query_results_for_resource_group_level_policy_assignment(
             &self,
             policy_events_resource: impl Into<String>,
@@ -2616,6 +2845,7 @@ pub mod policy_events {
             pub(crate) skiptoken: Option<String>,
         }
         impl Builder {
+            #[doc = "Skiptoken is only provided if a previous response returned a partial result as a part of nextLink element."]
             pub fn skiptoken(mut self, skiptoken: impl Into<String>) -> Self {
                 self.skiptoken = Some(skiptoken.into());
                 self
@@ -2682,34 +2912,42 @@ pub mod policy_events {
             pub(crate) skiptoken: Option<String>,
         }
         impl Builder {
+            #[doc = "Maximum number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Ordering expression using OData notation. One or more comma-separated column names with an optional \"desc\" (the default) or \"asc\", e.g. \"$orderby=PolicyAssignmentId, ResourceId asc\"."]
             pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
                 self.orderby = Some(orderby.into());
                 self
             }
+            #[doc = "Select expression using OData notation. Limits the columns on each record to just those requested, e.g. \"$select=PolicyAssignmentId, ResourceId\"."]
             pub fn select(mut self, select: impl Into<String>) -> Self {
                 self.select = Some(select.into());
                 self
             }
+            #[doc = "ISO 8601 formatted timestamp specifying the start time of the interval to query. When not specified, the service uses ($to - 1-day)."]
             pub fn from(mut self, from: impl Into<String>) -> Self {
                 self.from = Some(from.into());
                 self
             }
+            #[doc = "ISO 8601 formatted timestamp specifying the end time of the interval to query. When not specified, the service uses request time."]
             pub fn to(mut self, to: impl Into<String>) -> Self {
                 self.to = Some(to.into());
                 self
             }
+            #[doc = "OData filter expression."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "OData apply expression for aggregations."]
             pub fn apply(mut self, apply: impl Into<String>) -> Self {
                 self.apply = Some(apply.into());
                 self
             }
+            #[doc = "Skiptoken is only provided if a previous response returned a partial result as a part of nextLink element."]
             pub fn skiptoken(mut self, skiptoken: impl Into<String>) -> Self {
                 self.skiptoken = Some(skiptoken.into());
                 self
@@ -2824,34 +3062,42 @@ pub mod policy_events {
             pub(crate) skiptoken: Option<String>,
         }
         impl Builder {
+            #[doc = "Maximum number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Ordering expression using OData notation. One or more comma-separated column names with an optional \"desc\" (the default) or \"asc\", e.g. \"$orderby=PolicyAssignmentId, ResourceId asc\"."]
             pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
                 self.orderby = Some(orderby.into());
                 self
             }
+            #[doc = "Select expression using OData notation. Limits the columns on each record to just those requested, e.g. \"$select=PolicyAssignmentId, ResourceId\"."]
             pub fn select(mut self, select: impl Into<String>) -> Self {
                 self.select = Some(select.into());
                 self
             }
+            #[doc = "ISO 8601 formatted timestamp specifying the start time of the interval to query. When not specified, the service uses ($to - 1-day)."]
             pub fn from(mut self, from: impl Into<String>) -> Self {
                 self.from = Some(from.into());
                 self
             }
+            #[doc = "ISO 8601 formatted timestamp specifying the end time of the interval to query. When not specified, the service uses request time."]
             pub fn to(mut self, to: impl Into<String>) -> Self {
                 self.to = Some(to.into());
                 self
             }
+            #[doc = "OData filter expression."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "OData apply expression for aggregations."]
             pub fn apply(mut self, apply: impl Into<String>) -> Self {
                 self.apply = Some(apply.into());
                 self
             }
+            #[doc = "Skiptoken is only provided if a previous response returned a partial result as a part of nextLink element."]
             pub fn skiptoken(mut self, skiptoken: impl Into<String>) -> Self {
                 self.skiptoken = Some(skiptoken.into());
                 self
@@ -2966,34 +3212,42 @@ pub mod policy_events {
             pub(crate) skiptoken: Option<String>,
         }
         impl Builder {
+            #[doc = "Maximum number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Ordering expression using OData notation. One or more comma-separated column names with an optional \"desc\" (the default) or \"asc\", e.g. \"$orderby=PolicyAssignmentId, ResourceId asc\"."]
             pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
                 self.orderby = Some(orderby.into());
                 self
             }
+            #[doc = "Select expression using OData notation. Limits the columns on each record to just those requested, e.g. \"$select=PolicyAssignmentId, ResourceId\"."]
             pub fn select(mut self, select: impl Into<String>) -> Self {
                 self.select = Some(select.into());
                 self
             }
+            #[doc = "ISO 8601 formatted timestamp specifying the start time of the interval to query. When not specified, the service uses ($to - 1-day)."]
             pub fn from(mut self, from: impl Into<String>) -> Self {
                 self.from = Some(from.into());
                 self
             }
+            #[doc = "ISO 8601 formatted timestamp specifying the end time of the interval to query. When not specified, the service uses request time."]
             pub fn to(mut self, to: impl Into<String>) -> Self {
                 self.to = Some(to.into());
                 self
             }
+            #[doc = "OData filter expression."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "OData apply expression for aggregations."]
             pub fn apply(mut self, apply: impl Into<String>) -> Self {
                 self.apply = Some(apply.into());
                 self
             }
+            #[doc = "Skiptoken is only provided if a previous response returned a partial result as a part of nextLink element."]
             pub fn skiptoken(mut self, skiptoken: impl Into<String>) -> Self {
                 self.skiptoken = Some(skiptoken.into());
                 self
@@ -3109,38 +3363,47 @@ pub mod policy_events {
             pub(crate) skiptoken: Option<String>,
         }
         impl Builder {
+            #[doc = "Maximum number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Ordering expression using OData notation. One or more comma-separated column names with an optional \"desc\" (the default) or \"asc\", e.g. \"$orderby=PolicyAssignmentId, ResourceId asc\"."]
             pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
                 self.orderby = Some(orderby.into());
                 self
             }
+            #[doc = "Select expression using OData notation. Limits the columns on each record to just those requested, e.g. \"$select=PolicyAssignmentId, ResourceId\"."]
             pub fn select(mut self, select: impl Into<String>) -> Self {
                 self.select = Some(select.into());
                 self
             }
+            #[doc = "ISO 8601 formatted timestamp specifying the start time of the interval to query. When not specified, the service uses ($to - 1-day)."]
             pub fn from(mut self, from: impl Into<String>) -> Self {
                 self.from = Some(from.into());
                 self
             }
+            #[doc = "ISO 8601 formatted timestamp specifying the end time of the interval to query. When not specified, the service uses request time."]
             pub fn to(mut self, to: impl Into<String>) -> Self {
                 self.to = Some(to.into());
                 self
             }
+            #[doc = "OData filter expression."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "OData apply expression for aggregations."]
             pub fn apply(mut self, apply: impl Into<String>) -> Self {
                 self.apply = Some(apply.into());
                 self
             }
+            #[doc = "The $expand query parameter. For example, to expand components use $expand=components"]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
             }
+            #[doc = "Skiptoken is only provided if a previous response returned a partial result as a part of nextLink element."]
             pub fn skiptoken(mut self, skiptoken: impl Into<String>) -> Self {
                 self.skiptoken = Some(skiptoken.into());
                 self
@@ -3259,34 +3522,42 @@ pub mod policy_events {
             pub(crate) skiptoken: Option<String>,
         }
         impl Builder {
+            #[doc = "Maximum number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Ordering expression using OData notation. One or more comma-separated column names with an optional \"desc\" (the default) or \"asc\", e.g. \"$orderby=PolicyAssignmentId, ResourceId asc\"."]
             pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
                 self.orderby = Some(orderby.into());
                 self
             }
+            #[doc = "Select expression using OData notation. Limits the columns on each record to just those requested, e.g. \"$select=PolicyAssignmentId, ResourceId\"."]
             pub fn select(mut self, select: impl Into<String>) -> Self {
                 self.select = Some(select.into());
                 self
             }
+            #[doc = "ISO 8601 formatted timestamp specifying the start time of the interval to query. When not specified, the service uses ($to - 1-day)."]
             pub fn from(mut self, from: impl Into<String>) -> Self {
                 self.from = Some(from.into());
                 self
             }
+            #[doc = "ISO 8601 formatted timestamp specifying the end time of the interval to query. When not specified, the service uses request time."]
             pub fn to(mut self, to: impl Into<String>) -> Self {
                 self.to = Some(to.into());
                 self
             }
+            #[doc = "OData filter expression."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "OData apply expression for aggregations."]
             pub fn apply(mut self, apply: impl Into<String>) -> Self {
                 self.apply = Some(apply.into());
                 self
             }
+            #[doc = "Skiptoken is only provided if a previous response returned a partial result as a part of nextLink element."]
             pub fn skiptoken(mut self, skiptoken: impl Into<String>) -> Self {
                 self.skiptoken = Some(skiptoken.into());
                 self
@@ -3397,34 +3668,42 @@ pub mod policy_events {
             pub(crate) skiptoken: Option<String>,
         }
         impl Builder {
+            #[doc = "Maximum number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Ordering expression using OData notation. One or more comma-separated column names with an optional \"desc\" (the default) or \"asc\", e.g. \"$orderby=PolicyAssignmentId, ResourceId asc\"."]
             pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
                 self.orderby = Some(orderby.into());
                 self
             }
+            #[doc = "Select expression using OData notation. Limits the columns on each record to just those requested, e.g. \"$select=PolicyAssignmentId, ResourceId\"."]
             pub fn select(mut self, select: impl Into<String>) -> Self {
                 self.select = Some(select.into());
                 self
             }
+            #[doc = "ISO 8601 formatted timestamp specifying the start time of the interval to query. When not specified, the service uses ($to - 1-day)."]
             pub fn from(mut self, from: impl Into<String>) -> Self {
                 self.from = Some(from.into());
                 self
             }
+            #[doc = "ISO 8601 formatted timestamp specifying the end time of the interval to query. When not specified, the service uses request time."]
             pub fn to(mut self, to: impl Into<String>) -> Self {
                 self.to = Some(to.into());
                 self
             }
+            #[doc = "OData filter expression."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "OData apply expression for aggregations."]
             pub fn apply(mut self, apply: impl Into<String>) -> Self {
                 self.apply = Some(apply.into());
                 self
             }
+            #[doc = "Skiptoken is only provided if a previous response returned a partial result as a part of nextLink element."]
             pub fn skiptoken(mut self, skiptoken: impl Into<String>) -> Self {
                 self.skiptoken = Some(skiptoken.into());
                 self
@@ -3535,34 +3814,42 @@ pub mod policy_events {
             pub(crate) skiptoken: Option<String>,
         }
         impl Builder {
+            #[doc = "Maximum number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Ordering expression using OData notation. One or more comma-separated column names with an optional \"desc\" (the default) or \"asc\", e.g. \"$orderby=PolicyAssignmentId, ResourceId asc\"."]
             pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
                 self.orderby = Some(orderby.into());
                 self
             }
+            #[doc = "Select expression using OData notation. Limits the columns on each record to just those requested, e.g. \"$select=PolicyAssignmentId, ResourceId\"."]
             pub fn select(mut self, select: impl Into<String>) -> Self {
                 self.select = Some(select.into());
                 self
             }
+            #[doc = "ISO 8601 formatted timestamp specifying the start time of the interval to query. When not specified, the service uses ($to - 1-day)."]
             pub fn from(mut self, from: impl Into<String>) -> Self {
                 self.from = Some(from.into());
                 self
             }
+            #[doc = "ISO 8601 formatted timestamp specifying the end time of the interval to query. When not specified, the service uses request time."]
             pub fn to(mut self, to: impl Into<String>) -> Self {
                 self.to = Some(to.into());
                 self
             }
+            #[doc = "OData filter expression."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "OData apply expression for aggregations."]
             pub fn apply(mut self, apply: impl Into<String>) -> Self {
                 self.apply = Some(apply.into());
                 self
             }
+            #[doc = "Skiptoken is only provided if a previous response returned a partial result as a part of nextLink element."]
             pub fn skiptoken(mut self, skiptoken: impl Into<String>) -> Self {
                 self.skiptoken = Some(skiptoken.into());
                 self
@@ -3674,34 +3961,42 @@ pub mod policy_events {
             pub(crate) skiptoken: Option<String>,
         }
         impl Builder {
+            #[doc = "Maximum number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Ordering expression using OData notation. One or more comma-separated column names with an optional \"desc\" (the default) or \"asc\", e.g. \"$orderby=PolicyAssignmentId, ResourceId asc\"."]
             pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
                 self.orderby = Some(orderby.into());
                 self
             }
+            #[doc = "Select expression using OData notation. Limits the columns on each record to just those requested, e.g. \"$select=PolicyAssignmentId, ResourceId\"."]
             pub fn select(mut self, select: impl Into<String>) -> Self {
                 self.select = Some(select.into());
                 self
             }
+            #[doc = "ISO 8601 formatted timestamp specifying the start time of the interval to query. When not specified, the service uses ($to - 1-day)."]
             pub fn from(mut self, from: impl Into<String>) -> Self {
                 self.from = Some(from.into());
                 self
             }
+            #[doc = "ISO 8601 formatted timestamp specifying the end time of the interval to query. When not specified, the service uses request time."]
             pub fn to(mut self, to: impl Into<String>) -> Self {
                 self.to = Some(to.into());
                 self
             }
+            #[doc = "OData filter expression."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "OData apply expression for aggregations."]
             pub fn apply(mut self, apply: impl Into<String>) -> Self {
                 self.apply = Some(apply.into());
                 self
             }
+            #[doc = "Skiptoken is only provided if a previous response returned a partial result as a part of nextLink element."]
             pub fn skiptoken(mut self, skiptoken: impl Into<String>) -> Self {
                 self.skiptoken = Some(skiptoken.into());
                 self
@@ -3797,6 +4092,10 @@ pub mod policy_states {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Subsequent post calls to the next link"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `next_link`: Next link for list operation."]
         pub fn next_link(&self, next_link: impl Into<String>) -> next_link::Builder {
             next_link::Builder {
                 client: self.0.clone(),
@@ -3804,6 +4103,12 @@ pub mod policy_states {
                 skiptoken: None,
             }
         }
+        #[doc = "Queries policy states for the resources under the management group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `policy_states_resource`: The virtual resource under PolicyStates resource type. In a given time range, 'latest' represents the latest policy state(s), whereas 'default' represents all policy state(s)."]
+        #[doc = "* `management_groups_namespace`: The namespace for Microsoft Management RP; only \"Microsoft.Management\" is allowed."]
+        #[doc = "* `management_group_name`: Management group name."]
         pub fn list_query_results_for_management_group(
             &self,
             policy_states_resource: impl Into<String>,
@@ -3825,6 +4130,12 @@ pub mod policy_states {
                 skiptoken: None,
             }
         }
+        #[doc = "Summarizes policy states for the resources under the management group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `policy_states_summary_resource`: The virtual resource under PolicyStates resource type for summarize action. In a given time range, 'latest' represents the latest policy state(s) and is the only allowed value."]
+        #[doc = "* `management_groups_namespace`: The namespace for Microsoft Management RP; only \"Microsoft.Management\" is allowed."]
+        #[doc = "* `management_group_name`: Management group name."]
         pub fn summarize_for_management_group(
             &self,
             policy_states_summary_resource: impl Into<String>,
@@ -3842,6 +4153,11 @@ pub mod policy_states {
                 filter: None,
             }
         }
+        #[doc = "Queries policy states for the resources under the subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `policy_states_resource`: The virtual resource under PolicyStates resource type. In a given time range, 'latest' represents the latest policy state(s), whereas 'default' represents all policy state(s)."]
+        #[doc = "* `subscription_id`: Microsoft Azure subscription ID."]
         pub fn list_query_results_for_subscription(
             &self,
             policy_states_resource: impl Into<String>,
@@ -3861,6 +4177,11 @@ pub mod policy_states {
                 skiptoken: None,
             }
         }
+        #[doc = "Summarizes policy states for the resources under the subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `policy_states_summary_resource`: The virtual resource under PolicyStates resource type for summarize action. In a given time range, 'latest' represents the latest policy state(s) and is the only allowed value."]
+        #[doc = "* `subscription_id`: Microsoft Azure subscription ID."]
         pub fn summarize_for_subscription(
             &self,
             policy_states_summary_resource: impl Into<String>,
@@ -3876,6 +4197,12 @@ pub mod policy_states {
                 filter: None,
             }
         }
+        #[doc = "Queries policy states for the resources under the resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `policy_states_resource`: The virtual resource under PolicyStates resource type. In a given time range, 'latest' represents the latest policy state(s), whereas 'default' represents all policy state(s)."]
+        #[doc = "* `subscription_id`: Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: Resource group name."]
         pub fn list_query_results_for_resource_group(
             &self,
             policy_states_resource: impl Into<String>,
@@ -3897,6 +4224,12 @@ pub mod policy_states {
                 skiptoken: None,
             }
         }
+        #[doc = "Summarizes policy states for the resources under the resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `policy_states_summary_resource`: The virtual resource under PolicyStates resource type for summarize action. In a given time range, 'latest' represents the latest policy state(s) and is the only allowed value."]
+        #[doc = "* `subscription_id`: Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: Resource group name."]
         pub fn summarize_for_resource_group(
             &self,
             policy_states_summary_resource: impl Into<String>,
@@ -3914,6 +4247,11 @@ pub mod policy_states {
                 filter: None,
             }
         }
+        #[doc = "Queries policy states for the resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `policy_states_resource`: The virtual resource under PolicyStates resource type. In a given time range, 'latest' represents the latest policy state(s), whereas 'default' represents all policy state(s)."]
+        #[doc = "* `resource_id`: Resource ID."]
         pub fn list_query_results_for_resource(
             &self,
             policy_states_resource: impl Into<String>,
@@ -3934,6 +4272,11 @@ pub mod policy_states {
                 skiptoken: None,
             }
         }
+        #[doc = "Summarizes policy states for the resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `policy_states_summary_resource`: The virtual resource under PolicyStates resource type for summarize action. In a given time range, 'latest' represents the latest policy state(s) and is the only allowed value."]
+        #[doc = "* `resource_id`: Resource ID."]
         pub fn summarize_for_resource(
             &self,
             policy_states_summary_resource: impl Into<String>,
@@ -3949,12 +4292,21 @@ pub mod policy_states {
                 filter: None,
             }
         }
+        #[doc = "Triggers a policy evaluation scan for all the resources under the subscription"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Microsoft Azure subscription ID."]
         pub fn trigger_subscription_evaluation(&self, subscription_id: impl Into<String>) -> trigger_subscription_evaluation::Builder {
             trigger_subscription_evaluation::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Triggers a policy evaluation scan for all the resources under the resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: Resource group name."]
         pub fn trigger_resource_group_evaluation(
             &self,
             subscription_id: impl Into<String>,
@@ -3966,6 +4318,13 @@ pub mod policy_states {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Queries policy states for the subscription level policy set definition."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `policy_states_resource`: The virtual resource under PolicyStates resource type. In a given time range, 'latest' represents the latest policy state(s), whereas 'default' represents all policy state(s)."]
+        #[doc = "* `subscription_id`: Microsoft Azure subscription ID."]
+        #[doc = "* `authorization_namespace`: The namespace for Microsoft Authorization resource provider; only \"Microsoft.Authorization\" is allowed."]
+        #[doc = "* `policy_set_definition_name`: Policy set definition name."]
         pub fn list_query_results_for_policy_set_definition(
             &self,
             policy_states_resource: impl Into<String>,
@@ -3989,6 +4348,13 @@ pub mod policy_states {
                 skiptoken: None,
             }
         }
+        #[doc = "Summarizes policy states for the subscription level policy set definition."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `policy_states_summary_resource`: The virtual resource under PolicyStates resource type for summarize action. In a given time range, 'latest' represents the latest policy state(s) and is the only allowed value."]
+        #[doc = "* `subscription_id`: Microsoft Azure subscription ID."]
+        #[doc = "* `authorization_namespace`: The namespace for Microsoft Authorization resource provider; only \"Microsoft.Authorization\" is allowed."]
+        #[doc = "* `policy_set_definition_name`: Policy set definition name."]
         pub fn summarize_for_policy_set_definition(
             &self,
             policy_states_summary_resource: impl Into<String>,
@@ -4008,6 +4374,13 @@ pub mod policy_states {
                 filter: None,
             }
         }
+        #[doc = "Queries policy states for the subscription level policy definition."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `policy_states_resource`: The virtual resource under PolicyStates resource type. In a given time range, 'latest' represents the latest policy state(s), whereas 'default' represents all policy state(s)."]
+        #[doc = "* `subscription_id`: Microsoft Azure subscription ID."]
+        #[doc = "* `authorization_namespace`: The namespace for Microsoft Authorization resource provider; only \"Microsoft.Authorization\" is allowed."]
+        #[doc = "* `policy_definition_name`: Policy definition name."]
         pub fn list_query_results_for_policy_definition(
             &self,
             policy_states_resource: impl Into<String>,
@@ -4031,6 +4404,13 @@ pub mod policy_states {
                 skiptoken: None,
             }
         }
+        #[doc = "Summarizes policy states for the subscription level policy definition."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `policy_states_summary_resource`: The virtual resource under PolicyStates resource type for summarize action. In a given time range, 'latest' represents the latest policy state(s) and is the only allowed value."]
+        #[doc = "* `subscription_id`: Microsoft Azure subscription ID."]
+        #[doc = "* `authorization_namespace`: The namespace for Microsoft Authorization resource provider; only \"Microsoft.Authorization\" is allowed."]
+        #[doc = "* `policy_definition_name`: Policy definition name."]
         pub fn summarize_for_policy_definition(
             &self,
             policy_states_summary_resource: impl Into<String>,
@@ -4050,6 +4430,13 @@ pub mod policy_states {
                 filter: None,
             }
         }
+        #[doc = "Queries policy states for the subscription level policy assignment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `policy_states_resource`: The virtual resource under PolicyStates resource type. In a given time range, 'latest' represents the latest policy state(s), whereas 'default' represents all policy state(s)."]
+        #[doc = "* `subscription_id`: Microsoft Azure subscription ID."]
+        #[doc = "* `authorization_namespace`: The namespace for Microsoft Authorization resource provider; only \"Microsoft.Authorization\" is allowed."]
+        #[doc = "* `policy_assignment_name`: Policy assignment name."]
         pub fn list_query_results_for_subscription_level_policy_assignment(
             &self,
             policy_states_resource: impl Into<String>,
@@ -4073,6 +4460,13 @@ pub mod policy_states {
                 skiptoken: None,
             }
         }
+        #[doc = "Summarizes policy states for the subscription level policy assignment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `policy_states_summary_resource`: The virtual resource under PolicyStates resource type for summarize action. In a given time range, 'latest' represents the latest policy state(s) and is the only allowed value."]
+        #[doc = "* `subscription_id`: Microsoft Azure subscription ID."]
+        #[doc = "* `authorization_namespace`: The namespace for Microsoft Authorization resource provider; only \"Microsoft.Authorization\" is allowed."]
+        #[doc = "* `policy_assignment_name`: Policy assignment name."]
         pub fn summarize_for_subscription_level_policy_assignment(
             &self,
             policy_states_summary_resource: impl Into<String>,
@@ -4092,6 +4486,14 @@ pub mod policy_states {
                 filter: None,
             }
         }
+        #[doc = "Queries policy states for the resource group level policy assignment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `policy_states_resource`: The virtual resource under PolicyStates resource type. In a given time range, 'latest' represents the latest policy state(s), whereas 'default' represents all policy state(s)."]
+        #[doc = "* `subscription_id`: Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: Resource group name."]
+        #[doc = "* `authorization_namespace`: The namespace for Microsoft Authorization resource provider; only \"Microsoft.Authorization\" is allowed."]
+        #[doc = "* `policy_assignment_name`: Policy assignment name."]
         pub fn list_query_results_for_resource_group_level_policy_assignment(
             &self,
             policy_states_resource: impl Into<String>,
@@ -4117,6 +4519,14 @@ pub mod policy_states {
                 skiptoken: None,
             }
         }
+        #[doc = "Summarizes policy states for the resource group level policy assignment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `policy_states_summary_resource`: The virtual resource under PolicyStates resource type for summarize action. In a given time range, 'latest' represents the latest policy state(s) and is the only allowed value."]
+        #[doc = "* `subscription_id`: Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: Resource group name."]
+        #[doc = "* `authorization_namespace`: The namespace for Microsoft Authorization resource provider; only \"Microsoft.Authorization\" is allowed."]
+        #[doc = "* `policy_assignment_name`: Policy assignment name."]
         pub fn summarize_for_resource_group_level_policy_assignment(
             &self,
             policy_states_summary_resource: impl Into<String>,
@@ -4149,6 +4559,7 @@ pub mod policy_states {
             pub(crate) skiptoken: Option<String>,
         }
         impl Builder {
+            #[doc = "Skiptoken is only provided if a previous response returned a partial result as a part of nextLink element."]
             pub fn skiptoken(mut self, skiptoken: impl Into<String>) -> Self {
                 self.skiptoken = Some(skiptoken.into());
                 self
@@ -4215,34 +4626,42 @@ pub mod policy_states {
             pub(crate) skiptoken: Option<String>,
         }
         impl Builder {
+            #[doc = "Maximum number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Ordering expression using OData notation. One or more comma-separated column names with an optional \"desc\" (the default) or \"asc\", e.g. \"$orderby=PolicyAssignmentId, ResourceId asc\"."]
             pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
                 self.orderby = Some(orderby.into());
                 self
             }
+            #[doc = "Select expression using OData notation. Limits the columns on each record to just those requested, e.g. \"$select=PolicyAssignmentId, ResourceId\"."]
             pub fn select(mut self, select: impl Into<String>) -> Self {
                 self.select = Some(select.into());
                 self
             }
+            #[doc = "ISO 8601 formatted timestamp specifying the start time of the interval to query. When not specified, the service uses ($to - 1-day)."]
             pub fn from(mut self, from: impl Into<String>) -> Self {
                 self.from = Some(from.into());
                 self
             }
+            #[doc = "ISO 8601 formatted timestamp specifying the end time of the interval to query. When not specified, the service uses request time."]
             pub fn to(mut self, to: impl Into<String>) -> Self {
                 self.to = Some(to.into());
                 self
             }
+            #[doc = "OData filter expression."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "OData apply expression for aggregations."]
             pub fn apply(mut self, apply: impl Into<String>) -> Self {
                 self.apply = Some(apply.into());
                 self
             }
+            #[doc = "Skiptoken is only provided if a previous response returned a partial result as a part of nextLink element."]
             pub fn skiptoken(mut self, skiptoken: impl Into<String>) -> Self {
                 self.skiptoken = Some(skiptoken.into());
                 self
@@ -4354,18 +4773,22 @@ pub mod policy_states {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "Maximum number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "ISO 8601 formatted timestamp specifying the start time of the interval to query. When not specified, the service uses ($to - 1-day)."]
             pub fn from(mut self, from: impl Into<String>) -> Self {
                 self.from = Some(from.into());
                 self
             }
+            #[doc = "ISO 8601 formatted timestamp specifying the end time of the interval to query. When not specified, the service uses request time."]
             pub fn to(mut self, to: impl Into<String>) -> Self {
                 self.to = Some(to.into());
                 self
             }
+            #[doc = "OData filter expression."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -4442,34 +4865,42 @@ pub mod policy_states {
             pub(crate) skiptoken: Option<String>,
         }
         impl Builder {
+            #[doc = "Maximum number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Ordering expression using OData notation. One or more comma-separated column names with an optional \"desc\" (the default) or \"asc\", e.g. \"$orderby=PolicyAssignmentId, ResourceId asc\"."]
             pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
                 self.orderby = Some(orderby.into());
                 self
             }
+            #[doc = "Select expression using OData notation. Limits the columns on each record to just those requested, e.g. \"$select=PolicyAssignmentId, ResourceId\"."]
             pub fn select(mut self, select: impl Into<String>) -> Self {
                 self.select = Some(select.into());
                 self
             }
+            #[doc = "ISO 8601 formatted timestamp specifying the start time of the interval to query. When not specified, the service uses ($to - 1-day)."]
             pub fn from(mut self, from: impl Into<String>) -> Self {
                 self.from = Some(from.into());
                 self
             }
+            #[doc = "ISO 8601 formatted timestamp specifying the end time of the interval to query. When not specified, the service uses request time."]
             pub fn to(mut self, to: impl Into<String>) -> Self {
                 self.to = Some(to.into());
                 self
             }
+            #[doc = "OData filter expression."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "OData apply expression for aggregations."]
             pub fn apply(mut self, apply: impl Into<String>) -> Self {
                 self.apply = Some(apply.into());
                 self
             }
+            #[doc = "Skiptoken is only provided if a previous response returned a partial result as a part of nextLink element."]
             pub fn skiptoken(mut self, skiptoken: impl Into<String>) -> Self {
                 self.skiptoken = Some(skiptoken.into());
                 self
@@ -4579,18 +5010,22 @@ pub mod policy_states {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "Maximum number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "ISO 8601 formatted timestamp specifying the start time of the interval to query. When not specified, the service uses ($to - 1-day)."]
             pub fn from(mut self, from: impl Into<String>) -> Self {
                 self.from = Some(from.into());
                 self
             }
+            #[doc = "ISO 8601 formatted timestamp specifying the end time of the interval to query. When not specified, the service uses request time."]
             pub fn to(mut self, to: impl Into<String>) -> Self {
                 self.to = Some(to.into());
                 self
             }
+            #[doc = "OData filter expression."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -4667,34 +5102,42 @@ pub mod policy_states {
             pub(crate) skiptoken: Option<String>,
         }
         impl Builder {
+            #[doc = "Maximum number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Ordering expression using OData notation. One or more comma-separated column names with an optional \"desc\" (the default) or \"asc\", e.g. \"$orderby=PolicyAssignmentId, ResourceId asc\"."]
             pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
                 self.orderby = Some(orderby.into());
                 self
             }
+            #[doc = "Select expression using OData notation. Limits the columns on each record to just those requested, e.g. \"$select=PolicyAssignmentId, ResourceId\"."]
             pub fn select(mut self, select: impl Into<String>) -> Self {
                 self.select = Some(select.into());
                 self
             }
+            #[doc = "ISO 8601 formatted timestamp specifying the start time of the interval to query. When not specified, the service uses ($to - 1-day)."]
             pub fn from(mut self, from: impl Into<String>) -> Self {
                 self.from = Some(from.into());
                 self
             }
+            #[doc = "ISO 8601 formatted timestamp specifying the end time of the interval to query. When not specified, the service uses request time."]
             pub fn to(mut self, to: impl Into<String>) -> Self {
                 self.to = Some(to.into());
                 self
             }
+            #[doc = "OData filter expression."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "OData apply expression for aggregations."]
             pub fn apply(mut self, apply: impl Into<String>) -> Self {
                 self.apply = Some(apply.into());
                 self
             }
+            #[doc = "Skiptoken is only provided if a previous response returned a partial result as a part of nextLink element."]
             pub fn skiptoken(mut self, skiptoken: impl Into<String>) -> Self {
                 self.skiptoken = Some(skiptoken.into());
                 self
@@ -4806,18 +5249,22 @@ pub mod policy_states {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "Maximum number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "ISO 8601 formatted timestamp specifying the start time of the interval to query. When not specified, the service uses ($to - 1-day)."]
             pub fn from(mut self, from: impl Into<String>) -> Self {
                 self.from = Some(from.into());
                 self
             }
+            #[doc = "ISO 8601 formatted timestamp specifying the end time of the interval to query. When not specified, the service uses request time."]
             pub fn to(mut self, to: impl Into<String>) -> Self {
                 self.to = Some(to.into());
                 self
             }
+            #[doc = "OData filter expression."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -4895,38 +5342,47 @@ pub mod policy_states {
             pub(crate) skiptoken: Option<String>,
         }
         impl Builder {
+            #[doc = "Maximum number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Ordering expression using OData notation. One or more comma-separated column names with an optional \"desc\" (the default) or \"asc\", e.g. \"$orderby=PolicyAssignmentId, ResourceId asc\"."]
             pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
                 self.orderby = Some(orderby.into());
                 self
             }
+            #[doc = "Select expression using OData notation. Limits the columns on each record to just those requested, e.g. \"$select=PolicyAssignmentId, ResourceId\"."]
             pub fn select(mut self, select: impl Into<String>) -> Self {
                 self.select = Some(select.into());
                 self
             }
+            #[doc = "ISO 8601 formatted timestamp specifying the start time of the interval to query. When not specified, the service uses ($to - 1-day)."]
             pub fn from(mut self, from: impl Into<String>) -> Self {
                 self.from = Some(from.into());
                 self
             }
+            #[doc = "ISO 8601 formatted timestamp specifying the end time of the interval to query. When not specified, the service uses request time."]
             pub fn to(mut self, to: impl Into<String>) -> Self {
                 self.to = Some(to.into());
                 self
             }
+            #[doc = "OData filter expression."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "OData apply expression for aggregations."]
             pub fn apply(mut self, apply: impl Into<String>) -> Self {
                 self.apply = Some(apply.into());
                 self
             }
+            #[doc = "The $expand query parameter. For example, to expand components use $expand=components"]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
             }
+            #[doc = "Skiptoken is only provided if a previous response returned a partial result as a part of nextLink element."]
             pub fn skiptoken(mut self, skiptoken: impl Into<String>) -> Self {
                 self.skiptoken = Some(skiptoken.into());
                 self
@@ -5039,18 +5495,22 @@ pub mod policy_states {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "Maximum number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "ISO 8601 formatted timestamp specifying the start time of the interval to query. When not specified, the service uses ($to - 1-day)."]
             pub fn from(mut self, from: impl Into<String>) -> Self {
                 self.from = Some(from.into());
                 self
             }
+            #[doc = "ISO 8601 formatted timestamp specifying the end time of the interval to query. When not specified, the service uses request time."]
             pub fn to(mut self, to: impl Into<String>) -> Self {
                 self.to = Some(to.into());
                 self
             }
+            #[doc = "OData filter expression."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -5227,34 +5687,42 @@ pub mod policy_states {
             pub(crate) skiptoken: Option<String>,
         }
         impl Builder {
+            #[doc = "Maximum number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Ordering expression using OData notation. One or more comma-separated column names with an optional \"desc\" (the default) or \"asc\", e.g. \"$orderby=PolicyAssignmentId, ResourceId asc\"."]
             pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
                 self.orderby = Some(orderby.into());
                 self
             }
+            #[doc = "Select expression using OData notation. Limits the columns on each record to just those requested, e.g. \"$select=PolicyAssignmentId, ResourceId\"."]
             pub fn select(mut self, select: impl Into<String>) -> Self {
                 self.select = Some(select.into());
                 self
             }
+            #[doc = "ISO 8601 formatted timestamp specifying the start time of the interval to query. When not specified, the service uses ($to - 1-day)."]
             pub fn from(mut self, from: impl Into<String>) -> Self {
                 self.from = Some(from.into());
                 self
             }
+            #[doc = "ISO 8601 formatted timestamp specifying the end time of the interval to query. When not specified, the service uses request time."]
             pub fn to(mut self, to: impl Into<String>) -> Self {
                 self.to = Some(to.into());
                 self
             }
+            #[doc = "OData filter expression."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "OData apply expression for aggregations."]
             pub fn apply(mut self, apply: impl Into<String>) -> Self {
                 self.apply = Some(apply.into());
                 self
             }
+            #[doc = "Skiptoken is only provided if a previous response returned a partial result as a part of nextLink element."]
             pub fn skiptoken(mut self, skiptoken: impl Into<String>) -> Self {
                 self.skiptoken = Some(skiptoken.into());
                 self
@@ -5361,18 +5829,22 @@ pub mod policy_states {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "Maximum number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "ISO 8601 formatted timestamp specifying the start time of the interval to query. When not specified, the service uses ($to - 1-day)."]
             pub fn from(mut self, from: impl Into<String>) -> Self {
                 self.from = Some(from.into());
                 self
             }
+            #[doc = "ISO 8601 formatted timestamp specifying the end time of the interval to query. When not specified, the service uses request time."]
             pub fn to(mut self, to: impl Into<String>) -> Self {
                 self.to = Some(to.into());
                 self
             }
+            #[doc = "OData filter expression."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -5445,34 +5917,42 @@ pub mod policy_states {
             pub(crate) skiptoken: Option<String>,
         }
         impl Builder {
+            #[doc = "Maximum number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Ordering expression using OData notation. One or more comma-separated column names with an optional \"desc\" (the default) or \"asc\", e.g. \"$orderby=PolicyAssignmentId, ResourceId asc\"."]
             pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
                 self.orderby = Some(orderby.into());
                 self
             }
+            #[doc = "Select expression using OData notation. Limits the columns on each record to just those requested, e.g. \"$select=PolicyAssignmentId, ResourceId\"."]
             pub fn select(mut self, select: impl Into<String>) -> Self {
                 self.select = Some(select.into());
                 self
             }
+            #[doc = "ISO 8601 formatted timestamp specifying the start time of the interval to query. When not specified, the service uses ($to - 1-day)."]
             pub fn from(mut self, from: impl Into<String>) -> Self {
                 self.from = Some(from.into());
                 self
             }
+            #[doc = "ISO 8601 formatted timestamp specifying the end time of the interval to query. When not specified, the service uses request time."]
             pub fn to(mut self, to: impl Into<String>) -> Self {
                 self.to = Some(to.into());
                 self
             }
+            #[doc = "OData filter expression."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "OData apply expression for aggregations."]
             pub fn apply(mut self, apply: impl Into<String>) -> Self {
                 self.apply = Some(apply.into());
                 self
             }
+            #[doc = "Skiptoken is only provided if a previous response returned a partial result as a part of nextLink element."]
             pub fn skiptoken(mut self, skiptoken: impl Into<String>) -> Self {
                 self.skiptoken = Some(skiptoken.into());
                 self
@@ -5579,18 +6059,22 @@ pub mod policy_states {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "Maximum number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "ISO 8601 formatted timestamp specifying the start time of the interval to query. When not specified, the service uses ($to - 1-day)."]
             pub fn from(mut self, from: impl Into<String>) -> Self {
                 self.from = Some(from.into());
                 self
             }
+            #[doc = "ISO 8601 formatted timestamp specifying the end time of the interval to query. When not specified, the service uses request time."]
             pub fn to(mut self, to: impl Into<String>) -> Self {
                 self.to = Some(to.into());
                 self
             }
+            #[doc = "OData filter expression."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -5663,34 +6147,42 @@ pub mod policy_states {
             pub(crate) skiptoken: Option<String>,
         }
         impl Builder {
+            #[doc = "Maximum number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Ordering expression using OData notation. One or more comma-separated column names with an optional \"desc\" (the default) or \"asc\", e.g. \"$orderby=PolicyAssignmentId, ResourceId asc\"."]
             pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
                 self.orderby = Some(orderby.into());
                 self
             }
+            #[doc = "Select expression using OData notation. Limits the columns on each record to just those requested, e.g. \"$select=PolicyAssignmentId, ResourceId\"."]
             pub fn select(mut self, select: impl Into<String>) -> Self {
                 self.select = Some(select.into());
                 self
             }
+            #[doc = "ISO 8601 formatted timestamp specifying the start time of the interval to query. When not specified, the service uses ($to - 1-day)."]
             pub fn from(mut self, from: impl Into<String>) -> Self {
                 self.from = Some(from.into());
                 self
             }
+            #[doc = "ISO 8601 formatted timestamp specifying the end time of the interval to query. When not specified, the service uses request time."]
             pub fn to(mut self, to: impl Into<String>) -> Self {
                 self.to = Some(to.into());
                 self
             }
+            #[doc = "OData filter expression."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "OData apply expression for aggregations."]
             pub fn apply(mut self, apply: impl Into<String>) -> Self {
                 self.apply = Some(apply.into());
                 self
             }
+            #[doc = "Skiptoken is only provided if a previous response returned a partial result as a part of nextLink element."]
             pub fn skiptoken(mut self, skiptoken: impl Into<String>) -> Self {
                 self.skiptoken = Some(skiptoken.into());
                 self
@@ -5797,18 +6289,22 @@ pub mod policy_states {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "Maximum number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "ISO 8601 formatted timestamp specifying the start time of the interval to query. When not specified, the service uses ($to - 1-day)."]
             pub fn from(mut self, from: impl Into<String>) -> Self {
                 self.from = Some(from.into());
                 self
             }
+            #[doc = "ISO 8601 formatted timestamp specifying the end time of the interval to query. When not specified, the service uses request time."]
             pub fn to(mut self, to: impl Into<String>) -> Self {
                 self.to = Some(to.into());
                 self
             }
+            #[doc = "OData filter expression."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -5882,34 +6378,42 @@ pub mod policy_states {
             pub(crate) skiptoken: Option<String>,
         }
         impl Builder {
+            #[doc = "Maximum number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Ordering expression using OData notation. One or more comma-separated column names with an optional \"desc\" (the default) or \"asc\", e.g. \"$orderby=PolicyAssignmentId, ResourceId asc\"."]
             pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
                 self.orderby = Some(orderby.into());
                 self
             }
+            #[doc = "Select expression using OData notation. Limits the columns on each record to just those requested, e.g. \"$select=PolicyAssignmentId, ResourceId\"."]
             pub fn select(mut self, select: impl Into<String>) -> Self {
                 self.select = Some(select.into());
                 self
             }
+            #[doc = "ISO 8601 formatted timestamp specifying the start time of the interval to query. When not specified, the service uses ($to - 1-day)."]
             pub fn from(mut self, from: impl Into<String>) -> Self {
                 self.from = Some(from.into());
                 self
             }
+            #[doc = "ISO 8601 formatted timestamp specifying the end time of the interval to query. When not specified, the service uses request time."]
             pub fn to(mut self, to: impl Into<String>) -> Self {
                 self.to = Some(to.into());
                 self
             }
+            #[doc = "OData filter expression."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "OData apply expression for aggregations."]
             pub fn apply(mut self, apply: impl Into<String>) -> Self {
                 self.apply = Some(apply.into());
                 self
             }
+            #[doc = "Skiptoken is only provided if a previous response returned a partial result as a part of nextLink element."]
             pub fn skiptoken(mut self, skiptoken: impl Into<String>) -> Self {
                 self.skiptoken = Some(skiptoken.into());
                 self
@@ -6017,18 +6521,22 @@ pub mod policy_states {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "Maximum number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "ISO 8601 formatted timestamp specifying the start time of the interval to query. When not specified, the service uses ($to - 1-day)."]
             pub fn from(mut self, from: impl Into<String>) -> Self {
                 self.from = Some(from.into());
                 self
             }
+            #[doc = "ISO 8601 formatted timestamp specifying the end time of the interval to query. When not specified, the service uses request time."]
             pub fn to(mut self, to: impl Into<String>) -> Self {
                 self.to = Some(to.into());
                 self
             }
+            #[doc = "OData filter expression."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -6086,6 +6594,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists available operations."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -6139,12 +6648,17 @@ pub mod policy_metadata {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get policy metadata resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: The name of the policy metadata resource."]
         pub fn get_resource(&self, resource_name: impl Into<String>) -> get_resource::Builder {
             get_resource::Builder {
                 client: self.0.clone(),
                 resource_name: resource_name.into(),
             }
         }
+        #[doc = "Get a list of the policy metadata resources."]
         pub fn list(&self) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -6209,6 +6723,7 @@ pub mod policy_metadata {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "Maximum number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -6285,6 +6800,11 @@ pub mod policy_restrictions {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Checks what restrictions Azure Policy will place on a resource within a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `parameters`: The check policy restrictions parameters."]
         pub fn check_at_subscription_scope(
             &self,
             subscription_id: impl Into<String>,
@@ -6296,6 +6816,12 @@ pub mod policy_restrictions {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Checks what restrictions Azure Policy will place on a resource within a resource group. Use this when the resource group the resource will be created in is already known."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `parameters`: The check policy restrictions parameters."]
         pub fn check_at_resource_group_scope(
             &self,
             subscription_id: impl Into<String>,
@@ -6417,6 +6943,10 @@ pub mod attestations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets all attestations for the subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_for_subscription(&self, subscription_id: impl Into<String>) -> list_for_subscription::Builder {
             list_for_subscription::Builder {
                 client: self.0.clone(),
@@ -6425,6 +6955,11 @@ pub mod attestations {
                 filter: None,
             }
         }
+        #[doc = "Gets an existing attestation at subscription scope."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `attestation_name`: The name of the attestation."]
         pub fn get_at_subscription(
             &self,
             subscription_id: impl Into<String>,
@@ -6436,6 +6971,12 @@ pub mod attestations {
                 attestation_name: attestation_name.into(),
             }
         }
+        #[doc = "Creates or updates an attestation at subscription scope."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `attestation_name`: The name of the attestation."]
+        #[doc = "* `parameters`: The attestation parameters."]
         pub fn create_or_update_at_subscription(
             &self,
             subscription_id: impl Into<String>,
@@ -6449,6 +6990,11 @@ pub mod attestations {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Deletes an existing attestation at subscription scope."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `attestation_name`: The name of the attestation."]
         pub fn delete_at_subscription(
             &self,
             subscription_id: impl Into<String>,
@@ -6460,6 +7006,11 @@ pub mod attestations {
                 attestation_name: attestation_name.into(),
             }
         }
+        #[doc = "Gets all attestations for the resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
         pub fn list_for_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -6473,6 +7024,12 @@ pub mod attestations {
                 filter: None,
             }
         }
+        #[doc = "Gets an existing attestation at resource group scope."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `attestation_name`: The name of the attestation."]
         pub fn get_at_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -6486,6 +7043,13 @@ pub mod attestations {
                 attestation_name: attestation_name.into(),
             }
         }
+        #[doc = "Creates or updates an attestation at resource group scope."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `attestation_name`: The name of the attestation."]
+        #[doc = "* `parameters`: The attestation parameters."]
         pub fn create_or_update_at_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -6501,6 +7065,12 @@ pub mod attestations {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Deletes an existing attestation at resource group scope."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `attestation_name`: The name of the attestation."]
         pub fn delete_at_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -6514,6 +7084,10 @@ pub mod attestations {
                 attestation_name: attestation_name.into(),
             }
         }
+        #[doc = "Gets all attestations for a resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_id`: Resource ID."]
         pub fn list_for_resource(&self, resource_id: impl Into<String>) -> list_for_resource::Builder {
             list_for_resource::Builder {
                 client: self.0.clone(),
@@ -6522,6 +7096,11 @@ pub mod attestations {
                 filter: None,
             }
         }
+        #[doc = "Gets an existing attestation at resource scope."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_id`: Resource ID."]
+        #[doc = "* `attestation_name`: The name of the attestation."]
         pub fn get_at_resource(&self, resource_id: impl Into<String>, attestation_name: impl Into<String>) -> get_at_resource::Builder {
             get_at_resource::Builder {
                 client: self.0.clone(),
@@ -6529,6 +7108,12 @@ pub mod attestations {
                 attestation_name: attestation_name.into(),
             }
         }
+        #[doc = "Creates or updates an attestation at resource scope."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_id`: Resource ID."]
+        #[doc = "* `attestation_name`: The name of the attestation."]
+        #[doc = "* `parameters`: The attestation parameters."]
         pub fn create_or_update_at_resource(
             &self,
             resource_id: impl Into<String>,
@@ -6542,6 +7127,11 @@ pub mod attestations {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Deletes an existing attestation at individual resource scope."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_id`: Resource ID."]
+        #[doc = "* `attestation_name`: The name of the attestation."]
         pub fn delete_at_resource(
             &self,
             resource_id: impl Into<String>,
@@ -6565,10 +7155,12 @@ pub mod attestations {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "Maximum number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "OData filter expression."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -6819,10 +7411,12 @@ pub mod attestations {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "Maximum number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "OData filter expression."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -7079,10 +7673,12 @@ pub mod attestations {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "Maximum number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "OData filter expression."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self

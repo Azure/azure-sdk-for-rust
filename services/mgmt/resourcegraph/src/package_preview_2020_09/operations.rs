@@ -79,12 +79,20 @@ impl Client {
     }
 }
 impl Client {
+    #[doc = "List changes to a resource for a given time interval."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `parameters`: the parameters for this request for changes."]
     pub fn resource_changes(&self, parameters: impl Into<models::ResourceChangesRequestParameters>) -> resource_changes::Builder {
         resource_changes::Builder {
             client: self.clone(),
             parameters: parameters.into(),
         }
     }
+    #[doc = "Get resource change details."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `parameters`: The parameters for this request for resource change details."]
     pub fn resource_change_details(
         &self,
         parameters: impl Into<models::ResourceChangeDetailsRequestParameters>,
@@ -94,12 +102,17 @@ impl Client {
             parameters: parameters.into(),
         }
     }
+    #[doc = "Queries the resources managed by Azure Resource Manager for all subscriptions specified in the request."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `query`: Request specifying query and its options."]
     pub fn resources(&self, query: impl Into<models::QueryRequest>) -> resources::Builder {
         resources::Builder {
             client: self.clone(),
             query: query.into(),
         }
     }
+    #[doc = "List all snapshots of a resource for a given time interval."]
     pub fn resources_history(&self, request: impl Into<models::ResourcesHistoryRequest>) -> resources_history::Builder {
         resources_history::Builder {
             client: self.clone(),
@@ -300,6 +313,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all of the available REST API operations."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }

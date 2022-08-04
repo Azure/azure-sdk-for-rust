@@ -157,6 +157,11 @@ pub mod autoscale_settings {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists the autoscale settings for a resource group"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_by_resource_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -168,6 +173,12 @@ pub mod autoscale_settings {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets an autoscale setting"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `autoscale_setting_name`: The autoscale setting name."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -181,6 +192,13 @@ pub mod autoscale_settings {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates an autoscale setting."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `autoscale_setting_name`: The autoscale setting name."]
+        #[doc = "* `parameters`: Parameters supplied to the operation."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -196,6 +214,13 @@ pub mod autoscale_settings {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates an existing AutoscaleSettingsResource. To update other fields use the CreateOrUpdate method."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `autoscale_setting_name`: The autoscale setting name."]
+        #[doc = "* `autoscale_setting_resource`: Parameters supplied to the operation."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -211,6 +236,12 @@ pub mod autoscale_settings {
                 autoscale_setting_resource: autoscale_setting_resource.into(),
             }
         }
+        #[doc = "Deletes and autoscale setting"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `autoscale_setting_name`: The autoscale setting name."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -224,6 +255,10 @@ pub mod autoscale_settings {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists the autoscale settings for a subscription"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
@@ -608,6 +643,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all of the available operations from Microsoft.Insights provider."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -660,6 +696,13 @@ pub mod alert_rule_incidents {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets an incident associated to an alert rule"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `rule_name`: The name of the rule."]
+        #[doc = "* `incident_name`: The name of the incident to retrieve."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -675,6 +718,12 @@ pub mod alert_rule_incidents {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets a list of incidents associated to an alert rule"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `rule_name`: The name of the rule."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_by_alert_rule(
             &self,
             resource_group_name: impl Into<String>,
@@ -801,6 +850,12 @@ pub mod alert_rules {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a classic metric alert rule"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `rule_name`: The name of the rule."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -814,6 +869,13 @@ pub mod alert_rules {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates a classic metric alert rule."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `rule_name`: The name of the rule."]
+        #[doc = "* `parameters`: The parameters of the rule to create or update."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -829,6 +891,13 @@ pub mod alert_rules {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates an existing classic metric AlertRuleResource. To update other fields use the CreateOrUpdate method."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `rule_name`: The name of the rule."]
+        #[doc = "* `alert_rules_resource`: Parameters supplied to the operation."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -844,6 +913,12 @@ pub mod alert_rules {
                 alert_rules_resource: alert_rules_resource.into(),
             }
         }
+        #[doc = "Deletes a classic metric alert rule"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `rule_name`: The name of the rule."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -857,6 +932,11 @@ pub mod alert_rules {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "List the classic metric alert rules within a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_by_resource_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -868,6 +948,10 @@ pub mod alert_rules {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "List the classic metric alert rules within a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
@@ -1211,6 +1295,11 @@ pub mod log_profiles {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the log profile."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `log_profile_name`: The name of the log profile."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn get(&self, log_profile_name: impl Into<String>, subscription_id: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -1218,6 +1307,12 @@ pub mod log_profiles {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Create or update a log profile in Azure Monitoring REST API."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `log_profile_name`: The name of the log profile."]
+        #[doc = "* `parameters`: Parameters supplied to the operation."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn create_or_update(
             &self,
             log_profile_name: impl Into<String>,
@@ -1231,6 +1326,12 @@ pub mod log_profiles {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates an existing LogProfilesResource. To update other fields use the CreateOrUpdate method."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `log_profile_name`: The name of the log profile."]
+        #[doc = "* `log_profiles_resource`: Parameters supplied to the operation."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -1244,6 +1345,11 @@ pub mod log_profiles {
                 log_profiles_resource: log_profiles_resource.into(),
             }
         }
+        #[doc = "Deletes the log profile."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `log_profile_name`: The name of the log profile."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn delete(&self, log_profile_name: impl Into<String>, subscription_id: impl Into<String>) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),
@@ -1251,6 +1357,10 @@ pub mod log_profiles {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "List the log profiles."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -1512,6 +1622,11 @@ pub mod diagnostic_settings {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the active diagnostic settings for the specified resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_uri`: The identifier of the resource."]
+        #[doc = "* `name`: The name of the diagnostic setting."]
         pub fn get(&self, resource_uri: impl Into<String>, name: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -1519,6 +1634,12 @@ pub mod diagnostic_settings {
                 name: name.into(),
             }
         }
+        #[doc = "Creates or updates diagnostic settings for the specified resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_uri`: The identifier of the resource."]
+        #[doc = "* `parameters`: Parameters supplied to the operation."]
+        #[doc = "* `name`: The name of the diagnostic setting."]
         pub fn create_or_update(
             &self,
             resource_uri: impl Into<String>,
@@ -1532,6 +1653,11 @@ pub mod diagnostic_settings {
                 name: name.into(),
             }
         }
+        #[doc = "Deletes existing diagnostic settings for the specified resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_uri`: The identifier of the resource."]
+        #[doc = "* `name`: The name of the diagnostic setting."]
         pub fn delete(&self, resource_uri: impl Into<String>, name: impl Into<String>) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),
@@ -1539,6 +1665,10 @@ pub mod diagnostic_settings {
                 name: name.into(),
             }
         }
+        #[doc = "Gets the active diagnostic settings list for the specified resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_uri`: The identifier of the resource."]
         pub fn list(&self, resource_uri: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -1752,6 +1882,11 @@ pub mod subscription_diagnostic_settings {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the active subscription diagnostic settings for the specified resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `name`: The name of the diagnostic setting."]
         pub fn get(&self, subscription_id: impl Into<String>, name: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -1759,6 +1894,12 @@ pub mod subscription_diagnostic_settings {
                 name: name.into(),
             }
         }
+        #[doc = "Creates or updates subscription diagnostic settings for the specified resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `parameters`: Parameters supplied to the operation."]
+        #[doc = "* `name`: The name of the diagnostic setting."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -1772,6 +1913,11 @@ pub mod subscription_diagnostic_settings {
                 name: name.into(),
             }
         }
+        #[doc = "Deletes existing subscription diagnostic settings for the specified resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `name`: The name of the diagnostic setting."]
         pub fn delete(&self, subscription_id: impl Into<String>, name: impl Into<String>) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),
@@ -1779,6 +1925,10 @@ pub mod subscription_diagnostic_settings {
                 name: name.into(),
             }
         }
+        #[doc = "Gets the active subscription diagnostic settings list for the specified subscriptionId."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -1993,6 +2143,11 @@ pub mod diagnostic_settings_category {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the diagnostic settings category for the specified resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_uri`: The identifier of the resource."]
+        #[doc = "* `name`: The name of the diagnostic setting."]
         pub fn get(&self, resource_uri: impl Into<String>, name: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -2000,6 +2155,10 @@ pub mod diagnostic_settings_category {
                 name: name.into(),
             }
         }
+        #[doc = "Lists the diagnostic settings categories for the specified resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_uri`: The identifier of the resource."]
         pub fn list(&self, resource_uri: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -2110,6 +2269,12 @@ pub mod action_groups {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get an action group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `action_group_name`: The name of the action group."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -2123,6 +2288,13 @@ pub mod action_groups {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Create a new action group or update an existing one."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `action_group_name`: The name of the action group."]
+        #[doc = "* `action_group`: The action group to create or use for the update."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -2138,6 +2310,13 @@ pub mod action_groups {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates an existing action group's tags. To update other fields use the CreateOrUpdate method."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `action_group_name`: The name of the action group."]
+        #[doc = "* `action_group_patch`: Parameters supplied to the operation."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -2153,6 +2332,12 @@ pub mod action_groups {
                 action_group_patch: action_group_patch.into(),
             }
         }
+        #[doc = "Delete an action group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `action_group_name`: The name of the action group."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -2166,12 +2351,21 @@ pub mod action_groups {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get a list of all action groups in a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_by_subscription_id(&self, subscription_id: impl Into<String>) -> list_by_subscription_id::Builder {
             list_by_subscription_id::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get a list of all action groups in a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_by_resource_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -2183,6 +2377,13 @@ pub mod action_groups {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Enable a receiver in an action group. This changes the receiver's status from Disabled to Enabled. This operation is only supported for Email or SMS receivers."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `action_group_name`: The name of the action group."]
+        #[doc = "* `enable_request`: The receiver to re-enable."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn enable_receiver(
             &self,
             resource_group_name: impl Into<String>,
@@ -2576,6 +2777,12 @@ pub mod activity_log_alerts {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get an activity log alert."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `activity_log_alert_name`: The name of the activity log alert."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -2589,6 +2796,13 @@ pub mod activity_log_alerts {
                 activity_log_alert_name: activity_log_alert_name.into(),
             }
         }
+        #[doc = "Create a new activity log alert or update an existing one."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `activity_log_alert_name`: The name of the activity log alert."]
+        #[doc = "* `activity_log_alert`: The activity log alert to create or use for the update."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -2604,6 +2818,13 @@ pub mod activity_log_alerts {
                 activity_log_alert: activity_log_alert.into(),
             }
         }
+        #[doc = "Updates an existing ActivityLogAlertResource's tags. To update other fields use the CreateOrUpdate method."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `activity_log_alert_name`: The name of the activity log alert."]
+        #[doc = "* `activity_log_alert_patch`: Parameters supplied to the operation."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -2619,6 +2840,12 @@ pub mod activity_log_alerts {
                 activity_log_alert_patch: activity_log_alert_patch.into(),
             }
         }
+        #[doc = "Delete an activity log alert."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `activity_log_alert_name`: The name of the activity log alert."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -2632,12 +2859,21 @@ pub mod activity_log_alerts {
                 activity_log_alert_name: activity_log_alert_name.into(),
             }
         }
+        #[doc = "Get a list of all activity log alerts in a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_by_subscription_id(&self, subscription_id: impl Into<String>) -> list_by_subscription_id::Builder {
             list_by_subscription_id::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get a list of all activity log alerts in a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -2977,6 +3213,11 @@ pub mod activity_logs {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Provides the list of records from the activity logs."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `filter`: Reduces the set of data collected.<br>This argument is required and it also requires at least the start date/time.<br>The **$filter** argument is very restricted and allows only the following patterns.<br>- *List events for a resource group*: $filter=eventTimestamp ge '2014-07-16T04:36:37.6407898Z' and eventTimestamp le '2014-07-20T04:36:37.6407898Z' and resourceGroupName eq 'resourceGroupName'.<br>- *List events for resource*: $filter=eventTimestamp ge '2014-07-16T04:36:37.6407898Z' and eventTimestamp le '2014-07-20T04:36:37.6407898Z' and resourceUri eq 'resourceURI'.<br>- *List events for a subscription in a time range*: $filter=eventTimestamp ge '2014-07-16T04:36:37.6407898Z' and eventTimestamp le '2014-07-20T04:36:37.6407898Z'.<br>- *List events for a resource provider*: $filter=eventTimestamp ge '2014-07-16T04:36:37.6407898Z' and eventTimestamp le '2014-07-20T04:36:37.6407898Z' and resourceProvider eq 'resourceProviderName'.<br>- *List events for a correlation Id*: $filter=eventTimestamp ge '2014-07-16T04:36:37.6407898Z' and eventTimestamp le '2014-07-20T04:36:37.6407898Z' and correlationId eq 'correlationID'.<br><br>**NOTE**: No other syntax is allowed."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list(&self, filter: impl Into<String>, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -2997,6 +3238,7 @@ pub mod activity_logs {
             pub(crate) select: Option<String>,
         }
         impl Builder {
+            #[doc = "Used to fetch events with only the given properties.<br>The **$select** argument is a comma separated list of property names to be returned. Possible values are: *authorization*, *claims*, *correlationId*, *description*, *eventDataId*, *eventName*, *eventTimestamp*, *httpRequest*, *level*, *operationId*, *operationName*, *properties*, *resourceGroupName*, *resourceProviderName*, *resourceId*, *status*, *submissionTimestamp*, *subStatus*, *subscriptionId*"]
             pub fn select(mut self, select: impl Into<String>) -> Self {
                 self.select = Some(select.into());
                 self
@@ -3076,6 +3318,7 @@ pub mod event_categories {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get the list of available event categories supported in the Activity Logs Service.<br>The current list includes the following: Administrative, Security, ServiceHealth, Alert, Recommendation, Policy."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -3130,6 +3373,7 @@ pub mod tenant_activity_logs {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the Activity Logs for the Tenant.<br>Everything that is applicable to the API to get the Activity Logs for the subscription is applicable to this API (the parameters, $filter, etc.).<br>One thing to point out here is that this API does *not* retrieve the logs at the individual subscription of the tenant but only surfaces the logs that were generated at the tenant level."]
         pub fn list(&self) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -3148,10 +3392,12 @@ pub mod tenant_activity_logs {
             pub(crate) select: Option<String>,
         }
         impl Builder {
+            #[doc = "Reduces the set of data collected. <br>The **$filter** is very restricted and allows only the following patterns.<br>- List events for a resource group: $filter=eventTimestamp ge '<Start Time>' and eventTimestamp le '<End Time>' and eventChannels eq 'Admin, Operation' and resourceGroupName eq '<ResourceGroupName>'.<br>- List events for resource: $filter=eventTimestamp ge '<Start Time>' and eventTimestamp le '<End Time>' and eventChannels eq 'Admin, Operation' and resourceUri eq '<ResourceURI>'.<br>- List events for a subscription: $filter=eventTimestamp ge '<Start Time>' and eventTimestamp le '<End Time>' and eventChannels eq 'Admin, Operation'.<br>- List events for a resource provider: $filter=eventTimestamp ge '<Start Time>' and eventTimestamp le '<End Time>' and eventChannels eq 'Admin, Operation' and resourceProvider eq '<ResourceProviderName>'.<br>- List events for a correlation Id: api-version=2014-04-01&$filter=eventTimestamp ge '2014-07-16T04:36:37.6407898Z' and eventTimestamp le '2014-07-20T04:36:37.6407898Z' and eventChannels eq 'Admin, Operation' and correlationId eq '<CorrelationID>'.<br>**NOTE**: No other syntax is allowed."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Used to fetch events with only the given properties.<br>The **$select** argument is a comma separated list of property names to be returned. Possible values are: *authorization*, *claims*, *correlationId*, *description*, *eventDataId*, *eventName*, *eventTimestamp*, *httpRequest*, *level*, *operationId*, *operationName*, *properties*, *resourceGroupName*, *resourceProviderName*, *resourceId*, *status*, *submissionTimestamp*, *subStatus*, *subscriptionId*"]
             pub fn select(mut self, select: impl Into<String>) -> Self {
                 self.select = Some(select.into());
                 self
@@ -3231,6 +3477,10 @@ pub mod metric_definitions {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists the metric definitions for the resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_uri`: The identifier of the resource."]
         pub fn list(&self, resource_uri: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -3249,6 +3499,7 @@ pub mod metric_definitions {
             pub(crate) metricnamespace: Option<String>,
         }
         impl Builder {
+            #[doc = "Metric namespace to query metric definitions for."]
             pub fn metricnamespace(mut self, metricnamespace: impl Into<String>) -> Self {
                 self.metricnamespace = Some(metricnamespace.into());
                 self
@@ -3301,6 +3552,10 @@ pub mod metrics {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "**Lists the metric values for a resource**."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_uri`: The identifier of the resource."]
         pub fn list(&self, resource_uri: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -3335,38 +3590,47 @@ pub mod metrics {
             pub(crate) metricnamespace: Option<String>,
         }
         impl Builder {
+            #[doc = "The timespan of the query. It is a string with the following format 'startDateTime_ISO/endDateTime_ISO'."]
             pub fn timespan(mut self, timespan: impl Into<String>) -> Self {
                 self.timespan = Some(timespan.into());
                 self
             }
+            #[doc = "The interval (i.e. timegrain) of the query."]
             pub fn interval(mut self, interval: impl Into<String>) -> Self {
                 self.interval = Some(interval.into());
                 self
             }
+            #[doc = "The names of the metrics (comma separated) to retrieve. Special case: If a metricname itself has a comma in it then use %2 to indicate it. Eg: 'Metric,Name1' should be **'Metric%2Name1'**"]
             pub fn metricnames(mut self, metricnames: impl Into<String>) -> Self {
                 self.metricnames = Some(metricnames.into());
                 self
             }
+            #[doc = "The list of aggregation types (comma separated) to retrieve."]
             pub fn aggregation(mut self, aggregation: impl Into<String>) -> Self {
                 self.aggregation = Some(aggregation.into());
                 self
             }
+            #[doc = "The maximum number of records to retrieve.\nValid only if $filter is specified.\nDefaults to 10."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "The aggregation to use for sorting results and the direction of the sort.\nOnly one order can be specified.\nExamples: sum asc."]
             pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
                 self.orderby = Some(orderby.into());
                 self
             }
+            #[doc = "The **$filter** is used to reduce the set of metric data returned. Example: Metric contains metadata A, B and C. - Return all time series of C where A = a1 and B = b1 or b2 **$filter=A eq 'a1' and B eq 'b1' or B eq 'b2' and C eq '*'** - Invalid variant: **$filter=A eq 'a1' and B eq 'b1' and C eq '*' or B = 'b2'** This is invalid because the logical or operator cannot separate two different metadata names. - Return all time series where A = a1, B = b1 and C = c1: **$filter=A eq 'a1' and B eq 'b1' and C eq 'c1'** - Return all time series where A = a1 **$filter=A eq 'a1' and B eq '*' and C eq '*'**. Special case: When dimension name or dimension value uses round brackets. Eg: When dimension name is **dim (test) 1** Instead of using $filter= \"dim (test) 1 eq '*' \" use **$filter= \"dim %2528test%2529 1 eq '*' \"** When dimension name is **dim (test) 3** and dimension value is **dim3 (test) val** Instead of using $filter= \"dim (test) 3 eq 'dim3 (test) val' \" use **$filter= \"dim %2528test%2529 3 eq 'dim3 %2528test%2529 val' \"**"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Reduces the set of data collected. The syntax allowed depends on the operation. See the operation's description for details."]
             pub fn result_type(mut self, result_type: impl Into<String>) -> Self {
                 self.result_type = Some(result_type.into());
                 self
             }
+            #[doc = "Metric namespace to query metric definitions for."]
             pub fn metricnamespace(mut self, metricnamespace: impl Into<String>) -> Self {
                 self.metricnamespace = Some(metricnamespace.into());
                 self
@@ -3442,6 +3706,10 @@ pub mod baselines {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "**Lists the metric baseline values for a resource**."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_uri`: The identifier of the resource."]
         pub fn list(&self, resource_uri: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -3474,34 +3742,42 @@ pub mod baselines {
             pub(crate) result_type: Option<String>,
         }
         impl Builder {
+            #[doc = "The names of the metrics (comma separated) to retrieve. Special case: If a metricname itself has a comma in it then use %2 to indicate it. Eg: 'Metric,Name1' should be **'Metric%2Name1'**"]
             pub fn metricnames(mut self, metricnames: impl Into<String>) -> Self {
                 self.metricnames = Some(metricnames.into());
                 self
             }
+            #[doc = "Metric namespace to query metric definitions for."]
             pub fn metricnamespace(mut self, metricnamespace: impl Into<String>) -> Self {
                 self.metricnamespace = Some(metricnamespace.into());
                 self
             }
+            #[doc = "The timespan of the query. It is a string with the following format 'startDateTime_ISO/endDateTime_ISO'."]
             pub fn timespan(mut self, timespan: impl Into<String>) -> Self {
                 self.timespan = Some(timespan.into());
                 self
             }
+            #[doc = "The interval (i.e. timegrain) of the query."]
             pub fn interval(mut self, interval: impl Into<String>) -> Self {
                 self.interval = Some(interval.into());
                 self
             }
+            #[doc = "The list of aggregation types (comma separated) to retrieve."]
             pub fn aggregation(mut self, aggregation: impl Into<String>) -> Self {
                 self.aggregation = Some(aggregation.into());
                 self
             }
+            #[doc = "The list of sensitivities (comma separated) to retrieve."]
             pub fn sensitivities(mut self, sensitivities: impl Into<String>) -> Self {
                 self.sensitivities = Some(sensitivities.into());
                 self
             }
+            #[doc = "The **$filter** is used to reduce the set of metric data returned. Example: Metric contains metadata A, B and C. - Return all time series of C where A = a1 and B = b1 or b2 **$filter=A eq 'a1' and B eq 'b1' or B eq 'b2' and C eq '*'** - Invalid variant: **$filter=A eq 'a1' and B eq 'b1' and C eq '*' or B = 'b2'** This is invalid because the logical or operator cannot separate two different metadata names. - Return all time series where A = a1, B = b1 and C = c1: **$filter=A eq 'a1' and B eq 'b1' and C eq 'c1'** - Return all time series where A = a1 **$filter=A eq 'a1' and B eq '*' and C eq '*'**. Special case: When dimension name or dimension value uses round brackets. Eg: When dimension name is **dim (test) 1** Instead of using $filter= \"dim (test) 1 eq '*' \" use **$filter= \"dim %2528test%2529 1 eq '*' \"** When dimension name is **dim (test) 3** and dimension value is **dim3 (test) val** Instead of using $filter= \"dim (test) 3 eq 'dim3 (test) val' \" use **$filter= \"dim %2528test%2529 3 eq 'dim3 %2528test%2529 val' \"**"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Allows retrieving only metadata of the baseline. On data request all information is retrieved."]
             pub fn result_type(mut self, result_type: impl Into<String>) -> Self {
                 self.result_type = Some(result_type.into());
                 self
@@ -3575,12 +3851,21 @@ pub mod metric_alerts {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieve alert rule definitions in a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Retrieve alert rule definitions in a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -3592,6 +3877,12 @@ pub mod metric_alerts {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Retrieve an alert rule definition."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `rule_name`: The name of the rule."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -3605,6 +3896,13 @@ pub mod metric_alerts {
                 rule_name: rule_name.into(),
             }
         }
+        #[doc = "Create or update an metric alert definition."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `rule_name`: The name of the rule."]
+        #[doc = "* `parameters`: The parameters of the rule to create or update."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -3620,6 +3918,13 @@ pub mod metric_alerts {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Update an metric alert definition."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `rule_name`: The name of the rule."]
+        #[doc = "* `parameters`: The parameters of the rule to update."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -3635,6 +3940,12 @@ pub mod metric_alerts {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Delete an alert rule definition."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `rule_name`: The name of the rule."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -3967,6 +4278,12 @@ pub mod metric_alerts_status {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieve an alert rule status."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `rule_name`: The name of the rule."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -3980,6 +4297,13 @@ pub mod metric_alerts_status {
                 rule_name: rule_name.into(),
             }
         }
+        #[doc = "Retrieve an alert rule status."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `rule_name`: The name of the rule."]
+        #[doc = "* `status_name`: The name of the status."]
         pub fn list_by_name(
             &self,
             subscription_id: impl Into<String>,
@@ -4107,6 +4431,12 @@ pub mod scheduled_query_rules {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets an Log Search rule"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `rule_name`: The name of the rule."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -4120,6 +4450,13 @@ pub mod scheduled_query_rules {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates an log search rule."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `rule_name`: The name of the rule."]
+        #[doc = "* `parameters`: The parameters of the rule to create or update."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -4135,6 +4472,13 @@ pub mod scheduled_query_rules {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Update log search Rule."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `rule_name`: The name of the rule."]
+        #[doc = "* `parameters`: The parameters of the rule to update."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -4150,6 +4494,12 @@ pub mod scheduled_query_rules {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Deletes a Log Search rule"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `rule_name`: The name of the rule."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -4163,6 +4513,10 @@ pub mod scheduled_query_rules {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "List the Log Search rules within a subscription group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
@@ -4170,6 +4524,11 @@ pub mod scheduled_query_rules {
                 filter: None,
             }
         }
+        #[doc = "List the Log Search rules within a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_by_resource_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -4415,6 +4774,7 @@ pub mod scheduled_query_rules {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the operation. For more information please see https://msdn.microsoft.com/en-us/library/azure/dn931934.aspx"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -4473,6 +4833,7 @@ pub mod scheduled_query_rules {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the operation. For more information please see https://msdn.microsoft.com/en-us/library/azure/dn931934.aspx"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -4526,6 +4887,10 @@ pub mod metric_namespaces {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists the metric namespaces for the resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_uri`: The identifier of the resource."]
         pub fn list(&self, resource_uri: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -4544,6 +4909,7 @@ pub mod metric_namespaces {
             pub(crate) start_time: Option<String>,
         }
         impl Builder {
+            #[doc = "The ISO 8601 conform Date start time from which to query for metric namespaces."]
             pub fn start_time(mut self, start_time: impl Into<String>) -> Self {
                 self.start_time = Some(start_time.into());
                 self
@@ -4596,6 +4962,10 @@ pub mod vm_insights {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieves the VM Insights onboarding status for the specified resource or resource scope."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_uri`: The fully qualified Azure Resource manager identifier of the resource, or scope, whose status to retrieve."]
         pub fn get_onboarding_status(&self, resource_uri: impl Into<String>) -> get_onboarding_status::Builder {
             get_onboarding_status::Builder {
                 client: self.0.clone(),
@@ -4656,12 +5026,21 @@ pub mod private_link_scopes {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a list of all Azure Monitor PrivateLinkScopes within a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets a list of Azure Monitor PrivateLinkScopes within a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_by_resource_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -4673,6 +5052,12 @@ pub mod private_link_scopes {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Returns a Azure Monitor PrivateLinkScope."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `scope_name`: The name of the Azure Monitor PrivateLinkScope resource."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -4686,6 +5071,13 @@ pub mod private_link_scopes {
                 scope_name: scope_name.into(),
             }
         }
+        #[doc = "Creates (or updates) a Azure Monitor PrivateLinkScope. Note: You cannot specify a different value for InstrumentationKey nor AppId in the Put operation."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `scope_name`: The name of the Azure Monitor PrivateLinkScope resource."]
+        #[doc = "* `azure_monitor_private_link_scope_payload`: Properties that need to be specified to create or update a Azure Monitor PrivateLinkScope."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -4701,6 +5093,13 @@ pub mod private_link_scopes {
                 azure_monitor_private_link_scope_payload: azure_monitor_private_link_scope_payload.into(),
             }
         }
+        #[doc = "Updates an existing PrivateLinkScope's tags. To update other fields use the CreateOrUpdate method."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `scope_name`: The name of the Azure Monitor PrivateLinkScope resource."]
+        #[doc = "* `private_link_scope_tags`: Updated tag information to set into the PrivateLinkScope instance."]
         pub fn update_tags(
             &self,
             resource_group_name: impl Into<String>,
@@ -4716,6 +5115,12 @@ pub mod private_link_scopes {
                 private_link_scope_tags: private_link_scope_tags.into(),
             }
         }
+        #[doc = "Deletes a Azure Monitor PrivateLinkScope."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `scope_name`: The name of the Azure Monitor PrivateLinkScope resource."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -5110,6 +5515,12 @@ pub mod private_link_scope_operation_status {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get the status of an azure asynchronous operation associated with a private link scope operation."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `async_operation_id`: The operation Id."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn get(
             &self,
             async_operation_id: impl Into<String>,
@@ -5181,6 +5592,12 @@ pub mod private_link_resources {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the private link resources that need to be created for a Azure Monitor PrivateLinkScope."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `scope_name`: The name of the Azure Monitor PrivateLinkScope resource."]
         pub fn list_by_private_link_scope(
             &self,
             subscription_id: impl Into<String>,
@@ -5194,6 +5611,13 @@ pub mod private_link_resources {
                 scope_name: scope_name.into(),
             }
         }
+        #[doc = "Gets the private link resources that need to be created for a Azure Monitor PrivateLinkScope."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `scope_name`: The name of the Azure Monitor PrivateLinkScope resource."]
+        #[doc = "* `group_name`: The name of the private link resource."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -5340,6 +5764,13 @@ pub mod private_endpoint_connections {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a private endpoint connection."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `scope_name`: The name of the Azure Monitor PrivateLinkScope resource."]
+        #[doc = "* `private_endpoint_connection_name`: The name of the private endpoint connection."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -5355,6 +5786,13 @@ pub mod private_endpoint_connections {
                 private_endpoint_connection_name: private_endpoint_connection_name.into(),
             }
         }
+        #[doc = "Approve or reject a private endpoint connection with a given name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `scope_name`: The name of the Azure Monitor PrivateLinkScope resource."]
+        #[doc = "* `private_endpoint_connection_name`: The name of the private endpoint connection."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -5372,6 +5810,13 @@ pub mod private_endpoint_connections {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Deletes a private endpoint connection with a given name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `scope_name`: The name of the Azure Monitor PrivateLinkScope resource."]
+        #[doc = "* `private_endpoint_connection_name`: The name of the private endpoint connection."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -5387,6 +5832,12 @@ pub mod private_endpoint_connections {
                 private_endpoint_connection_name: private_endpoint_connection_name.into(),
             }
         }
+        #[doc = "Gets all private endpoint connections on a private link scope."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `scope_name`: The name of the Azure Monitor PrivateLinkScope resource."]
         pub fn list_by_private_link_scope(
             &self,
             subscription_id: impl Into<String>,
@@ -5631,6 +6082,13 @@ pub mod private_link_scoped_resources {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a scoped resource in a private link scope."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `scope_name`: The name of the Azure Monitor PrivateLinkScope resource."]
+        #[doc = "* `name`: The name of the scoped resource object."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -5646,6 +6104,13 @@ pub mod private_link_scoped_resources {
                 name: name.into(),
             }
         }
+        #[doc = "Approve or reject a private endpoint connection with a given name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `scope_name`: The name of the Azure Monitor PrivateLinkScope resource."]
+        #[doc = "* `name`: The name of the scoped resource object."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -5663,6 +6128,13 @@ pub mod private_link_scoped_resources {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Deletes a private endpoint connection with a given name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `scope_name`: The name of the Azure Monitor PrivateLinkScope resource."]
+        #[doc = "* `name`: The name of the scoped resource object."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -5678,6 +6150,12 @@ pub mod private_link_scoped_resources {
                 name: name.into(),
             }
         }
+        #[doc = "Gets all private endpoint connections on a private link scope."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `scope_name`: The name of the Azure Monitor PrivateLinkScope resource."]
         pub fn list_by_private_link_scope(
             &self,
             subscription_id: impl Into<String>,

@@ -85,6 +85,12 @@ pub mod operationalization_clusters {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the operationalization cluster resource view. Note that the credentials are not returned by this call. Call ListKeys to get them."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID."]
+        #[doc = "* `resource_group_name`: Name of the resource group in which the cluster is located."]
+        #[doc = "* `cluster_name`: The name of the cluster."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -98,6 +104,13 @@ pub mod operationalization_clusters {
                 cluster_name: cluster_name.into(),
             }
         }
+        #[doc = "Create or update an operationalization cluster."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID."]
+        #[doc = "* `resource_group_name`: Name of the resource group in which the cluster is located."]
+        #[doc = "* `cluster_name`: The name of the cluster."]
+        #[doc = "* `parameters`: Parameters supplied to create or update an Operationalization cluster."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -113,6 +126,13 @@ pub mod operationalization_clusters {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "The PATCH operation can be used to update only the tags for a cluster. Use PUT operation to update other properties."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID."]
+        #[doc = "* `resource_group_name`: Name of the resource group in which the cluster is located."]
+        #[doc = "* `cluster_name`: The name of the cluster."]
+        #[doc = "* `parameters`: The parameters supplied to patch the cluster."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -128,6 +148,12 @@ pub mod operationalization_clusters {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Deletes the specified cluster."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID."]
+        #[doc = "* `resource_group_name`: Name of the resource group in which the cluster is located."]
+        #[doc = "* `cluster_name`: The name of the cluster."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -141,6 +167,12 @@ pub mod operationalization_clusters {
                 cluster_name: cluster_name.into(),
             }
         }
+        #[doc = "Gets the credentials for the specified cluster such as Storage, ACR and ACS credentials. This is a long running operation because it fetches keys from dependencies."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID."]
+        #[doc = "* `resource_group_name`: Name of the resource group in which the cluster is located."]
+        #[doc = "* `cluster_name`: The name of the cluster."]
         pub fn list_keys(
             &self,
             subscription_id: impl Into<String>,
@@ -154,6 +186,12 @@ pub mod operationalization_clusters {
                 cluster_name: cluster_name.into(),
             }
         }
+        #[doc = "Checks if updates are available for system services in the cluster"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID."]
+        #[doc = "* `resource_group_name`: Name of the resource group in which the cluster is located."]
+        #[doc = "* `cluster_name`: The name of the cluster."]
         pub fn check_update(
             &self,
             subscription_id: impl Into<String>,
@@ -167,6 +205,12 @@ pub mod operationalization_clusters {
                 cluster_name: cluster_name.into(),
             }
         }
+        #[doc = "Updates system services in a cluster."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID."]
+        #[doc = "* `resource_group_name`: Name of the resource group in which the cluster is located."]
+        #[doc = "* `cluster_name`: The name of the cluster."]
         pub fn update_system(
             &self,
             subscription_id: impl Into<String>,
@@ -180,6 +224,11 @@ pub mod operationalization_clusters {
                 cluster_name: cluster_name.into(),
             }
         }
+        #[doc = "Gets the clusters in the specified resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID."]
+        #[doc = "* `resource_group_name`: Name of the resource group in which the cluster is located."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -192,6 +241,10 @@ pub mod operationalization_clusters {
                 skiptoken: None,
             }
         }
+        #[doc = "Gets the operationalization clusters in the specified subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID."]
         pub fn list_by_subscription_id(&self, subscription_id: impl Into<String>) -> list_by_subscription_id::Builder {
             list_by_subscription_id::Builder {
                 client: self.0.clone(),
@@ -572,6 +625,7 @@ pub mod operationalization_clusters {
             pub(crate) skiptoken: Option<String>,
         }
         impl Builder {
+            #[doc = "Continuation token for pagination."]
             pub fn skiptoken(mut self, skiptoken: impl Into<String>) -> Self {
                 self.skiptoken = Some(skiptoken.into());
                 self
@@ -655,6 +709,7 @@ pub mod operationalization_clusters {
             pub(crate) skiptoken: Option<String>,
         }
         impl Builder {
+            #[doc = "Continuation token for pagination."]
             pub fn skiptoken(mut self, skiptoken: impl Into<String>) -> Self {
                 self.skiptoken = Some(skiptoken.into());
                 self
@@ -732,6 +787,7 @@ pub mod machine_learning_compute {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets all available operations."]
         pub fn list_available_operations(&self) -> list_available_operations::Builder {
             list_available_operations::Builder { client: self.0.clone() }
         }

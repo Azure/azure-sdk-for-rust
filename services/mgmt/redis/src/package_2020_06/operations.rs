@@ -100,6 +100,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all of the available REST API operations of the Microsoft.Cache provider."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -178,6 +179,11 @@ pub mod redis {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Checks that the redis cache name is valid and is not already in use."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `parameters`: Parameters supplied to the CheckNameAvailability Redis operation. The only supported resource type is 'Microsoft.Cache/redis'"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn check_name_availability(
             &self,
             parameters: impl Into<models::CheckNameAvailabilityParameters>,
@@ -189,6 +195,13 @@ pub mod redis {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets any upgrade notifications for a Redis cache."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `name`: The name of the Redis cache."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `history`: how many minutes in past to look for upgrade notifications"]
         pub fn list_upgrade_notifications(
             &self,
             resource_group_name: impl Into<String>,
@@ -204,6 +217,12 @@ pub mod redis {
                 history,
             }
         }
+        #[doc = "Gets a Redis cache (resource description)."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `name`: The name of the Redis cache."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -217,6 +236,13 @@ pub mod redis {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Create or replace (overwrite/recreate, with potential downtime) an existing Redis cache."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `name`: The name of the Redis cache."]
+        #[doc = "* `parameters`: Parameters supplied to the Create Redis operation."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create(
             &self,
             resource_group_name: impl Into<String>,
@@ -232,6 +258,13 @@ pub mod redis {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Update an existing Redis cache."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `name`: The name of the Redis cache."]
+        #[doc = "* `parameters`: Parameters supplied to the Update Redis operation."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -247,6 +280,12 @@ pub mod redis {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes a Redis cache."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `name`: The name of the Redis cache."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -260,6 +299,11 @@ pub mod redis {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists all Redis caches in a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_resource_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -271,12 +315,22 @@ pub mod redis {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets all Redis caches in the specified subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Retrieve a Redis cache's access keys. This operation requires write permission to the cache resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `name`: The name of the Redis cache."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_keys(
             &self,
             resource_group_name: impl Into<String>,
@@ -290,6 +344,13 @@ pub mod redis {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Regenerate Redis cache's access keys. This operation requires write permission to the cache resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `name`: The name of the Redis cache."]
+        #[doc = "* `parameters`: Specifies which key to regenerate."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn regenerate_key(
             &self,
             resource_group_name: impl Into<String>,
@@ -305,6 +366,13 @@ pub mod redis {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Reboot specified Redis node(s). This operation requires write permission to the cache resource. There can be potential data loss."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `name`: The name of the Redis cache."]
+        #[doc = "* `parameters`: Specifies which Redis node(s) to reboot."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn force_reboot(
             &self,
             resource_group_name: impl Into<String>,
@@ -320,6 +388,13 @@ pub mod redis {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Import data into Redis cache."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `name`: The name of the Redis cache."]
+        #[doc = "* `parameters`: Parameters for Redis import operation."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn import_data(
             &self,
             resource_group_name: impl Into<String>,
@@ -335,6 +410,13 @@ pub mod redis {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Export data from the redis cache to blobs in a container."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `name`: The name of the Redis cache."]
+        #[doc = "* `parameters`: Parameters for Redis export operation."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn export_data(
             &self,
             resource_group_name: impl Into<String>,
@@ -1110,6 +1192,12 @@ pub mod firewall_rules {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets all firewall rules in the specified redis cache."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `cache_name`: The name of the Redis cache."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -1123,6 +1211,13 @@ pub mod firewall_rules {
                 cache_name: cache_name.into(),
             }
         }
+        #[doc = "Gets a single firewall rule in a specified redis cache."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `cache_name`: The name of the Redis cache."]
+        #[doc = "* `rule_name`: The name of the firewall rule."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -1138,6 +1233,14 @@ pub mod firewall_rules {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Create or update a redis cache firewall rule"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `cache_name`: The name of the Redis cache."]
+        #[doc = "* `rule_name`: The name of the firewall rule."]
+        #[doc = "* `parameters`: Parameters supplied to the create or update redis firewall rule operation."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -1155,6 +1258,13 @@ pub mod firewall_rules {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes a single firewall rule in a specified redis cache."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `cache_name`: The name of the Redis cache."]
+        #[doc = "* `rule_name`: The name of the firewall rule."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -1428,6 +1538,12 @@ pub mod patch_schedules {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets all patch schedules in the specified redis cache (there is only one)."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `cache_name`: The name of the Redis cache."]
         pub fn list_by_redis_resource(
             &self,
             subscription_id: impl Into<String>,
@@ -1441,6 +1557,13 @@ pub mod patch_schedules {
                 cache_name: cache_name.into(),
             }
         }
+        #[doc = "Gets the patching schedule of a redis cache."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `name`: The name of the redis cache."]
+        #[doc = "* `default`: Default string modeled as parameter for auto generation to work correctly."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -1456,6 +1579,14 @@ pub mod patch_schedules {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Create or replace the patching schedule for Redis cache."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `name`: The name of the Redis cache."]
+        #[doc = "* `default`: Default string modeled as parameter for auto generation to work correctly."]
+        #[doc = "* `parameters`: Parameters to set the patching schedule for Redis cache."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -1473,6 +1604,13 @@ pub mod patch_schedules {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes the patching schedule of a redis cache."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `name`: The name of the redis cache."]
+        #[doc = "* `default`: Default string modeled as parameter for auto generation to work correctly."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -1746,6 +1884,13 @@ pub mod linked_server {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the detailed information about a linked server of a redis cache (requires Premium SKU)."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `name`: The name of the redis cache."]
+        #[doc = "* `linked_server_name`: The name of the linked server."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -1761,6 +1906,14 @@ pub mod linked_server {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Adds a linked server to the Redis cache (requires Premium SKU)."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `name`: The name of the Redis cache."]
+        #[doc = "* `linked_server_name`: The name of the linked server that is being added to the Redis cache."]
+        #[doc = "* `parameters`: Parameters supplied to the Create Linked server operation."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create(
             &self,
             resource_group_name: impl Into<String>,
@@ -1778,6 +1931,13 @@ pub mod linked_server {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes the linked server from a redis cache (requires Premium SKU)."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `name`: The name of the redis cache."]
+        #[doc = "* `linked_server_name`: The name of the linked server that is being added to the Redis cache."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -1793,6 +1953,12 @@ pub mod linked_server {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the list of linked servers associated with this redis cache (requires Premium SKU)."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `name`: The name of the redis cache."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(
             &self,
             resource_group_name: impl Into<String>,
@@ -2065,6 +2231,12 @@ pub mod private_endpoint_connections {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List all the private endpoint connections associated with the redis cache."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `cache_name`: The name of the Redis cache."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list(
             &self,
             resource_group_name: impl Into<String>,
@@ -2078,6 +2250,13 @@ pub mod private_endpoint_connections {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the specified private endpoint connection associated with the redis cache."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `cache_name`: The name of the Redis cache."]
+        #[doc = "* `private_endpoint_connection_name`: The name of the private endpoint connection associated with the Azure resource"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -2093,6 +2272,14 @@ pub mod private_endpoint_connections {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Update the state of specified private endpoint connection associated with the redis cache."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `cache_name`: The name of the Redis cache."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `private_endpoint_connection_name`: The name of the private endpoint connection associated with the Azure resource"]
+        #[doc = "* `properties`: The private endpoint connection properties."]
         pub fn put(
             &self,
             resource_group_name: impl Into<String>,
@@ -2110,6 +2297,13 @@ pub mod private_endpoint_connections {
                 properties: properties.into(),
             }
         }
+        #[doc = "Deletes the specified private endpoint connection associated with the redis cache."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `cache_name`: The name of the Redis cache."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `private_endpoint_connection_name`: The name of the private endpoint connection associated with the Azure resource"]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -2355,6 +2549,12 @@ pub mod private_link_resources {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the private link resources that need to be created for a redis cache."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `cache_name`: The name of the Redis cache."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_by_redis_cache(
             &self,
             resource_group_name: impl Into<String>,

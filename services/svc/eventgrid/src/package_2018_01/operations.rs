@@ -76,12 +76,20 @@ impl Client {
     }
 }
 impl Client {
+    #[doc = "Publishes a batch of events to an Azure Event Grid topic."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `events`: An array of events to be published to Event Grid."]
     pub fn publish_event_grid_events(&self, events: Vec<models::EventGridEvent>) -> publish_event_grid_events::Builder {
         publish_event_grid_events::Builder {
             client: self.clone(),
             events,
         }
     }
+    #[doc = "Publishes a batch of events to an Azure Event Grid topic."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `events`: An array of events to be published to Event Grid."]
     pub fn publish_cloud_event_events(&self, events: Vec<models::CloudEventEvent>) -> publish_cloud_event_events::Builder {
         publish_cloud_event_events::Builder {
             client: self.clone(),
@@ -89,6 +97,10 @@ impl Client {
             aeg_channel_name: None,
         }
     }
+    #[doc = "Publishes a batch of events to an Azure Event Grid topic."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `events`: An array of events to be published to Event Grid."]
     pub fn publish_custom_event_events(&self, events: Vec<models::CustomEventEvent>) -> publish_custom_event_events::Builder {
         publish_custom_event_events::Builder {
             client: self.clone(),
@@ -147,6 +159,7 @@ pub mod publish_cloud_event_events {
         pub(crate) aeg_channel_name: Option<String>,
     }
     impl Builder {
+        #[doc = "Required only when publishing to partner namespaces with partner topic routing mode ChannelNameHeader."]
         pub fn aeg_channel_name(mut self, aeg_channel_name: impl Into<String>) -> Self {
             self.aeg_channel_name = Some(aeg_channel_name.into());
             self

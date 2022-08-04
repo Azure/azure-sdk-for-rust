@@ -139,6 +139,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all of the available Storage Rest API operations."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -192,6 +193,10 @@ pub mod skus {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists the available SKUs supported by Microsoft.Storage for given subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -253,6 +258,11 @@ pub mod storage_accounts {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Checks that the storage account name is valid and is not already in use."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `account_name`: The name of the storage account within the specified resource group. Storage account names must be between 3 and 24 characters in length and use numbers and lower-case letters only."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn check_name_availability(
             &self,
             account_name: impl Into<models::StorageAccountCheckNameAvailabilityParameters>,
@@ -264,6 +274,12 @@ pub mod storage_accounts {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Returns the properties for the specified storage account including but not limited to name, SKU name, location, and account status. The ListKeys operation should be used to retrieve storage keys."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of the storage account within the specified resource group. Storage account names must be between 3 and 24 characters in length and use numbers and lower-case letters only."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn get_properties(
             &self,
             resource_group_name: impl Into<String>,
@@ -278,6 +294,13 @@ pub mod storage_accounts {
                 expand: None,
             }
         }
+        #[doc = "Asynchronously creates a new storage account with the specified parameters. If an account is already created and a subsequent create request is issued with different properties, the account properties will be updated. If an account is already created and a subsequent create or update request is issued with the exact same set of properties, the request will succeed."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of the storage account within the specified resource group. Storage account names must be between 3 and 24 characters in length and use numbers and lower-case letters only."]
+        #[doc = "* `parameters`: The parameters to provide for the created account."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn create(
             &self,
             resource_group_name: impl Into<String>,
@@ -293,6 +316,13 @@ pub mod storage_accounts {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "The update operation can be used to update the SKU, encryption, access tier, or tags for a storage account. It can also be used to map the account to a custom domain. Only one custom domain is supported per storage account; the replacement/change of custom domain is not supported. In order to replace an old custom domain, the old value must be cleared/unregistered before a new value can be set. The update of multiple properties is supported. This call does not change the storage keys for the account. If you want to change the storage account keys, use the regenerate keys operation. The location and name of the storage account cannot be changed after creation."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of the storage account within the specified resource group. Storage account names must be between 3 and 24 characters in length and use numbers and lower-case letters only."]
+        #[doc = "* `parameters`: The parameters to provide for the updated account."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -308,6 +338,12 @@ pub mod storage_accounts {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes a storage account in Microsoft Azure."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of the storage account within the specified resource group. Storage account names must be between 3 and 24 characters in length and use numbers and lower-case letters only."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -321,12 +357,21 @@ pub mod storage_accounts {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists all the storage accounts available under the subscription. Note that storage keys are not returned; use the ListKeys operation for this."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists all the storage accounts available under the given resource group. Note that storage keys are not returned; use the ListKeys operation for this."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription. The name is case insensitive."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_by_resource_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -338,6 +383,12 @@ pub mod storage_accounts {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists the access keys or Kerberos keys (if active directory enabled) for the specified storage account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of the storage account within the specified resource group. Storage account names must be between 3 and 24 characters in length and use numbers and lower-case letters only."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_keys(
             &self,
             resource_group_name: impl Into<String>,
@@ -352,6 +403,13 @@ pub mod storage_accounts {
                 expand: None,
             }
         }
+        #[doc = "Regenerates one of the access keys or Kerberos keys for the specified storage account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of the storage account within the specified resource group. Storage account names must be between 3 and 24 characters in length and use numbers and lower-case letters only."]
+        #[doc = "* `regenerate_key`: Specifies name of the key which should be regenerated -- key1, key2, kerb1, kerb2."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn regenerate_key(
             &self,
             resource_group_name: impl Into<String>,
@@ -367,6 +425,13 @@ pub mod storage_accounts {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "List SAS credentials of a storage account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of the storage account within the specified resource group. Storage account names must be between 3 and 24 characters in length and use numbers and lower-case letters only."]
+        #[doc = "* `parameters`: The parameters to provide to list SAS credentials for the storage account."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_account_sas(
             &self,
             resource_group_name: impl Into<String>,
@@ -382,6 +447,13 @@ pub mod storage_accounts {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "List service SAS credentials of a specific resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of the storage account within the specified resource group. Storage account names must be between 3 and 24 characters in length and use numbers and lower-case letters only."]
+        #[doc = "* `parameters`: The parameters to provide to list service SAS credentials."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_service_sas(
             &self,
             resource_group_name: impl Into<String>,
@@ -397,6 +469,12 @@ pub mod storage_accounts {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Failover request can be triggered for a storage account in case of availability issues. The failover occurs from the storage account's primary cluster to secondary cluster for RA-GRS accounts. The secondary cluster will become primary after failover."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of the storage account within the specified resource group. Storage account names must be between 3 and 24 characters in length and use numbers and lower-case letters only."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn failover(
             &self,
             resource_group_name: impl Into<String>,
@@ -410,6 +488,13 @@ pub mod storage_accounts {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Live Migration of storage account to enable Hns"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of the storage account within the specified resource group. Storage account names must be between 3 and 24 characters in length and use numbers and lower-case letters only."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `request_type`: Required. Hierarchical namespace migration type can either be a hierarchical namespace validation request 'HnsOnValidationRequest' or a hydration request 'HnsOnHydrationRequest'. The validation request will validate the migration whereas the hydration request will migrate the account."]
         pub fn hierarchical_namespace_migration(
             &self,
             resource_group_name: impl Into<String>,
@@ -425,6 +510,12 @@ pub mod storage_accounts {
                 request_type: request_type.into(),
             }
         }
+        #[doc = "Abort live Migration of storage account to enable Hns"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of the storage account within the specified resource group. Storage account names must be between 3 and 24 characters in length and use numbers and lower-case letters only."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn abort_hierarchical_namespace_migration(
             &self,
             resource_group_name: impl Into<String>,
@@ -438,6 +529,13 @@ pub mod storage_accounts {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Restore blobs in the specified blob ranges"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of the storage account within the specified resource group. Storage account names must be between 3 and 24 characters in length and use numbers and lower-case letters only."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `parameters`: The parameters to provide for restore blob ranges."]
         pub fn restore_blob_ranges(
             &self,
             resource_group_name: impl Into<String>,
@@ -453,6 +551,12 @@ pub mod storage_accounts {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Revoke user delegation keys."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of the storage account within the specified resource group. Storage account names must be between 3 and 24 characters in length and use numbers and lower-case letters only."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn revoke_user_delegation_keys(
             &self,
             resource_group_name: impl Into<String>,
@@ -529,6 +633,7 @@ pub mod storage_accounts {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "May be used to expand the properties within account's properties. By default, data is not included when fetching properties. Currently we only support geoReplicationStats and blobRestoreStatus."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -906,6 +1011,7 @@ pub mod storage_accounts {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "Specifies type of the key to be listed. Possible value is kerb."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -1403,12 +1509,22 @@ pub mod deleted_accounts {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists deleted accounts under the subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get properties of specified deleted account resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `deleted_account_name`: Name of the deleted storage account."]
+        #[doc = "* `location`: The location of the deleted storage account."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn get(
             &self,
             deleted_account_name: impl Into<String>,
@@ -1554,6 +1670,11 @@ pub mod usages {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the current usage count and the limit for the resources of the location under the subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `location`: The location of the Azure Storage resource."]
         pub fn list_by_location(&self, subscription_id: impl Into<String>, location: impl Into<String>) -> list_by_location::Builder {
             list_by_location::Builder {
                 client: self.0.clone(),
@@ -1618,6 +1739,13 @@ pub mod management_policies {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the managementpolicy associated with the specified storage account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of the storage account within the specified resource group. Storage account names must be between 3 and 24 characters in length and use numbers and lower-case letters only."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `management_policy_name`: The name of the Storage Account Management Policy. It should always be 'default'"]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -1633,6 +1761,14 @@ pub mod management_policies {
                 management_policy_name: management_policy_name.into(),
             }
         }
+        #[doc = "Sets the managementpolicy to the specified storage account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of the storage account within the specified resource group. Storage account names must be between 3 and 24 characters in length and use numbers and lower-case letters only."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `management_policy_name`: The name of the Storage Account Management Policy. It should always be 'default'"]
+        #[doc = "* `properties`: The ManagementPolicy set to a storage account."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -1650,6 +1786,13 @@ pub mod management_policies {
                 properties: properties.into(),
             }
         }
+        #[doc = "Deletes the managementpolicy associated with the specified storage account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of the storage account within the specified resource group. Storage account names must be between 3 and 24 characters in length and use numbers and lower-case letters only."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `management_policy_name`: The name of the Storage Account Management Policy. It should always be 'default'"]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -1836,6 +1979,13 @@ pub mod blob_inventory_policies {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the blob inventory policy associated with the specified storage account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of the storage account within the specified resource group. Storage account names must be between 3 and 24 characters in length and use numbers and lower-case letters only."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `blob_inventory_policy_name`: The name of the storage account blob inventory policy. It should always be 'default'"]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -1851,6 +2001,14 @@ pub mod blob_inventory_policies {
                 blob_inventory_policy_name: blob_inventory_policy_name.into(),
             }
         }
+        #[doc = "Sets the blob inventory policy to the specified storage account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of the storage account within the specified resource group. Storage account names must be between 3 and 24 characters in length and use numbers and lower-case letters only."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `blob_inventory_policy_name`: The name of the storage account blob inventory policy. It should always be 'default'"]
+        #[doc = "* `properties`: The blob inventory policy set to a storage account."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -1868,6 +2026,13 @@ pub mod blob_inventory_policies {
                 properties: properties.into(),
             }
         }
+        #[doc = "Deletes the blob inventory policy associated with the specified storage account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of the storage account within the specified resource group. Storage account names must be between 3 and 24 characters in length and use numbers and lower-case letters only."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `blob_inventory_policy_name`: The name of the storage account blob inventory policy. It should always be 'default'"]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -1883,6 +2048,12 @@ pub mod blob_inventory_policies {
                 blob_inventory_policy_name: blob_inventory_policy_name.into(),
             }
         }
+        #[doc = "Gets the blob inventory policy associated with the specified storage account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of the storage account within the specified resource group. Storage account names must be between 3 and 24 characters in length and use numbers and lower-case letters only."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list(
             &self,
             resource_group_name: impl Into<String>,
@@ -2120,6 +2291,12 @@ pub mod private_endpoint_connections {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List all the private endpoint connections associated with the storage account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of the storage account within the specified resource group. Storage account names must be between 3 and 24 characters in length and use numbers and lower-case letters only."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list(
             &self,
             resource_group_name: impl Into<String>,
@@ -2133,6 +2310,13 @@ pub mod private_endpoint_connections {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the specified private endpoint connection associated with the storage account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of the storage account within the specified resource group. Storage account names must be between 3 and 24 characters in length and use numbers and lower-case letters only."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `private_endpoint_connection_name`: The name of the private endpoint connection associated with the Azure resource"]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -2148,6 +2332,14 @@ pub mod private_endpoint_connections {
                 private_endpoint_connection_name: private_endpoint_connection_name.into(),
             }
         }
+        #[doc = "Update the state of specified private endpoint connection associated with the storage account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of the storage account within the specified resource group. Storage account names must be between 3 and 24 characters in length and use numbers and lower-case letters only."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `private_endpoint_connection_name`: The name of the private endpoint connection associated with the Azure resource"]
+        #[doc = "* `properties`: The private endpoint connection properties."]
         pub fn put(
             &self,
             resource_group_name: impl Into<String>,
@@ -2165,6 +2357,13 @@ pub mod private_endpoint_connections {
                 properties: properties.into(),
             }
         }
+        #[doc = "Deletes the specified private endpoint connection associated with the storage account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of the storage account within the specified resource group. Storage account names must be between 3 and 24 characters in length and use numbers and lower-case letters only."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `private_endpoint_connection_name`: The name of the private endpoint connection associated with the Azure resource"]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -2377,6 +2576,12 @@ pub mod private_link_resources {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the private link resources that need to be created for a storage account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of the storage account within the specified resource group. Storage account names must be between 3 and 24 characters in length and use numbers and lower-case letters only."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_by_storage_account(
             &self,
             resource_group_name: impl Into<String>,
@@ -2448,6 +2653,12 @@ pub mod object_replication_policies {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List the object replication policies associated with the storage account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of the storage account within the specified resource group. Storage account names must be between 3 and 24 characters in length and use numbers and lower-case letters only."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list(
             &self,
             resource_group_name: impl Into<String>,
@@ -2461,6 +2672,13 @@ pub mod object_replication_policies {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get the object replication policy of the storage account by policy ID."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of the storage account within the specified resource group. Storage account names must be between 3 and 24 characters in length and use numbers and lower-case letters only."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `object_replication_policy_id`: For the destination account, provide the value 'default'. Configure the policy on the destination account first. For the source account, provide the value of the policy ID that is returned when you download the policy that was defined on the destination account. The policy is downloaded as a JSON file."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -2476,6 +2694,14 @@ pub mod object_replication_policies {
                 object_replication_policy_id: object_replication_policy_id.into(),
             }
         }
+        #[doc = "Create or update the object replication policy of the storage account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of the storage account within the specified resource group. Storage account names must be between 3 and 24 characters in length and use numbers and lower-case letters only."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `object_replication_policy_id`: For the destination account, provide the value 'default'. Configure the policy on the destination account first. For the source account, provide the value of the policy ID that is returned when you download the policy that was defined on the destination account. The policy is downloaded as a JSON file."]
+        #[doc = "* `properties`: The object replication policy set to a storage account. A unique policy ID will be created if absent."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -2493,6 +2719,13 @@ pub mod object_replication_policies {
                 properties: properties.into(),
             }
         }
+        #[doc = "Deletes the object replication policy associated with the specified storage account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of the storage account within the specified resource group. Storage account names must be between 3 and 24 characters in length and use numbers and lower-case letters only."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `object_replication_policy_id`: For the destination account, provide the value 'default'. Configure the policy on the destination account first. For the source account, provide the value of the policy ID that is returned when you download the policy that was defined on the destination account. The policy is downloaded as a JSON file."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -2705,6 +2938,12 @@ pub mod local_users {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List the local users associated with the storage account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of the storage account within the specified resource group. Storage account names must be between 3 and 24 characters in length and use numbers and lower-case letters only."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list(
             &self,
             resource_group_name: impl Into<String>,
@@ -2718,6 +2957,13 @@ pub mod local_users {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get the local user of the storage account by username."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of the storage account within the specified resource group. Storage account names must be between 3 and 24 characters in length and use numbers and lower-case letters only."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `username`: The name of local user. The username must contain lowercase letters and numbers only. It must be unique only within the storage account."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -2733,6 +2979,14 @@ pub mod local_users {
                 username: username.into(),
             }
         }
+        #[doc = "Create or update the properties of a local user associated with the storage account"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of the storage account within the specified resource group. Storage account names must be between 3 and 24 characters in length and use numbers and lower-case letters only."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `username`: The name of local user. The username must contain lowercase letters and numbers only. It must be unique only within the storage account."]
+        #[doc = "* `properties`: The local user associated with a storage account."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -2750,6 +3004,13 @@ pub mod local_users {
                 properties: properties.into(),
             }
         }
+        #[doc = "Deletes the local user associated with the specified storage account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of the storage account within the specified resource group. Storage account names must be between 3 and 24 characters in length and use numbers and lower-case letters only."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `username`: The name of local user. The username must contain lowercase letters and numbers only. It must be unique only within the storage account."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -2765,6 +3026,13 @@ pub mod local_users {
                 username: username.into(),
             }
         }
+        #[doc = "List SSH authorized keys and shared key of the local user."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of the storage account within the specified resource group. Storage account names must be between 3 and 24 characters in length and use numbers and lower-case letters only."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `username`: The name of local user. The username must contain lowercase letters and numbers only. It must be unique only within the storage account."]
         pub fn list_keys(
             &self,
             resource_group_name: impl Into<String>,
@@ -2780,6 +3048,13 @@ pub mod local_users {
                 username: username.into(),
             }
         }
+        #[doc = "Regenerate the local user SSH password."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of the storage account within the specified resource group. Storage account names must be between 3 and 24 characters in length and use numbers and lower-case letters only."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `username`: The name of local user. The username must contain lowercase letters and numbers only. It must be unique only within the storage account."]
         pub fn regenerate_password(
             &self,
             resource_group_name: impl Into<String>,
@@ -3122,6 +3397,13 @@ pub mod encryption_scopes {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Returns the properties for the specified encryption scope."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of the storage account within the specified resource group. Storage account names must be between 3 and 24 characters in length and use numbers and lower-case letters only."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `encryption_scope_name`: The name of the encryption scope within the specified storage account. Encryption scope names must be between 3 and 63 characters in length and use numbers, lower-case letters and dash (-) only. Every dash (-) character must be immediately preceded and followed by a letter or number."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -3137,6 +3419,14 @@ pub mod encryption_scopes {
                 encryption_scope_name: encryption_scope_name.into(),
             }
         }
+        #[doc = "Synchronously creates or updates an encryption scope under the specified storage account. If an encryption scope is already created and a subsequent request is issued with different properties, the encryption scope properties will be updated per the specified request."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of the storage account within the specified resource group. Storage account names must be between 3 and 24 characters in length and use numbers and lower-case letters only."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `encryption_scope_name`: The name of the encryption scope within the specified storage account. Encryption scope names must be between 3 and 63 characters in length and use numbers, lower-case letters and dash (-) only. Every dash (-) character must be immediately preceded and followed by a letter or number."]
+        #[doc = "* `encryption_scope`: Encryption scope properties to be used for the create or update."]
         pub fn put(
             &self,
             resource_group_name: impl Into<String>,
@@ -3154,6 +3444,14 @@ pub mod encryption_scopes {
                 encryption_scope: encryption_scope.into(),
             }
         }
+        #[doc = "Update encryption scope properties as specified in the request body. Update fails if the specified encryption scope does not already exist."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of the storage account within the specified resource group. Storage account names must be between 3 and 24 characters in length and use numbers and lower-case letters only."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `encryption_scope_name`: The name of the encryption scope within the specified storage account. Encryption scope names must be between 3 and 63 characters in length and use numbers, lower-case letters and dash (-) only. Every dash (-) character must be immediately preceded and followed by a letter or number."]
+        #[doc = "* `encryption_scope`: Encryption scope properties to be used for the update."]
         pub fn patch(
             &self,
             resource_group_name: impl Into<String>,
@@ -3171,6 +3469,12 @@ pub mod encryption_scopes {
                 encryption_scope: encryption_scope.into(),
             }
         }
+        #[doc = "Lists all the encryption scopes available under the specified storage account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of the storage account within the specified resource group. Storage account names must be between 3 and 24 characters in length and use numbers and lower-case letters only."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list(
             &self,
             resource_group_name: impl Into<String>,
@@ -3443,6 +3747,12 @@ pub mod blob_services {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List blob services of storage account. It returns a collection of one object named default."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of the storage account within the specified resource group. Storage account names must be between 3 and 24 characters in length and use numbers and lower-case letters only."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list(
             &self,
             resource_group_name: impl Into<String>,
@@ -3456,6 +3766,13 @@ pub mod blob_services {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the properties of a storage account’s Blob service, including properties for Storage Analytics and CORS (Cross-Origin Resource Sharing) rules."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of the storage account within the specified resource group. Storage account names must be between 3 and 24 characters in length and use numbers and lower-case letters only."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `blob_services_name`: The name of the blob Service within the specified storage account. Blob Service Name must be 'default'"]
         pub fn get_service_properties(
             &self,
             resource_group_name: impl Into<String>,
@@ -3471,6 +3788,14 @@ pub mod blob_services {
                 blob_services_name: blob_services_name.into(),
             }
         }
+        #[doc = "Sets the properties of a storage account’s Blob service, including properties for Storage Analytics and CORS (Cross-Origin Resource Sharing) rules. "]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of the storage account within the specified resource group. Storage account names must be between 3 and 24 characters in length and use numbers and lower-case letters only."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `blob_services_name`: The name of the blob Service within the specified storage account. Blob Service Name must be 'default'"]
+        #[doc = "* `parameters`: The properties of a storage account’s Blob service, including properties for Storage Analytics and CORS (Cross-Origin Resource Sharing) rules."]
         pub fn set_service_properties(
             &self,
             resource_group_name: impl Into<String>,
@@ -3657,6 +3982,12 @@ pub mod blob_containers {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all containers and does not support a prefix like data plane. Also SRP today does not return continuation token."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of the storage account within the specified resource group. Storage account names must be between 3 and 24 characters in length and use numbers and lower-case letters only."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list(
             &self,
             resource_group_name: impl Into<String>,
@@ -3673,6 +4004,13 @@ pub mod blob_containers {
                 include: None,
             }
         }
+        #[doc = "Gets properties of a specified container. "]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of the storage account within the specified resource group. Storage account names must be between 3 and 24 characters in length and use numbers and lower-case letters only."]
+        #[doc = "* `container_name`: The name of the blob container within the specified storage account. Blob container names must be between 3 and 63 characters in length and use numbers, lower-case letters and dash (-) only. Every dash (-) character must be immediately preceded and followed by a letter or number."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -3688,6 +4026,14 @@ pub mod blob_containers {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates a new container under the specified account as described by request body. The container resource includes metadata and properties for that container. It does not include a list of the blobs contained by the container. "]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of the storage account within the specified resource group. Storage account names must be between 3 and 24 characters in length and use numbers and lower-case letters only."]
+        #[doc = "* `container_name`: The name of the blob container within the specified storage account. Blob container names must be between 3 and 63 characters in length and use numbers, lower-case letters and dash (-) only. Every dash (-) character must be immediately preceded and followed by a letter or number."]
+        #[doc = "* `blob_container`: Properties of the blob container to create."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn create(
             &self,
             resource_group_name: impl Into<String>,
@@ -3705,6 +4051,14 @@ pub mod blob_containers {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates container properties as specified in request body. Properties not mentioned in the request will be unchanged. Update fails if the specified container doesn't already exist. "]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of the storage account within the specified resource group. Storage account names must be between 3 and 24 characters in length and use numbers and lower-case letters only."]
+        #[doc = "* `container_name`: The name of the blob container within the specified storage account. Blob container names must be between 3 and 63 characters in length and use numbers, lower-case letters and dash (-) only. Every dash (-) character must be immediately preceded and followed by a letter or number."]
+        #[doc = "* `blob_container`: Properties to update for the blob container."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -3722,6 +4076,13 @@ pub mod blob_containers {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes specified container under its account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of the storage account within the specified resource group. Storage account names must be between 3 and 24 characters in length and use numbers and lower-case letters only."]
+        #[doc = "* `container_name`: The name of the blob container within the specified storage account. Blob container names must be between 3 and 63 characters in length and use numbers, lower-case letters and dash (-) only. Every dash (-) character must be immediately preceded and followed by a letter or number."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -3737,6 +4098,14 @@ pub mod blob_containers {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Sets legal hold tags. Setting the same tag results in an idempotent operation. SetLegalHold follows an append pattern and does not clear out the existing tags that are not specified in the request."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of the storage account within the specified resource group. Storage account names must be between 3 and 24 characters in length and use numbers and lower-case letters only."]
+        #[doc = "* `container_name`: The name of the blob container within the specified storage account. Blob container names must be between 3 and 63 characters in length and use numbers, lower-case letters and dash (-) only. Every dash (-) character must be immediately preceded and followed by a letter or number."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `legal_hold`: The LegalHold property that will be set to a blob container."]
         pub fn set_legal_hold(
             &self,
             resource_group_name: impl Into<String>,
@@ -3754,6 +4123,14 @@ pub mod blob_containers {
                 legal_hold: legal_hold.into(),
             }
         }
+        #[doc = "Clears legal hold tags. Clearing the same or non-existent tag results in an idempotent operation. ClearLegalHold clears out only the specified tags in the request."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of the storage account within the specified resource group. Storage account names must be between 3 and 24 characters in length and use numbers and lower-case letters only."]
+        #[doc = "* `container_name`: The name of the blob container within the specified storage account. Blob container names must be between 3 and 63 characters in length and use numbers, lower-case letters and dash (-) only. Every dash (-) character must be immediately preceded and followed by a letter or number."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `legal_hold`: The LegalHold property that will be clear from a blob container."]
         pub fn clear_legal_hold(
             &self,
             resource_group_name: impl Into<String>,
@@ -3771,6 +4148,14 @@ pub mod blob_containers {
                 legal_hold: legal_hold.into(),
             }
         }
+        #[doc = "Gets the existing immutability policy along with the corresponding ETag in response headers and body."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of the storage account within the specified resource group. Storage account names must be between 3 and 24 characters in length and use numbers and lower-case letters only."]
+        #[doc = "* `container_name`: The name of the blob container within the specified storage account. Blob container names must be between 3 and 63 characters in length and use numbers, lower-case letters and dash (-) only. Every dash (-) character must be immediately preceded and followed by a letter or number."]
+        #[doc = "* `immutability_policy_name`: The name of the blob container immutabilityPolicy within the specified storage account. ImmutabilityPolicy Name must be 'default'"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn get_immutability_policy(
             &self,
             resource_group_name: impl Into<String>,
@@ -3789,6 +4174,14 @@ pub mod blob_containers {
                 if_match: None,
             }
         }
+        #[doc = "Creates or updates an unlocked immutability policy. ETag in If-Match is honored if given but not required for this operation."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of the storage account within the specified resource group. Storage account names must be between 3 and 24 characters in length and use numbers and lower-case letters only."]
+        #[doc = "* `container_name`: The name of the blob container within the specified storage account. Blob container names must be between 3 and 63 characters in length and use numbers, lower-case letters and dash (-) only. Every dash (-) character must be immediately preceded and followed by a letter or number."]
+        #[doc = "* `immutability_policy_name`: The name of the blob container immutabilityPolicy within the specified storage account. ImmutabilityPolicy Name must be 'default'"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn create_or_update_immutability_policy(
             &self,
             resource_group_name: impl Into<String>,
@@ -3808,6 +4201,15 @@ pub mod blob_containers {
                 if_match: None,
             }
         }
+        #[doc = "Aborts an unlocked immutability policy. The response of delete has immutabilityPeriodSinceCreationInDays set to 0. ETag in If-Match is required for this operation. Deleting a locked immutability policy is not allowed, the only way is to delete the container after deleting all expired blobs inside the policy locked container."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of the storage account within the specified resource group. Storage account names must be between 3 and 24 characters in length and use numbers and lower-case letters only."]
+        #[doc = "* `container_name`: The name of the blob container within the specified storage account. Blob container names must be between 3 and 63 characters in length and use numbers, lower-case letters and dash (-) only. Every dash (-) character must be immediately preceded and followed by a letter or number."]
+        #[doc = "* `immutability_policy_name`: The name of the blob container immutabilityPolicy within the specified storage account. ImmutabilityPolicy Name must be 'default'"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `if_match`: The entity state (ETag) version of the immutability policy to update. A value of \"*\" can be used to apply the operation only if the immutability policy already exists. If omitted, this operation will always be applied."]
         pub fn delete_immutability_policy(
             &self,
             resource_group_name: impl Into<String>,
@@ -3827,6 +4229,14 @@ pub mod blob_containers {
                 if_match: if_match.into(),
             }
         }
+        #[doc = "Sets the ImmutabilityPolicy to Locked state. The only action allowed on a Locked policy is ExtendImmutabilityPolicy action. ETag in If-Match is required for this operation."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of the storage account within the specified resource group. Storage account names must be between 3 and 24 characters in length and use numbers and lower-case letters only."]
+        #[doc = "* `container_name`: The name of the blob container within the specified storage account. Blob container names must be between 3 and 63 characters in length and use numbers, lower-case letters and dash (-) only. Every dash (-) character must be immediately preceded and followed by a letter or number."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `if_match`: The entity state (ETag) version of the immutability policy to update. A value of \"*\" can be used to apply the operation only if the immutability policy already exists. If omitted, this operation will always be applied."]
         pub fn lock_immutability_policy(
             &self,
             resource_group_name: impl Into<String>,
@@ -3844,6 +4254,14 @@ pub mod blob_containers {
                 if_match: if_match.into(),
             }
         }
+        #[doc = "Extends the immutabilityPeriodSinceCreationInDays of a locked immutabilityPolicy. The only action allowed on a Locked policy will be this action. ETag in If-Match is required for this operation."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of the storage account within the specified resource group. Storage account names must be between 3 and 24 characters in length and use numbers and lower-case letters only."]
+        #[doc = "* `container_name`: The name of the blob container within the specified storage account. Blob container names must be between 3 and 63 characters in length and use numbers, lower-case letters and dash (-) only. Every dash (-) character must be immediately preceded and followed by a letter or number."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `if_match`: The entity state (ETag) version of the immutability policy to update. A value of \"*\" can be used to apply the operation only if the immutability policy already exists. If omitted, this operation will always be applied."]
         pub fn extend_immutability_policy(
             &self,
             resource_group_name: impl Into<String>,
@@ -3862,6 +4280,13 @@ pub mod blob_containers {
                 parameters: None,
             }
         }
+        #[doc = "The Lease Container operation establishes and manages a lock on a container for delete operations. The lock duration can be 15 to 60 seconds, or can be infinite."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of the storage account within the specified resource group. Storage account names must be between 3 and 24 characters in length and use numbers and lower-case letters only."]
+        #[doc = "* `container_name`: The name of the blob container within the specified storage account. Blob container names must be between 3 and 63 characters in length and use numbers, lower-case letters and dash (-) only. Every dash (-) character must be immediately preceded and followed by a letter or number."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn lease(
             &self,
             resource_group_name: impl Into<String>,
@@ -3878,6 +4303,13 @@ pub mod blob_containers {
                 parameters: None,
             }
         }
+        #[doc = "This operation migrates a blob container from container level WORM to object level immutability enabled container. Prerequisites require a container level immutability policy either in locked or unlocked state, Account level versioning must be enabled and there should be no Legal hold on the container."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of the storage account within the specified resource group. Storage account names must be between 3 and 24 characters in length and use numbers and lower-case letters only."]
+        #[doc = "* `container_name`: The name of the blob container within the specified storage account. Blob container names must be between 3 and 63 characters in length and use numbers, lower-case letters and dash (-) only. Every dash (-) character must be immediately preceded and followed by a letter or number."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn object_level_worm(
             &self,
             resource_group_name: impl Into<String>,
@@ -3908,14 +4340,17 @@ pub mod blob_containers {
             pub(crate) include: Option<String>,
         }
         impl Builder {
+            #[doc = "Optional. Specified maximum number of containers that can be included in the list."]
             pub fn maxpagesize(mut self, maxpagesize: impl Into<String>) -> Self {
                 self.maxpagesize = Some(maxpagesize.into());
                 self
             }
+            #[doc = "Optional. When specified, only container names starting with the filter will be listed."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Optional, used to include the properties for soft deleted blob containers."]
             pub fn include(mut self, include: impl Into<String>) -> Self {
                 self.include = Some(include.into());
                 self
@@ -4304,6 +4739,7 @@ pub mod blob_containers {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "The entity state (ETag) version of the immutability policy to update. A value of \"*\" can be used to apply the operation only if the immutability policy already exists. If omitted, this operation will always be applied."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -4361,10 +4797,12 @@ pub mod blob_containers {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "The ImmutabilityPolicy Properties that will be created or updated to a blob container."]
             pub fn parameters(mut self, parameters: impl Into<models::ImmutabilityPolicy>) -> Self {
                 self.parameters = Some(parameters.into());
                 self
             }
+            #[doc = "The entity state (ETag) version of the immutability policy to update. A value of \"*\" can be used to apply the operation only if the immutability policy already exists. If omitted, this operation will always be applied."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -4526,6 +4964,7 @@ pub mod blob_containers {
             pub(crate) parameters: Option<models::ImmutabilityPolicy>,
         }
         impl Builder {
+            #[doc = "The ImmutabilityPolicy Properties that will be extended for a blob container."]
             pub fn parameters(mut self, parameters: impl Into<models::ImmutabilityPolicy>) -> Self {
                 self.parameters = Some(parameters.into());
                 self
@@ -4584,6 +5023,7 @@ pub mod blob_containers {
             pub(crate) parameters: Option<models::LeaseContainerRequest>,
         }
         impl Builder {
+            #[doc = "Lease Container request body."]
             pub fn parameters(mut self, parameters: impl Into<models::LeaseContainerRequest>) -> Self {
                 self.parameters = Some(parameters.into());
                 self
@@ -4683,6 +5123,12 @@ pub mod file_services {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List all file services in storage accounts"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of the storage account within the specified resource group. Storage account names must be between 3 and 24 characters in length and use numbers and lower-case letters only."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list(
             &self,
             resource_group_name: impl Into<String>,
@@ -4696,6 +5142,13 @@ pub mod file_services {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the properties of file services in storage accounts, including CORS (Cross-Origin Resource Sharing) rules."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of the storage account within the specified resource group. Storage account names must be between 3 and 24 characters in length and use numbers and lower-case letters only."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `file_services_name`: The name of the file Service within the specified storage account. File Service Name must be \"default\""]
         pub fn get_service_properties(
             &self,
             resource_group_name: impl Into<String>,
@@ -4711,6 +5164,14 @@ pub mod file_services {
                 file_services_name: file_services_name.into(),
             }
         }
+        #[doc = "Sets the properties of file services in storage accounts, including CORS (Cross-Origin Resource Sharing) rules. "]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of the storage account within the specified resource group. Storage account names must be between 3 and 24 characters in length and use numbers and lower-case letters only."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `file_services_name`: The name of the file Service within the specified storage account. File Service Name must be \"default\""]
+        #[doc = "* `parameters`: The properties of file services in storage accounts, including CORS (Cross-Origin Resource Sharing) rules."]
         pub fn set_service_properties(
             &self,
             resource_group_name: impl Into<String>,
@@ -4896,6 +5357,12 @@ pub mod file_shares {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all shares."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of the storage account within the specified resource group. Storage account names must be between 3 and 24 characters in length and use numbers and lower-case letters only."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list(
             &self,
             resource_group_name: impl Into<String>,
@@ -4912,6 +5379,13 @@ pub mod file_shares {
                 expand: None,
             }
         }
+        #[doc = "Gets properties of a specified share."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of the storage account within the specified resource group. Storage account names must be between 3 and 24 characters in length and use numbers and lower-case letters only."]
+        #[doc = "* `share_name`: The name of the file share within the specified storage account. File share names must be between 3 and 63 characters in length and use numbers, lower-case letters and dash (-) only. Every dash (-) character must be immediately preceded and followed by a letter or number."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -4929,6 +5403,14 @@ pub mod file_shares {
                 x_ms_snapshot: None,
             }
         }
+        #[doc = "Creates a new share under the specified account as described by request body. The share resource includes metadata and properties for that share. It does not include a list of the files contained by the share. "]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of the storage account within the specified resource group. Storage account names must be between 3 and 24 characters in length and use numbers and lower-case letters only."]
+        #[doc = "* `share_name`: The name of the file share within the specified storage account. File share names must be between 3 and 63 characters in length and use numbers, lower-case letters and dash (-) only. Every dash (-) character must be immediately preceded and followed by a letter or number."]
+        #[doc = "* `file_share`: Properties of the file share to create."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn create(
             &self,
             resource_group_name: impl Into<String>,
@@ -4947,6 +5429,14 @@ pub mod file_shares {
                 expand: None,
             }
         }
+        #[doc = "Updates share properties as specified in request body. Properties not mentioned in the request will not be changed. Update fails if the specified share does not already exist. "]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of the storage account within the specified resource group. Storage account names must be between 3 and 24 characters in length and use numbers and lower-case letters only."]
+        #[doc = "* `share_name`: The name of the file share within the specified storage account. File share names must be between 3 and 63 characters in length and use numbers, lower-case letters and dash (-) only. Every dash (-) character must be immediately preceded and followed by a letter or number."]
+        #[doc = "* `file_share`: Properties to update for the file share."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -4964,6 +5454,13 @@ pub mod file_shares {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes specified share under its account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of the storage account within the specified resource group. Storage account names must be between 3 and 24 characters in length and use numbers and lower-case letters only."]
+        #[doc = "* `share_name`: The name of the file share within the specified storage account. File share names must be between 3 and 63 characters in length and use numbers, lower-case letters and dash (-) only. Every dash (-) character must be immediately preceded and followed by a letter or number."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -4981,6 +5478,13 @@ pub mod file_shares {
                 include: None,
             }
         }
+        #[doc = "Restore a file share within a valid retention days if share soft delete is enabled"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of the storage account within the specified resource group. Storage account names must be between 3 and 24 characters in length and use numbers and lower-case letters only."]
+        #[doc = "* `share_name`: The name of the file share within the specified storage account. File share names must be between 3 and 63 characters in length and use numbers, lower-case letters and dash (-) only. Every dash (-) character must be immediately preceded and followed by a letter or number."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn restore(
             &self,
             resource_group_name: impl Into<String>,
@@ -4998,6 +5502,13 @@ pub mod file_shares {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "The Lease Share operation establishes and manages a lock on a share for delete operations. The lock duration can be 15 to 60 seconds, or can be infinite."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of the storage account within the specified resource group. Storage account names must be between 3 and 24 characters in length and use numbers and lower-case letters only."]
+        #[doc = "* `share_name`: The name of the file share within the specified storage account. File share names must be between 3 and 63 characters in length and use numbers, lower-case letters and dash (-) only. Every dash (-) character must be immediately preceded and followed by a letter or number."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn lease(
             &self,
             resource_group_name: impl Into<String>,
@@ -5030,14 +5541,17 @@ pub mod file_shares {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "Optional. Specified maximum number of shares that can be included in the list."]
             pub fn maxpagesize(mut self, maxpagesize: impl Into<String>) -> Self {
                 self.maxpagesize = Some(maxpagesize.into());
                 self
             }
+            #[doc = "Optional. When specified, only share names starting with the filter will be listed."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Optional, used to expand the properties within share's properties. Valid values are: deleted, snapshots. Should be passed as a string with delimiter ','"]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -5126,10 +5640,12 @@ pub mod file_shares {
             pub(crate) x_ms_snapshot: Option<String>,
         }
         impl Builder {
+            #[doc = "Optional, used to expand the properties within share's properties. Valid values are: stats. Should be passed as a string with delimiter ','."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
             }
+            #[doc = "Optional, used to retrieve properties of a snapshot."]
             pub fn x_ms_snapshot(mut self, x_ms_snapshot: impl Into<String>) -> Self {
                 self.x_ms_snapshot = Some(x_ms_snapshot.into());
                 self
@@ -5193,6 +5709,7 @@ pub mod file_shares {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "Optional, used to expand the properties within share's properties. Valid values are: snapshots. Should be passed as a string with delimiter ','"]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -5308,10 +5825,12 @@ pub mod file_shares {
             pub(crate) include: Option<String>,
         }
         impl Builder {
+            #[doc = "Optional, used to delete a snapshot."]
             pub fn x_ms_snapshot(mut self, x_ms_snapshot: impl Into<String>) -> Self {
                 self.x_ms_snapshot = Some(x_ms_snapshot.into());
                 self
             }
+            #[doc = "Optional. Valid values are: snapshots, leased-snapshots, none. The default value is snapshots. For 'snapshots', the file share is deleted including all of its file share snapshots. If the file share contains leased-snapshots, the deletion fails. For 'leased-snapshots', the file share is deleted included all of its file share snapshots (leased/unleased). For 'none', the file share is deleted if it has no share snapshots. If the file share contains any snapshots (leased or unleased), the deletion fails."]
             pub fn include(mut self, include: impl Into<String>) -> Self {
                 self.include = Some(include.into());
                 self
@@ -5413,10 +5932,12 @@ pub mod file_shares {
             pub(crate) x_ms_snapshot: Option<String>,
         }
         impl Builder {
+            #[doc = "Lease Share request body."]
             pub fn parameters(mut self, parameters: impl Into<models::LeaseShareRequest>) -> Self {
                 self.parameters = Some(parameters.into());
                 self
             }
+            #[doc = "Optional. Specify the snapshot time to lease a snapshot."]
             pub fn x_ms_snapshot(mut self, x_ms_snapshot: impl Into<String>) -> Self {
                 self.x_ms_snapshot = Some(x_ms_snapshot.into());
                 self
@@ -5469,6 +5990,12 @@ pub mod queue_services {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List all queue services for the storage account"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of the storage account within the specified resource group. Storage account names must be between 3 and 24 characters in length and use numbers and lower-case letters only."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list(
             &self,
             resource_group_name: impl Into<String>,
@@ -5482,6 +6009,13 @@ pub mod queue_services {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the properties of a storage account’s Queue service, including properties for Storage Analytics and CORS (Cross-Origin Resource Sharing) rules."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of the storage account within the specified resource group. Storage account names must be between 3 and 24 characters in length and use numbers and lower-case letters only."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `queue_service_name`: The name of the Queue Service within the specified storage account. Queue Service Name must be 'default'"]
         pub fn get_service_properties(
             &self,
             resource_group_name: impl Into<String>,
@@ -5497,6 +6031,14 @@ pub mod queue_services {
                 queue_service_name: queue_service_name.into(),
             }
         }
+        #[doc = "Sets the properties of a storage account’s Queue service, including properties for Storage Analytics and CORS (Cross-Origin Resource Sharing) rules. "]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of the storage account within the specified resource group. Storage account names must be between 3 and 24 characters in length and use numbers and lower-case letters only."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `queue_service_name`: The name of the Queue Service within the specified storage account. Queue Service Name must be 'default'"]
+        #[doc = "* `parameters`: The properties of a storage account’s Queue service, only properties for Storage Analytics and CORS (Cross-Origin Resource Sharing) rules can be specified."]
         pub fn set_service_properties(
             &self,
             resource_group_name: impl Into<String>,
@@ -5682,6 +6224,13 @@ pub mod queue {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the queue with the specified queue name, under the specified account if it exists."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of the storage account within the specified resource group. Storage account names must be between 3 and 24 characters in length and use numbers and lower-case letters only."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `queue_name`: A queue name must be unique within a storage account and must be between 3 and 63 characters.The name must comprise of lowercase alphanumeric and dash(-) characters only, it should begin and end with an alphanumeric character and it cannot have two consecutive dash(-) characters."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -5697,6 +6246,14 @@ pub mod queue {
                 queue_name: queue_name.into(),
             }
         }
+        #[doc = "Creates a new queue with the specified queue name, under the specified account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of the storage account within the specified resource group. Storage account names must be between 3 and 24 characters in length and use numbers and lower-case letters only."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `queue_name`: A queue name must be unique within a storage account and must be between 3 and 63 characters.The name must comprise of lowercase alphanumeric and dash(-) characters only, it should begin and end with an alphanumeric character and it cannot have two consecutive dash(-) characters."]
+        #[doc = "* `queue`: Queue properties and metadata to be created with"]
         pub fn create(
             &self,
             resource_group_name: impl Into<String>,
@@ -5714,6 +6271,14 @@ pub mod queue {
                 queue: queue.into(),
             }
         }
+        #[doc = "Creates a new queue with the specified queue name, under the specified account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of the storage account within the specified resource group. Storage account names must be between 3 and 24 characters in length and use numbers and lower-case letters only."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `queue_name`: A queue name must be unique within a storage account and must be between 3 and 63 characters.The name must comprise of lowercase alphanumeric and dash(-) characters only, it should begin and end with an alphanumeric character and it cannot have two consecutive dash(-) characters."]
+        #[doc = "* `queue`: Queue properties and metadata to be created with"]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -5731,6 +6296,13 @@ pub mod queue {
                 queue: queue.into(),
             }
         }
+        #[doc = "Deletes the queue with the specified queue name, under the specified account if it exists."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of the storage account within the specified resource group. Storage account names must be between 3 and 24 characters in length and use numbers and lower-case letters only."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `queue_name`: A queue name must be unique within a storage account and must be between 3 and 63 characters.The name must comprise of lowercase alphanumeric and dash(-) characters only, it should begin and end with an alphanumeric character and it cannot have two consecutive dash(-) characters."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -5746,6 +6318,12 @@ pub mod queue {
                 queue_name: queue_name.into(),
             }
         }
+        #[doc = "Gets a list of all the queues under the specified storage account"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of the storage account within the specified resource group. Storage account names must be between 3 and 24 characters in length and use numbers and lower-case letters only."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list(
             &self,
             resource_group_name: impl Into<String>,
@@ -5963,10 +6541,12 @@ pub mod queue {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "Optional, a maximum number of queues that should be included in a list queue response"]
             pub fn maxpagesize(mut self, maxpagesize: impl Into<String>) -> Self {
                 self.maxpagesize = Some(maxpagesize.into());
                 self
             }
+            #[doc = "Optional, When specified, only the queues with a name starting with the given filter will be listed."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -6043,6 +6623,12 @@ pub mod table_services {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List all table services for the storage account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of the storage account within the specified resource group. Storage account names must be between 3 and 24 characters in length and use numbers and lower-case letters only."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list(
             &self,
             resource_group_name: impl Into<String>,
@@ -6056,6 +6642,13 @@ pub mod table_services {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the properties of a storage account’s Table service, including properties for Storage Analytics and CORS (Cross-Origin Resource Sharing) rules."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of the storage account within the specified resource group. Storage account names must be between 3 and 24 characters in length and use numbers and lower-case letters only."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `table_service_name`: The name of the Table Service within the specified storage account. Table Service Name must be 'default'"]
         pub fn get_service_properties(
             &self,
             resource_group_name: impl Into<String>,
@@ -6071,6 +6664,14 @@ pub mod table_services {
                 table_service_name: table_service_name.into(),
             }
         }
+        #[doc = "Sets the properties of a storage account’s Table service, including properties for Storage Analytics and CORS (Cross-Origin Resource Sharing) rules. "]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of the storage account within the specified resource group. Storage account names must be between 3 and 24 characters in length and use numbers and lower-case letters only."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `table_service_name`: The name of the Table Service within the specified storage account. Table Service Name must be 'default'"]
+        #[doc = "* `parameters`: The properties of a storage account’s Table service, only properties for Storage Analytics and CORS (Cross-Origin Resource Sharing) rules can be specified."]
         pub fn set_service_properties(
             &self,
             resource_group_name: impl Into<String>,
@@ -6256,6 +6857,13 @@ pub mod table {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the table with the specified table name, under the specified account if it exists."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of the storage account within the specified resource group. Storage account names must be between 3 and 24 characters in length and use numbers and lower-case letters only."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `table_name`: A table name must be unique within a storage account and must be between 3 and 63 characters.The name must comprise of only alphanumeric characters and it cannot begin with a numeric character."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -6271,6 +6879,13 @@ pub mod table {
                 table_name: table_name.into(),
             }
         }
+        #[doc = "Creates a new table with the specified table name, under the specified account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of the storage account within the specified resource group. Storage account names must be between 3 and 24 characters in length and use numbers and lower-case letters only."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `table_name`: A table name must be unique within a storage account and must be between 3 and 63 characters.The name must comprise of only alphanumeric characters and it cannot begin with a numeric character."]
         pub fn create(
             &self,
             resource_group_name: impl Into<String>,
@@ -6286,6 +6901,13 @@ pub mod table {
                 table_name: table_name.into(),
             }
         }
+        #[doc = "Creates a new table with the specified table name, under the specified account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of the storage account within the specified resource group. Storage account names must be between 3 and 24 characters in length and use numbers and lower-case letters only."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `table_name`: A table name must be unique within a storage account and must be between 3 and 63 characters.The name must comprise of only alphanumeric characters and it cannot begin with a numeric character."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -6301,6 +6923,13 @@ pub mod table {
                 table_name: table_name.into(),
             }
         }
+        #[doc = "Deletes the table with the specified table name, under the specified account if it exists."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of the storage account within the specified resource group. Storage account names must be between 3 and 24 characters in length and use numbers and lower-case letters only."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `table_name`: A table name must be unique within a storage account and must be between 3 and 63 characters.The name must comprise of only alphanumeric characters and it cannot begin with a numeric character."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -6316,6 +6945,12 @@ pub mod table {
                 table_name: table_name.into(),
             }
         }
+        #[doc = "Gets a list of all the tables under the specified storage account"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of the storage account within the specified resource group. Storage account names must be between 3 and 24 characters in length and use numbers and lower-case letters only."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list(
             &self,
             resource_group_name: impl Into<String>,

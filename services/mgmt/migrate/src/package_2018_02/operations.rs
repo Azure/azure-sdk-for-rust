@@ -103,6 +103,12 @@ pub mod location {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Checks whether the project name is available in the specified region."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `location_name`: The desired region for the name check."]
+        #[doc = "* `subscription_id`: Azure Subscription Id in which project was created."]
+        #[doc = "* `parameters`: Properties needed to check the availability of a name."]
         pub fn check_name_availability(
             &self,
             location_name: impl Into<String>,
@@ -175,6 +181,11 @@ pub mod assessment_options {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get the assessment options."]
+        #[doc = "Get the available options for the properties of an assessment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure Subscription Id in which project was created."]
+        #[doc = "* `location_name`: Azure region in which the project is created."]
         pub fn get(&self, subscription_id: impl Into<String>, location_name: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -195,6 +206,7 @@ pub mod assessment_options {
             pub(crate) accept_language: Option<String>,
         }
         impl Builder {
+            #[doc = "Standard request header. Used by service to respond to client in appropriate language."]
             pub fn accept_language(mut self, accept_language: impl Into<String>) -> Self {
                 self.accept_language = Some(accept_language.into());
                 self
@@ -248,6 +260,10 @@ pub mod projects {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get all projects."]
+        #[doc = "Get all the projects in the subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure Subscription Id in which project was created."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
@@ -256,6 +272,11 @@ pub mod projects {
             }
         }
         #[doc = "Get all projects."]
+        #[doc = "Get all the projects in the resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure Subscription Id in which project was created."]
+        #[doc = "* `resource_group_name`: Name of the Azure Resource Group that project is part of."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -269,6 +290,12 @@ pub mod projects {
             }
         }
         #[doc = "Get the specified project."]
+        #[doc = "Get the project with the specified name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure Subscription Id in which project was created."]
+        #[doc = "* `resource_group_name`: Name of the Azure Resource Group that project is part of."]
+        #[doc = "* `project_name`: Name of the Azure Migrate project."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -284,6 +311,12 @@ pub mod projects {
             }
         }
         #[doc = "Create or update project."]
+        #[doc = "Create a project with specified name. If a project already exists, update it."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure Subscription Id in which project was created."]
+        #[doc = "* `resource_group_name`: Name of the Azure Resource Group that project is part of."]
+        #[doc = "* `project_name`: Name of the Azure Migrate project."]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -300,6 +333,12 @@ pub mod projects {
             }
         }
         #[doc = "Update project."]
+        #[doc = "Update a project with specified name. Supports partial updates, for example only tags can be provided."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure Subscription Id in which project was created."]
+        #[doc = "* `resource_group_name`: Name of the Azure Resource Group that project is part of."]
+        #[doc = "* `project_name`: Name of the Azure Migrate project."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -316,6 +355,12 @@ pub mod projects {
             }
         }
         #[doc = "Delete the project"]
+        #[doc = "Delete the project. Deleting non-existent project is a no-operation."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure Subscription Id in which project was created."]
+        #[doc = "* `resource_group_name`: Name of the Azure Resource Group that project is part of."]
+        #[doc = "* `project_name`: Name of the Azure Migrate project."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -331,6 +376,12 @@ pub mod projects {
             }
         }
         #[doc = "Get shared keys for the project."]
+        #[doc = "Gets the Log Analytics Workspace ID and Primary Key for the specified project."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure Subscription Id in which project was created."]
+        #[doc = "* `resource_group_name`: Name of the Azure Resource Group that project is part of."]
+        #[doc = "* `project_name`: Name of the Azure Migrate project."]
         pub fn get_keys(
             &self,
             subscription_id: impl Into<String>,
@@ -356,6 +407,7 @@ pub mod projects {
             pub(crate) accept_language: Option<String>,
         }
         impl Builder {
+            #[doc = "Standard request header. Used by service to respond to client in appropriate language."]
             pub fn accept_language(mut self, accept_language: impl Into<String>) -> Self {
                 self.accept_language = Some(accept_language.into());
                 self
@@ -414,6 +466,7 @@ pub mod projects {
             pub(crate) accept_language: Option<String>,
         }
         impl Builder {
+            #[doc = "Standard request header. Used by service to respond to client in appropriate language."]
             pub fn accept_language(mut self, accept_language: impl Into<String>) -> Self {
                 self.accept_language = Some(accept_language.into());
                 self
@@ -474,6 +527,7 @@ pub mod projects {
             pub(crate) accept_language: Option<String>,
         }
         impl Builder {
+            #[doc = "Standard request header. Used by service to respond to client in appropriate language."]
             pub fn accept_language(mut self, accept_language: impl Into<String>) -> Self {
                 self.accept_language = Some(accept_language.into());
                 self
@@ -539,10 +593,12 @@ pub mod projects {
             pub(crate) project: Option<models::Project>,
         }
         impl Builder {
+            #[doc = "Standard request header. Used by service to respond to client in appropriate language."]
             pub fn accept_language(mut self, accept_language: impl Into<String>) -> Self {
                 self.accept_language = Some(accept_language.into());
                 self
             }
+            #[doc = "New or Updated project object."]
             pub fn project(mut self, project: impl Into<models::Project>) -> Self {
                 self.project = Some(project.into());
                 self
@@ -614,10 +670,12 @@ pub mod projects {
             pub(crate) project: Option<models::Project>,
         }
         impl Builder {
+            #[doc = "Standard request header. Used by service to respond to client in appropriate language."]
             pub fn accept_language(mut self, accept_language: impl Into<String>) -> Self {
                 self.accept_language = Some(accept_language.into());
                 self
             }
+            #[doc = "Updated project object."]
             pub fn project(mut self, project: impl Into<models::Project>) -> Self {
                 self.project = Some(project.into());
                 self
@@ -683,6 +741,7 @@ pub mod projects {
             pub(crate) accept_language: Option<String>,
         }
         impl Builder {
+            #[doc = "Standard request header. Used by service to respond to client in appropriate language."]
             pub fn accept_language(mut self, accept_language: impl Into<String>) -> Self {
                 self.accept_language = Some(accept_language.into());
                 self
@@ -739,6 +798,7 @@ pub mod projects {
             pub(crate) accept_language: Option<String>,
         }
         impl Builder {
+            #[doc = "Standard request header. Used by service to respond to client in appropriate language."]
             pub fn accept_language(mut self, accept_language: impl Into<String>) -> Self {
                 self.accept_language = Some(accept_language.into());
                 self
@@ -794,6 +854,12 @@ pub mod machines {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get all machines in the project"]
+        #[doc = "Get data of all the machines available in the project. Returns a json array of objects of type 'machine' defined in Models section."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure Subscription Id in which project was created."]
+        #[doc = "* `resource_group_name`: Name of the Azure Resource Group that project is part of."]
+        #[doc = "* `project_name`: Name of the Azure Migrate project."]
         pub fn list_by_project(
             &self,
             subscription_id: impl Into<String>,
@@ -809,6 +875,13 @@ pub mod machines {
             }
         }
         #[doc = "Get a specific machine."]
+        #[doc = "Get the machine with the specified name. Returns a json object of type 'machine' defined in Models section."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure Subscription Id in which project was created."]
+        #[doc = "* `resource_group_name`: Name of the Azure Resource Group that project is part of."]
+        #[doc = "* `project_name`: Name of the Azure Migrate project."]
+        #[doc = "* `machine_name`: Unique name of a machine in private datacenter."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -838,6 +911,7 @@ pub mod machines {
             pub(crate) accept_language: Option<String>,
         }
         impl Builder {
+            #[doc = "Standard request header. Used by service to respond to client in appropriate language."]
             pub fn accept_language(mut self, accept_language: impl Into<String>) -> Self {
                 self.accept_language = Some(accept_language.into());
                 self
@@ -900,6 +974,7 @@ pub mod machines {
             pub(crate) accept_language: Option<String>,
         }
         impl Builder {
+            #[doc = "Standard request header. Used by service to respond to client in appropriate language."]
             pub fn accept_language(mut self, accept_language: impl Into<String>) -> Self {
                 self.accept_language = Some(accept_language.into());
                 self
@@ -955,6 +1030,12 @@ pub mod groups {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get all groups"]
+        #[doc = "Get all groups created in the project. Returns a json array of objects of type 'group' as specified in the Models section."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure Subscription Id in which project was created."]
+        #[doc = "* `resource_group_name`: Name of the Azure Resource Group that project is part of."]
+        #[doc = "* `project_name`: Name of the Azure Migrate project."]
         pub fn list_by_project(
             &self,
             subscription_id: impl Into<String>,
@@ -970,6 +1051,13 @@ pub mod groups {
             }
         }
         #[doc = "Get a specific group."]
+        #[doc = "Get information related to a specific group in the project. Returns a json object of type 'group' as specified in the models section."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure Subscription Id in which project was created."]
+        #[doc = "* `resource_group_name`: Name of the Azure Resource Group that project is part of."]
+        #[doc = "* `project_name`: Name of the Azure Migrate project."]
+        #[doc = "* `group_name`: Unique name of a group within a project."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -987,6 +1075,13 @@ pub mod groups {
             }
         }
         #[doc = "Create a new group with specified settings. If group with the name provided already exists, then the existing group is updated."]
+        #[doc = "Create a new group by sending a json object of type 'group' as given in Models section as part of the Request Body. The group name in a project is unique. Labels can be applied on a group as part of creation.\n\nIf a group with the groupName specified in the URL already exists, then this call acts as an update.\n\nThis operation is Idempotent.\n"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure Subscription Id in which project was created."]
+        #[doc = "* `resource_group_name`: Name of the Azure Resource Group that project is part of."]
+        #[doc = "* `project_name`: Name of the Azure Migrate project."]
+        #[doc = "* `group_name`: Unique name of a group within a project."]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -1005,6 +1100,13 @@ pub mod groups {
             }
         }
         #[doc = "Delete the group"]
+        #[doc = "Delete the group from the project. The machines remain in the project. Deleting a non-existent group results in a no-operation.\n\nA group is an aggregation mechanism for machines in a project. Therefore, deleting group does not delete machines in it.\n"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure Subscription Id in which project was created."]
+        #[doc = "* `resource_group_name`: Name of the Azure Resource Group that project is part of."]
+        #[doc = "* `project_name`: Name of the Azure Migrate project."]
+        #[doc = "* `group_name`: Unique name of a group within a project."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1034,6 +1136,7 @@ pub mod groups {
             pub(crate) accept_language: Option<String>,
         }
         impl Builder {
+            #[doc = "Standard request header. Used by service to respond to client in appropriate language."]
             pub fn accept_language(mut self, accept_language: impl Into<String>) -> Self {
                 self.accept_language = Some(accept_language.into());
                 self
@@ -1096,6 +1199,7 @@ pub mod groups {
             pub(crate) accept_language: Option<String>,
         }
         impl Builder {
+            #[doc = "Standard request header. Used by service to respond to client in appropriate language."]
             pub fn accept_language(mut self, accept_language: impl Into<String>) -> Self {
                 self.accept_language = Some(accept_language.into());
                 self
@@ -1163,10 +1267,12 @@ pub mod groups {
             pub(crate) group: Option<models::Group>,
         }
         impl Builder {
+            #[doc = "Standard request header. Used by service to respond to client in appropriate language."]
             pub fn accept_language(mut self, accept_language: impl Into<String>) -> Self {
                 self.accept_language = Some(accept_language.into());
                 self
             }
+            #[doc = "New or Updated Group object."]
             pub fn group(mut self, group: impl Into<models::Group>) -> Self {
                 self.group = Some(group.into());
                 self
@@ -1239,6 +1345,7 @@ pub mod groups {
             pub(crate) accept_language: Option<String>,
         }
         impl Builder {
+            #[doc = "Standard request header. Used by service to respond to client in appropriate language."]
             pub fn accept_language(mut self, accept_language: impl Into<String>) -> Self {
                 self.accept_language = Some(accept_language.into());
                 self
@@ -1290,6 +1397,13 @@ pub mod assessments {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get all assessments created for the specified group."]
+        #[doc = "Get all assessments created for the specified group.\n\nReturns a json array of objects of type 'assessment' as specified in Models section.\n"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure Subscription Id in which project was created."]
+        #[doc = "* `resource_group_name`: Name of the Azure Resource Group that project is part of."]
+        #[doc = "* `project_name`: Name of the Azure Migrate project."]
+        #[doc = "* `group_name`: Unique name of a group within a project."]
         pub fn list_by_group(
             &self,
             subscription_id: impl Into<String>,
@@ -1307,6 +1421,12 @@ pub mod assessments {
             }
         }
         #[doc = "Get all assessments created in the project."]
+        #[doc = "Get all assessments created in the project.\n\nReturns a json array of objects of type 'assessment' as specified in Models section.\n"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure Subscription Id in which project was created."]
+        #[doc = "* `resource_group_name`: Name of the Azure Resource Group that project is part of."]
+        #[doc = "* `project_name`: Name of the Azure Migrate project."]
         pub fn list_by_project(
             &self,
             subscription_id: impl Into<String>,
@@ -1322,6 +1442,14 @@ pub mod assessments {
             }
         }
         #[doc = "Get an assessment."]
+        #[doc = "Get an existing assessment with the specified name. Returns a json object of type 'assessment' as specified in Models section."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure Subscription Id in which project was created."]
+        #[doc = "* `resource_group_name`: Name of the Azure Resource Group that project is part of."]
+        #[doc = "* `project_name`: Name of the Azure Migrate project."]
+        #[doc = "* `group_name`: Unique name of a group within a project."]
+        #[doc = "* `assessment_name`: Unique name of an assessment within a project."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1341,6 +1469,14 @@ pub mod assessments {
             }
         }
         #[doc = "Create or Update assessment."]
+        #[doc = "Create a new assessment with the given name and the specified settings. Since name of an assessment in a project is a unique identifier, if an assessment with the name provided already exists, then the existing assessment is updated.\n\nAny PUT operation, resulting in either create or update on an assessment, will cause the assessment to go in a \"InProgress\" state. This will be indicated by the field 'computationState' on the Assessment object. During this time no other PUT operation will be allowed on that assessment object, nor will a Delete operation. Once the computation for the assessment is complete, the field 'computationState' will be updated to 'Ready', and then other PUT or DELETE operations can happen on the assessment.\n\nWhen assessment is under computation, any PUT will lead to a 400 - Bad Request error.\n"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure Subscription Id in which project was created."]
+        #[doc = "* `resource_group_name`: Name of the Azure Resource Group that project is part of."]
+        #[doc = "* `project_name`: Name of the Azure Migrate project."]
+        #[doc = "* `group_name`: Unique name of a group within a project."]
+        #[doc = "* `assessment_name`: Unique name of an assessment within a project."]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -1361,6 +1497,14 @@ pub mod assessments {
             }
         }
         #[doc = "Deletes an assessment from the project."]
+        #[doc = "Delete an assessment from the project. The machines remain in the assessment. Deleting a non-existent assessment results in a no-operation.\n\nWhen an assessment is under computation, as indicated by the 'computationState' field, it cannot be deleted. Any such attempt will return a 400 - Bad Request.\n"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure Subscription Id in which project was created."]
+        #[doc = "* `resource_group_name`: Name of the Azure Resource Group that project is part of."]
+        #[doc = "* `project_name`: Name of the Azure Migrate project."]
+        #[doc = "* `group_name`: Unique name of a group within a project."]
+        #[doc = "* `assessment_name`: Unique name of an assessment within a project."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1380,6 +1524,14 @@ pub mod assessments {
             }
         }
         #[doc = "Get download URL for the assessment report."]
+        #[doc = "Get the URL for downloading the assessment in a report format."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure Subscription Id in which project was created."]
+        #[doc = "* `resource_group_name`: Name of the Azure Resource Group that project is part of."]
+        #[doc = "* `project_name`: Name of the Azure Migrate project."]
+        #[doc = "* `group_name`: Unique name of a group within a project."]
+        #[doc = "* `assessment_name`: Unique name of an assessment within a project."]
         pub fn get_report_download_url(
             &self,
             subscription_id: impl Into<String>,
@@ -1412,6 +1564,7 @@ pub mod assessments {
             pub(crate) accept_language: Option<String>,
         }
         impl Builder {
+            #[doc = "Standard request header. Used by service to respond to client in appropriate language."]
             pub fn accept_language(mut self, accept_language: impl Into<String>) -> Self {
                 self.accept_language = Some(accept_language.into());
                 self
@@ -1474,6 +1627,7 @@ pub mod assessments {
             pub(crate) accept_language: Option<String>,
         }
         impl Builder {
+            #[doc = "Standard request header. Used by service to respond to client in appropriate language."]
             pub fn accept_language(mut self, accept_language: impl Into<String>) -> Self {
                 self.accept_language = Some(accept_language.into());
                 self
@@ -1537,6 +1691,7 @@ pub mod assessments {
             pub(crate) accept_language: Option<String>,
         }
         impl Builder {
+            #[doc = "Standard request header. Used by service to respond to client in appropriate language."]
             pub fn accept_language(mut self, accept_language: impl Into<String>) -> Self {
                 self.accept_language = Some(accept_language.into());
                 self
@@ -1606,10 +1761,12 @@ pub mod assessments {
             pub(crate) assessment: Option<models::Assessment>,
         }
         impl Builder {
+            #[doc = "Standard request header. Used by service to respond to client in appropriate language."]
             pub fn accept_language(mut self, accept_language: impl Into<String>) -> Self {
                 self.accept_language = Some(accept_language.into());
                 self
             }
+            #[doc = "New or Updated Assessment object."]
             pub fn assessment(mut self, assessment: impl Into<models::Assessment>) -> Self {
                 self.assessment = Some(assessment.into());
                 self
@@ -1684,6 +1841,7 @@ pub mod assessments {
             pub(crate) accept_language: Option<String>,
         }
         impl Builder {
+            #[doc = "Standard request header. Used by service to respond to client in appropriate language."]
             pub fn accept_language(mut self, accept_language: impl Into<String>) -> Self {
                 self.accept_language = Some(accept_language.into());
                 self
@@ -1744,6 +1902,7 @@ pub mod assessments {
             pub(crate) accept_language: Option<String>,
         }
         impl Builder {
+            #[doc = "Standard request header. Used by service to respond to client in appropriate language."]
             pub fn accept_language(mut self, accept_language: impl Into<String>) -> Self {
                 self.accept_language = Some(accept_language.into());
                 self
@@ -1793,6 +1952,14 @@ pub mod assessed_machines {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get assessed machines for assessment."]
+        #[doc = "Get list of machines that assessed as part of the specified assessment. Returns a json array of objects of type 'assessedMachine' as specified in the Models section.\n\nWhenever an assessment is created or updated, it goes under computation. During this phase, the 'status' field of Assessment object reports 'Computing'.\nDuring the period when the assessment is under computation, the list of assessed machines is empty and no assessed machines are returned by this call.\n"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure Subscription Id in which project was created."]
+        #[doc = "* `resource_group_name`: Name of the Azure Resource Group that project is part of."]
+        #[doc = "* `project_name`: Name of the Azure Migrate project."]
+        #[doc = "* `group_name`: Unique name of a group within a project."]
+        #[doc = "* `assessment_name`: Unique name of an assessment within a project."]
         pub fn list_by_assessment(
             &self,
             subscription_id: impl Into<String>,
@@ -1812,6 +1979,15 @@ pub mod assessed_machines {
             }
         }
         #[doc = "Get an assessed machine."]
+        #[doc = "Get an assessed machine with its size & cost estimate that was evaluated in the specified assessment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure Subscription Id in which project was created."]
+        #[doc = "* `resource_group_name`: Name of the Azure Resource Group that project is part of."]
+        #[doc = "* `project_name`: Name of the Azure Migrate project."]
+        #[doc = "* `group_name`: Unique name of a group within a project."]
+        #[doc = "* `assessment_name`: Unique name of an assessment within a project."]
+        #[doc = "* `assessed_machine_name`: Unique name of an assessed machine evaluated as part of an assessment."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1847,6 +2023,7 @@ pub mod assessed_machines {
             pub(crate) accept_language: Option<String>,
         }
         impl Builder {
+            #[doc = "Standard request header. Used by service to respond to client in appropriate language."]
             pub fn accept_language(mut self, accept_language: impl Into<String>) -> Self {
                 self.accept_language = Some(accept_language.into());
                 self
@@ -1905,6 +2082,7 @@ pub mod assessed_machines {
             pub(crate) accept_language: Option<String>,
         }
         impl Builder {
+            #[doc = "Standard request header. Used by service to respond to client in appropriate language."]
             pub fn accept_language(mut self, accept_language: impl Into<String>) -> Self {
                 self.accept_language = Some(accept_language.into());
                 self
@@ -1953,6 +2131,7 @@ pub mod operations {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get list of operations supported in the API."]
+        #[doc = "Get a list of REST API supported by Microsoft.Migrate provider."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }

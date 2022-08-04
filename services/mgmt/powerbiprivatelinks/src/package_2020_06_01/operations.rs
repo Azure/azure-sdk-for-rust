@@ -100,6 +100,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all of the available Power BI RP operations."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -179,6 +180,10 @@ pub mod private_link_services_for_power_bi {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets all the private link resources for the given subscription id."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_by_subscription_id(&self, subscription_id: impl Into<String>) -> list_by_subscription_id::Builder {
             list_by_subscription_id::Builder {
                 client: self.0.clone(),
@@ -239,6 +244,11 @@ pub mod private_link_service_resource_operation_results {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets operation result of Private Link Service Resources for Power BI."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
+        #[doc = "* `operation_id`: The id of Azure async operation."]
         pub fn get(&self, subscription_id: impl Into<String>, operation_id: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -312,6 +322,11 @@ pub mod private_link_services {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets all the private link resources for the given resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -379,6 +394,12 @@ pub mod power_bi_resources {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets all the private link resources for the given Azure resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `azure_resource_name`: The name of the Azure resource."]
         pub fn list_by_resource_name(
             &self,
             subscription_id: impl Into<String>,
@@ -392,6 +413,13 @@ pub mod power_bi_resources {
                 azure_resource_name: azure_resource_name.into(),
             }
         }
+        #[doc = "Creates or updates a Private Link Service Resource for Power BI."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `azure_resource_name`: The name of the Azure resource."]
+        #[doc = "* `body`: Tenant resource to be created or updated."]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -408,6 +436,13 @@ pub mod power_bi_resources {
                 x_ms_client_tenant_id: None,
             }
         }
+        #[doc = "Creates or updates a Private Link Service Resource for Power BI."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `azure_resource_name`: The name of the Azure resource."]
+        #[doc = "* `body`: Tenant resource to be created or updated."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -424,6 +459,12 @@ pub mod power_bi_resources {
                 x_ms_client_tenant_id: None,
             }
         }
+        #[doc = "Deletes a Private Link Service Resource for Power BI."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `azure_resource_name`: The name of the Azure resource."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -507,6 +548,7 @@ pub mod power_bi_resources {
             pub(crate) x_ms_client_tenant_id: Option<String>,
         }
         impl Builder {
+            #[doc = "The client tenant id in header. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
             pub fn x_ms_client_tenant_id(mut self, x_ms_client_tenant_id: impl Into<String>) -> Self {
                 self.x_ms_client_tenant_id = Some(x_ms_client_tenant_id.into());
                 self
@@ -578,6 +620,7 @@ pub mod power_bi_resources {
             pub(crate) x_ms_client_tenant_id: Option<String>,
         }
         impl Builder {
+            #[doc = "The client tenant id in header. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
             pub fn x_ms_client_tenant_id(mut self, x_ms_client_tenant_id: impl Into<String>) -> Self {
                 self.x_ms_client_tenant_id = Some(x_ms_client_tenant_id.into());
                 self
@@ -691,6 +734,12 @@ pub mod private_link_resources {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "List private link Power BI resource."]
+        #[doc = "List private link resources under a specific Power BI resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `azure_resource_name`: The name of the Azure resource."]
         pub fn list_by_resource(
             &self,
             subscription_id: impl Into<String>,
@@ -705,6 +754,13 @@ pub mod private_link_resources {
             }
         }
         #[doc = "Get a private link resource."]
+        #[doc = "Get properties of a private link resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `azure_resource_name`: The name of the Azure resource."]
+        #[doc = "* `private_link_resource_name`: The name of private link resource."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -846,6 +902,12 @@ pub mod private_endpoint_connections {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Lists all private endpoint connections under a resource."]
+        #[doc = "Gets private endpoint connection for Power BI."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription."]
+        #[doc = "* `azure_resource_name`: The name of the powerbi resource."]
         pub fn list_by_resource(
             &self,
             subscription_id: impl Into<String>,
@@ -860,6 +922,13 @@ pub mod private_endpoint_connections {
             }
         }
         #[doc = "Get a specific private endpoint connection."]
+        #[doc = "Get a specific private endpoint connection for Power BI by private endpoint name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `azure_resource_name`: The name of the Azure resource."]
+        #[doc = "* `private_endpoint_name`: The name of the private endpoint."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -876,6 +945,14 @@ pub mod private_endpoint_connections {
             }
         }
         #[doc = "Update a specific private endpoint connection."]
+        #[doc = "Updates the status of Private Endpoint Connection object. Used to approve or reject a connection."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `azure_resource_name`: The name of the Azure resource."]
+        #[doc = "* `private_endpoint_name`: The name of the private endpoint."]
+        #[doc = "* `private_endpoint_connection`: Private endpoint connection object to update."]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -894,6 +971,13 @@ pub mod private_endpoint_connections {
             }
         }
         #[doc = "Asynchronous API to delete a private endpoint connection for Power BI by private endpoint name."]
+        #[doc = "Deletes a private endpoint connection for Power BI by private endpoint name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `azure_resource_name`: The name of the Azure resource."]
+        #[doc = "* `private_endpoint_name`: The name of the private endpoint."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,

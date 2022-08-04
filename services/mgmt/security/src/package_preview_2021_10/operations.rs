@@ -82,12 +82,20 @@ pub mod mde_onboardings {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "The configuration or data needed to onboard the machine to MDE"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure subscription ID"]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "The default configuration or data needed to onboard the machine to MDE"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure subscription ID"]
         pub fn get(&self, subscription_id: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),

@@ -88,6 +88,14 @@ pub mod record_sets {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a record set."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `zone_name`: The name of the DNS zone (without a terminating dot)."]
+        #[doc = "* `relative_record_set_name`: The name of the record set, relative to the name of the zone."]
+        #[doc = "* `record_type`: The type of DNS record in this record set."]
+        #[doc = "* `subscription_id`: Specifies the Azure subscription ID, which uniquely identifies the Microsoft Azure subscription."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -105,6 +113,15 @@ pub mod record_sets {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates a record set within a DNS zone."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `zone_name`: The name of the DNS zone (without a terminating dot)."]
+        #[doc = "* `relative_record_set_name`: The name of the record set, relative to the name of the zone."]
+        #[doc = "* `record_type`: The type of DNS record in this record set. Record sets of type SOA can be updated but not created (they are created when the DNS zone is created)."]
+        #[doc = "* `parameters`: Parameters supplied to the CreateOrUpdate operation."]
+        #[doc = "* `subscription_id`: Specifies the Azure subscription ID, which uniquely identifies the Microsoft Azure subscription."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -126,6 +143,15 @@ pub mod record_sets {
                 if_none_match: None,
             }
         }
+        #[doc = "Updates a record set within a DNS zone."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `zone_name`: The name of the DNS zone (without a terminating dot)."]
+        #[doc = "* `relative_record_set_name`: The name of the record set, relative to the name of the zone."]
+        #[doc = "* `record_type`: The type of DNS record in this record set."]
+        #[doc = "* `parameters`: Parameters supplied to the Update operation."]
+        #[doc = "* `subscription_id`: Specifies the Azure subscription ID, which uniquely identifies the Microsoft Azure subscription."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -146,6 +172,14 @@ pub mod record_sets {
                 if_match: None,
             }
         }
+        #[doc = "Deletes a record set from a DNS zone. This operation cannot be undone."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `zone_name`: The name of the DNS zone (without a terminating dot)."]
+        #[doc = "* `relative_record_set_name`: The name of the record set, relative to the name of the zone."]
+        #[doc = "* `record_type`: The type of DNS record in this record set. Record sets of type SOA cannot be deleted (they are deleted when the DNS zone is deleted)."]
+        #[doc = "* `subscription_id`: Specifies the Azure subscription ID, which uniquely identifies the Microsoft Azure subscription."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -164,6 +198,13 @@ pub mod record_sets {
                 if_match: None,
             }
         }
+        #[doc = "Lists the record sets of a specified type in a DNS zone."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `zone_name`: The name of the DNS zone (without a terminating dot)."]
+        #[doc = "* `record_type`: The type of record sets to enumerate."]
+        #[doc = "* `subscription_id`: Specifies the Azure subscription ID, which uniquely identifies the Microsoft Azure subscription."]
         pub fn list_by_type(
             &self,
             resource_group_name: impl Into<String>,
@@ -181,6 +222,12 @@ pub mod record_sets {
                 recordsetnamesuffix: None,
             }
         }
+        #[doc = "Lists all record sets in a DNS zone."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `zone_name`: The name of the DNS zone (without a terminating dot)."]
+        #[doc = "* `subscription_id`: Specifies the Azure subscription ID, which uniquely identifies the Microsoft Azure subscription."]
         pub fn list_by_dns_zone(
             &self,
             resource_group_name: impl Into<String>,
@@ -196,6 +243,12 @@ pub mod record_sets {
                 recordsetnamesuffix: None,
             }
         }
+        #[doc = "Lists all record sets in a DNS zone."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `zone_name`: The name of the DNS zone (without a terminating dot)."]
+        #[doc = "* `subscription_id`: Specifies the Azure subscription ID, which uniquely identifies the Microsoft Azure subscription."]
         pub fn list_all_by_dns_zone(
             &self,
             resource_group_name: impl Into<String>,
@@ -288,10 +341,12 @@ pub mod record_sets {
             pub(crate) if_none_match: Option<String>,
         }
         impl Builder {
+            #[doc = "The etag of the record set. Omit this value to always overwrite the current record set. Specify the last-seen etag value to prevent accidentally overwriting any concurrent changes."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
             }
+            #[doc = "Set to '*' to allow a new record set to be created, but to prevent updating an existing record set. Other values will be ignored."]
             pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
                 self.if_none_match = Some(if_none_match.into());
                 self
@@ -366,6 +421,7 @@ pub mod record_sets {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "The etag of the record set. Omit this value to always overwrite the current record set. Specify the last-seen etag value to prevent accidentally overwriting concurrent changes."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -435,6 +491,7 @@ pub mod record_sets {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "The etag of the record set. Omit this value to always delete the current record set. Specify the last-seen etag value to prevent accidentally deleting any concurrent changes."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -496,10 +553,12 @@ pub mod record_sets {
             pub(crate) recordsetnamesuffix: Option<String>,
         }
         impl Builder {
+            #[doc = "The maximum number of record sets to return. If not specified, returns up to 100 record sets."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "The suffix label of the record set name that has to be used to filter the record set enumerations. If this parameter is specified, Enumeration will return only records that end with .<recordSetNameSuffix>"]
             pub fn recordsetnamesuffix(mut self, recordsetnamesuffix: impl Into<String>) -> Self {
                 self.recordsetnamesuffix = Some(recordsetnamesuffix.into());
                 self
@@ -593,10 +652,12 @@ pub mod record_sets {
             pub(crate) recordsetnamesuffix: Option<String>,
         }
         impl Builder {
+            #[doc = "The maximum number of record sets to return. If not specified, returns up to 100 record sets."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "The suffix label of the record set name that has to be used to filter the record set enumerations. If this parameter is specified, Enumeration will return only records that end with .<recordSetNameSuffix>"]
             pub fn recordsetnamesuffix(mut self, recordsetnamesuffix: impl Into<String>) -> Self {
                 self.recordsetnamesuffix = Some(recordsetnamesuffix.into());
                 self
@@ -689,10 +750,12 @@ pub mod record_sets {
             pub(crate) recordsetnamesuffix: Option<String>,
         }
         impl Builder {
+            #[doc = "The maximum number of record sets to return. If not specified, returns up to 100 record sets."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "The suffix label of the record set name that has to be used to filter the record set enumerations. If this parameter is specified, Enumeration will return only records that end with .<recordSetNameSuffix>"]
             pub fn recordsetnamesuffix(mut self, recordsetnamesuffix: impl Into<String>) -> Self {
                 self.recordsetnamesuffix = Some(recordsetnamesuffix.into());
                 self
@@ -777,6 +840,12 @@ pub mod zones {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a DNS zone. Retrieves the zone properties, but not the record sets within the zone."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `zone_name`: The name of the DNS zone (without a terminating dot)."]
+        #[doc = "* `subscription_id`: Specifies the Azure subscription ID, which uniquely identifies the Microsoft Azure subscription."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -790,6 +859,13 @@ pub mod zones {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates a DNS zone. Does not modify DNS records within the zone."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `zone_name`: The name of the DNS zone (without a terminating dot)."]
+        #[doc = "* `parameters`: Parameters supplied to the CreateOrUpdate operation."]
+        #[doc = "* `subscription_id`: Specifies the Azure subscription ID, which uniquely identifies the Microsoft Azure subscription."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -807,6 +883,13 @@ pub mod zones {
                 if_none_match: None,
             }
         }
+        #[doc = "Updates a DNS zone. Does not modify DNS records within the zone."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `zone_name`: The name of the DNS zone (without a terminating dot)."]
+        #[doc = "* `parameters`: Parameters supplied to the Update operation."]
+        #[doc = "* `subscription_id`: Specifies the Azure subscription ID, which uniquely identifies the Microsoft Azure subscription."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -823,6 +906,12 @@ pub mod zones {
                 if_match: None,
             }
         }
+        #[doc = "Deletes a DNS zone. WARNING: All DNS records in the zone will also be deleted. This operation cannot be undone."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `zone_name`: The name of the DNS zone (without a terminating dot)."]
+        #[doc = "* `subscription_id`: Specifies the Azure subscription ID, which uniquely identifies the Microsoft Azure subscription."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -837,6 +926,11 @@ pub mod zones {
                 if_match: None,
             }
         }
+        #[doc = "Lists the DNS zones within a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `subscription_id`: Specifies the Azure subscription ID, which uniquely identifies the Microsoft Azure subscription."]
         pub fn list_by_resource_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -849,6 +943,10 @@ pub mod zones {
                 top: None,
             }
         }
+        #[doc = "Lists the DNS zones in all resource groups in a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Specifies the Azure subscription ID, which uniquely identifies the Microsoft Azure subscription."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -927,10 +1025,12 @@ pub mod zones {
             pub(crate) if_none_match: Option<String>,
         }
         impl Builder {
+            #[doc = "The etag of the DNS zone. Omit this value to always overwrite the current zone. Specify the last-seen etag value to prevent accidentally overwriting any concurrent changes."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
             }
+            #[doc = "Set to '*' to allow a new DNS zone to be created, but to prevent updating an existing zone. Other values will be ignored."]
             pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
                 self.if_none_match = Some(if_none_match.into());
                 self
@@ -1001,6 +1101,7 @@ pub mod zones {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "The etag of the DNS zone. Omit this value to always overwrite the current zone. Specify the last-seen etag value to prevent accidentally overwriting any concurrent changes."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -1067,6 +1168,7 @@ pub mod zones {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "The etag of the DNS zone. Omit this value to always delete the current zone. Specify the last-seen etag value to prevent accidentally deleting any concurrent changes."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -1125,6 +1227,7 @@ pub mod zones {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The maximum number of record sets to return. If not specified, returns up to 100 record sets."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -1208,6 +1311,7 @@ pub mod zones {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The maximum number of DNS zones to return. If not specified, returns up to 100 zones."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -1285,6 +1389,11 @@ pub mod dns_resource_reference {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Returns the DNS records specified by the referencing targetResourceIds."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Specifies the Azure subscription ID, which uniquely identifies the Microsoft Azure subscription."]
+        #[doc = "* `parameters`: Properties for dns resource reference request."]
         pub fn get_by_target_resources(
             &self,
             subscription_id: impl Into<String>,

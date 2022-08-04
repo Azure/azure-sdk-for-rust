@@ -85,6 +85,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists the operations available from this provider."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -142,6 +143,12 @@ pub mod guest_usages {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets a Guest Usages resource"]
+        #[doc = "Gets a Guest Usages resource for the Microsoft.AzureActiveDirectory resource provider"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `resource_name`: The initial domain name of the AAD tenant."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -156,6 +163,12 @@ pub mod guest_usages {
             }
         }
         #[doc = "Creates a Guest Usages resource"]
+        #[doc = "Creates a Guest Usages resource for the Microsoft.AzureActiveDirectory resource provider"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `resource_name`: The initial domain name of the AAD tenant."]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -171,6 +184,12 @@ pub mod guest_usages {
             }
         }
         #[doc = "Updates a Guest Usages resource"]
+        #[doc = "Updates a Guest Usages resource for the Microsoft.AzureActiveDirectory resource provider"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `resource_name`: The initial domain name of the AAD tenant."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -186,6 +205,12 @@ pub mod guest_usages {
             }
         }
         #[doc = "Deletes a Guest Usages resource"]
+        #[doc = "Deletes a Guest Usages resource for the Microsoft.AzureActiveDirectory resource provider"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `resource_name`: The initial domain name of the AAD tenant."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -200,6 +225,10 @@ pub mod guest_usages {
             }
         }
         #[doc = "Gets Guest Usages resources under a subscription"]
+        #[doc = "Gets Guest Usages resources under a subscription for the Microsoft.AzureActiveDirectory resource provider"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)"]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
@@ -207,6 +236,11 @@ pub mod guest_usages {
             }
         }
         #[doc = "Gets Guest Usages resources under resource group"]
+        #[doc = "Gets Guest Usages resources under a resource group for the Microsoft.AzureActiveDirectory resource provider"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -283,6 +317,7 @@ pub mod guest_usages {
             pub(crate) resource: Option<models::GuestUsagesResource>,
         }
         impl Builder {
+            #[doc = "Guest Usages resource to be created"]
             pub fn resource(mut self, resource: impl Into<models::GuestUsagesResource>) -> Self {
                 self.resource = Some(resource.into());
                 self
@@ -345,6 +380,7 @@ pub mod guest_usages {
             pub(crate) resource_patch: Option<models::GuestUsagesResourcePatch>,
         }
         impl Builder {
+            #[doc = "Guest Usages Resource to be updated"]
             pub fn resource_patch(mut self, resource_patch: impl Into<models::GuestUsagesResourcePatch>) -> Self {
                 self.resource_patch = Some(resource_patch.into());
                 self

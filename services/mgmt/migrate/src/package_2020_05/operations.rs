@@ -98,6 +98,12 @@ pub mod migrate_projects_controller {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get a specific project."]
+        #[doc = "Get information related to a specific migrate project. Returns a json object of type 'migrateProject' as specified in the models section."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure Subscription Id in which project was created."]
+        #[doc = "* `resource_group_name`: Name of the Azure Resource Group that project is part of."]
+        #[doc = "* `migrate_project_name`: Migrate project name."]
         pub fn get_migrate_project(
             &self,
             subscription_id: impl Into<String>,
@@ -112,6 +118,13 @@ pub mod migrate_projects_controller {
             }
         }
         #[doc = "Create a new project with specified settings."]
+        #[doc = "Create a new project by sending a json object of type 'migrateproject' as given in Models section as part of the Request Body. The project name is unique.\n\nThis operation is Idempotent.\n"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure Subscription Id in which project was created."]
+        #[doc = "* `resource_group_name`: Name of the Azure Resource Group that project is part of."]
+        #[doc = "* `migrate_project_name`: Migrate project name."]
+        #[doc = "* `body`: Migrate project body."]
         pub fn put_migrate_project(
             &self,
             subscription_id: impl Into<String>,
@@ -128,6 +141,13 @@ pub mod migrate_projects_controller {
             }
         }
         #[doc = "Update project."]
+        #[doc = "Update a project with specified name. Supports partial updates, for example only tags can be provided."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure Subscription Id in which project was created."]
+        #[doc = "* `resource_group_name`: Name of the Azure Resource Group that project is part of."]
+        #[doc = "* `migrate_project_name`: Migrate project name."]
+        #[doc = "* `body`: Migrate project body."]
         pub fn patch_migrate_project(
             &self,
             subscription_id: impl Into<String>,
@@ -144,6 +164,12 @@ pub mod migrate_projects_controller {
             }
         }
         #[doc = "Delete the project"]
+        #[doc = "Delete the migrate project. It deletes summary of the project."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure Subscription Id in which project was created."]
+        #[doc = "* `resource_group_name`: Name of the Azure Resource Group that project is part of."]
+        #[doc = "* `migrate_project_name`: Migrate project name."]
         pub fn delete_migrate_project(
             &self,
             subscription_id: impl Into<String>,
@@ -377,6 +403,12 @@ pub mod private_endpoint_connections_controller {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get the private endpoint connections."]
+        #[doc = "Get all the private endpoint connections under a migrate project."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure Subscription Id in which project was created."]
+        #[doc = "* `resource_group_name`: Name of the Azure Resource Group that project is part of."]
+        #[doc = "* `migrate_project_name`: Migrate project name."]
         pub fn get_private_endpoint_connections(
             &self,
             subscription_id: impl Into<String>,
@@ -443,6 +475,13 @@ pub mod private_endpoint_connection_controller {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get the private endpoint."]
+        #[doc = "Get the private endpoint with the specified name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure Subscription Id in which project was created."]
+        #[doc = "* `resource_group_name`: Name of the Azure Resource Group that project is part of."]
+        #[doc = "* `migrate_project_name`: Migrate project name."]
+        #[doc = "* `pe_connection_name`: Private endpoint connection name."]
         pub fn get_private_endpoint_connection(
             &self,
             subscription_id: impl Into<String>,
@@ -459,6 +498,14 @@ pub mod private_endpoint_connection_controller {
             }
         }
         #[doc = "Create or update private endpoint."]
+        #[doc = "Create a private endpoint with specified name. If a private endpoint already exists, update it."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure Subscription Id in which project was created."]
+        #[doc = "* `resource_group_name`: Name of the Azure Resource Group that project is part of."]
+        #[doc = "* `migrate_project_name`: Migrate project name."]
+        #[doc = "* `pe_connection_name`: Private endpoint connection name."]
+        #[doc = "* `body`: Modify connection state body."]
         pub fn put_private_endpoint_connection(
             &self,
             subscription_id: impl Into<String>,
@@ -477,6 +524,13 @@ pub mod private_endpoint_connection_controller {
             }
         }
         #[doc = "Delete the endpoint"]
+        #[doc = "Delete the private endpoint. Deleting non-existent private endpoint is a no-operation."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure Subscription Id in which project was created."]
+        #[doc = "* `resource_group_name`: Name of the Azure Resource Group that project is part of."]
+        #[doc = "* `migrate_project_name`: Migrate project name."]
+        #[doc = "* `pe_connection_name`: Private endpoint connection name."]
         pub fn delete_private_endpoint_connection(
             &self,
             subscription_id: impl Into<String>,
@@ -643,6 +697,13 @@ pub mod private_link_resource_controller {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get the private link resource."]
+        #[doc = "Get the private link resource with the specified name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure Subscription Id in which project was created."]
+        #[doc = "* `resource_group_name`: Name of the Azure Resource Group that project is part of."]
+        #[doc = "* `migrate_project_name`: Migrate project name."]
+        #[doc = "* `private_link_resource_name`: Private Link resource name."]
         pub fn get_private_link_resource(
             &self,
             subscription_id: impl Into<String>,
@@ -659,6 +720,12 @@ pub mod private_link_resource_controller {
             }
         }
         #[doc = "Get the list of private link resources."]
+        #[doc = "Get the list of private link resources."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure Subscription Id in which project was created."]
+        #[doc = "* `resource_group_name`: Name of the Azure Resource Group that project is part of."]
+        #[doc = "* `migrate_project_name`: Migrate project name."]
         pub fn get_private_link_resources(
             &self,
             subscription_id: impl Into<String>,
@@ -785,6 +852,10 @@ pub mod projects {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get all migrate projects."]
+        #[doc = "Get all the migrate projects in the subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure Subscription Id in which project was created."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
@@ -792,6 +863,11 @@ pub mod projects {
             }
         }
         #[doc = "Get all migrate projects."]
+        #[doc = "Get all the migrate projects in the resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure Subscription Id in which project was created."]
+        #[doc = "* `resource_group_name`: Name of the Azure Resource Group that project is part of."]
         pub fn list(&self, subscription_id: impl Into<String>, resource_group_name: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -956,6 +1032,7 @@ pub mod operations {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get list of operations supported in the API."]
+        #[doc = "Get a list of REST API supported by Microsoft.Migrate provider."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }

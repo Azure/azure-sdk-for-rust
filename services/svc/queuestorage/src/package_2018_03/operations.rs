@@ -91,6 +91,10 @@ pub mod service {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "gets the properties of a storage account's Queue service, including properties for Storage Analytics and CORS (Cross-Origin Resource Sharing) rules."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn get_properties(&self, x_ms_version: impl Into<String>) -> get_properties::Builder {
             get_properties::Builder {
                 client: self.0.clone(),
@@ -99,6 +103,11 @@ pub mod service {
                 x_ms_client_request_id: None,
             }
         }
+        #[doc = "Sets properties for a storage account's Queue service endpoint, including properties for Storage Analytics and CORS (Cross-Origin Resource Sharing) rules"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `storage_service_properties`: The StorageService properties."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn set_properties(
             &self,
             storage_service_properties: impl Into<models::StorageServiceProperties>,
@@ -112,6 +121,10 @@ pub mod service {
                 x_ms_client_request_id: None,
             }
         }
+        #[doc = "Retrieves statistics related to replication for the Queue service. It is only available on the secondary location endpoint when read-access geo-redundant replication is enabled for the storage account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn get_statistics(&self, x_ms_version: impl Into<String>) -> get_statistics::Builder {
             get_statistics::Builder {
                 client: self.0.clone(),
@@ -120,6 +133,10 @@ pub mod service {
                 x_ms_client_request_id: None,
             }
         }
+        #[doc = "The List Queues Segment operation returns a list of the queues under the specified account"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn list_queues_segment(&self, x_ms_version: impl Into<String>) -> list_queues_segment::Builder {
             list_queues_segment::Builder {
                 client: self.0.clone(),
@@ -144,10 +161,12 @@ pub mod service {
             pub(crate) x_ms_client_request_id: Option<String>,
         }
         impl Builder {
+            #[doc = "The The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/setting-timeouts-for-queue-service-operations>Setting Timeouts for Queue Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "Provides a client-generated, opaque value with a 1 KB character limit that is recorded in the analytics logs when storage analytics logging is enabled."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
@@ -203,10 +222,12 @@ pub mod service {
             pub(crate) x_ms_client_request_id: Option<String>,
         }
         impl Builder {
+            #[doc = "The The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/setting-timeouts-for-queue-service-operations>Setting Timeouts for Queue Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "Provides a client-generated, opaque value with a 1 KB character limit that is recorded in the analytics logs when storage analytics logging is enabled."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
@@ -258,10 +279,12 @@ pub mod service {
             pub(crate) x_ms_client_request_id: Option<String>,
         }
         impl Builder {
+            #[doc = "The The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/setting-timeouts-for-queue-service-operations>Setting Timeouts for Queue Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "Provides a client-generated, opaque value with a 1 KB character limit that is recorded in the analytics logs when storage analytics logging is enabled."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
@@ -320,26 +343,32 @@ pub mod service {
             pub(crate) x_ms_client_request_id: Option<String>,
         }
         impl Builder {
+            #[doc = "Filters the results to return only queues whose name begins with the specified prefix."]
             pub fn prefix(mut self, prefix: impl Into<String>) -> Self {
                 self.prefix = Some(prefix.into());
                 self
             }
+            #[doc = "A string value that identifies the portion of the list of queues to be returned with the next listing operation. The operation returns the NextMarker value within the response body if the listing operation did not return all queues remaining to be listed with the current page. The NextMarker value can be used as the value for the marker parameter in a subsequent call to request the next page of list items. The marker value is opaque to the client."]
             pub fn marker(mut self, marker: impl Into<String>) -> Self {
                 self.marker = Some(marker.into());
                 self
             }
+            #[doc = "Specifies the maximum number of queues to return. If the request does not specify maxresults, or specifies a value greater than 5000, the server will return up to 5000 items. Note that if the listing operation crosses a partition boundary, then the service will return a continuation token for retrieving the remainder of the results. For this reason, it is possible that the service will return fewer results than specified by maxresults, or than the default of 5000."]
             pub fn maxresults(mut self, maxresults: i64) -> Self {
                 self.maxresults = Some(maxresults);
                 self
             }
+            #[doc = "Include this parameter to specify that the queues' metadata be returned as part of the response body."]
             pub fn include(mut self, include: Vec<String>) -> Self {
                 self.include = include;
                 self
             }
+            #[doc = "The The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/setting-timeouts-for-queue-service-operations>Setting Timeouts for Queue Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "Provides a client-generated, opaque value with a 1 KB character limit that is recorded in the analytics logs when storage analytics logging is enabled."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
@@ -416,6 +445,11 @@ pub mod queue {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "creates a new queue under the given account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `queue_name`: The queue name."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn create(&self, queue_name: impl Into<String>, x_ms_version: impl Into<String>) -> create::Builder {
             create::Builder {
                 client: self.0.clone(),
@@ -426,6 +460,11 @@ pub mod queue {
                 x_ms_client_request_id: None,
             }
         }
+        #[doc = "operation permanently deletes the specified queue"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `queue_name`: The queue name."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn delete(&self, queue_name: impl Into<String>, x_ms_version: impl Into<String>) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),
@@ -435,6 +474,11 @@ pub mod queue {
                 x_ms_client_request_id: None,
             }
         }
+        #[doc = "Retrieves user-defined metadata and queue properties on the specified queue. Metadata is associated with the queue as name-values pairs."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `queue_name`: The queue name."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn get_properties(&self, queue_name: impl Into<String>, x_ms_version: impl Into<String>) -> get_properties::Builder {
             get_properties::Builder {
                 client: self.0.clone(),
@@ -444,6 +488,11 @@ pub mod queue {
                 x_ms_client_request_id: None,
             }
         }
+        #[doc = "sets user-defined metadata on the specified queue. Metadata is associated with the queue as name-value pairs."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `queue_name`: The queue name."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn set_metadata(&self, queue_name: impl Into<String>, x_ms_version: impl Into<String>) -> set_metadata::Builder {
             set_metadata::Builder {
                 client: self.0.clone(),
@@ -454,6 +503,11 @@ pub mod queue {
                 x_ms_client_request_id: None,
             }
         }
+        #[doc = "returns details about any stored access policies specified on the queue that may be used with Shared Access Signatures."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `queue_name`: The queue name."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn get_access_policy(&self, queue_name: impl Into<String>, x_ms_version: impl Into<String>) -> get_access_policy::Builder {
             get_access_policy::Builder {
                 client: self.0.clone(),
@@ -463,6 +517,11 @@ pub mod queue {
                 x_ms_client_request_id: None,
             }
         }
+        #[doc = "sets stored access policies for the queue that may be used with Shared Access Signatures"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `queue_name`: The queue name."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn set_access_policy(&self, queue_name: impl Into<String>, x_ms_version: impl Into<String>) -> set_access_policy::Builder {
             set_access_policy::Builder {
                 client: self.0.clone(),
@@ -491,14 +550,17 @@ pub mod queue {
             pub(crate) x_ms_client_request_id: Option<String>,
         }
         impl Builder {
+            #[doc = "The The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/setting-timeouts-for-queue-service-operations>Setting Timeouts for Queue Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "Optional. Include this parameter to specify that the queue's metadata be returned as part of the response body. Note that metadata requested with this parameter must be stored in accordance with the naming restrictions imposed by the 2009-09-19 version of the Queue service. Beginning with this version, all metadata names must adhere to the naming conventions for C# identifiers."]
             pub fn x_ms_meta(mut self, x_ms_meta: impl Into<String>) -> Self {
                 self.x_ms_meta = Some(x_ms_meta.into());
                 self
             }
+            #[doc = "Provides a client-generated, opaque value with a 1 KB character limit that is recorded in the analytics logs when storage analytics logging is enabled."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
@@ -554,10 +616,12 @@ pub mod queue {
             pub(crate) x_ms_client_request_id: Option<String>,
         }
         impl Builder {
+            #[doc = "The The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/setting-timeouts-for-queue-service-operations>Setting Timeouts for Queue Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "Provides a client-generated, opaque value with a 1 KB character limit that is recorded in the analytics logs when storage analytics logging is enabled."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
@@ -609,10 +673,12 @@ pub mod queue {
             pub(crate) x_ms_client_request_id: Option<String>,
         }
         impl Builder {
+            #[doc = "The The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/setting-timeouts-for-queue-service-operations>Setting Timeouts for Queue Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "Provides a client-generated, opaque value with a 1 KB character limit that is recorded in the analytics logs when storage analytics logging is enabled."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
@@ -665,14 +731,17 @@ pub mod queue {
             pub(crate) x_ms_client_request_id: Option<String>,
         }
         impl Builder {
+            #[doc = "The The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/setting-timeouts-for-queue-service-operations>Setting Timeouts for Queue Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "Optional. Include this parameter to specify that the queue's metadata be returned as part of the response body. Note that metadata requested with this parameter must be stored in accordance with the naming restrictions imposed by the 2009-09-19 version of the Queue service. Beginning with this version, all metadata names must adhere to the naming conventions for C# identifiers."]
             pub fn x_ms_meta(mut self, x_ms_meta: impl Into<String>) -> Self {
                 self.x_ms_meta = Some(x_ms_meta.into());
                 self
             }
+            #[doc = "Provides a client-generated, opaque value with a 1 KB character limit that is recorded in the analytics logs when storage analytics logging is enabled."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
@@ -727,10 +796,12 @@ pub mod queue {
             pub(crate) x_ms_client_request_id: Option<String>,
         }
         impl Builder {
+            #[doc = "The The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/setting-timeouts-for-queue-service-operations>Setting Timeouts for Queue Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "Provides a client-generated, opaque value with a 1 KB character limit that is recorded in the analytics logs when storage analytics logging is enabled."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
@@ -787,14 +858,17 @@ pub mod queue {
             pub(crate) x_ms_client_request_id: Option<String>,
         }
         impl Builder {
+            #[doc = "the acls for the queue"]
             pub fn queue_acl(mut self, queue_acl: impl Into<models::SignedIdentifiers>) -> Self {
                 self.queue_acl = Some(queue_acl.into());
                 self
             }
+            #[doc = "The The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/setting-timeouts-for-queue-service-operations>Setting Timeouts for Queue Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "Provides a client-generated, opaque value with a 1 KB character limit that is recorded in the analytics logs when storage analytics logging is enabled."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
@@ -844,6 +918,11 @@ pub mod messages {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "The Dequeue operation retrieves one or more messages from the front of the queue."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `queue_name`: The queue name."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn dequeue(&self, queue_name: impl Into<String>, x_ms_version: impl Into<String>) -> dequeue::Builder {
             dequeue::Builder {
                 client: self.0.clone(),
@@ -855,6 +934,12 @@ pub mod messages {
                 x_ms_client_request_id: None,
             }
         }
+        #[doc = "The Enqueue operation adds a new message to the back of the message queue. A visibility timeout can also be specified to make the message invisible until the visibility timeout expires. A message must be in a format that can be included in an XML request with UTF-8 encoding. The encoded message can be up to 64 KB in size for versions 2011-08-18 and newer, or 8 KB in size for previous versions."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `queue_name`: The queue name."]
+        #[doc = "* `queue_message`: A Message object which can be stored in a Queue"]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn enqueue(
             &self,
             queue_name: impl Into<String>,
@@ -872,6 +957,11 @@ pub mod messages {
                 x_ms_client_request_id: None,
             }
         }
+        #[doc = "The Clear operation deletes all messages from the specified queue."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `queue_name`: The queue name."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn clear(&self, queue_name: impl Into<String>, x_ms_version: impl Into<String>) -> clear::Builder {
             clear::Builder {
                 client: self.0.clone(),
@@ -881,6 +971,11 @@ pub mod messages {
                 x_ms_client_request_id: None,
             }
         }
+        #[doc = "The Peek operation retrieves one or more messages from the front of the queue, but does not alter the visibility of the message."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `queue_name`: The queue name."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn peek(&self, queue_name: impl Into<String>, x_ms_version: impl Into<String>) -> peek::Builder {
             peek::Builder {
                 client: self.0.clone(),
@@ -906,18 +1001,22 @@ pub mod messages {
             pub(crate) x_ms_client_request_id: Option<String>,
         }
         impl Builder {
+            #[doc = "Optional. A nonzero integer value that specifies the number of messages to retrieve from the queue, up to a maximum of 32. If fewer are visible, the visible messages are returned. By default, a single message is retrieved from the queue with this operation."]
             pub fn numofmessages(mut self, numofmessages: i64) -> Self {
                 self.numofmessages = Some(numofmessages);
                 self
             }
+            #[doc = "Optional. Specifies the new visibility timeout value, in seconds, relative to server time. The default value is 30 seconds. A specified value must be larger than or equal to 1 second, and cannot be larger than 7 days, or larger than 2 hours on REST protocol versions prior to version 2011-08-18. The visibility timeout of a message can be set to a value later than the expiry time."]
             pub fn visibilitytimeout(mut self, visibilitytimeout: i64) -> Self {
                 self.visibilitytimeout = Some(visibilitytimeout);
                 self
             }
+            #[doc = "The The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/setting-timeouts-for-queue-service-operations>Setting Timeouts for Queue Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "Provides a client-generated, opaque value with a 1 KB character limit that is recorded in the analytics logs when storage analytics logging is enabled."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
@@ -986,18 +1085,22 @@ pub mod messages {
             pub(crate) x_ms_client_request_id: Option<String>,
         }
         impl Builder {
+            #[doc = "Optional. If specified, the request must be made using an x-ms-version of 2011-08-18 or later. If not specified, the default value is 0. Specifies the new visibility timeout value, in seconds, relative to server time. The new value must be larger than or equal to 0, and cannot be larger than 7 days. The visibility timeout of a message cannot be set to a value later than the expiry time. visibilitytimeout should be set to a value smaller than the time-to-live value."]
             pub fn visibilitytimeout(mut self, visibilitytimeout: i64) -> Self {
                 self.visibilitytimeout = Some(visibilitytimeout);
                 self
             }
+            #[doc = "Optional. Specifies the time-to-live interval for the message, in seconds. Prior to version 2017-07-29, the maximum time-to-live allowed is 7 days. For version 2017-07-29 or later, the maximum time-to-live can be any positive number, as well as -1 indicating that the message does not expire. If this parameter is omitted, the default time-to-live is 7 days."]
             pub fn messagettl(mut self, messagettl: i64) -> Self {
                 self.messagettl = Some(messagettl);
                 self
             }
+            #[doc = "The The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/setting-timeouts-for-queue-service-operations>Setting Timeouts for Queue Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "Provides a client-generated, opaque value with a 1 KB character limit that is recorded in the analytics logs when storage analytics logging is enabled."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
@@ -1062,10 +1165,12 @@ pub mod messages {
             pub(crate) x_ms_client_request_id: Option<String>,
         }
         impl Builder {
+            #[doc = "The The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/setting-timeouts-for-queue-service-operations>Setting Timeouts for Queue Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "Provides a client-generated, opaque value with a 1 KB character limit that is recorded in the analytics logs when storage analytics logging is enabled."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
@@ -1118,14 +1223,17 @@ pub mod messages {
             pub(crate) x_ms_client_request_id: Option<String>,
         }
         impl Builder {
+            #[doc = "Optional. A nonzero integer value that specifies the number of messages to retrieve from the queue, up to a maximum of 32. If fewer are visible, the visible messages are returned. By default, a single message is retrieved from the queue with this operation."]
             pub fn numofmessages(mut self, numofmessages: i64) -> Self {
                 self.numofmessages = Some(numofmessages);
                 self
             }
+            #[doc = "The The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/setting-timeouts-for-queue-service-operations>Setting Timeouts for Queue Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "Provides a client-generated, opaque value with a 1 KB character limit that is recorded in the analytics logs when storage analytics logging is enabled."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
@@ -1180,6 +1288,14 @@ pub mod message_id {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "The Update operation was introduced with version 2011-08-18 of the Queue service API. The Update Message operation updates the visibility timeout of a message. You can also use this operation to update the contents of a message. A message must be in a format that can be included in an XML request with UTF-8 encoding, and the encoded message can be up to 64KB in size."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `queue_name`: The queue name."]
+        #[doc = "* `messageid`: The container name."]
+        #[doc = "* `popreceipt`: Required. Specifies the valid pop receipt value returned from an earlier call to the Get Messages or Update Message operation."]
+        #[doc = "* `visibilitytimeout`: Optional. Specifies the new visibility timeout value, in seconds, relative to server time. The default value is 30 seconds. A specified value must be larger than or equal to 1 second, and cannot be larger than 7 days, or larger than 2 hours on REST protocol versions prior to version 2011-08-18. The visibility timeout of a message can be set to a value later than the expiry time."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn update(
             &self,
             queue_name: impl Into<String>,
@@ -1200,6 +1316,13 @@ pub mod message_id {
                 x_ms_client_request_id: None,
             }
         }
+        #[doc = "The Delete operation deletes the specified message."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `queue_name`: The queue name."]
+        #[doc = "* `messageid`: The container name."]
+        #[doc = "* `popreceipt`: Required. Specifies the valid pop receipt value returned from an earlier call to the Get Messages or Update Message operation."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn delete(
             &self,
             queue_name: impl Into<String>,
@@ -1234,14 +1357,17 @@ pub mod message_id {
             pub(crate) x_ms_client_request_id: Option<String>,
         }
         impl Builder {
+            #[doc = "A Message object which can be stored in a Queue"]
             pub fn queue_message(mut self, queue_message: impl Into<models::QueueMessage>) -> Self {
                 self.queue_message = Some(queue_message.into());
                 self
             }
+            #[doc = "The The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/setting-timeouts-for-queue-service-operations>Setting Timeouts for Queue Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "Provides a client-generated, opaque value with a 1 KB character limit that is recorded in the analytics logs when storage analytics logging is enabled."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
@@ -1311,10 +1437,12 @@ pub mod message_id {
             pub(crate) x_ms_client_request_id: Option<String>,
         }
         impl Builder {
+            #[doc = "The The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/setting-timeouts-for-queue-service-operations>Setting Timeouts for Queue Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "Provides a client-generated, opaque value with a 1 KB character limit that is recorded in the analytics logs when storage analytics logging is enabled."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self

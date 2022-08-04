@@ -92,6 +92,9 @@ pub mod marketplace_agreements {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "List Confluent marketplace agreements in the subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Microsoft Azure subscription id"]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -99,6 +102,9 @@ pub mod marketplace_agreements {
             }
         }
         #[doc = "Create Confluent Marketplace agreement in the subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Microsoft Azure subscription id"]
         pub fn create(&self, subscription_id: impl Into<String>) -> create::Builder {
             create::Builder {
                 client: self.0.clone(),
@@ -191,6 +197,7 @@ pub mod marketplace_agreements {
             pub(crate) body: Option<models::ConfluentAgreementResource>,
         }
         impl Builder {
+            #[doc = "Confluent Marketplace Agreement resource"]
             pub fn body(mut self, body: impl Into<models::ConfluentAgreementResource>) -> Self {
                 self.body = Some(body.into());
                 self
@@ -325,6 +332,9 @@ pub mod organization {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "List all organizations under the specified subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Microsoft Azure subscription id"]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
@@ -332,6 +342,10 @@ pub mod organization {
             }
         }
         #[doc = "List all Organizations under the specified resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Microsoft Azure subscription id"]
+        #[doc = "* `resource_group_name`: Resource group name"]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -344,6 +358,11 @@ pub mod organization {
             }
         }
         #[doc = "Get the properties of a specific Organization resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Microsoft Azure subscription id"]
+        #[doc = "* `resource_group_name`: Resource group name"]
+        #[doc = "* `organization_name`: Organization resource name"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -358,6 +377,11 @@ pub mod organization {
             }
         }
         #[doc = "Create Organization resource"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Microsoft Azure subscription id"]
+        #[doc = "* `resource_group_name`: Resource group name"]
+        #[doc = "* `organization_name`: Organization resource name"]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -373,6 +397,11 @@ pub mod organization {
             }
         }
         #[doc = "Update Organization resource"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Microsoft Azure subscription id"]
+        #[doc = "* `resource_group_name`: Resource group name"]
+        #[doc = "* `organization_name`: Organization resource name"]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -388,6 +417,11 @@ pub mod organization {
             }
         }
         #[doc = "Delete Organization resource"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Microsoft Azure subscription id"]
+        #[doc = "* `resource_group_name`: Resource group name"]
+        #[doc = "* `organization_name`: Organization resource name"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -620,6 +654,7 @@ pub mod organization {
             pub(crate) body: Option<models::OrganizationResource>,
         }
         impl Builder {
+            #[doc = "Organization resource model"]
             pub fn body(mut self, body: impl Into<models::OrganizationResource>) -> Self {
                 self.body = Some(body.into());
                 self
@@ -688,6 +723,7 @@ pub mod organization {
             pub(crate) body: Option<models::OrganizationResourceUpdate>,
         }
         impl Builder {
+            #[doc = "Updated Organization resource"]
             pub fn body(mut self, body: impl Into<models::OrganizationResourceUpdate>) -> Self {
                 self.body = Some(body.into());
                 self
@@ -800,6 +836,12 @@ pub mod validations {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Organization Validate proxy resource"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Microsoft Azure subscription id"]
+        #[doc = "* `resource_group_name`: Resource group name"]
+        #[doc = "* `organization_name`: Organization resource name"]
+        #[doc = "* `body`: Organization resource model"]
         pub fn validate_organization(
             &self,
             subscription_id: impl Into<String>,

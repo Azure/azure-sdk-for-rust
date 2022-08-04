@@ -211,6 +211,12 @@ pub mod private_endpoint_connections {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List all private endpoint connections on a Automation account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
         pub fn list_by_automation_account(
             &self,
             subscription_id: impl Into<String>,
@@ -224,6 +230,13 @@ pub mod private_endpoint_connections {
                 automation_account_name: automation_account_name.into(),
             }
         }
+        #[doc = "Gets a private endpoint connection."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `private_endpoint_connection_name`: The name of the private endpoint connection."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -239,6 +252,13 @@ pub mod private_endpoint_connections {
                 private_endpoint_connection_name: private_endpoint_connection_name.into(),
             }
         }
+        #[doc = "Approve or reject a private endpoint connection with a given name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `private_endpoint_connection_name`: The name of the private endpoint connection."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -256,6 +276,13 @@ pub mod private_endpoint_connections {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Deletes a private endpoint connection with a given name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `private_endpoint_connection_name`: The name of the private endpoint connection."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -475,6 +502,12 @@ pub mod private_link_resources {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the private link resources that need to be created for Automation account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
         pub fn automation(
             &self,
             subscription_id: impl Into<String>,
@@ -541,6 +574,13 @@ pub mod python2_package {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieve the python 2 package identified by package name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `package_name`: The python package name."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -556,6 +596,14 @@ pub mod python2_package {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Create or Update the python 2 package identified by package name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `package_name`: The name of python package."]
+        #[doc = "* `parameters`: The create or update parameters for python package."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -573,6 +621,14 @@ pub mod python2_package {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Update the python 2 package identified by package name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `package_name`: The name of python package."]
+        #[doc = "* `parameters`: The update parameters for python package."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -590,6 +646,13 @@ pub mod python2_package {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Delete the python 2 package by name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `package_name`: The python package name."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -605,6 +668,12 @@ pub mod python2_package {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Retrieve a list of python 2 packages."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_automation_account(
             &self,
             resource_group_name: impl Into<String>,
@@ -927,6 +996,12 @@ pub mod agent_registration_information {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieve the automation agent registration information."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -940,6 +1015,13 @@ pub mod agent_registration_information {
                 automation_account_name: automation_account_name.into(),
             }
         }
+        #[doc = "Regenerate a primary or secondary agent registration key"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `parameters`: The name of the agent registration key to be regenerated"]
         pub fn regenerate_key(
             &self,
             subscription_id: impl Into<String>,
@@ -1055,6 +1137,13 @@ pub mod dsc_node {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieve the dsc node identified by node id."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `node_id`: The node id."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -1070,6 +1159,14 @@ pub mod dsc_node {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Update the dsc node."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `node_id`: Parameters supplied to the update dsc node."]
+        #[doc = "* `dsc_node_update_parameters`: Parameters supplied to the update dsc node."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -1087,6 +1184,13 @@ pub mod dsc_node {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Delete the dsc node identified by node id."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `node_id`: The node id."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -1102,6 +1206,12 @@ pub mod dsc_node {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Retrieve a list of dsc nodes."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_automation_account(
             &self,
             resource_group_name: impl Into<String>,
@@ -1295,18 +1405,22 @@ pub mod dsc_node {
             pub(crate) inlinecount: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the operation."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "The number of rows to skip."]
             pub fn skip(mut self, skip: i64) -> Self {
                 self.skip = Some(skip);
                 self
             }
+            #[doc = "The number of rows to take."]
             pub fn top(mut self, top: i64) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Return total rows."]
             pub fn inlinecount(mut self, inlinecount: impl Into<String>) -> Self {
                 self.inlinecount = Some(inlinecount.into());
                 self
@@ -1395,6 +1509,13 @@ pub mod node_reports {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieve the Dsc node report list by node id."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `node_id`: The parameters supplied to the list operation."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_node(
             &self,
             resource_group_name: impl Into<String>,
@@ -1411,6 +1532,14 @@ pub mod node_reports {
                 filter: None,
             }
         }
+        #[doc = "Retrieve the Dsc node report data by node id and report id."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `node_id`: The Dsc node id."]
+        #[doc = "* `report_id`: The report id."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -1428,6 +1557,14 @@ pub mod node_reports {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Retrieve the Dsc node reports by node id and report id."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `node_id`: The Dsc node id."]
+        #[doc = "* `report_id`: The report id."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get_content(
             &self,
             resource_group_name: impl Into<String>,
@@ -1459,6 +1596,7 @@ pub mod node_reports {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the operation."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -1635,6 +1773,13 @@ pub mod dsc_node_configuration {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieve the Dsc node configurations by node configuration."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `node_configuration_name`: The Dsc node configuration name."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1650,6 +1795,14 @@ pub mod dsc_node_configuration {
                 node_configuration_name: node_configuration_name.into(),
             }
         }
+        #[doc = "Create the node configuration identified by node configuration name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `node_configuration_name`: The Dsc node configuration name."]
+        #[doc = "* `parameters`: The create or update parameters for configuration."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -1667,6 +1820,13 @@ pub mod dsc_node_configuration {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Delete the Dsc node configurations by node configuration."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `node_configuration_name`: The Dsc node configuration name."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1682,6 +1842,12 @@ pub mod dsc_node_configuration {
                 node_configuration_name: node_configuration_name.into(),
             }
         }
+        #[doc = "Retrieve a list of dsc node configurations."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_automation_account(
             &self,
             resource_group_name: impl Into<String>,
@@ -1860,18 +2026,22 @@ pub mod dsc_node_configuration {
             pub(crate) inlinecount: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the operation."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "The number of rows to skip."]
             pub fn skip(mut self, skip: i64) -> Self {
                 self.skip = Some(skip);
                 self
             }
+            #[doc = "The number of rows to take."]
             pub fn top(mut self, top: i64) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Return total rows."]
             pub fn inlinecount(mut self, inlinecount: impl Into<String>) -> Self {
                 self.inlinecount = Some(inlinecount.into());
                 self
@@ -1960,6 +2130,13 @@ pub mod dsc_compilation_job {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieve the Dsc configuration compilation job identified by job id."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `compilation_job_name`: The DSC configuration Id."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -1975,6 +2152,14 @@ pub mod dsc_compilation_job {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates the Dsc compilation job of the configuration."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `compilation_job_name`: The DSC configuration Id."]
+        #[doc = "* `parameters`: The parameters supplied to the create compilation job operation."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create(
             &self,
             resource_group_name: impl Into<String>,
@@ -1992,6 +2177,12 @@ pub mod dsc_compilation_job {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Retrieve a list of dsc compilation jobs."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_automation_account(
             &self,
             resource_group_name: impl Into<String>,
@@ -2006,6 +2197,14 @@ pub mod dsc_compilation_job {
                 filter: None,
             }
         }
+        #[doc = "Retrieve the job stream identified by job stream id."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `job_id`: The job id."]
+        #[doc = "* `job_stream_id`: The job stream id."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get_stream(
             &self,
             resource_group_name: impl Into<String>,
@@ -2147,6 +2346,7 @@ pub mod dsc_compilation_job {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the operation."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -2274,6 +2474,13 @@ pub mod dsc_compilation_job_stream {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieve all the job streams for the compilation Job."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `job_id`: The job id."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_job(
             &self,
             resource_group_name: impl Into<String>,
@@ -2342,6 +2549,13 @@ pub mod node_count_information {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieve counts for Dsc Nodes."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `count_type`: The type of counts to retrieve"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -2417,6 +2631,13 @@ pub mod source_control {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieve the source control identified by source control name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `source_control_name`: The name of source control."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -2432,6 +2653,14 @@ pub mod source_control {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Create a source control."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `source_control_name`: The source control name."]
+        #[doc = "* `parameters`: The parameters supplied to the create or update source control operation."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -2449,6 +2678,14 @@ pub mod source_control {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Update a source control."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `source_control_name`: The source control name."]
+        #[doc = "* `parameters`: The parameters supplied to the update source control operation."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -2466,6 +2703,13 @@ pub mod source_control {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Delete the source control."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `source_control_name`: The name of source control."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -2481,6 +2725,12 @@ pub mod source_control {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Retrieve a list of source controls."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_automation_account(
             &self,
             resource_group_name: impl Into<String>,
@@ -2733,6 +2983,7 @@ pub mod source_control {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the operation."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -2812,6 +3063,14 @@ pub mod source_control_sync_job {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieve the source control sync job identified by job id."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `source_control_name`: The source control name."]
+        #[doc = "* `source_control_sync_job_id`: The source control sync job id."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -2829,6 +3088,15 @@ pub mod source_control_sync_job {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates the sync job for a source control."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `source_control_name`: The source control name."]
+        #[doc = "* `source_control_sync_job_id`: The source control sync job id."]
+        #[doc = "* `parameters`: The parameters supplied to the create source control sync job operation."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create(
             &self,
             resource_group_name: impl Into<String>,
@@ -2848,6 +3116,13 @@ pub mod source_control_sync_job {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Retrieve a list of source control sync jobs."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `source_control_name`: The source control name."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_automation_account(
             &self,
             resource_group_name: impl Into<String>,
@@ -2976,6 +3251,7 @@ pub mod source_control_sync_job {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the operation."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -3049,6 +3325,14 @@ pub mod source_control_sync_job_streams {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieve a list of sync job streams identified by sync job id."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `source_control_name`: The source control name."]
+        #[doc = "* `source_control_sync_job_id`: The source control sync job id."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_sync_job(
             &self,
             resource_group_name: impl Into<String>,
@@ -3067,6 +3351,15 @@ pub mod source_control_sync_job_streams {
                 filter: None,
             }
         }
+        #[doc = "Retrieve a sync job stream identified by stream id."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `source_control_name`: The source control name."]
+        #[doc = "* `source_control_sync_job_id`: The source control sync job id."]
+        #[doc = "* `stream_id`: The id of the sync job stream."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -3101,6 +3394,7 @@ pub mod source_control_sync_job_streams {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the operation."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -3223,6 +3517,12 @@ pub mod automation_account {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get information about an Automation Account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -3236,6 +3536,13 @@ pub mod automation_account {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Create or update automation account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `parameters`: Parameters supplied to the create or update automation account."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -3251,6 +3558,13 @@ pub mod automation_account {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Update an automation account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `parameters`: Parameters supplied to the update automation account."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -3266,6 +3580,12 @@ pub mod automation_account {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Delete an automation account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -3279,6 +3599,11 @@ pub mod automation_account {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Retrieve a list of accounts within a given resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_resource_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -3291,6 +3616,10 @@ pub mod automation_account {
             }
         }
         #[doc = "Lists the Automation Accounts within an Azure subscription."]
+        #[doc = "Retrieve a list of accounts within a given subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -3675,6 +4004,12 @@ pub mod statistics {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieve the statistics for the account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_automation_account(
             &self,
             resource_group_name: impl Into<String>,
@@ -3702,6 +4037,7 @@ pub mod statistics {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the operation."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -3756,6 +4092,12 @@ pub mod usages {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieve the usage for the account id."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_automation_account(
             &self,
             resource_group_name: impl Into<String>,
@@ -3828,6 +4170,12 @@ pub mod keys {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieve the automation keys for an account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_automation_account(
             &self,
             resource_group_name: impl Into<String>,
@@ -3900,6 +4248,13 @@ pub mod certificate {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieve the certificate identified by certificate name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `certificate_name`: The name of certificate."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -3915,6 +4270,14 @@ pub mod certificate {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Create a certificate."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `certificate_name`: The parameters supplied to the create or update certificate operation."]
+        #[doc = "* `parameters`: The parameters supplied to the create or update certificate operation."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -3932,6 +4295,14 @@ pub mod certificate {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Update a certificate."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `certificate_name`: The parameters supplied to the update certificate operation."]
+        #[doc = "* `parameters`: The parameters supplied to the update certificate operation."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -3949,6 +4320,13 @@ pub mod certificate {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Delete the certificate."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `certificate_name`: The name of certificate."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -3964,6 +4342,12 @@ pub mod certificate {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Retrieve a list of certificates."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_automation_account(
             &self,
             resource_group_name: impl Into<String>,
@@ -4286,6 +4670,13 @@ pub mod connection {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieve the connection identified by connection name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `connection_name`: The name of connection."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -4301,6 +4692,14 @@ pub mod connection {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Create or update a connection."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `connection_name`: The parameters supplied to the create or update connection operation."]
+        #[doc = "* `parameters`: The parameters supplied to the create or update connection operation."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -4318,6 +4717,14 @@ pub mod connection {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Update a connection."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `connection_name`: The parameters supplied to the update a connection operation."]
+        #[doc = "* `parameters`: The parameters supplied to the update a connection operation."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -4335,6 +4742,13 @@ pub mod connection {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Delete the connection."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `connection_name`: The name of connection."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -4350,6 +4764,12 @@ pub mod connection {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Retrieve a list of connections."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_automation_account(
             &self,
             resource_group_name: impl Into<String>,
@@ -4677,6 +5097,13 @@ pub mod connection_type {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieve the connection type identified by connection type name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `connection_type_name`: The name of connection type."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -4692,6 +5119,14 @@ pub mod connection_type {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Create a connection type."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `connection_type_name`: The parameters supplied to the create or update connection type operation."]
+        #[doc = "* `parameters`: The parameters supplied to the create or update connection type operation."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -4709,6 +5144,13 @@ pub mod connection_type {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Delete the connection type."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `connection_type_name`: The name of connection type."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -4724,6 +5166,12 @@ pub mod connection_type {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Retrieve a list of connection types."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_automation_account(
             &self,
             resource_group_name: impl Into<String>,
@@ -4986,6 +5434,13 @@ pub mod credential {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieve the credential identified by credential name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `credential_name`: The name of credential."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -5001,6 +5456,14 @@ pub mod credential {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Create a credential."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `credential_name`: The parameters supplied to the create or update credential operation."]
+        #[doc = "* `parameters`: The parameters supplied to the create or update credential operation."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -5018,6 +5481,14 @@ pub mod credential {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Update a credential."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `credential_name`: The parameters supplied to the Update credential operation."]
+        #[doc = "* `parameters`: The parameters supplied to the Update credential operation."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -5035,6 +5506,13 @@ pub mod credential {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Delete the credential."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `credential_name`: The name of credential."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -5050,6 +5528,12 @@ pub mod credential {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Retrieve a list of credentials."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_automation_account(
             &self,
             resource_group_name: impl Into<String>,
@@ -5372,6 +5856,13 @@ pub mod hybrid_runbook_worker_group {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieve a hybrid runbook worker group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `hybrid_runbook_worker_group_name`: The hybrid runbook worker group name"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -5387,6 +5878,14 @@ pub mod hybrid_runbook_worker_group {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Create a hybrid runbook worker group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `hybrid_runbook_worker_group_name`: The hybrid runbook worker group name"]
+        #[doc = "* `hybrid_runbook_worker_group_creation_parameters`: The create or update parameters for hybrid runbook worker group."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create(
             &self,
             resource_group_name: impl Into<String>,
@@ -5404,6 +5903,14 @@ pub mod hybrid_runbook_worker_group {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Update a hybrid runbook worker group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `hybrid_runbook_worker_group_name`: The hybrid runbook worker group name"]
+        #[doc = "* `parameters`: The hybrid runbook worker group"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -5421,6 +5928,13 @@ pub mod hybrid_runbook_worker_group {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Delete a hybrid runbook worker group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `hybrid_runbook_worker_group_name`: The hybrid runbook worker group name"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -5436,6 +5950,12 @@ pub mod hybrid_runbook_worker_group {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Retrieve a list of hybrid runbook worker groups."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_automation_account(
             &self,
             resource_group_name: impl Into<String>,
@@ -5651,6 +6171,7 @@ pub mod hybrid_runbook_worker_group {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the operation."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -5724,6 +6245,13 @@ pub mod job_schedule {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieve the job schedule identified by job schedule name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `job_schedule_id`: The job schedule name."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -5739,6 +6267,14 @@ pub mod job_schedule {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Create a job schedule."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `job_schedule_id`: The job schedule name."]
+        #[doc = "* `parameters`: The parameters supplied to the create job schedule operation."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create(
             &self,
             resource_group_name: impl Into<String>,
@@ -5756,6 +6292,13 @@ pub mod job_schedule {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Delete the job schedule identified by job schedule name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `job_schedule_id`: The job schedule name."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -5771,6 +6314,12 @@ pub mod job_schedule {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Retrieve a list of job schedules."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_automation_account(
             &self,
             resource_group_name: impl Into<String>,
@@ -5958,6 +6507,7 @@ pub mod job_schedule {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the operation."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -6037,6 +6587,12 @@ pub mod linked_workspace {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieve the linked workspace for the account id."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -6108,6 +6664,14 @@ pub mod activity {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieve the activity in the module identified by module name and activity name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `module_name`: The name of module."]
+        #[doc = "* `activity_name`: The name of activity."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -6125,6 +6689,13 @@ pub mod activity {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Retrieve a list of activities in the module identified by module name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `module_name`: The name of module."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_module(
             &self,
             resource_group_name: impl Into<String>,
@@ -6267,6 +6838,13 @@ pub mod module {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieve the module identified by module name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `module_name`: The module name."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -6282,6 +6860,14 @@ pub mod module {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Create or Update the module identified by module name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `module_name`: The name of module."]
+        #[doc = "* `parameters`: The create or update parameters for module."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -6299,6 +6885,14 @@ pub mod module {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Update the module identified by module name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `module_name`: The name of module."]
+        #[doc = "* `parameters`: The update parameters for module."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -6316,6 +6910,13 @@ pub mod module {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Delete the module by name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `module_name`: The module name."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -6331,6 +6932,12 @@ pub mod module {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Retrieve a list of modules."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_automation_account(
             &self,
             resource_group_name: impl Into<String>,
@@ -6653,6 +7260,14 @@ pub mod object_data_types {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieve a list of fields of a given type identified by module name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `module_name`: The name of module."]
+        #[doc = "* `type_name`: The name of type."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_fields_by_module_and_type(
             &self,
             resource_group_name: impl Into<String>,
@@ -6670,6 +7285,13 @@ pub mod object_data_types {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Retrieve a list of fields of a given type across all accessible modules."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `type_name`: The name of type."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_fields_by_type(
             &self,
             resource_group_name: impl Into<String>,
@@ -6788,6 +7410,14 @@ pub mod fields {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieve a list of fields of a given type identified by module name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `module_name`: The name of module."]
+        #[doc = "* `type_name`: The name of type."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_type(
             &self,
             resource_group_name: impl Into<String>,
@@ -6860,6 +7490,13 @@ pub mod schedule {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieve the schedule identified by schedule name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `schedule_name`: The schedule name."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -6875,6 +7512,14 @@ pub mod schedule {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Create a schedule."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `schedule_name`: The schedule name."]
+        #[doc = "* `parameters`: The parameters supplied to the create or update schedule operation."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -6892,6 +7537,14 @@ pub mod schedule {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Update the schedule identified by schedule name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `schedule_name`: The schedule name."]
+        #[doc = "* `parameters`: The parameters supplied to the update schedule operation."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -6909,6 +7562,13 @@ pub mod schedule {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Delete the schedule identified by schedule name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `schedule_name`: The schedule name."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -6924,6 +7584,12 @@ pub mod schedule {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Retrieve a list of schedules."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_automation_account(
             &self,
             resource_group_name: impl Into<String>,
@@ -7246,6 +7912,13 @@ pub mod variable {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieve the variable identified by variable name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `variable_name`: The name of variable."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -7261,6 +7934,14 @@ pub mod variable {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Create a variable."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `variable_name`: The variable name."]
+        #[doc = "* `parameters`: The parameters supplied to the create or update variable operation."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -7278,6 +7959,14 @@ pub mod variable {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Update a variable."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `variable_name`: The variable name."]
+        #[doc = "* `parameters`: The parameters supplied to the update variable operation."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -7295,6 +7984,13 @@ pub mod variable {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Delete the variable."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `variable_name`: The name of variable."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -7310,6 +8006,12 @@ pub mod variable {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Retrieve a list of variables."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_automation_account(
             &self,
             resource_group_name: impl Into<String>,
@@ -7632,6 +8334,13 @@ pub mod watcher {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieve the watcher identified by watcher name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `watcher_name`: The watcher name."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -7647,6 +8356,14 @@ pub mod watcher {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Create the watcher identified by watcher name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `watcher_name`: The watcher name."]
+        #[doc = "* `parameters`: The create or update parameters for watcher."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -7664,6 +8381,14 @@ pub mod watcher {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Update the watcher identified by watcher name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `watcher_name`: The watcher name."]
+        #[doc = "* `parameters`: The update parameters for watcher."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -7681,6 +8406,13 @@ pub mod watcher {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Delete the watcher by name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `watcher_name`: The watcher name."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -7696,6 +8428,13 @@ pub mod watcher {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Resume the watcher identified by watcher name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `watcher_name`: The watcher name."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn start(
             &self,
             resource_group_name: impl Into<String>,
@@ -7711,6 +8450,13 @@ pub mod watcher {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Resume the watcher identified by watcher name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `watcher_name`: The watcher name."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn stop(
             &self,
             resource_group_name: impl Into<String>,
@@ -7726,6 +8472,12 @@ pub mod watcher {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Retrieve a list of watchers."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_automation_account(
             &self,
             resource_group_name: impl Into<String>,
@@ -8080,6 +8832,7 @@ pub mod watcher {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the operation."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -8159,6 +8912,13 @@ pub mod dsc_configuration {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieve the configuration identified by configuration name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `configuration_name`: The configuration name."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -8174,6 +8934,14 @@ pub mod dsc_configuration {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Create the configuration identified by configuration name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `configuration_name`: The create or update parameters for configuration."]
+        #[doc = "* `parameters`: The create or update parameters for configuration."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -8191,6 +8959,13 @@ pub mod dsc_configuration {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Create the configuration identified by configuration name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `configuration_name`: The create or update parameters for configuration."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -8207,6 +8982,13 @@ pub mod dsc_configuration {
                 parameters: None,
             }
         }
+        #[doc = "Delete the dsc configuration identified by configuration name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `configuration_name`: The configuration name."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -8222,6 +9004,13 @@ pub mod dsc_configuration {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Retrieve the configuration script identified by configuration name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `configuration_name`: The configuration name."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get_content(
             &self,
             resource_group_name: impl Into<String>,
@@ -8237,6 +9026,12 @@ pub mod dsc_configuration {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Retrieve a list of configurations."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_automation_account(
             &self,
             resource_group_name: impl Into<String>,
@@ -8387,6 +9182,7 @@ pub mod dsc_configuration {
             pub(crate) parameters: Option<models::DscConfigurationUpdateParameters>,
         }
         impl Builder {
+            #[doc = "The create or update parameters for configuration."]
             pub fn parameters(mut self, parameters: impl Into<models::DscConfigurationUpdateParameters>) -> Self {
                 self.parameters = Some(parameters.into());
                 self
@@ -8555,18 +9351,22 @@ pub mod dsc_configuration {
             pub(crate) inlinecount: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the operation."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "The number of rows to skip."]
             pub fn skip(mut self, skip: i64) -> Self {
                 self.skip = Some(skip);
                 self
             }
+            #[doc = "The number of rows to take."]
             pub fn top(mut self, top: i64) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Return total rows."]
             pub fn inlinecount(mut self, inlinecount: impl Into<String>) -> Self {
                 self.inlinecount = Some(inlinecount.into());
                 self
@@ -8655,6 +9455,13 @@ pub mod job {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieve the job output identified by job name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `job_name`: The name of the job to be created."]
         pub fn get_output(
             &self,
             subscription_id: impl Into<String>,
@@ -8671,6 +9478,13 @@ pub mod job {
                 client_request_id: None,
             }
         }
+        #[doc = "Retrieve the runbook content of the job identified by job name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `job_name`: The job name."]
         pub fn get_runbook_content(
             &self,
             subscription_id: impl Into<String>,
@@ -8687,6 +9501,13 @@ pub mod job {
                 client_request_id: None,
             }
         }
+        #[doc = "Suspend the job identified by job name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `job_name`: The job name."]
         pub fn suspend(
             &self,
             subscription_id: impl Into<String>,
@@ -8703,6 +9524,13 @@ pub mod job {
                 client_request_id: None,
             }
         }
+        #[doc = "Stop the job identified by jobName."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `job_name`: The job name."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn stop(
             &self,
             resource_group_name: impl Into<String>,
@@ -8719,6 +9547,13 @@ pub mod job {
                 client_request_id: None,
             }
         }
+        #[doc = "Retrieve the job identified by job name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `job_name`: The job name."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -8735,6 +9570,14 @@ pub mod job {
                 client_request_id: None,
             }
         }
+        #[doc = "Create a job of the runbook."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `job_name`: The job name."]
+        #[doc = "* `parameters`: The parameters supplied to the create job operation."]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -8753,6 +9596,12 @@ pub mod job {
                 client_request_id: None,
             }
         }
+        #[doc = "Retrieve a list of jobs."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_automation_account(
             &self,
             resource_group_name: impl Into<String>,
@@ -8768,6 +9617,13 @@ pub mod job {
                 client_request_id: None,
             }
         }
+        #[doc = "Resume the job identified by jobName."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `job_name`: The job name."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn resume(
             &self,
             resource_group_name: impl Into<String>,
@@ -8798,6 +9654,7 @@ pub mod job {
             pub(crate) client_request_id: Option<String>,
         }
         impl Builder {
+            #[doc = "Identifies this specific client request."]
             pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
                 self.client_request_id = Some(client_request_id.into());
                 self
@@ -8860,6 +9717,7 @@ pub mod job {
             pub(crate) client_request_id: Option<String>,
         }
         impl Builder {
+            #[doc = "Identifies this specific client request."]
             pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
                 self.client_request_id = Some(client_request_id.into());
                 self
@@ -8915,6 +9773,7 @@ pub mod job {
             pub(crate) client_request_id: Option<String>,
         }
         impl Builder {
+            #[doc = "Identifies this specific client request."]
             pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
                 self.client_request_id = Some(client_request_id.into());
                 self
@@ -8974,6 +9833,7 @@ pub mod job {
             pub(crate) client_request_id: Option<String>,
         }
         impl Builder {
+            #[doc = "Identifies this specific client request."]
             pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
                 self.client_request_id = Some(client_request_id.into());
                 self
@@ -9033,6 +9893,7 @@ pub mod job {
             pub(crate) client_request_id: Option<String>,
         }
         impl Builder {
+            #[doc = "Identifies this specific client request."]
             pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
                 self.client_request_id = Some(client_request_id.into());
                 self
@@ -9096,6 +9957,7 @@ pub mod job {
             pub(crate) client_request_id: Option<String>,
         }
         impl Builder {
+            #[doc = "Identifies this specific client request."]
             pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
                 self.client_request_id = Some(client_request_id.into());
                 self
@@ -9159,10 +10021,12 @@ pub mod job {
             pub(crate) client_request_id: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the operation."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Identifies this specific client request."]
             pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
                 self.client_request_id = Some(client_request_id.into());
                 self
@@ -9253,6 +10117,7 @@ pub mod job {
             pub(crate) client_request_id: Option<String>,
         }
         impl Builder {
+            #[doc = "Identifies this specific client request."]
             pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
                 self.client_request_id = Some(client_request_id.into());
                 self
@@ -9304,6 +10169,14 @@ pub mod job_stream {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieve the job stream identified by job stream id."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `job_name`: The job name."]
+        #[doc = "* `job_stream_id`: The job stream id."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -9322,6 +10195,13 @@ pub mod job_stream {
                 client_request_id: None,
             }
         }
+        #[doc = "Retrieve a list of jobs streams identified by job name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `job_name`: The job name."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_job(
             &self,
             resource_group_name: impl Into<String>,
@@ -9354,6 +10234,7 @@ pub mod job_stream {
             pub(crate) client_request_id: Option<String>,
         }
         impl Builder {
+            #[doc = "Identifies this specific client request."]
             pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
                 self.client_request_id = Some(client_request_id.into());
                 self
@@ -9418,10 +10299,12 @@ pub mod job_stream {
             pub(crate) client_request_id: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the operation."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Identifies this specific client request."]
             pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
                 self.client_request_id = Some(client_request_id.into());
                 self
@@ -9505,6 +10388,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all of the available Automation REST API operations."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -9556,6 +10440,13 @@ pub mod operations {
     }
 }
 impl Client {
+    #[doc = "Post operation to serialize or deserialize GraphRunbookContent"]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+    #[doc = "* `automation_account_name`: The name of the automation account."]
+    #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+    #[doc = "* `parameters`: Input data describing the graphical runbook."]
     pub fn convert_graph_runbook_content(
         &self,
         resource_group_name: impl Into<String>,
@@ -9624,6 +10515,13 @@ pub mod software_update_configurations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get a single software update configuration by name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `software_update_configuration_name`: The name of the software update configuration to be created."]
         pub fn get_by_name(
             &self,
             subscription_id: impl Into<String>,
@@ -9640,6 +10538,14 @@ pub mod software_update_configurations {
                 client_request_id: None,
             }
         }
+        #[doc = "Create a new software update configuration with the name given in the URI."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `software_update_configuration_name`: The name of the software update configuration to be created."]
+        #[doc = "* `parameters`: Request body."]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -9658,6 +10564,13 @@ pub mod software_update_configurations {
                 client_request_id: None,
             }
         }
+        #[doc = "delete a specific software update configuration."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `software_update_configuration_name`: The name of the software update configuration to be created."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -9674,6 +10587,12 @@ pub mod software_update_configurations {
                 client_request_id: None,
             }
         }
+        #[doc = "Get all software update configurations for the account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -9703,6 +10622,7 @@ pub mod software_update_configurations {
             pub(crate) client_request_id: Option<String>,
         }
         impl Builder {
+            #[doc = "Identifies this specific client request."]
             pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
                 self.client_request_id = Some(client_request_id.into());
                 self
@@ -9763,6 +10683,7 @@ pub mod software_update_configurations {
             pub(crate) client_request_id: Option<String>,
         }
         impl Builder {
+            #[doc = "Identifies this specific client request."]
             pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
                 self.client_request_id = Some(client_request_id.into());
                 self
@@ -9828,6 +10749,7 @@ pub mod software_update_configurations {
             pub(crate) client_request_id: Option<String>,
         }
         impl Builder {
+            #[doc = "Identifies this specific client request."]
             pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
                 self.client_request_id = Some(client_request_id.into());
                 self
@@ -9880,10 +10802,12 @@ pub mod software_update_configurations {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "Identifies this specific client request."]
             pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
                 self.client_request_id = Some(client_request_id.into());
                 self
             }
+            #[doc = "The filter to apply on the operation."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -9934,6 +10858,13 @@ pub mod software_update_configuration_runs {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get a single software update configuration Run by Id."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `software_update_configuration_run_id`: The Id of the software update configuration run."]
         pub fn get_by_id(
             &self,
             subscription_id: impl Into<String>,
@@ -9950,6 +10881,12 @@ pub mod software_update_configuration_runs {
                 client_request_id: None,
             }
         }
+        #[doc = "Return list of software update configuration runs"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -9981,6 +10918,7 @@ pub mod software_update_configuration_runs {
             pub(crate) client_request_id: Option<String>,
         }
         impl Builder {
+            #[doc = "Identifies this specific client request."]
             pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
                 self.client_request_id = Some(client_request_id.into());
                 self
@@ -10038,18 +10976,22 @@ pub mod software_update_configuration_runs {
             pub(crate) top: Option<String>,
         }
         impl Builder {
+            #[doc = "Identifies this specific client request."]
             pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
                 self.client_request_id = Some(client_request_id.into());
                 self
             }
+            #[doc = "The filter to apply on the operation. You can use the following filters: 'properties/osType', 'properties/status', 'properties/startTime', and 'properties/softwareUpdateConfiguration/name'"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Number of entries you skip before returning results"]
             pub fn skip(mut self, skip: impl Into<String>) -> Self {
                 self.skip = Some(skip.into());
                 self
             }
+            #[doc = "Maximum number of entries returned in the results collection"]
             pub fn top(mut self, top: impl Into<String>) -> Self {
                 self.top = Some(top.into());
                 self
@@ -10106,6 +11048,13 @@ pub mod software_update_configuration_machine_runs {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get a single software update configuration machine run by Id."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `software_update_configuration_machine_run_id`: The Id of the software update configuration machine run."]
         pub fn get_by_id(
             &self,
             subscription_id: impl Into<String>,
@@ -10122,6 +11071,12 @@ pub mod software_update_configuration_machine_runs {
                 client_request_id: None,
             }
         }
+        #[doc = "Return list of software update configuration machine runs"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -10153,6 +11108,7 @@ pub mod software_update_configuration_machine_runs {
             pub(crate) client_request_id: Option<String>,
         }
         impl Builder {
+            #[doc = "Identifies this specific client request."]
             pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
                 self.client_request_id = Some(client_request_id.into());
                 self
@@ -10210,18 +11166,22 @@ pub mod software_update_configuration_machine_runs {
             pub(crate) top: Option<String>,
         }
         impl Builder {
+            #[doc = "Identifies this specific client request."]
             pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
                 self.client_request_id = Some(client_request_id.into());
                 self
             }
+            #[doc = "The filter to apply on the operation. You can use the following filters: 'properties/osType', 'properties/status', 'properties/startTime', and 'properties/softwareUpdateConfiguration/name'"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "number of entries you skip before returning results"]
             pub fn skip(mut self, skip: impl Into<String>) -> Self {
                 self.skip = Some(skip.into());
                 self
             }
+            #[doc = "Maximum number of entries returned in the results collection"]
             pub fn top(mut self, top: impl Into<String>) -> Self {
                 self.top = Some(top.into());
                 self
@@ -10278,6 +11238,13 @@ pub mod runbook_draft {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieve the content of runbook draft identified by runbook name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `runbook_name`: The runbook name."]
         pub fn get_content(
             &self,
             subscription_id: impl Into<String>,
@@ -10293,6 +11260,14 @@ pub mod runbook_draft {
                 runbook_name: runbook_name.into(),
             }
         }
+        #[doc = "Replaces the runbook draft content."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `runbook_name`: The runbook name."]
+        #[doc = "* `runbook_content`: The\u{a0}runbook\u{a0}draft\u{a0}content."]
         pub fn replace_content(
             &self,
             subscription_id: impl Into<String>,
@@ -10310,6 +11285,13 @@ pub mod runbook_draft {
                 runbook_content: runbook_content.into(),
             }
         }
+        #[doc = "Retrieve the runbook draft identified by runbook name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `runbook_name`: The runbook name."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -10325,6 +11307,13 @@ pub mod runbook_draft {
                 runbook_name: runbook_name.into(),
             }
         }
+        #[doc = "Undo draft edit to last known published state identified by runbook name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `runbook_name`: The runbook name."]
         pub fn undo_edit(
             &self,
             subscription_id: impl Into<String>,
@@ -10550,6 +11539,13 @@ pub mod runbook {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Publish runbook draft."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `runbook_name`: The parameters supplied to the publish runbook operation."]
         pub fn publish(
             &self,
             subscription_id: impl Into<String>,
@@ -10565,6 +11561,13 @@ pub mod runbook {
                 runbook_name: runbook_name.into(),
             }
         }
+        #[doc = "Retrieve the content of runbook identified by runbook name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `runbook_name`: The runbook name."]
         pub fn get_content(
             &self,
             subscription_id: impl Into<String>,
@@ -10580,6 +11583,13 @@ pub mod runbook {
                 runbook_name: runbook_name.into(),
             }
         }
+        #[doc = "Retrieve the runbook identified by runbook name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `runbook_name`: The runbook name."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -10595,6 +11605,14 @@ pub mod runbook {
                 runbook_name: runbook_name.into(),
             }
         }
+        #[doc = "Create the runbook identified by runbook name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `runbook_name`: The runbook name."]
+        #[doc = "* `parameters`: The create or update parameters for runbook. Provide either content link for a published runbook or draft, not both."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -10612,6 +11630,14 @@ pub mod runbook {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Update the runbook identified by runbook name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `runbook_name`: The runbook name."]
+        #[doc = "* `parameters`: The update parameters for runbook."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -10629,6 +11655,13 @@ pub mod runbook {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Delete the runbook by name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `runbook_name`: The runbook name."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -10644,6 +11677,12 @@ pub mod runbook {
                 runbook_name: runbook_name.into(),
             }
         }
+        #[doc = "Retrieve a list of runbooks."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
         pub fn list_by_automation_account(
             &self,
             subscription_id: impl Into<String>,
@@ -11063,6 +12102,14 @@ pub mod test_job_streams {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieve a test job stream of the test job identified by runbook name and stream id."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `runbook_name`: The runbook name."]
+        #[doc = "* `job_stream_id`: The job stream id."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -11080,6 +12127,13 @@ pub mod test_job_streams {
                 job_stream_id: job_stream_id.into(),
             }
         }
+        #[doc = "Retrieve a list of test job streams identified by runbook name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `runbook_name`: The runbook name."]
         pub fn list_by_test_job(
             &self,
             subscription_id: impl Into<String>,
@@ -11158,6 +12212,7 @@ pub mod test_job_streams {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the operation."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -11231,6 +12286,13 @@ pub mod test_job {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieve the test job for the specified runbook."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `runbook_name`: The runbook name."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -11246,6 +12308,14 @@ pub mod test_job {
                 runbook_name: runbook_name.into(),
             }
         }
+        #[doc = "Create a test job of the runbook."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `runbook_name`: The parameters supplied to the create test job operation."]
+        #[doc = "* `parameters`: The parameters supplied to the create test job operation."]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -11263,6 +12333,13 @@ pub mod test_job {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Resume the test job."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `runbook_name`: The runbook name."]
         pub fn resume(
             &self,
             subscription_id: impl Into<String>,
@@ -11278,6 +12355,13 @@ pub mod test_job {
                 runbook_name: runbook_name.into(),
             }
         }
+        #[doc = "Stop the test job."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `runbook_name`: The runbook name."]
         pub fn stop(
             &self,
             subscription_id: impl Into<String>,
@@ -11293,6 +12377,13 @@ pub mod test_job {
                 runbook_name: runbook_name.into(),
             }
         }
+        #[doc = "Suspend the test job."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `runbook_name`: The runbook name."]
         pub fn suspend(
             &self,
             subscription_id: impl Into<String>,
@@ -11542,6 +12633,12 @@ pub mod webhook {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Generates a Uri for use in creating a webhook."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn generate_uri(
             &self,
             resource_group_name: impl Into<String>,
@@ -11555,6 +12652,13 @@ pub mod webhook {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Retrieve the webhook identified by webhook name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `webhook_name`: The webhook name."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -11570,6 +12674,14 @@ pub mod webhook {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Create the webhook identified by webhook name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `webhook_name`: The webhook name."]
+        #[doc = "* `parameters`: The create or update parameters for webhook."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -11587,6 +12699,14 @@ pub mod webhook {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Update the webhook identified by webhook name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `webhook_name`: The webhook name."]
+        #[doc = "* `parameters`: The update parameters for webhook."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -11604,6 +12724,13 @@ pub mod webhook {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Delete the webhook by name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `webhook_name`: The webhook name."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -11619,6 +12746,12 @@ pub mod webhook {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Retrieve a list of webhooks."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_automation_account(
             &self,
             resource_group_name: impl Into<String>,
@@ -11918,6 +13051,7 @@ pub mod webhook {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the operation."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -11997,6 +13131,14 @@ pub mod hybrid_runbook_workers {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieve a hybrid runbook worker."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `hybrid_runbook_worker_group_name`: The hybrid runbook worker group name"]
+        #[doc = "* `hybrid_runbook_worker_id`: The hybrid runbook worker id"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -12014,6 +13156,15 @@ pub mod hybrid_runbook_workers {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Create a hybrid runbook worker."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `hybrid_runbook_worker_group_name`: The hybrid runbook worker group name"]
+        #[doc = "* `hybrid_runbook_worker_id`: The hybrid runbook worker id"]
+        #[doc = "* `hybrid_runbook_worker_creation_parameters`: The create or update parameters for hybrid runbook worker."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create(
             &self,
             resource_group_name: impl Into<String>,
@@ -12033,6 +13184,14 @@ pub mod hybrid_runbook_workers {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Delete a hybrid runbook worker."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `hybrid_runbook_worker_group_name`: The hybrid runbook worker group name"]
+        #[doc = "* `hybrid_runbook_worker_id`: The hybrid runbook worker id"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -12050,6 +13209,15 @@ pub mod hybrid_runbook_workers {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Move a hybrid worker to a different group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `hybrid_runbook_worker_group_name`: The hybrid runbook worker group name"]
+        #[doc = "* `hybrid_runbook_worker_id`: The hybrid runbook worker id"]
+        #[doc = "* `hybrid_runbook_worker_move_parameters`: The hybrid runbook worker move parameters"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn move_(
             &self,
             resource_group_name: impl Into<String>,
@@ -12069,6 +13237,13 @@ pub mod hybrid_runbook_workers {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Retrieve a list of hybrid runbook workers."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of an Azure Resource group."]
+        #[doc = "* `automation_account_name`: The name of the automation account."]
+        #[doc = "* `hybrid_runbook_worker_group_name`: The hybrid runbook worker group name"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_hybrid_runbook_worker_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -12292,6 +13467,7 @@ pub mod hybrid_runbook_workers {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the operation."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self

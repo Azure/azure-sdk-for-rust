@@ -94,6 +94,11 @@ impl Client {
     }
 }
 impl Client {
+    #[doc = "Checks ADU resource name availability."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `subscription_id`: The Azure subscription ID."]
+    #[doc = "* `request`: Check Name Availability Request."]
     pub fn check_name_availability(
         &self,
         subscription_id: impl Into<String>,
@@ -160,12 +165,21 @@ pub mod accounts {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Returns list of Accounts."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Returns list of Accounts."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `subscription_id`: The Azure subscription ID."]
         pub fn list_by_resource_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -177,6 +191,12 @@ pub mod accounts {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Returns account details for the given account name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `subscription_id`: The Azure subscription ID."]
+        #[doc = "* `account_name`: Account name."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -190,6 +210,13 @@ pub mod accounts {
                 account_name: account_name.into(),
             }
         }
+        #[doc = "Creates or updates Account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `subscription_id`: The Azure subscription ID."]
+        #[doc = "* `account_name`: Account name."]
+        #[doc = "* `account`: Account details."]
         pub fn create(
             &self,
             resource_group_name: impl Into<String>,
@@ -205,6 +232,13 @@ pub mod accounts {
                 account: account.into(),
             }
         }
+        #[doc = "Updates account's patchable properties"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `subscription_id`: The Azure subscription ID."]
+        #[doc = "* `account_name`: Account name."]
+        #[doc = "* `account_update_payload`: Updated Account."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -220,6 +254,12 @@ pub mod accounts {
                 account_update_payload: account_update_payload.into(),
             }
         }
+        #[doc = "Deletes account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `subscription_id`: The Azure subscription ID."]
+        #[doc = "* `account_name`: Account name."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -233,6 +273,12 @@ pub mod accounts {
                 account_name: account_name.into(),
             }
         }
+        #[doc = "Checks whether account exists."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `subscription_id`: The Azure subscription ID."]
+        #[doc = "* `account_name`: Account name."]
         pub fn head(
             &self,
             resource_group_name: impl Into<String>,
@@ -677,6 +723,12 @@ pub mod instances {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Returns instances for the given account name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `subscription_id`: The Azure subscription ID."]
+        #[doc = "* `account_name`: Account name."]
         pub fn list_by_account(
             &self,
             resource_group_name: impl Into<String>,
@@ -690,6 +742,13 @@ pub mod instances {
                 account_name: account_name.into(),
             }
         }
+        #[doc = "Returns instance details for the given instance and account name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `subscription_id`: The Azure subscription ID."]
+        #[doc = "* `account_name`: Account name."]
+        #[doc = "* `instance_name`: Instance name."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -705,6 +764,14 @@ pub mod instances {
                 instance_name: instance_name.into(),
             }
         }
+        #[doc = "Creates or updates instance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `subscription_id`: The Azure subscription ID."]
+        #[doc = "* `account_name`: Account name."]
+        #[doc = "* `instance_name`: Instance name."]
+        #[doc = "* `instance`: Instance details."]
         pub fn create(
             &self,
             resource_group_name: impl Into<String>,
@@ -722,6 +789,14 @@ pub mod instances {
                 instance: instance.into(),
             }
         }
+        #[doc = "Updates instance's tags."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `subscription_id`: The Azure subscription ID."]
+        #[doc = "* `account_name`: Account name."]
+        #[doc = "* `instance_name`: Instance name."]
+        #[doc = "* `tag_update_payload`: Updated tags."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -739,6 +814,13 @@ pub mod instances {
                 tag_update_payload: tag_update_payload.into(),
             }
         }
+        #[doc = "Deletes instance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `subscription_id`: The Azure subscription ID."]
+        #[doc = "* `account_name`: Account name."]
+        #[doc = "* `instance_name`: Instance name."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -754,6 +836,13 @@ pub mod instances {
                 instance_name: instance_name.into(),
             }
         }
+        #[doc = "Checks whether instance exists."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `subscription_id`: The Azure subscription ID."]
+        #[doc = "* `account_name`: Account name."]
+        #[doc = "* `instance_name`: Instance name."]
         pub fn head(
             &self,
             resource_group_name: impl Into<String>,
@@ -1128,6 +1217,12 @@ pub mod private_endpoint_connections {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List all private endpoint connections in a device update account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `account_name`: Account name."]
         pub fn list_by_account(
             &self,
             subscription_id: impl Into<String>,
@@ -1141,6 +1236,13 @@ pub mod private_endpoint_connections {
                 account_name: account_name.into(),
             }
         }
+        #[doc = "Get the specified private endpoint connection associated with the device update account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `account_name`: Account name."]
+        #[doc = "* `private_endpoint_connection_name`: The name of the private endpoint connection associated with the Azure resource"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1156,6 +1258,14 @@ pub mod private_endpoint_connections {
                 private_endpoint_connection_name: private_endpoint_connection_name.into(),
             }
         }
+        #[doc = "Update the state of specified private endpoint connection associated with the device update account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `account_name`: Account name."]
+        #[doc = "* `private_endpoint_connection_name`: The name of the private endpoint connection associated with the Azure resource"]
+        #[doc = "* `private_endpoint_connection`: The parameters for creating a private endpoint connection."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -1173,6 +1283,13 @@ pub mod private_endpoint_connections {
                 private_endpoint_connection: private_endpoint_connection.into(),
             }
         }
+        #[doc = "Deletes the specified private endpoint connection associated with the device update account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `account_name`: Account name."]
+        #[doc = "* `private_endpoint_connection_name`: The name of the private endpoint connection associated with the Azure resource"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1395,6 +1512,12 @@ pub mod private_link_resources {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List all private link resources in a device update account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `account_name`: Account name."]
         pub fn list_by_account(
             &self,
             subscription_id: impl Into<String>,
@@ -1408,6 +1531,13 @@ pub mod private_link_resources {
                 account_name: account_name.into(),
             }
         }
+        #[doc = "Get the specified private link resource associated with the device update account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `account_name`: Account name."]
+        #[doc = "* `group_id`: The group ID of the private link resource."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1536,6 +1666,12 @@ pub mod private_endpoint_connection_proxies {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "(INTERNAL - DO NOT USE) List all private endpoint connection proxies in a device update account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `account_name`: Account name."]
         pub fn list_by_account(
             &self,
             subscription_id: impl Into<String>,
@@ -1549,6 +1685,14 @@ pub mod private_endpoint_connection_proxies {
                 account_name: account_name.into(),
             }
         }
+        #[doc = "(INTERNAL - DO NOT USE) Validates a private endpoint connection proxy object."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `account_name`: Account name."]
+        #[doc = "* `private_endpoint_connection_proxy_id`: The ID of the private endpoint connection proxy object."]
+        #[doc = "* `private_endpoint_connection_proxy`: The parameters for creating a private endpoint connection proxy."]
         pub fn validate(
             &self,
             subscription_id: impl Into<String>,
@@ -1566,6 +1710,14 @@ pub mod private_endpoint_connection_proxies {
                 private_endpoint_connection_proxy: private_endpoint_connection_proxy.into(),
             }
         }
+        #[doc = "(INTERNAL - DO NOT USE) Updates a private endpoint inside the private endpoint connection proxy object."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `account_name`: Account name."]
+        #[doc = "* `private_endpoint_connection_proxy_id`: The ID of the private endpoint connection proxy object."]
+        #[doc = "* `private_endpoint_update`: The parameters for updating a private endpoint connection proxy."]
         pub fn update_private_endpoint_properties(
             &self,
             subscription_id: impl Into<String>,
@@ -1583,6 +1735,13 @@ pub mod private_endpoint_connection_proxies {
                 private_endpoint_update: private_endpoint_update.into(),
             }
         }
+        #[doc = "(INTERNAL - DO NOT USE) Get the specified private endpoint connection proxy associated with the device update account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `account_name`: Account name."]
+        #[doc = "* `private_endpoint_connection_proxy_id`: The ID of the private endpoint connection proxy object."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1598,6 +1757,14 @@ pub mod private_endpoint_connection_proxies {
                 private_endpoint_connection_proxy_id: private_endpoint_connection_proxy_id.into(),
             }
         }
+        #[doc = "(INTERNAL - DO NOT USE) Creates or updates the specified private endpoint connection proxy resource associated with the device update account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `account_name`: Account name."]
+        #[doc = "* `private_endpoint_connection_proxy_id`: The ID of the private endpoint connection proxy object."]
+        #[doc = "* `private_endpoint_connection_proxy`: The parameters for creating a private endpoint connection proxy."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -1615,6 +1782,13 @@ pub mod private_endpoint_connection_proxies {
                 private_endpoint_connection_proxy: private_endpoint_connection_proxy.into(),
             }
         }
+        #[doc = "(INTERNAL - DO NOT USE) Deletes the specified private endpoint connection proxy associated with the device update account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `account_name`: Account name."]
+        #[doc = "* `private_endpoint_connection_proxy_id`: The ID of the private endpoint connection proxy object."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1921,6 +2095,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Returns list of operations for Microsoft.DeviceUpdate resource provider."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }

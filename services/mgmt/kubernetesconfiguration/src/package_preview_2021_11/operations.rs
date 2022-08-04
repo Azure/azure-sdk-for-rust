@@ -109,6 +109,15 @@ pub mod extensions {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets Kubernetes Cluster Extension."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `cluster_rp`: The Kubernetes cluster RP - either Microsoft.ContainerService (for AKS clusters) or Microsoft.Kubernetes (for OnPrem K8S clusters)."]
+        #[doc = "* `cluster_resource_name`: The Kubernetes cluster resource name - either managedClusters (for AKS clusters) or connectedClusters (for OnPrem K8S clusters)."]
+        #[doc = "* `cluster_name`: The name of the kubernetes cluster."]
+        #[doc = "* `extension_name`: Name of the Extension."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -128,6 +137,16 @@ pub mod extensions {
                 extension_name: extension_name.into(),
             }
         }
+        #[doc = "Create a new Kubernetes Cluster Extension."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `cluster_rp`: The Kubernetes cluster RP - either Microsoft.ContainerService (for AKS clusters) or Microsoft.Kubernetes (for OnPrem K8S clusters)."]
+        #[doc = "* `cluster_resource_name`: The Kubernetes cluster resource name - either managedClusters (for AKS clusters) or connectedClusters (for OnPrem K8S clusters)."]
+        #[doc = "* `cluster_name`: The name of the kubernetes cluster."]
+        #[doc = "* `extension_name`: Name of the Extension."]
+        #[doc = "* `extension`: Properties necessary to Create an Extension."]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -149,6 +168,16 @@ pub mod extensions {
                 extension: extension.into(),
             }
         }
+        #[doc = "Patch an existing Kubernetes Cluster Extension."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `cluster_rp`: The Kubernetes cluster RP - either Microsoft.ContainerService (for AKS clusters) or Microsoft.Kubernetes (for OnPrem K8S clusters)."]
+        #[doc = "* `cluster_resource_name`: The Kubernetes cluster resource name - either managedClusters (for AKS clusters) or connectedClusters (for OnPrem K8S clusters)."]
+        #[doc = "* `cluster_name`: The name of the kubernetes cluster."]
+        #[doc = "* `extension_name`: Name of the Extension."]
+        #[doc = "* `patch_extension`: Properties to Patch in an existing Extension."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -170,6 +199,15 @@ pub mod extensions {
                 patch_extension: patch_extension.into(),
             }
         }
+        #[doc = "Delete a Kubernetes Cluster Extension. This will cause the Agent to Uninstall the extension from the cluster."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `cluster_rp`: The Kubernetes cluster RP - either Microsoft.ContainerService (for AKS clusters) or Microsoft.Kubernetes (for OnPrem K8S clusters)."]
+        #[doc = "* `cluster_resource_name`: The Kubernetes cluster resource name - either managedClusters (for AKS clusters) or connectedClusters (for OnPrem K8S clusters)."]
+        #[doc = "* `cluster_name`: The name of the kubernetes cluster."]
+        #[doc = "* `extension_name`: Name of the Extension."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -190,6 +228,14 @@ pub mod extensions {
                 force_delete: None,
             }
         }
+        #[doc = "List all Extensions in the cluster."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `cluster_rp`: The Kubernetes cluster RP - either Microsoft.ContainerService (for AKS clusters) or Microsoft.Kubernetes (for OnPrem K8S clusters)."]
+        #[doc = "* `cluster_resource_name`: The Kubernetes cluster resource name - either managedClusters (for AKS clusters) or connectedClusters (for OnPrem K8S clusters)."]
+        #[doc = "* `cluster_name`: The name of the kubernetes cluster."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -390,6 +436,7 @@ pub mod extensions {
             pub(crate) force_delete: Option<bool>,
         }
         impl Builder {
+            #[doc = "Delete the extension resource in Azure - not the normal asynchronous delete."]
             pub fn force_delete(mut self, force_delete: bool) -> Self {
                 self.force_delete = Some(force_delete);
                 self
@@ -512,6 +559,16 @@ pub mod operation_status {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get Async Operation status"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `cluster_rp`: The Kubernetes cluster RP - either Microsoft.ContainerService (for AKS clusters) or Microsoft.Kubernetes (for OnPrem K8S clusters)."]
+        #[doc = "* `cluster_resource_name`: The Kubernetes cluster resource name - either managedClusters (for AKS clusters) or connectedClusters (for OnPrem K8S clusters)."]
+        #[doc = "* `cluster_name`: The name of the kubernetes cluster."]
+        #[doc = "* `extension_name`: Name of the Extension."]
+        #[doc = "* `operation_id`: operation Id"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -533,6 +590,14 @@ pub mod operation_status {
                 operation_id: operation_id.into(),
             }
         }
+        #[doc = "List Async Operations, currently in progress, in a cluster"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `cluster_rp`: The Kubernetes cluster RP - either Microsoft.ContainerService (for AKS clusters) or Microsoft.Kubernetes (for OnPrem K8S clusters)."]
+        #[doc = "* `cluster_resource_name`: The Kubernetes cluster resource name - either managedClusters (for AKS clusters) or connectedClusters (for OnPrem K8S clusters)."]
+        #[doc = "* `cluster_name`: The name of the kubernetes cluster."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -680,6 +745,15 @@ pub mod cluster_extension_type {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get Extension Type details"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `cluster_rp`: The Kubernetes cluster RP - either Microsoft.ContainerService (for AKS clusters) or Microsoft.Kubernetes (for OnPrem K8S clusters)."]
+        #[doc = "* `cluster_resource_name`: The Kubernetes cluster resource name - either managedClusters (for AKS clusters) or connectedClusters (for OnPrem K8S clusters)."]
+        #[doc = "* `cluster_name`: The name of the kubernetes cluster."]
+        #[doc = "* `extension_type_name`: Extension type name"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -754,6 +828,14 @@ pub mod cluster_extension_types {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get Extension Types"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `cluster_rp`: The Kubernetes cluster RP - either Microsoft.ContainerService (for AKS clusters) or Microsoft.Kubernetes (for OnPrem K8S clusters)."]
+        #[doc = "* `cluster_resource_name`: The Kubernetes cluster resource name - either managedClusters (for AKS clusters) or connectedClusters (for OnPrem K8S clusters)."]
+        #[doc = "* `cluster_name`: The name of the kubernetes cluster."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -851,6 +933,12 @@ pub mod extension_type_versions {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List available versions for an Extension Type"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `location`: extension location"]
+        #[doc = "* `extension_type_name`: Extension type name"]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -948,6 +1036,11 @@ pub mod location_extension_types {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List all Extension Types"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `location`: extension location"]
         pub fn list(&self, subscription_id: impl Into<String>, location: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -1037,6 +1130,15 @@ pub mod source_control_configurations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets details of the Source Control Configuration."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `cluster_rp`: The Kubernetes cluster RP - either Microsoft.ContainerService (for AKS clusters) or Microsoft.Kubernetes (for OnPrem K8S clusters)."]
+        #[doc = "* `cluster_resource_name`: The Kubernetes cluster resource name - either managedClusters (for AKS clusters) or connectedClusters (for OnPrem K8S clusters)."]
+        #[doc = "* `cluster_name`: The name of the kubernetes cluster."]
+        #[doc = "* `source_control_configuration_name`: Name of the Source Control Configuration."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1056,6 +1158,16 @@ pub mod source_control_configurations {
                 source_control_configuration_name: source_control_configuration_name.into(),
             }
         }
+        #[doc = "Create a new Kubernetes Source Control Configuration."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `cluster_rp`: The Kubernetes cluster RP - either Microsoft.ContainerService (for AKS clusters) or Microsoft.Kubernetes (for OnPrem K8S clusters)."]
+        #[doc = "* `cluster_resource_name`: The Kubernetes cluster resource name - either managedClusters (for AKS clusters) or connectedClusters (for OnPrem K8S clusters)."]
+        #[doc = "* `cluster_name`: The name of the kubernetes cluster."]
+        #[doc = "* `source_control_configuration_name`: Name of the Source Control Configuration."]
+        #[doc = "* `source_control_configuration`: Properties necessary to Create KubernetesConfiguration."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -1077,6 +1189,15 @@ pub mod source_control_configurations {
                 source_control_configuration: source_control_configuration.into(),
             }
         }
+        #[doc = "This will delete the YAML file used to set up the Source control configuration, thus stopping future sync from the source repo."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `cluster_rp`: The Kubernetes cluster RP - either Microsoft.ContainerService (for AKS clusters) or Microsoft.Kubernetes (for OnPrem K8S clusters)."]
+        #[doc = "* `cluster_resource_name`: The Kubernetes cluster resource name - either managedClusters (for AKS clusters) or connectedClusters (for OnPrem K8S clusters)."]
+        #[doc = "* `cluster_name`: The name of the kubernetes cluster."]
+        #[doc = "* `source_control_configuration_name`: Name of the Source Control Configuration."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1096,6 +1217,14 @@ pub mod source_control_configurations {
                 source_control_configuration_name: source_control_configuration_name.into(),
             }
         }
+        #[doc = "List all Source Control Configurations."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `cluster_rp`: The Kubernetes cluster RP - either Microsoft.ContainerService (for AKS clusters) or Microsoft.Kubernetes (for OnPrem K8S clusters)."]
+        #[doc = "* `cluster_resource_name`: The Kubernetes cluster resource name - either managedClusters (for AKS clusters) or connectedClusters (for OnPrem K8S clusters)."]
+        #[doc = "* `cluster_name`: The name of the kubernetes cluster."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -1353,6 +1482,15 @@ pub mod flux_configurations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets details of the Flux Configuration."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `cluster_rp`: The Kubernetes cluster RP - either Microsoft.ContainerService (for AKS clusters) or Microsoft.Kubernetes (for OnPrem K8S clusters)."]
+        #[doc = "* `cluster_resource_name`: The Kubernetes cluster resource name - either managedClusters (for AKS clusters) or connectedClusters (for OnPrem K8S clusters)."]
+        #[doc = "* `cluster_name`: The name of the kubernetes cluster."]
+        #[doc = "* `flux_configuration_name`: Name of the Flux Configuration."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1372,6 +1510,16 @@ pub mod flux_configurations {
                 flux_configuration_name: flux_configuration_name.into(),
             }
         }
+        #[doc = "Create a new Kubernetes Flux Configuration."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `cluster_rp`: The Kubernetes cluster RP - either Microsoft.ContainerService (for AKS clusters) or Microsoft.Kubernetes (for OnPrem K8S clusters)."]
+        #[doc = "* `cluster_resource_name`: The Kubernetes cluster resource name - either managedClusters (for AKS clusters) or connectedClusters (for OnPrem K8S clusters)."]
+        #[doc = "* `cluster_name`: The name of the kubernetes cluster."]
+        #[doc = "* `flux_configuration_name`: Name of the Flux Configuration."]
+        #[doc = "* `flux_configuration`: Properties necessary to Create a FluxConfiguration."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -1393,6 +1541,16 @@ pub mod flux_configurations {
                 flux_configuration: flux_configuration.into(),
             }
         }
+        #[doc = "Update an existing Kubernetes Flux Configuration."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `cluster_rp`: The Kubernetes cluster RP - either Microsoft.ContainerService (for AKS clusters) or Microsoft.Kubernetes (for OnPrem K8S clusters)."]
+        #[doc = "* `cluster_resource_name`: The Kubernetes cluster resource name - either managedClusters (for AKS clusters) or connectedClusters (for OnPrem K8S clusters)."]
+        #[doc = "* `cluster_name`: The name of the kubernetes cluster."]
+        #[doc = "* `flux_configuration_name`: Name of the Flux Configuration."]
+        #[doc = "* `flux_configuration_patch`: Properties to Patch in an existing Flux Configuration."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -1414,6 +1572,15 @@ pub mod flux_configurations {
                 flux_configuration_patch: flux_configuration_patch.into(),
             }
         }
+        #[doc = "This will delete the YAML file used to set up the Flux Configuration, thus stopping future sync from the source repo."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `cluster_rp`: The Kubernetes cluster RP - either Microsoft.ContainerService (for AKS clusters) or Microsoft.Kubernetes (for OnPrem K8S clusters)."]
+        #[doc = "* `cluster_resource_name`: The Kubernetes cluster resource name - either managedClusters (for AKS clusters) or connectedClusters (for OnPrem K8S clusters)."]
+        #[doc = "* `cluster_name`: The name of the kubernetes cluster."]
+        #[doc = "* `flux_configuration_name`: Name of the Flux Configuration."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1434,6 +1601,14 @@ pub mod flux_configurations {
                 force_delete: None,
             }
         }
+        #[doc = "List all Flux Configurations."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `cluster_rp`: The Kubernetes cluster RP - either Microsoft.ContainerService (for AKS clusters) or Microsoft.Kubernetes (for OnPrem K8S clusters)."]
+        #[doc = "* `cluster_resource_name`: The Kubernetes cluster resource name - either managedClusters (for AKS clusters) or connectedClusters (for OnPrem K8S clusters)."]
+        #[doc = "* `cluster_name`: The name of the kubernetes cluster."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -1634,6 +1809,7 @@ pub mod flux_configurations {
             pub(crate) force_delete: Option<bool>,
         }
         impl Builder {
+            #[doc = "Delete the extension resource in Azure - not the normal asynchronous delete."]
             pub fn force_delete(mut self, force_delete: bool) -> Self {
                 self.force_delete = Some(force_delete);
                 self
@@ -1756,6 +1932,16 @@ pub mod flux_config_operation_status {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get Async Operation status"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `cluster_rp`: The Kubernetes cluster RP - either Microsoft.ContainerService (for AKS clusters) or Microsoft.Kubernetes (for OnPrem K8S clusters)."]
+        #[doc = "* `cluster_resource_name`: The Kubernetes cluster resource name - either managedClusters (for AKS clusters) or connectedClusters (for OnPrem K8S clusters)."]
+        #[doc = "* `cluster_name`: The name of the kubernetes cluster."]
+        #[doc = "* `flux_configuration_name`: Name of the Flux Configuration."]
+        #[doc = "* `operation_id`: operation Id"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1833,6 +2019,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List all the available operations the KubernetesConfiguration resource provider supports."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }

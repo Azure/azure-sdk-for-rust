@@ -108,6 +108,7 @@ pub mod operations {
             pub(crate) skip_token: Option<String>,
         }
         impl Builder {
+            #[doc = "A skip token is used to continue retrieving items after an operation returns a partial result. If a previous response contains a nextLink element, the value of the nextLink element will include a skipToken parameter that specifies a starting point to use for subsequent calls."]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());
                 self
@@ -183,6 +184,11 @@ pub mod resource_changes {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "List the changes of a resource within the specified time range. Customer data will be masked if the user doesn't have access."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_id`: The identifier of the resource."]
+        #[doc = "* `start_time`: Specifies the start time of the changes request."]
+        #[doc = "* `end_time`: Specifies the end time of the changes request."]
         pub fn list(&self, resource_id: impl Into<String>, start_time: impl Into<String>, end_time: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -207,10 +213,12 @@ pub mod resource_changes {
             pub(crate) scan_latest: Option<bool>,
         }
         impl Builder {
+            #[doc = "A skip token is used to continue retrieving items after an operation returns a partial result. If a previous response contains a nextLink element, the value of the nextLink element will include a skipToken parameter that specifies a starting point to use for subsequent calls."]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());
                 self
             }
+            #[doc = "Specifies whether to scan latest"]
             pub fn scan_latest(mut self, scan_latest: bool) -> Self {
                 self.scan_latest = Some(scan_latest);
                 self
@@ -297,6 +305,12 @@ pub mod changes {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "List the changes of a resource group within the specified time range. Customer data will always be masked."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `start_time`: Specifies the start time of the changes request."]
+        #[doc = "* `end_time`: Specifies the end time of the changes request."]
         pub fn list_changes_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -315,6 +329,11 @@ pub mod changes {
             }
         }
         #[doc = "List the changes of a subscription within the specified time range. Customer data will always be masked."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `start_time`: Specifies the start time of the changes request."]
+        #[doc = "* `end_time`: Specifies the end time of the changes request."]
         pub fn list_changes_by_subscription(
             &self,
             subscription_id: impl Into<String>,
@@ -345,10 +364,12 @@ pub mod changes {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "A skip token is used to continue retrieving items after an operation returns a partial result. If a previous response contains a nextLink element, the value of the nextLink element will include a skipToken parameter that specifies a starting point to use for subsequent calls."]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());
                 self
             }
+            #[doc = "Reduces the set of data collected.<br>This argument is not required. Only accepts 'resourceId' and 'resourceType' and only accepts the following patterns. <br>- *List changes for a resource type*: $filter=resourceType eq 'microsoft.web/sites'.<br>- *List changes for multiple resource types:* $filter=resourceType eq 'microsoft.web/sites,microsoft.compute/virtualmachines'.<br> - *List changes for a resource Id*: $filter=resourceId eq '{resourceId}'.<br>- *List changes for multiple resource Ids:* $filter=resourceId eq '{resourceId1},{resourceId2}}'."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -442,10 +463,12 @@ pub mod changes {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "A skip token is used to continue retrieving items after an operation returns a partial result. If a previous response contains a nextLink element, the value of the nextLink element will include a skipToken parameter that specifies a starting point to use for subsequent calls."]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());
                 self
             }
+            #[doc = "Reduces the set of data collected.<br>This argument is not required. Only accepts 'resourceId' and 'resourceType' and only accepts the following patterns. <br>- *List changes for a resource type*: $filter=resourceType eq 'microsoft.web/sites'.<br>- *List changes for multiple resource types:* $filter=resourceType eq 'microsoft.web/sites,microsoft.compute/virtualmachines'.<br> - *List changes for a resource Id*: $filter=resourceId eq '{resourceId}'.<br>- *List changes for multiple resource Ids:* $filter=resourceId eq '{resourceId1},{resourceId2}}'."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -531,6 +554,11 @@ pub mod change_snapshots {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets change snapshots for the given resource Id and change Id."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_id`: Specifies the resource Id."]
+        #[doc = "* `change_id`: Specifies the change Id."]
         pub fn get_change_snapshots(
             &self,
             subscription_id: impl Into<String>,

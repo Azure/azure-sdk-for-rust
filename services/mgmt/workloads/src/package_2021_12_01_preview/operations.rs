@@ -109,12 +109,21 @@ pub mod php_workloads {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists PHP workload resources for a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists PHP workload resources in a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -126,6 +135,12 @@ pub mod php_workloads {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Gets the PHP workload resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `php_workload_name`: Php workload name"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -139,6 +154,13 @@ pub mod php_workloads {
                 php_workload_name: php_workload_name.into(),
             }
         }
+        #[doc = "Create or updated PHP workload resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `php_workload_name`: Php workload name"]
+        #[doc = "* `php_workload_resource`: Resource create or update request payload"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -154,6 +176,13 @@ pub mod php_workloads {
                 php_workload_resource: php_workload_resource.into(),
             }
         }
+        #[doc = "Update PHP workload resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `php_workload_name`: Php workload name"]
+        #[doc = "* `resource_patch_request_body`: Workload resource update data"]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -169,6 +198,12 @@ pub mod php_workloads {
                 resource_patch_request_body: resource_patch_request_body.into(),
             }
         }
+        #[doc = "Delete PHP workload resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `php_workload_name`: Php workload name"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -521,6 +556,7 @@ pub mod php_workloads {
             pub(crate) delete_infra: Option<String>,
         }
         impl Builder {
+            #[doc = "Whether to delete infra along with workload resource."]
             pub fn delete_infra(mut self, delete_infra: impl Into<String>) -> Self {
                 self.delete_infra = Some(delete_infra.into());
                 self
@@ -573,6 +609,12 @@ pub mod wordpress_instances {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists WordPress instance resources under a phpWorkload resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `php_workload_name`: Php workload name"]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -586,6 +628,12 @@ pub mod wordpress_instances {
                 php_workload_name: php_workload_name.into(),
             }
         }
+        #[doc = "Gets the WordPress instance resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `php_workload_name`: Php workload name"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -599,6 +647,13 @@ pub mod wordpress_instances {
                 php_workload_name: php_workload_name.into(),
             }
         }
+        #[doc = "Create or updated WordPress instance resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `php_workload_name`: Php workload name"]
+        #[doc = "* `wordpress_instance_resource`: Resource create or update request payload"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -614,6 +669,12 @@ pub mod wordpress_instances {
                 wordpress_instance_resource: wordpress_instance_resource.into(),
             }
         }
+        #[doc = "Delete WordPress instance resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `php_workload_name`: Php workload name"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -859,6 +920,11 @@ pub mod wordpress_instances {
     }
 }
 impl Client {
+    #[doc = "Get SAP sizing recommendations."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `subscription_id`: The ID of the target subscription."]
+    #[doc = "* `location`: The name of Azure region."]
     pub fn sap_sizing_recommendations(
         &self,
         subscription_id: impl Into<String>,
@@ -871,6 +937,11 @@ impl Client {
             sap_sizing_recommendation: None,
         }
     }
+    #[doc = "Get SAP supported SKUs."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `subscription_id`: The ID of the target subscription."]
+    #[doc = "* `location`: The name of Azure region."]
     pub fn sap_supported_sku(&self, subscription_id: impl Into<String>, location: impl Into<String>) -> sap_supported_sku::Builder {
         sap_supported_sku::Builder {
             client: self.clone(),
@@ -879,6 +950,11 @@ impl Client {
             sap_supported_sku: None,
         }
     }
+    #[doc = "Get SAP Disk Configurations."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `subscription_id`: The ID of the target subscription."]
+    #[doc = "* `location`: The name of Azure region."]
     pub fn sap_disk_configurations(
         &self,
         subscription_id: impl Into<String>,
@@ -891,6 +967,11 @@ impl Client {
             sap_disk_configurations: None,
         }
     }
+    #[doc = "Get SAP Availability Zone Details."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `subscription_id`: The ID of the target subscription."]
+    #[doc = "* `location`: The name of Azure region."]
     pub fn sap_availability_zone_details(
         &self,
         subscription_id: impl Into<String>,
@@ -915,6 +996,7 @@ pub mod sap_sizing_recommendations {
         pub(crate) sap_sizing_recommendation: Option<models::SapSizingRecommendationRequest>,
     }
     impl Builder {
+        #[doc = "SAP Sizing Recommendation Request body"]
         pub fn sap_sizing_recommendation(mut self, sap_sizing_recommendation: impl Into<models::SapSizingRecommendationRequest>) -> Self {
             self.sap_sizing_recommendation = Some(sap_sizing_recommendation.into());
             self
@@ -970,6 +1052,7 @@ pub mod sap_supported_sku {
         pub(crate) sap_supported_sku: Option<models::SapSupportedSkusRequest>,
     }
     impl Builder {
+        #[doc = "SAP Supported SKU Request body"]
         pub fn sap_supported_sku(mut self, sap_supported_sku: impl Into<models::SapSupportedSkusRequest>) -> Self {
             self.sap_supported_sku = Some(sap_supported_sku.into());
             self
@@ -1025,6 +1108,7 @@ pub mod sap_disk_configurations {
         pub(crate) sap_disk_configurations: Option<models::SapDiskConfigurationsRequest>,
     }
     impl Builder {
+        #[doc = "SAP Disk Configurations Request body"]
         pub fn sap_disk_configurations(mut self, sap_disk_configurations: impl Into<models::SapDiskConfigurationsRequest>) -> Self {
             self.sap_disk_configurations = Some(sap_disk_configurations.into());
             self
@@ -1080,6 +1164,7 @@ pub mod sap_availability_zone_details {
         pub(crate) sap_availability_zone_details: Option<models::SapAvailabilityZoneDetailsRequest>,
     }
     impl Builder {
+        #[doc = "SAP Availability Zone Details Request body"]
         pub fn sap_availability_zone_details(
             mut self,
             sap_availability_zone_details: impl Into<models::SapAvailabilityZoneDetailsRequest>,
@@ -1131,6 +1216,12 @@ pub mod sap_virtual_instances {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets an Virtual Instance for SAP."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `sap_virtual_instance_name`: The name of the Virtual Instances for SAP."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1144,6 +1235,12 @@ pub mod sap_virtual_instances {
                 sap_virtual_instance_name: sap_virtual_instance_name.into(),
             }
         }
+        #[doc = "Creates an Virtual Instance for SAP."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `sap_virtual_instance_name`: The name of the Virtual Instances for SAP."]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -1158,6 +1255,12 @@ pub mod sap_virtual_instances {
                 body: None,
             }
         }
+        #[doc = "Updates an Virtual Instance for SAP."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `sap_virtual_instance_name`: The name of the Virtual Instances for SAP."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -1172,6 +1275,12 @@ pub mod sap_virtual_instances {
                 body: None,
             }
         }
+        #[doc = "Deletes an Virtual Instance for SAP."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `sap_virtual_instance_name`: The name of the Virtual Instances for SAP."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1185,6 +1294,11 @@ pub mod sap_virtual_instances {
                 sap_virtual_instance_name: sap_virtual_instance_name.into(),
             }
         }
+        #[doc = "Gets all Virtual Instances for SAP in a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -1196,12 +1310,22 @@ pub mod sap_virtual_instances {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Gets all Virtual Instances for SAP in the subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Starts the SAP System."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `sap_virtual_instance_name`: The name of the Virtual Instances for SAP."]
         pub fn start(
             &self,
             subscription_id: impl Into<String>,
@@ -1215,6 +1339,12 @@ pub mod sap_virtual_instances {
                 sap_virtual_instance_name: sap_virtual_instance_name.into(),
             }
         }
+        #[doc = "Stops the SAP System."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `sap_virtual_instance_name`: The name of the Virtual Instances for SAP."]
         pub fn stop(
             &self,
             subscription_id: impl Into<String>,
@@ -1298,6 +1428,7 @@ pub mod sap_virtual_instances {
             pub(crate) body: Option<models::SapVirtualInstance>,
         }
         impl Builder {
+            #[doc = "The Virtual Instance for SAP request body."]
             pub fn body(mut self, body: impl Into<models::SapVirtualInstance>) -> Self {
                 self.body = Some(body.into());
                 self
@@ -1366,6 +1497,7 @@ pub mod sap_virtual_instances {
             pub(crate) body: Option<models::UpdateSapVirtualInstanceRequest>,
         }
         impl Builder {
+            #[doc = "The Update Virtual Instance for SAP request body."]
             pub fn body(mut self, body: impl Into<models::UpdateSapVirtualInstanceRequest>) -> Self {
                 self.body = Some(body.into());
                 self
@@ -1701,6 +1833,7 @@ pub mod sap_virtual_instances {
             pub(crate) body: Option<models::StopRequest>,
         }
         impl Builder {
+            #[doc = "The Virtual Instances for SAP stop request body."]
             pub fn body(mut self, body: impl Into<models::StopRequest>) -> Self {
                 self.body = Some(body.into());
                 self
@@ -1758,6 +1891,13 @@ pub mod sap_central_instances {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the SAP Central Instance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `sap_virtual_instance_name`: The name of the Virtual Instances for SAP."]
+        #[doc = "* `central_instance_name`: Central Instance name string modeled as parameter for auto generation to work correctly."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1773,6 +1913,13 @@ pub mod sap_central_instances {
                 central_instance_name: central_instance_name.into(),
             }
         }
+        #[doc = "Puts the SAP Central Instance. <br><br>This will be used by service only. PUT by end user will return a Bad Request error."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `sap_virtual_instance_name`: The name of the Virtual Instances for SAP."]
+        #[doc = "* `central_instance_name`: Central Instance name string modeled as parameter for auto generation to work correctly."]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -1789,6 +1936,13 @@ pub mod sap_central_instances {
                 body: None,
             }
         }
+        #[doc = "Updates the SAP Central Instance. <br><br>This can be used to update tags."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `sap_virtual_instance_name`: The name of the Virtual Instances for SAP."]
+        #[doc = "* `central_instance_name`: Central Instance name string modeled as parameter for auto generation to work correctly."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -1805,6 +1959,13 @@ pub mod sap_central_instances {
                 body: None,
             }
         }
+        #[doc = "Deletes the SAP Central Instance. <br><br>This will be used by service only. Delete by end user will return a Bad Request error."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `sap_virtual_instance_name`: The name of the Virtual Instances for SAP."]
+        #[doc = "* `central_instance_name`: Central Instance name string modeled as parameter for auto generation to work correctly."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1820,6 +1981,12 @@ pub mod sap_central_instances {
                 central_instance_name: central_instance_name.into(),
             }
         }
+        #[doc = "Lists the SAP Central Instances in an SVI."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `sap_virtual_instance_name`: The name of the Virtual Instances for SAP."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -1898,6 +2065,7 @@ pub mod sap_central_instances {
             pub(crate) body: Option<models::SapCentralServerInstance>,
         }
         impl Builder {
+            #[doc = "The SAP Central Server instance request body."]
             pub fn body(mut self, body: impl Into<models::SapCentralServerInstance>) -> Self {
                 self.body = Some(body.into());
                 self
@@ -1965,6 +2133,7 @@ pub mod sap_central_instances {
             pub(crate) body: Option<models::UpdateSapCentralInstanceRequest>,
         }
         impl Builder {
+            #[doc = "The SAP Central Server instance request body."]
             pub fn body(mut self, body: impl Into<models::UpdateSapCentralInstanceRequest>) -> Self {
                 self.body = Some(body.into());
                 self
@@ -2153,6 +2322,13 @@ pub mod sap_database_instances {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the SAP Database Instance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `sap_virtual_instance_name`: The name of the Virtual Instances for SAP."]
+        #[doc = "* `database_instance_name`: Database Instance string modeled as parameter for auto generation to work correctly."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -2168,6 +2344,13 @@ pub mod sap_database_instances {
                 database_instance_name: database_instance_name.into(),
             }
         }
+        #[doc = "Puts the SAP Database Instance. <br><br>This will be used by service only. PUT by end user will return a Bad Request error."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `sap_virtual_instance_name`: The name of the Virtual Instances for SAP."]
+        #[doc = "* `database_instance_name`: Database Instance string modeled as parameter for auto generation to work correctly."]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -2184,6 +2367,13 @@ pub mod sap_database_instances {
                 body: None,
             }
         }
+        #[doc = "Puts the SAP Database Instance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `sap_virtual_instance_name`: The name of the Virtual Instances for SAP."]
+        #[doc = "* `database_instance_name`: Database Instance string modeled as parameter for auto generation to work correctly."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -2200,6 +2390,13 @@ pub mod sap_database_instances {
                 body: None,
             }
         }
+        #[doc = "Deletes the SAP Database Instance. <br><br>This will be used by service only. Delete by end user will return a Bad Request error."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `sap_virtual_instance_name`: The name of the Virtual Instances for SAP."]
+        #[doc = "* `database_instance_name`: Database Instance string modeled as parameter for auto generation to work correctly."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -2215,6 +2412,12 @@ pub mod sap_database_instances {
                 database_instance_name: database_instance_name.into(),
             }
         }
+        #[doc = "Lists the SAP Database Instances in an SVI."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `sap_virtual_instance_name`: The name of the Virtual Instances for SAP."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -2293,6 +2496,7 @@ pub mod sap_database_instances {
             pub(crate) body: Option<models::SapDatabaseInstance>,
         }
         impl Builder {
+            #[doc = "The SAP Database Server instance request body."]
             pub fn body(mut self, body: impl Into<models::SapDatabaseInstance>) -> Self {
                 self.body = Some(body.into());
                 self
@@ -2360,6 +2564,7 @@ pub mod sap_database_instances {
             pub(crate) body: Option<models::UpdateSapDatabaseInstanceRequest>,
         }
         impl Builder {
+            #[doc = "The SAP Database Server instance request body."]
             pub fn body(mut self, body: impl Into<models::UpdateSapDatabaseInstanceRequest>) -> Self {
                 self.body = Some(body.into());
                 self
@@ -2548,6 +2753,13 @@ pub mod sap_application_server_instances {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the SAP Application Server Instance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `sap_virtual_instance_name`: The name of the Virtual Instances for SAP."]
+        #[doc = "* `application_instance_name`: The name of SAP Application Server instance."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -2563,6 +2775,13 @@ pub mod sap_application_server_instances {
                 application_instance_name: application_instance_name.into(),
             }
         }
+        #[doc = "Puts the SAP Application Server Instance. <br><br>This will be used by service only. PUT by end user will return a Bad Request error."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `sap_virtual_instance_name`: The name of the Virtual Instances for SAP."]
+        #[doc = "* `application_instance_name`: The name of SAP Application Server instance."]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -2579,6 +2798,13 @@ pub mod sap_application_server_instances {
                 body: None,
             }
         }
+        #[doc = "Puts the SAP Application Server Instance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `sap_virtual_instance_name`: The name of the Virtual Instances for SAP."]
+        #[doc = "* `application_instance_name`: The name of SAP Application Server instance."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -2595,6 +2821,13 @@ pub mod sap_application_server_instances {
                 body: None,
             }
         }
+        #[doc = "Deletes the SAP Application Server Instance. <br><br>This operation will be used by service only. Delete by end user will return a Bad Request error."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `sap_virtual_instance_name`: The name of the Virtual Instances for SAP."]
+        #[doc = "* `application_instance_name`: The name of SAP Application Server instance."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -2610,6 +2843,12 @@ pub mod sap_application_server_instances {
                 application_instance_name: application_instance_name.into(),
             }
         }
+        #[doc = "Lists the SAP Application server Instances in an SVI."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `sap_virtual_instance_name`: The name of the Virtual Instances for SAP."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -2688,6 +2927,7 @@ pub mod sap_application_server_instances {
             pub(crate) body: Option<models::SapApplicationServerInstance>,
         }
         impl Builder {
+            #[doc = "The SAP Application Server instance request body."]
             pub fn body(mut self, body: impl Into<models::SapApplicationServerInstance>) -> Self {
                 self.body = Some(body.into());
                 self
@@ -2755,6 +2995,7 @@ pub mod sap_application_server_instances {
             pub(crate) body: Option<models::UpdateSapApplicationInstanceRequest>,
         }
         impl Builder {
+            #[doc = "The SAP Application Server instance request body."]
             pub fn body(mut self, body: impl Into<models::UpdateSapApplicationInstanceRequest>) -> Self {
                 self.body = Some(body.into());
                 self
@@ -2937,6 +3178,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all the available API operations under this PR"]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -3017,6 +3259,10 @@ pub mod monitors {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets a list of SAP monitors in the specified subscription."]
+        #[doc = "Gets a list of SAP monitors in the specified subscription. The operations returns various properties of each SAP monitor."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -3024,6 +3270,11 @@ pub mod monitors {
             }
         }
         #[doc = "Gets a list of SAP monitors"]
+        #[doc = "Gets a list of SAP monitors in the specified resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -3036,6 +3287,12 @@ pub mod monitors {
             }
         }
         #[doc = "Gets properties of a SAP monitor."]
+        #[doc = "Gets properties of a SAP monitor for the specified subscription, resource group, and resource name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `monitor_name`: Name of the SAP monitor resource."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -3050,6 +3307,13 @@ pub mod monitors {
             }
         }
         #[doc = "Creates a SAP monitor."]
+        #[doc = "Creates a SAP monitor for the specified subscription, resource group, and resource name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `monitor_name`: Name of the SAP monitor resource."]
+        #[doc = "* `monitor_parameter`: Request body representing a SAP monitor"]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -3066,6 +3330,13 @@ pub mod monitors {
             }
         }
         #[doc = "Patches the Tags field of a SAP monitor."]
+        #[doc = "Patches the Tags field of a SAP monitor for the specified subscription, resource group, and SAP monitor name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `monitor_name`: Name of the SAP monitor resource."]
+        #[doc = "* `body`: The Update SAP workload monitor request body."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -3082,6 +3353,12 @@ pub mod monitors {
             }
         }
         #[doc = "Deletes a SAP monitor."]
+        #[doc = "Deletes a SAP monitor with the specified subscription, resource group, and SAP monitor name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `monitor_name`: Name of the SAP monitor resource."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -3482,6 +3759,12 @@ pub mod provider_instances {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets a list of provider instances in the specified SAP monitor."]
+        #[doc = "Gets a list of provider instances in the specified SAP monitor. The operations returns various properties of each provider instances."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `monitor_name`: Name of the SAP monitor resource."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -3496,6 +3779,13 @@ pub mod provider_instances {
             }
         }
         #[doc = "Gets properties of a provider instance."]
+        #[doc = "Gets properties of a provider instance for the specified subscription, resource group, SAP monitor name, and resource name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `monitor_name`: Name of the SAP monitor resource."]
+        #[doc = "* `provider_instance_name`: Name of the provider instance."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -3512,6 +3802,14 @@ pub mod provider_instances {
             }
         }
         #[doc = "Creates a provider instance."]
+        #[doc = "Creates a provider instance for the specified subscription, resource group, SAP monitor name, and resource name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `monitor_name`: Name of the SAP monitor resource."]
+        #[doc = "* `provider_instance_name`: Name of the provider instance."]
+        #[doc = "* `provider_instance_parameter`: Request body representing a provider instance"]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -3530,6 +3828,13 @@ pub mod provider_instances {
             }
         }
         #[doc = "Deletes a provider instance."]
+        #[doc = "Deletes a provider instance for the specified subscription, resource group, SAP monitor name, and resource name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `monitor_name`: Name of the SAP monitor resource."]
+        #[doc = "* `provider_instance_name`: Name of the provider instance."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -3811,6 +4116,10 @@ pub mod skus {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all the available SKUs under this PR"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),

@@ -88,6 +88,10 @@ pub mod system_assigned_identities {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the systemAssignedIdentity available under the specified RP scope."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `scope`: The resource provider scope of the resource. Parent resource being extended by Managed Identities."]
         pub fn get_by_scope(&self, scope: impl Into<String>) -> get_by_scope::Builder {
             get_by_scope::Builder {
                 client: self.0.clone(),
@@ -148,6 +152,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists available operations for the Microsoft.ManagedIdentity provider"]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -229,12 +234,21 @@ pub mod user_assigned_identities {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all the userAssignedIdentities available under the specified subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Id of the Subscription to which the identity belongs."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists all the userAssignedIdentities available under the specified ResourceGroup."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Id of the Subscription to which the identity belongs."]
+        #[doc = "* `resource_group_name`: The name of the Resource Group to which the identity belongs."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -246,6 +260,12 @@ pub mod user_assigned_identities {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Lists the associated resources for this identity."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Id of the Subscription to which the identity belongs."]
+        #[doc = "* `resource_group_name`: The name of the Resource Group to which the identity belongs."]
+        #[doc = "* `resource_name`: The name of the identity resource."]
         pub fn list_associated_resources(
             &self,
             subscription_id: impl Into<String>,
@@ -264,6 +284,12 @@ pub mod user_assigned_identities {
                 skiptoken: None,
             }
         }
+        #[doc = "Gets the identity."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Id of the Subscription to which the identity belongs."]
+        #[doc = "* `resource_group_name`: The name of the Resource Group to which the identity belongs."]
+        #[doc = "* `resource_name`: The name of the identity resource."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -277,6 +303,13 @@ pub mod user_assigned_identities {
                 resource_name: resource_name.into(),
             }
         }
+        #[doc = "Create or update an identity in the specified subscription and resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Id of the Subscription to which the identity belongs."]
+        #[doc = "* `resource_group_name`: The name of the Resource Group to which the identity belongs."]
+        #[doc = "* `resource_name`: The name of the identity resource."]
+        #[doc = "* `parameters`: Parameters to create or update the identity"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -292,6 +325,13 @@ pub mod user_assigned_identities {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Update an identity in the specified subscription and resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Id of the Subscription to which the identity belongs."]
+        #[doc = "* `resource_group_name`: The name of the Resource Group to which the identity belongs."]
+        #[doc = "* `resource_name`: The name of the identity resource."]
+        #[doc = "* `parameters`: Parameters to update the identity"]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -307,6 +347,12 @@ pub mod user_assigned_identities {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Deletes the identity."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Id of the Subscription to which the identity belongs."]
+        #[doc = "* `resource_group_name`: The name of the Resource Group to which the identity belongs."]
+        #[doc = "* `resource_name`: The name of the identity resource."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -487,22 +533,27 @@ pub mod user_assigned_identities {
             pub(crate) skiptoken: Option<String>,
         }
         impl Builder {
+            #[doc = "OData filter expression to apply to the query."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "OData orderBy expression to apply to the query."]
             pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
                 self.orderby = Some(orderby.into());
                 self
             }
+            #[doc = "Number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Number of records to skip."]
             pub fn skip(mut self, skip: i32) -> Self {
                 self.skip = Some(skip);
                 self
             }
+            #[doc = "A skip token is used to continue retrieving items after an operation returns a partial result. If a previous response contains a nextLink element, the value of the nextLink element will include a skipToken parameter that specifies a starting point to use for subsequent calls."]
             pub fn skiptoken(mut self, skiptoken: impl Into<String>) -> Self {
                 self.skiptoken = Some(skiptoken.into());
                 self

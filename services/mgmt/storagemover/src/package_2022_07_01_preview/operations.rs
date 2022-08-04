@@ -180,12 +180,21 @@ pub mod storage_movers {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all Storage Movers in a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists all Storage Movers in a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
         pub fn list(&self, subscription_id: impl Into<String>, resource_group_name: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -193,6 +202,12 @@ pub mod storage_movers {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Gets a Storage Mover resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `storage_mover_name`: The name of the Storage Mover resource."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -206,6 +221,12 @@ pub mod storage_movers {
                 storage_mover_name: storage_mover_name.into(),
             }
         }
+        #[doc = "Creates or updates a top-level Storage Mover resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `storage_mover_name`: The name of the Storage Mover resource."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -221,6 +242,12 @@ pub mod storage_movers {
                 storage_mover: storage_mover.into(),
             }
         }
+        #[doc = "Updates properties for a Storage Mover resource. Properties not specified in the request body will be unchanged."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `storage_mover_name`: The name of the Storage Mover resource."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -236,6 +263,12 @@ pub mod storage_movers {
                 storage_mover: storage_mover.into(),
             }
         }
+        #[doc = "Deletes a Storage Mover resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `storage_mover_name`: The name of the Storage Mover resource."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -621,6 +654,12 @@ pub mod agents {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all Agents in a Storage Mover."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `storage_mover_name`: The name of the Storage Mover resource."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -634,6 +673,13 @@ pub mod agents {
                 storage_mover_name: storage_mover_name.into(),
             }
         }
+        #[doc = "Gets an Agent resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `storage_mover_name`: The name of the Storage Mover resource."]
+        #[doc = "* `agent_name`: The name of the Agent resource."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -649,6 +695,13 @@ pub mod agents {
                 agent_name: agent_name.into(),
             }
         }
+        #[doc = "Creates or updates an Agent resource, which references a hybrid compute machine that can run jobs."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `storage_mover_name`: The name of the Storage Mover resource."]
+        #[doc = "* `agent_name`: The name of the Agent resource."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -666,6 +719,13 @@ pub mod agents {
                 agent: agent.into(),
             }
         }
+        #[doc = "Creates or updates an Agent resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `storage_mover_name`: The name of the Storage Mover resource."]
+        #[doc = "* `agent_name`: The name of the Agent resource."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -683,6 +743,13 @@ pub mod agents {
                 agent: agent.into(),
             }
         }
+        #[doc = "Deletes an Agent resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `storage_mover_name`: The name of the Storage Mover resource."]
+        #[doc = "* `agent_name`: The name of the Agent resource."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1006,6 +1073,12 @@ pub mod endpoints {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all Endpoints in a Storage Mover."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `storage_mover_name`: The name of the Storage Mover resource."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -1019,6 +1092,13 @@ pub mod endpoints {
                 storage_mover_name: storage_mover_name.into(),
             }
         }
+        #[doc = "Gets an Endpoint resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `storage_mover_name`: The name of the Storage Mover resource."]
+        #[doc = "* `endpoint_name`: The name of the Endpoint resource."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1034,6 +1114,13 @@ pub mod endpoints {
                 endpoint_name: endpoint_name.into(),
             }
         }
+        #[doc = "Creates or updates an Endpoint resource, which represents a data transfer source or destination."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `storage_mover_name`: The name of the Storage Mover resource."]
+        #[doc = "* `endpoint_name`: The name of the Endpoint resource."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -1051,6 +1138,13 @@ pub mod endpoints {
                 endpoint: endpoint.into(),
             }
         }
+        #[doc = "Updates properties for an Endpoint resource. Properties not specified in the request body will be unchanged."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `storage_mover_name`: The name of the Storage Mover resource."]
+        #[doc = "* `endpoint_name`: The name of the Endpoint resource."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -1068,6 +1162,13 @@ pub mod endpoints {
                 endpoint: endpoint.into(),
             }
         }
+        #[doc = "Deletes an Endpoint resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `storage_mover_name`: The name of the Storage Mover resource."]
+        #[doc = "* `endpoint_name`: The name of the Endpoint resource."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1391,6 +1492,12 @@ pub mod projects {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all Projects in a Storage Mover."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `storage_mover_name`: The name of the Storage Mover resource."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -1404,6 +1511,13 @@ pub mod projects {
                 storage_mover_name: storage_mover_name.into(),
             }
         }
+        #[doc = "Gets a Project resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `storage_mover_name`: The name of the Storage Mover resource."]
+        #[doc = "* `project_name`: The name of the Project resource."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1419,6 +1533,13 @@ pub mod projects {
                 project_name: project_name.into(),
             }
         }
+        #[doc = "Creates or updates a Project resource, which is a logical grouping of related jobs."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `storage_mover_name`: The name of the Storage Mover resource."]
+        #[doc = "* `project_name`: The name of the Project resource."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -1436,6 +1557,13 @@ pub mod projects {
                 project: project.into(),
             }
         }
+        #[doc = "Updates properties for a Project resource. Properties not specified in the request body will be unchanged."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `storage_mover_name`: The name of the Storage Mover resource."]
+        #[doc = "* `project_name`: The name of the Project resource."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -1453,6 +1581,13 @@ pub mod projects {
                 project: project.into(),
             }
         }
+        #[doc = "Deletes a Project resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `storage_mover_name`: The name of the Storage Mover resource."]
+        #[doc = "* `project_name`: The name of the Project resource."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1776,6 +1911,13 @@ pub mod job_definitions {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all Job Definitions in a Project."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `storage_mover_name`: The name of the Storage Mover resource."]
+        #[doc = "* `project_name`: The name of the Project resource."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -1791,6 +1933,14 @@ pub mod job_definitions {
                 project_name: project_name.into(),
             }
         }
+        #[doc = "Gets a Job Definition resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `storage_mover_name`: The name of the Storage Mover resource."]
+        #[doc = "* `project_name`: The name of the Project resource."]
+        #[doc = "* `job_definition_name`: The name of the Job Definition resource."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1808,6 +1958,14 @@ pub mod job_definitions {
                 job_definition_name: job_definition_name.into(),
             }
         }
+        #[doc = "Creates or updates a Job Definition resource, which contains configuration for a single unit of managed data transfer."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `storage_mover_name`: The name of the Storage Mover resource."]
+        #[doc = "* `project_name`: The name of the Project resource."]
+        #[doc = "* `job_definition_name`: The name of the Job Definition resource."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -1827,6 +1985,14 @@ pub mod job_definitions {
                 job_definition: job_definition.into(),
             }
         }
+        #[doc = "Updates properties for a Job Definition resource. Properties not specified in the request body will be unchanged."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `storage_mover_name`: The name of the Storage Mover resource."]
+        #[doc = "* `project_name`: The name of the Project resource."]
+        #[doc = "* `job_definition_name`: The name of the Job Definition resource."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -1846,6 +2012,14 @@ pub mod job_definitions {
                 job_definition: job_definition.into(),
             }
         }
+        #[doc = "Deletes a Job Definition resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `storage_mover_name`: The name of the Storage Mover resource."]
+        #[doc = "* `project_name`: The name of the Project resource."]
+        #[doc = "* `job_definition_name`: The name of the Job Definition resource."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1863,6 +2037,14 @@ pub mod job_definitions {
                 job_definition_name: job_definition_name.into(),
             }
         }
+        #[doc = "Requests an Agent to start a new instance of this Job Definition, generating a new Job Run resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `storage_mover_name`: The name of the Storage Mover resource."]
+        #[doc = "* `project_name`: The name of the Project resource."]
+        #[doc = "* `job_definition_name`: The name of the Job Definition resource."]
         pub fn start_job(
             &self,
             subscription_id: impl Into<String>,
@@ -1880,6 +2062,14 @@ pub mod job_definitions {
                 job_definition_name: job_definition_name.into(),
             }
         }
+        #[doc = "Requests the Agent of any active instance of this Job Definition to stop."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `storage_mover_name`: The name of the Storage Mover resource."]
+        #[doc = "* `project_name`: The name of the Project resource."]
+        #[doc = "* `job_definition_name`: The name of the Job Definition resource."]
         pub fn stop_job(
             &self,
             subscription_id: impl Into<String>,
@@ -2274,6 +2464,14 @@ pub mod job_runs {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all Job Runs in a Job Definition."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `storage_mover_name`: The name of the Storage Mover resource."]
+        #[doc = "* `project_name`: The name of the Project resource."]
+        #[doc = "* `job_definition_name`: The name of the Job Definition resource."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -2291,6 +2489,15 @@ pub mod job_runs {
                 job_definition_name: job_definition_name.into(),
             }
         }
+        #[doc = "Gets a Job Run resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `storage_mover_name`: The name of the Storage Mover resource."]
+        #[doc = "* `project_name`: The name of the Project resource."]
+        #[doc = "* `job_definition_name`: The name of the Job Definition resource."]
+        #[doc = "* `job_run_name`: The name of the Job Run resource."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,

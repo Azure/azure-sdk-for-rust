@@ -88,6 +88,12 @@ pub mod accounts {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get a Maps Account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of the Maps Account."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -101,6 +107,13 @@ pub mod accounts {
                 account_name: account_name.into(),
             }
         }
+        #[doc = "Create or update a Maps Account. A Maps Account holds the keys which allow access to the Maps REST APIs."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of the Maps Account."]
+        #[doc = "* `maps_account`: The new or updated parameters for the Maps Account."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -116,6 +129,13 @@ pub mod accounts {
                 maps_account: maps_account.into(),
             }
         }
+        #[doc = "Updates a Maps Account. Only a subset of the parameters may be updated after creation, such as Sku, Tags, Properties."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of the Maps Account."]
+        #[doc = "* `maps_account_update_parameters`: The updated parameters for the Maps Account."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -131,6 +151,12 @@ pub mod accounts {
                 maps_account_update_parameters: maps_account_update_parameters.into(),
             }
         }
+        #[doc = "Delete a Maps Account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of the Maps Account."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -144,6 +170,11 @@ pub mod accounts {
                 account_name: account_name.into(),
             }
         }
+        #[doc = "Get all Maps Accounts in a Resource Group"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -155,12 +186,22 @@ pub mod accounts {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Get all Maps Accounts in a Subscription"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get the keys to use with the Maps APIs. A key is used to authenticate and authorize access to the Maps REST APIs. Only one key is needed at a time; two are given to provide seamless key regeneration."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of the Maps Account."]
         pub fn list_keys(
             &self,
             subscription_id: impl Into<String>,
@@ -174,6 +215,13 @@ pub mod accounts {
                 account_name: account_name.into(),
             }
         }
+        #[doc = "Regenerate either the primary or secondary key for use with the Maps APIs. The old key will stop working immediately."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of the Maps Account."]
+        #[doc = "* `key_specification`: Which key to regenerate:  primary or secondary."]
         pub fn regenerate_keys(
             &self,
             subscription_id: impl Into<String>,
@@ -674,9 +722,14 @@ pub mod maps {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List operations available for the Maps Resource Provider"]
         pub fn list_operations(&self) -> list_operations::Builder {
             list_operations::Builder { client: self.0.clone() }
         }
+        #[doc = "List operations available for the Maps Resource Provider"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_subscription_operations(&self, subscription_id: impl Into<String>) -> list_subscription_operations::Builder {
             list_subscription_operations::Builder {
                 client: self.0.clone(),
@@ -832,6 +885,12 @@ pub mod creators {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get all Creator instances for an Azure Maps Account"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of the Maps Account."]
         pub fn list_by_account(
             &self,
             subscription_id: impl Into<String>,
@@ -845,6 +904,13 @@ pub mod creators {
                 account_name: account_name.into(),
             }
         }
+        #[doc = "Get a Maps Creator resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of the Maps Account."]
+        #[doc = "* `creator_name`: The name of the Maps Creator instance."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -860,6 +926,14 @@ pub mod creators {
                 creator_name: creator_name.into(),
             }
         }
+        #[doc = "Create or update a Maps Creator resource. Creator resource will manage Azure resources required to populate a custom set of mapping data. It requires an account to exist before it can be created."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of the Maps Account."]
+        #[doc = "* `creator_name`: The name of the Maps Creator instance."]
+        #[doc = "* `creator_resource`: The new or updated parameters for the Creator resource."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -877,6 +951,14 @@ pub mod creators {
                 creator_resource: creator_resource.into(),
             }
         }
+        #[doc = "Updates the Maps Creator resource. Only a subset of the parameters may be updated after creation, such as Tags."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of the Maps Account."]
+        #[doc = "* `creator_name`: The name of the Maps Creator instance."]
+        #[doc = "* `creator_update_parameters`: The update parameters for Maps Creator."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -894,6 +976,13 @@ pub mod creators {
                 creator_update_parameters: creator_update_parameters.into(),
             }
         }
+        #[doc = "Delete a Maps Creator resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of the Maps Account."]
+        #[doc = "* `creator_name`: The name of the Maps Creator instance."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,

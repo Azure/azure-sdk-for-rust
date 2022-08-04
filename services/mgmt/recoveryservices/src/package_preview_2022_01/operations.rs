@@ -106,6 +106,14 @@ pub mod vault_certificates {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Uploads a certificate for a resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `vault_name`: The name of the recovery services vault."]
+        #[doc = "* `certificate_name`: Certificate friendly name."]
+        #[doc = "* `certificate_request`: Input parameters for uploading the vault certificate."]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -185,6 +193,13 @@ pub mod registered_identities {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Unregisters the given container from your Recovery Services vault."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `vault_name`: The name of the recovery services vault."]
+        #[doc = "* `identity_name`: Name of the protection container to unregister."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -256,6 +271,12 @@ pub mod replication_usages {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Fetches the replication usages of the vault."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `vault_name`: The name of the recovery services vault."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -329,6 +350,11 @@ pub mod private_link_resources {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Returns the list of private link resources that need to be created for Backup and SiteRecovery"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `vault_name`: The name of the recovery services vault."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -343,6 +369,11 @@ pub mod private_link_resources {
             }
         }
         #[doc = "Returns a specified private link resource that need to be created for Backup and SiteRecovery"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `vault_name`: The name of the recovery services vault."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -497,6 +528,12 @@ pub mod recovery_services {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "API to check for resource name availability.\r\nA name is available if no other resource exists that has the same SubscriptionId, Resource Name and Type\r\nor if one or more such resources exist, each of these must be GC'd and their time of deletion be more than 24 Hours Ago"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `location`: Location of the resource"]
+        #[doc = "* `input`: Contains information about Resource type and Resource name"]
         pub fn check_name_availability(
             &self,
             subscription_id: impl Into<String>,
@@ -513,6 +550,11 @@ pub mod recovery_services {
             }
         }
         #[doc = "API to get details about capabilities provided by Microsoft.RecoveryServices RP"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `location`: Location of the resource"]
+        #[doc = "* `input`: Contains information about Resource type and properties to get capabilities"]
         pub fn capabilities(
             &self,
             subscription_id: impl Into<String>,
@@ -638,12 +680,21 @@ pub mod vaults {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Fetches all the resources of the specified type in the subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription Id."]
         pub fn list_by_subscription_id(&self, subscription_id: impl Into<String>) -> list_by_subscription_id::Builder {
             list_by_subscription_id::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Retrieve a list of Vaults."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -655,6 +706,12 @@ pub mod vaults {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Get the Vault details."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `vault_name`: The name of the recovery services vault."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -668,6 +725,13 @@ pub mod vaults {
                 vault_name: vault_name.into(),
             }
         }
+        #[doc = "Creates or updates a Recovery Services vault."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `vault_name`: The name of the recovery services vault."]
+        #[doc = "* `vault`: Recovery Services Vault to be created."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -683,6 +747,13 @@ pub mod vaults {
                 vault: vault.into(),
             }
         }
+        #[doc = "Updates the vault."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `vault_name`: The name of the recovery services vault."]
+        #[doc = "* `vault`: Recovery Services Vault to be created."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -698,6 +769,12 @@ pub mod vaults {
                 vault: vault.into(),
             }
         }
+        #[doc = "Deletes a vault."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `vault_name`: The name of the recovery services vault."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1091,6 +1168,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Returns the list of available operations."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -1172,6 +1250,12 @@ pub mod vault_extended_info {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get the vault extended info."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `vault_name`: The name of the recovery services vault."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1185,6 +1269,13 @@ pub mod vault_extended_info {
                 vault_name: vault_name.into(),
             }
         }
+        #[doc = "Create vault extended info."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `vault_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_resource_extended_info_details`: Details of ResourceExtendedInfo"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -1200,6 +1291,13 @@ pub mod vault_extended_info {
                 resource_resource_extended_info_details: resource_resource_extended_info_details.into(),
             }
         }
+        #[doc = "Update vault extended info."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `vault_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_resource_extended_info_details`: Details of ResourceExtendedInfo"]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -1360,6 +1458,12 @@ pub mod vault_extended_info {
     }
 }
 impl Client {
+    #[doc = "Gets the operation status for a resource."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `subscription_id`: The subscription Id."]
+    #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+    #[doc = "* `vault_name`: The name of the recovery services vault."]
     pub fn get_operation_status(
         &self,
         subscription_id: impl Into<String>,
@@ -1375,6 +1479,12 @@ impl Client {
             operation_id: operation_id.into(),
         }
     }
+    #[doc = "Gets the operation result for a resource."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `subscription_id`: The subscription Id."]
+    #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+    #[doc = "* `vault_name`: The name of the recovery services vault."]
     pub fn get_operation_result(
         &self,
         subscription_id: impl Into<String>,
@@ -1508,6 +1618,12 @@ pub mod usages {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Fetches the usages of the vault."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `vault_name`: The name of the recovery services vault."]
         pub fn list_by_vaults(
             &self,
             subscription_id: impl Into<String>,

@@ -85,12 +85,21 @@ pub mod linker {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Returns list of Linkers which connects to the resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_uri`: The fully qualified Azure Resource manager identifier of the resource to be connected."]
         pub fn list(&self, resource_uri: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
                 resource_uri: resource_uri.into(),
             }
         }
+        #[doc = "Returns Linker resource for a given name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_uri`: The fully qualified Azure Resource manager identifier of the resource to be connected."]
+        #[doc = "* `linker_name`: The name Linker resource."]
         pub fn get(&self, resource_uri: impl Into<String>, linker_name: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -98,6 +107,12 @@ pub mod linker {
                 linker_name: linker_name.into(),
             }
         }
+        #[doc = "Create or update linker resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_uri`: The fully qualified Azure Resource manager identifier of the resource to be connected."]
+        #[doc = "* `linker_name`: The name Linker resource."]
+        #[doc = "* `parameters`: Linker details."]
         pub fn create_or_update(
             &self,
             resource_uri: impl Into<String>,
@@ -111,6 +126,12 @@ pub mod linker {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Operation to update an existing link."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_uri`: The fully qualified Azure Resource manager identifier of the resource to be connected."]
+        #[doc = "* `linker_name`: The name Linker resource."]
+        #[doc = "* `parameters`: Linker details."]
         pub fn update(
             &self,
             resource_uri: impl Into<String>,
@@ -124,6 +145,11 @@ pub mod linker {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Delete a link."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_uri`: The fully qualified Azure Resource manager identifier of the resource to be connected."]
+        #[doc = "* `linker_name`: The name Linker resource."]
         pub fn delete(&self, resource_uri: impl Into<String>, linker_name: impl Into<String>) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),
@@ -131,6 +157,11 @@ pub mod linker {
                 linker_name: linker_name.into(),
             }
         }
+        #[doc = "Validate a link."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_uri`: The fully qualified Azure Resource manager identifier of the resource to be connected."]
+        #[doc = "* `linker_name`: The name Linker resource."]
         pub fn validate(&self, resource_uri: impl Into<String>, linker_name: impl Into<String>) -> validate::Builder {
             validate::Builder {
                 client: self.0.clone(),
@@ -138,6 +169,11 @@ pub mod linker {
                 linker_name: linker_name.into(),
             }
         }
+        #[doc = "list source configurations for a linker."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_uri`: The fully qualified Azure Resource manager identifier of the resource to be connected."]
+        #[doc = "* `linker_name`: The name Linker resource."]
         pub fn list_configurations(&self, resource_uri: impl Into<String>, linker_name: impl Into<String>) -> list_configurations::Builder {
             list_configurations::Builder {
                 client: self.0.clone(),
@@ -561,6 +597,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists the available ServiceLinker REST API operations."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }

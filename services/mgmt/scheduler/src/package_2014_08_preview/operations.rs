@@ -85,12 +85,21 @@ pub mod job_collections {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets all job collections under specified subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets all job collections under specified resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id."]
+        #[doc = "* `resource_group_name`: The resource group name."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -102,6 +111,12 @@ pub mod job_collections {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Gets a job collection."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `job_collection_name`: The job collection name."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -115,6 +130,13 @@ pub mod job_collections {
                 job_collection_name: job_collection_name.into(),
             }
         }
+        #[doc = "Provisions a new job collection or updates an existing job collection."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `job_collection_name`: The job collection name."]
+        #[doc = "* `job_collection`: The job collection definition."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -130,6 +152,13 @@ pub mod job_collections {
                 job_collection: job_collection.into(),
             }
         }
+        #[doc = "Patches an existing job collection."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `job_collection_name`: The job collection name."]
+        #[doc = "* `job_collection`: The job collection definition."]
         pub fn patch(
             &self,
             subscription_id: impl Into<String>,
@@ -145,6 +174,12 @@ pub mod job_collections {
                 job_collection: job_collection.into(),
             }
         }
+        #[doc = "Deletes a job collection."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `job_collection_name`: The job collection name."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -158,6 +193,12 @@ pub mod job_collections {
                 job_collection_name: job_collection_name.into(),
             }
         }
+        #[doc = "Enables all of the jobs in the job collection."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `job_collection_name`: The job collection name."]
         pub fn enable(
             &self,
             subscription_id: impl Into<String>,
@@ -171,6 +212,12 @@ pub mod job_collections {
                 job_collection_name: job_collection_name.into(),
             }
         }
+        #[doc = "Disables all of the jobs in the job collection."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `job_collection_name`: The job collection name."]
         pub fn disable(
             &self,
             subscription_id: impl Into<String>,
@@ -655,6 +702,13 @@ pub mod jobs {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a job."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `job_collection_name`: The job collection name."]
+        #[doc = "* `job_name`: The job name."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -670,6 +724,14 @@ pub mod jobs {
                 job_name: job_name.into(),
             }
         }
+        #[doc = "Provisions a new job or updates an existing job."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `job_collection_name`: The job collection name."]
+        #[doc = "* `job_name`: The job name."]
+        #[doc = "* `job`: The job definition."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -687,6 +749,14 @@ pub mod jobs {
                 job: job.into(),
             }
         }
+        #[doc = "Patches an existing job."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `job_collection_name`: The job collection name."]
+        #[doc = "* `job_name`: The job name."]
+        #[doc = "* `job`: The job definition."]
         pub fn patch(
             &self,
             subscription_id: impl Into<String>,
@@ -704,6 +774,13 @@ pub mod jobs {
                 job: job.into(),
             }
         }
+        #[doc = "Deletes a job."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `job_collection_name`: The job collection name."]
+        #[doc = "* `job_name`: The job name."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -719,6 +796,13 @@ pub mod jobs {
                 job_name: job_name.into(),
             }
         }
+        #[doc = "Runs a job."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `job_collection_name`: The job collection name."]
+        #[doc = "* `job_name`: The job name."]
         pub fn run(
             &self,
             subscription_id: impl Into<String>,
@@ -734,6 +818,12 @@ pub mod jobs {
                 job_name: job_name.into(),
             }
         }
+        #[doc = "Lists all jobs under the specified job collection."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `job_collection_name`: The job collection name."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -750,6 +840,13 @@ pub mod jobs {
                 filter: None,
             }
         }
+        #[doc = "Lists job history."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription id."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `job_collection_name`: The job collection name."]
+        #[doc = "* `job_name`: The job name."]
         pub fn list_job_history(
             &self,
             subscription_id: impl Into<String>,
@@ -1059,14 +1156,17 @@ pub mod jobs {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "The number of jobs to request, in the of range [1..100]."]
             pub fn top(mut self, top: i64) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "The (0-based) index of the job history list from which to begin requesting entries."]
             pub fn skip(mut self, skip: i64) -> Self {
                 self.skip = Some(skip);
                 self
             }
+            #[doc = "The filter to apply on the job state."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -1162,14 +1262,17 @@ pub mod jobs {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "the number of job history to request, in the of range [1..100]."]
             pub fn top(mut self, top: i64) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "The (0-based) index of the job history list from which to begin requesting entries."]
             pub fn skip(mut self, skip: i64) -> Self {
                 self.skip = Some(skip);
                 self
             }
+            #[doc = "The filter to apply on the job state."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self

@@ -30,7 +30,7 @@ jobs:
         run: cargo clippy --all
 
       - name: cargo doc sdk
-        run: cargo doc --all
+        run: cargo doc --all --no-deps
 
       - name: cargo fmt services
         run: |

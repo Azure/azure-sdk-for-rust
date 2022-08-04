@@ -88,6 +88,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "This method gets all the operations."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -167,6 +168,10 @@ pub mod jobs {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all the jobs available under the subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Subscription Id"]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -174,6 +179,13 @@ pub mod jobs {
                 skip_token: None,
             }
         }
+        #[doc = "Request to mark devices for a given job as shipped"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `job_name`: The name of the job Resource within the specified resource group. job names must be between 3 and 24 characters in length and use any alphanumeric and underscore only"]
+        #[doc = "* `subscription_id`: The Subscription Id"]
+        #[doc = "* `resource_group_name`: The Resource Group Name"]
+        #[doc = "* `mark_devices_shipped_request`: Mark Devices Shipped Request"]
         pub fn mark_devices_shipped(
             &self,
             job_name: impl Into<String>,
@@ -189,6 +201,11 @@ pub mod jobs {
                 mark_devices_shipped_request: mark_devices_shipped_request.into(),
             }
         }
+        #[doc = "Lists all the jobs available under the given resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Subscription Id"]
+        #[doc = "* `resource_group_name`: The Resource Group Name"]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -201,6 +218,12 @@ pub mod jobs {
                 skip_token: None,
             }
         }
+        #[doc = "Gets information about the specified job."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Subscription Id"]
+        #[doc = "* `resource_group_name`: The Resource Group Name"]
+        #[doc = "* `job_name`: The name of the job Resource within the specified resource group. job names must be between 3 and 24 characters in length and use any alphanumeric and underscore only"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -215,6 +238,13 @@ pub mod jobs {
                 expand: None,
             }
         }
+        #[doc = "Creates a new job with the specified parameters. Existing job cannot be updated with this API and should instead be updated with the Update job API."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Subscription Id"]
+        #[doc = "* `resource_group_name`: The Resource Group Name"]
+        #[doc = "* `job_name`: The name of the job Resource within the specified resource group. job names must be between 3 and 24 characters in length and use any alphanumeric and underscore only"]
+        #[doc = "* `job_resource`: Job details from request body."]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -230,6 +260,13 @@ pub mod jobs {
                 job_resource: job_resource.into(),
             }
         }
+        #[doc = "Updates the properties of an existing job."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Subscription Id"]
+        #[doc = "* `resource_group_name`: The Resource Group Name"]
+        #[doc = "* `job_name`: The name of the job Resource within the specified resource group. job names must be between 3 and 24 characters in length and use any alphanumeric and underscore only"]
+        #[doc = "* `job_resource_update_parameter`: Job update parameters from request body."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -246,6 +283,12 @@ pub mod jobs {
                 if_match: None,
             }
         }
+        #[doc = "Deletes a job."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Subscription Id"]
+        #[doc = "* `resource_group_name`: The Resource Group Name"]
+        #[doc = "* `job_name`: The name of the job Resource within the specified resource group. job names must be between 3 and 24 characters in length and use any alphanumeric and underscore only"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -259,6 +302,13 @@ pub mod jobs {
                 job_name: job_name.into(),
             }
         }
+        #[doc = "Book shipment pick up."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Subscription Id"]
+        #[doc = "* `resource_group_name`: The Resource Group Name"]
+        #[doc = "* `job_name`: The name of the job Resource within the specified resource group. job names must be between 3 and 24 characters in length and use any alphanumeric and underscore only"]
+        #[doc = "* `shipment_pick_up_request`: Details of shipment pick up request."]
         pub fn book_shipment_pick_up(
             &self,
             subscription_id: impl Into<String>,
@@ -274,6 +324,13 @@ pub mod jobs {
                 shipment_pick_up_request: shipment_pick_up_request.into(),
             }
         }
+        #[doc = "CancelJob."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Subscription Id"]
+        #[doc = "* `resource_group_name`: The Resource Group Name"]
+        #[doc = "* `job_name`: The name of the job Resource within the specified resource group. job names must be between 3 and 24 characters in length and use any alphanumeric and underscore only"]
+        #[doc = "* `cancellation_reason`: Reason for cancellation."]
         pub fn cancel(
             &self,
             subscription_id: impl Into<String>,
@@ -289,6 +346,12 @@ pub mod jobs {
                 cancellation_reason: cancellation_reason.into(),
             }
         }
+        #[doc = "This method gets the unencrypted secrets related to the job."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Subscription Id"]
+        #[doc = "* `resource_group_name`: The Resource Group Name"]
+        #[doc = "* `job_name`: The name of the job Resource within the specified resource group. job names must be between 3 and 24 characters in length and use any alphanumeric and underscore only"]
         pub fn list_credentials(
             &self,
             subscription_id: impl Into<String>,
@@ -313,6 +376,7 @@ pub mod jobs {
             pub(crate) skip_token: Option<String>,
         }
         impl Builder {
+            #[doc = "$skipToken is supported on Get list of jobs, which provides the next page in the list of jobs."]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());
                 self
@@ -446,6 +510,7 @@ pub mod jobs {
             pub(crate) skip_token: Option<String>,
         }
         impl Builder {
+            #[doc = "$skipToken is supported on Get list of jobs, which provides the next page in the list of jobs."]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());
                 self
@@ -531,6 +596,7 @@ pub mod jobs {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "$expand is supported on details parameter for job, which provides details on the job stages."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -656,6 +722,7 @@ pub mod jobs {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "Defines the If-Match condition. The patch will be performed only if the ETag of the job on the server matches this value."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -923,6 +990,13 @@ pub mod jobs {
     }
 }
 impl Client {
+    #[doc = "Request to mitigate for a given job"]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `job_name`: The name of the job Resource within the specified resource group. job names must be between 3 and 24 characters in length and use any alphanumeric and underscore only"]
+    #[doc = "* `subscription_id`: The Subscription Id"]
+    #[doc = "* `resource_group_name`: The Resource Group Name"]
+    #[doc = "* `mitigate_job_request`: Mitigation Request"]
     pub fn mitigate(
         &self,
         job_name: impl Into<String>,
@@ -993,6 +1067,13 @@ pub mod service {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "This method provides the list of available skus for the given subscription, resource group and location."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Subscription Id"]
+        #[doc = "* `resource_group_name`: The Resource Group Name"]
+        #[doc = "* `location`: The location of the resource"]
+        #[doc = "* `available_sku_request`: Filters for showing the available skus."]
         pub fn list_available_skus_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -1008,6 +1089,12 @@ pub mod service {
                 available_sku_request: available_sku_request.into(),
             }
         }
+        #[doc = "[DEPRECATED NOTICE: This operation will soon be removed]. This method validates the customer shipping address and provide alternate addresses if any."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Subscription Id"]
+        #[doc = "* `location`: The location of the resource"]
+        #[doc = "* `validate_address`: Shipping address of the customer."]
         pub fn validate_address(
             &self,
             subscription_id: impl Into<String>,
@@ -1021,6 +1108,13 @@ pub mod service {
                 validate_address: validate_address.into(),
             }
         }
+        #[doc = "This method does all necessary pre-job creation validation under resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Subscription Id"]
+        #[doc = "* `resource_group_name`: The Resource Group Name"]
+        #[doc = "* `location`: The location of the resource"]
+        #[doc = "* `validation_request`: Inputs of the customer."]
         pub fn validate_inputs_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -1036,6 +1130,12 @@ pub mod service {
                 validation_request: validation_request.into(),
             }
         }
+        #[doc = "This method does all necessary pre-job creation validation under subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Subscription Id"]
+        #[doc = "* `location`: The location of the resource"]
+        #[doc = "* `validation_request`: Inputs of the customer."]
         pub fn validate_inputs(
             &self,
             subscription_id: impl Into<String>,
@@ -1049,6 +1149,12 @@ pub mod service {
                 validation_request: validation_request.into(),
             }
         }
+        #[doc = "This API provides configuration details specific to given region/location at Subscription level."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Subscription Id"]
+        #[doc = "* `location`: The location of the resource"]
+        #[doc = "* `region_configuration_request`: Request body to get the configuration for the region."]
         pub fn region_configuration(
             &self,
             subscription_id: impl Into<String>,
@@ -1062,6 +1168,13 @@ pub mod service {
                 region_configuration_request: region_configuration_request.into(),
             }
         }
+        #[doc = "This API provides configuration details specific to given region/location at Resource group level."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Subscription Id"]
+        #[doc = "* `resource_group_name`: The Resource Group Name"]
+        #[doc = "* `location`: The location of the resource"]
+        #[doc = "* `region_configuration_request`: Request body to get the configuration for the region at resource group level."]
         pub fn region_configuration_by_resource_group(
             &self,
             subscription_id: impl Into<String>,

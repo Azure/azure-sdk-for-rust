@@ -91,6 +91,12 @@ pub mod workspaces {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Returns the Workspace resource associated with the given name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `subscription_id`: The Azure subscription ID."]
+        #[doc = "* `workspace_name`: The name of the quantum workspace resource."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -104,6 +110,13 @@ pub mod workspaces {
                 workspace_name: workspace_name.into(),
             }
         }
+        #[doc = "Creates or updates a workspace resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `subscription_id`: The Azure subscription ID."]
+        #[doc = "* `workspace_name`: The name of the quantum workspace resource."]
+        #[doc = "* `quantum_workspace`: Workspace details."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -119,6 +132,13 @@ pub mod workspaces {
                 quantum_workspace: quantum_workspace.into(),
             }
         }
+        #[doc = "Updates an existing workspace's tags."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `subscription_id`: The Azure subscription ID."]
+        #[doc = "* `workspace_name`: The name of the quantum workspace resource."]
+        #[doc = "* `workspace_tags`: Parameters supplied to update tags."]
         pub fn update_tags(
             &self,
             resource_group_name: impl Into<String>,
@@ -134,6 +154,12 @@ pub mod workspaces {
                 workspace_tags: workspace_tags.into(),
             }
         }
+        #[doc = "Deletes a Workspace resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `subscription_id`: The Azure subscription ID."]
+        #[doc = "* `workspace_name`: The name of the quantum workspace resource."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -147,12 +173,21 @@ pub mod workspaces {
                 workspace_name: workspace_name.into(),
             }
         }
+        #[doc = "Gets the list of Workspaces within a Subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the list of Workspaces within a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `subscription_id`: The Azure subscription ID."]
         pub fn list_by_resource_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -546,6 +581,11 @@ pub mod offerings {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Returns the list of all provider offerings available for the given location."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID."]
+        #[doc = "* `location_name`: Location."]
         pub fn list(&self, subscription_id: impl Into<String>, location_name: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -635,6 +675,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Returns list of operations."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -714,6 +755,12 @@ pub mod workspace {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Check the availability of the resource name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID."]
+        #[doc = "* `location_name`: Location."]
+        #[doc = "* `check_name_availability_parameters`: The name and type of the resource."]
         pub fn check_name_availability(
             &self,
             subscription_id: impl Into<String>,

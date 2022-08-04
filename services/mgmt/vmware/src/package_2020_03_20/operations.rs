@@ -97,6 +97,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all of the available operations"]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -175,6 +176,11 @@ pub mod locations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Return trial status for subscription by region"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `location`: Azure region"]
         pub fn check_trial_availability(
             &self,
             subscription_id: impl Into<String>,
@@ -186,6 +192,11 @@ pub mod locations {
                 location: location.into(),
             }
         }
+        #[doc = "Return quota for subscription by region"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `location`: Azure region"]
         pub fn check_quota_availability(
             &self,
             subscription_id: impl Into<String>,
@@ -306,6 +317,10 @@ pub mod private_clouds {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "List private clouds in a resource group"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
         pub fn list(&self, subscription_id: impl Into<String>, resource_group_name: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -314,6 +329,9 @@ pub mod private_clouds {
             }
         }
         #[doc = "List private clouds in a subscription"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_in_subscription(&self, subscription_id: impl Into<String>) -> list_in_subscription::Builder {
             list_in_subscription::Builder {
                 client: self.0.clone(),
@@ -321,6 +339,11 @@ pub mod private_clouds {
             }
         }
         #[doc = "Get a private cloud"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `private_cloud_name`: Name of the private cloud"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -335,6 +358,12 @@ pub mod private_clouds {
             }
         }
         #[doc = "Create or update a private cloud"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `private_cloud_name`: Name of the private cloud"]
+        #[doc = "* `private_cloud`: The private cloud"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -351,6 +380,12 @@ pub mod private_clouds {
             }
         }
         #[doc = "Update a private cloud"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `private_cloud_name`: Name of the private cloud"]
+        #[doc = "* `private_cloud_update`: The private cloud properties to be updated"]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -367,6 +402,11 @@ pub mod private_clouds {
             }
         }
         #[doc = "Delete a private cloud"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `private_cloud_name`: Name of the private cloud"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -381,6 +421,11 @@ pub mod private_clouds {
             }
         }
         #[doc = "List the admin credentials for the private cloud"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `private_cloud_name`: Name of the private cloud"]
         pub fn list_admin_credentials(
             &self,
             subscription_id: impl Into<String>,
@@ -840,6 +885,11 @@ pub mod clusters {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "List clusters in a private cloud"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `private_cloud_name`: Name of the private cloud"]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -854,6 +904,12 @@ pub mod clusters {
             }
         }
         #[doc = "Get a cluster by name in a private cloud"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `private_cloud_name`: Name of the private cloud"]
+        #[doc = "* `cluster_name`: Name of the cluster in the private cloud"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -870,6 +926,13 @@ pub mod clusters {
             }
         }
         #[doc = "Create or update a cluster in a private cloud"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `private_cloud_name`: The name of the private cloud."]
+        #[doc = "* `cluster_name`: Name of the cluster in the private cloud"]
+        #[doc = "* `cluster`: A cluster in the private cloud"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -888,6 +951,13 @@ pub mod clusters {
             }
         }
         #[doc = "Update a cluster in a private cloud"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `private_cloud_name`: Name of the private cloud"]
+        #[doc = "* `cluster_name`: Name of the cluster in the private cloud"]
+        #[doc = "* `cluster_update`: The cluster properties to be updated"]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -906,6 +976,12 @@ pub mod clusters {
             }
         }
         #[doc = "Delete a cluster in a private cloud"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `private_cloud_name`: Name of the private cloud"]
+        #[doc = "* `cluster_name`: Name of the cluster in the private cloud"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1250,6 +1326,11 @@ pub mod hcx_enterprise_sites {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "List HCX Enterprise Sites in a private cloud"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `private_cloud_name`: Name of the private cloud"]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -1264,6 +1345,12 @@ pub mod hcx_enterprise_sites {
             }
         }
         #[doc = "Get an HCX Enterprise Site by name in a private cloud"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `private_cloud_name`: Name of the private cloud"]
+        #[doc = "* `hcx_enterprise_site_name`: Name of the HCX Enterprise Site in the private cloud"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1280,6 +1367,13 @@ pub mod hcx_enterprise_sites {
             }
         }
         #[doc = "Create or update an HCX Enterprise Site in a private cloud"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `private_cloud_name`: The name of the private cloud."]
+        #[doc = "* `hcx_enterprise_site_name`: Name of the HCX Enterprise Site in the private cloud"]
+        #[doc = "* `hcx_enterprise_site`: The HCX Enterprise Site"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -1298,6 +1392,12 @@ pub mod hcx_enterprise_sites {
             }
         }
         #[doc = "Delete an HCX Enterprise Site in a private cloud"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `private_cloud_name`: Name of the private cloud"]
+        #[doc = "* `hcx_enterprise_site_name`: Name of the HCX Enterprise Site in the private cloud"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1572,6 +1672,11 @@ pub mod authorizations {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "List ExpressRoute Circuit Authorizations in a private cloud"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `private_cloud_name`: Name of the private cloud"]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -1586,6 +1691,12 @@ pub mod authorizations {
             }
         }
         #[doc = "Get an ExpressRoute Circuit Authorization by name in a private cloud"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `private_cloud_name`: Name of the private cloud"]
+        #[doc = "* `authorization_name`: Name of the ExpressRoute Circuit Authorization in the private cloud"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1602,6 +1713,13 @@ pub mod authorizations {
             }
         }
         #[doc = "Create or update an ExpressRoute Circuit Authorization in a private cloud"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `private_cloud_name`: The name of the private cloud."]
+        #[doc = "* `authorization_name`: Name of the ExpressRoute Circuit Authorization in the private cloud"]
+        #[doc = "* `authorization`: An ExpressRoute Circuit Authorization"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -1620,6 +1738,12 @@ pub mod authorizations {
             }
         }
         #[doc = "Delete an ExpressRoute Circuit Authorization in a private cloud"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `private_cloud_name`: Name of the private cloud"]
+        #[doc = "* `authorization_name`: Name of the ExpressRoute Circuit Authorization in the private cloud"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,

@@ -92,6 +92,10 @@ pub mod container_groups {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get a list of container groups in the specified subscription."]
+        #[doc = "Get a list of container groups in the specified subscription. This operation returns properties of each container group including containers, image registry credentials, restart policy, IP address type, OS type, state, and volumes."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -99,6 +103,11 @@ pub mod container_groups {
             }
         }
         #[doc = "Get a list of container groups in the specified subscription and resource group."]
+        #[doc = "Get a list of container groups in a specified subscription and resource group. This operation returns properties of each container group including containers, image registry credentials, restart policy, IP address type, OS type, state, and volumes."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -111,6 +120,12 @@ pub mod container_groups {
             }
         }
         #[doc = "Get the properties of the specified container group."]
+        #[doc = "Gets the properties of the specified container group in the specified subscription and resource group. The operation returns the properties of each container group including containers, image registry credentials, restart policy, IP address type, OS type, state, and volumes."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `container_group_name`: The name of the container group."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -125,6 +140,13 @@ pub mod container_groups {
             }
         }
         #[doc = "Create or update container groups."]
+        #[doc = "Create or update container groups with specified configurations."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `container_group_name`: The name of the container group."]
+        #[doc = "* `container_group`: The properties of the container group to be created or updated."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -141,6 +163,13 @@ pub mod container_groups {
             }
         }
         #[doc = "Update container groups."]
+        #[doc = "Updates container group tags with specified values."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `container_group_name`: The name of the container group."]
+        #[doc = "* `resource`: The container group resource with just the tags to be updated."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -157,6 +186,12 @@ pub mod container_groups {
             }
         }
         #[doc = "Delete the specified container group."]
+        #[doc = "Delete the specified container group in the specified subscription and resource group. The operation does not delete other resources provided by the user, such as volumes."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `container_group_name`: The name of the container group."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -171,6 +206,12 @@ pub mod container_groups {
             }
         }
         #[doc = "Restarts all containers in a container group."]
+        #[doc = "Restarts all containers in a container group in place. If container image has updates, new image will be downloaded."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `container_group_name`: The name of the container group."]
         pub fn restart(
             &self,
             subscription_id: impl Into<String>,
@@ -185,6 +226,12 @@ pub mod container_groups {
             }
         }
         #[doc = "Stops all containers in a container group."]
+        #[doc = "Stops all containers in a container group. Compute resources will be deallocated and billing will stop."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `container_group_name`: The name of the container group."]
         pub fn stop(
             &self,
             subscription_id: impl Into<String>,
@@ -199,6 +246,12 @@ pub mod container_groups {
             }
         }
         #[doc = "Starts all containers in a container group."]
+        #[doc = "Starts all containers in a container group. Compute resources will be allocated and billing will start."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `container_group_name`: The name of the container group."]
         pub fn start(
             &self,
             subscription_id: impl Into<String>,
@@ -213,6 +266,12 @@ pub mod container_groups {
             }
         }
         #[doc = "Get all network dependencies for container group."]
+        #[doc = "Gets all the network dependencies for this container group to allow complete control of network setting and configuration. For container groups, this will always be an empty list."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `container_group_name`: The name of the container group."]
         pub fn get_outbound_network_dependencies_endpoints(
             &self,
             subscription_id: impl Into<String>,
@@ -807,6 +866,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List the operations for Azure Container Instance service."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -888,6 +948,11 @@ pub mod location {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get the usage for a subscription"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `location`: The identifier for the physical azure location."]
         pub fn list_usage(&self, subscription_id: impl Into<String>, location: impl Into<String>) -> list_usage::Builder {
             list_usage::Builder {
                 client: self.0.clone(),
@@ -896,6 +961,11 @@ pub mod location {
             }
         }
         #[doc = "Get the list of cached images."]
+        #[doc = "Get the list of cached images on specific OS type for a subscription in a region."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `location`: The identifier for the physical azure location."]
         pub fn list_cached_images(&self, subscription_id: impl Into<String>, location: impl Into<String>) -> list_cached_images::Builder {
             list_cached_images::Builder {
                 client: self.0.clone(),
@@ -904,6 +974,11 @@ pub mod location {
             }
         }
         #[doc = "Get the list of capabilities of the location."]
+        #[doc = "Get the list of CPU/memory/GPU capabilities of a region."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `location`: The identifier for the physical azure location."]
         pub fn list_capabilities(&self, subscription_id: impl Into<String>, location: impl Into<String>) -> list_capabilities::Builder {
             list_capabilities::Builder {
                 client: self.0.clone(),
@@ -1121,6 +1196,13 @@ pub mod containers {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get the logs for a specified container instance."]
+        #[doc = "Get the logs for a specified container instance in a specified resource group and container group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `container_group_name`: The name of the container group."]
+        #[doc = "* `container_name`: The name of the container instance."]
         pub fn list_logs(
             &self,
             subscription_id: impl Into<String>,
@@ -1139,6 +1221,14 @@ pub mod containers {
             }
         }
         #[doc = "Executes a command in a specific container instance."]
+        #[doc = "Executes a command for a specific container instance in a specified resource group and container group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `container_group_name`: The name of the container group."]
+        #[doc = "* `container_name`: The name of the container instance."]
+        #[doc = "* `container_exec_request`: The request for the exec command."]
         pub fn execute_command(
             &self,
             subscription_id: impl Into<String>,
@@ -1157,6 +1247,13 @@ pub mod containers {
             }
         }
         #[doc = "Attach to the output of a specific container instance."]
+        #[doc = "Attach to the output stream of a specific container instance in a specified resource group and container group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `container_group_name`: The name of the container group."]
+        #[doc = "* `container_name`: The name of the container instance."]
         pub fn attach(
             &self,
             subscription_id: impl Into<String>,
@@ -1187,10 +1284,12 @@ pub mod containers {
             pub(crate) timestamps: Option<bool>,
         }
         impl Builder {
+            #[doc = "The number of lines to show from the tail of the container instance log. If not provided, all available logs are shown up to 4mb."]
             pub fn tail(mut self, tail: i32) -> Self {
                 self.tail = Some(tail);
                 self
             }
+            #[doc = "If true, adds a timestamp at the beginning of every line of log output. If not provided, defaults to false."]
             pub fn timestamps(mut self, timestamps: bool) -> Self {
                 self.timestamps = Some(timestamps);
                 self

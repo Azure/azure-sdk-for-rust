@@ -104,6 +104,7 @@ impl Client {
 }
 impl Client {
     #[doc = "Get the Service Fabric cluster manifest."]
+    #[doc = "Get the Service Fabric cluster manifest. The cluster manifest contains properties of the cluster that include different node types on the cluster,\nsecurity configurations, fault, and upgrade domain topologies, etc.\n\nThese properties are specified as part of the ClusterConfig.JSON file while deploying a stand-alone cluster. However, most of the information in the cluster manifest\nis generated internally by service fabric during cluster deployment in other deployment scenarios (e.g. when using Azure portal).\n\nThe contents of the cluster manifest are for informational purposes only and users are not expected to take a dependency on the format of the file contents or its interpretation."]
     pub fn get_cluster_manifest(&self) -> get_cluster_manifest::Builder {
         get_cluster_manifest::Builder {
             client: self.clone(),
@@ -111,6 +112,7 @@ impl Client {
         }
     }
     #[doc = "Gets the health of a Service Fabric cluster."]
+    #[doc = "Use EventsHealthStateFilter to filter the collection of health events reported on the cluster based on the health state.\nSimilarly, use NodesHealthStateFilter and ApplicationsHealthStateFilter to filter the collection of nodes and applications returned based on their aggregated health state."]
     pub fn get_cluster_health(&self) -> get_cluster_health::Builder {
         get_cluster_health::Builder {
             client: self.clone(),
@@ -123,6 +125,7 @@ impl Client {
         }
     }
     #[doc = "Gets the health of a Service Fabric cluster using the specified policy."]
+    #[doc = "Use EventsHealthStateFilter to filter the collection of health events reported on the cluster based on the health state.\nSimilarly, use NodesHealthStateFilter and ApplicationsHealthStateFilter to filter the collection of nodes and applications returned based on their aggregated health state.\nUse ClusterHealthPolicies to override the health policies used to evaluate the health."]
     pub fn get_cluster_health_using_policy(&self) -> get_cluster_health_using_policy::Builder {
         get_cluster_health_using_policy::Builder {
             client: self.clone(),
@@ -136,6 +139,7 @@ impl Client {
         }
     }
     #[doc = "Gets the health of a Service Fabric cluster using health chunks."]
+    #[doc = "Gets the health of a Service Fabric cluster using health chunks. Includes the aggregated health state of the cluster, but none of the cluster entities.\nTo expand the cluster health and get the health state of all or some of the entities, use the POST URI and specify the cluster health chunk query description."]
     pub fn get_cluster_health_chunk(&self) -> get_cluster_health_chunk::Builder {
         get_cluster_health_chunk::Builder {
             client: self.clone(),
@@ -143,6 +147,7 @@ impl Client {
         }
     }
     #[doc = "Gets the health of a Service Fabric cluster using health chunks."]
+    #[doc = "Gets the health of a Service Fabric cluster using health chunks. The health evaluation is done based on the input cluster health chunk query description.\nThe query description allows users to specify health policies for evaluating the cluster and its children.\nUsers can specify very flexible filters to select which cluster entities to return. The selection can be done based on the entities health state and based on the hierarchy.\nThe query can return multi-level children of the entities based on the specified filters. For example, it can return one application with a specified name, and for this application, return\nonly services that are in Error or Warning, and all partitions and replicas for one of these services."]
     pub fn get_cluster_health_chunk_using_policy_and_advanced_filters(
         &self,
     ) -> get_cluster_health_chunk_using_policy_and_advanced_filters::Builder {
@@ -153,6 +158,10 @@ impl Client {
         }
     }
     #[doc = "Sends a health report on the Service Fabric cluster."]
+    #[doc = "Sends a health report on a Service Fabric cluster. The report must contain the information about the source of the health report and property on which it is reported.\nThe report is sent to a Service Fabric gateway node, which forwards to the health store.\nThe report may be accepted by the gateway, but rejected by the health store after extra validation.\nFor example, the health store may reject the report because of an invalid parameter, like a stale sequence number.\nTo see whether the report was applied in the health store, run GetClusterHealth and check that the report appears in the HealthEvents section."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `health_information`: Describes the health information for the health report. This information needs to be present in all of the health reports sent to the health manager."]
     pub fn report_cluster_health(&self, health_information: impl Into<models::HealthInformation>) -> report_cluster_health::Builder {
         report_cluster_health::Builder {
             client: self.clone(),
@@ -162,6 +171,7 @@ impl Client {
         }
     }
     #[doc = "Gets a list of fabric code versions that are provisioned in a Service Fabric cluster."]
+    #[doc = "Gets a list of information about fabric code versions that are provisioned in the cluster. The parameter CodeVersion can be used to optionally filter the output to only that particular version."]
     pub fn get_provisioned_fabric_code_version_info_list(&self) -> get_provisioned_fabric_code_version_info_list::Builder {
         get_provisioned_fabric_code_version_info_list::Builder {
             client: self.clone(),
@@ -170,6 +180,7 @@ impl Client {
         }
     }
     #[doc = "Gets a list of fabric config versions that are provisioned in a Service Fabric cluster."]
+    #[doc = "Gets a list of information about fabric config versions that are provisioned in the cluster. The parameter ConfigVersion can be used to optionally filter the output to only that particular version."]
     pub fn get_provisioned_fabric_config_version_info_list(&self) -> get_provisioned_fabric_config_version_info_list::Builder {
         get_provisioned_fabric_config_version_info_list::Builder {
             client: self.clone(),
@@ -178,6 +189,7 @@ impl Client {
         }
     }
     #[doc = "Gets the progress of the current cluster upgrade."]
+    #[doc = "Gets the current progress of the ongoing cluster upgrade. If no upgrade is currently in progress, get the last state of the previous cluster upgrade."]
     pub fn get_cluster_upgrade_progress(&self) -> get_cluster_upgrade_progress::Builder {
         get_cluster_upgrade_progress::Builder {
             client: self.clone(),
@@ -185,6 +197,10 @@ impl Client {
         }
     }
     #[doc = "Get the Service Fabric standalone cluster configuration."]
+    #[doc = "The cluster configuration contains properties of the cluster that include different node types on the cluster,\nsecurity configurations, fault, and upgrade domain topologies, etc."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `configuration_api_version`: The API version of the Standalone cluster json configuration."]
     pub fn get_cluster_configuration(&self, configuration_api_version: impl Into<String>) -> get_cluster_configuration::Builder {
         get_cluster_configuration::Builder {
             client: self.clone(),
@@ -193,6 +209,7 @@ impl Client {
         }
     }
     #[doc = "Get the cluster configuration upgrade status of a Service Fabric standalone cluster."]
+    #[doc = "Get the cluster configuration upgrade status details of a Service Fabric standalone cluster."]
     pub fn get_cluster_configuration_upgrade_status(&self) -> get_cluster_configuration_upgrade_status::Builder {
         get_cluster_configuration_upgrade_status::Builder {
             client: self.clone(),
@@ -200,6 +217,7 @@ impl Client {
         }
     }
     #[doc = "Get the service state of Service Fabric Upgrade Orchestration Service."]
+    #[doc = "Get the service state of Service Fabric Upgrade Orchestration Service. This API is internally used for support purposes."]
     pub fn get_upgrade_orchestration_service_state(&self) -> get_upgrade_orchestration_service_state::Builder {
         get_upgrade_orchestration_service_state::Builder {
             client: self.clone(),
@@ -207,6 +225,10 @@ impl Client {
         }
     }
     #[doc = "Update the service state of Service Fabric Upgrade Orchestration Service."]
+    #[doc = "Update the service state of Service Fabric Upgrade Orchestration Service. This API is internally used for support purposes."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `upgrade_orchestration_service_state`: Service state of Service Fabric Upgrade Orchestration Service."]
     pub fn set_upgrade_orchestration_service_state(
         &self,
         upgrade_orchestration_service_state: impl Into<models::UpgradeOrchestrationServiceState>,
@@ -218,6 +240,10 @@ impl Client {
         }
     }
     #[doc = "Provision the code or configuration packages of a Service Fabric cluster."]
+    #[doc = "Validate and provision the code or configuration packages of a Service Fabric cluster."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `provision_fabric_description`: Describes the parameters for provisioning a cluster."]
     pub fn provision_cluster(
         &self,
         provision_fabric_description: impl Into<models::ProvisionFabricDescription>,
@@ -229,6 +255,10 @@ impl Client {
         }
     }
     #[doc = "Unprovision the code or configuration packages of a Service Fabric cluster."]
+    #[doc = "It is supported to unprovision code and configuration separately."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `unprovision_fabric_description`: Describes the parameters for unprovisioning a cluster."]
     pub fn unprovision_cluster(
         &self,
         unprovision_fabric_description: impl Into<models::UnprovisionFabricDescription>,
@@ -240,6 +270,7 @@ impl Client {
         }
     }
     #[doc = "Roll back the upgrade of a Service Fabric cluster."]
+    #[doc = "Roll back the code or configuration upgrade of a Service Fabric cluster."]
     pub fn rollback_cluster_upgrade(&self) -> rollback_cluster_upgrade::Builder {
         rollback_cluster_upgrade::Builder {
             client: self.clone(),
@@ -247,6 +278,10 @@ impl Client {
         }
     }
     #[doc = "Make the cluster upgrade move on to the next upgrade domain."]
+    #[doc = "Make the cluster code or configuration upgrade move on to the next upgrade domain if appropriate."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `resume_cluster_upgrade_description`: Describes the parameters for resuming a cluster upgrade."]
     pub fn resume_cluster_upgrade(
         &self,
         resume_cluster_upgrade_description: impl Into<models::ResumeClusterUpgradeDescription>,
@@ -258,6 +293,10 @@ impl Client {
         }
     }
     #[doc = "Start upgrading the code or configuration version of a Service Fabric cluster."]
+    #[doc = "Validate the supplied upgrade parameters and start upgrading the code or configuration version of a Service Fabric cluster if the parameters are valid."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `start_cluster_upgrade_description`: Describes the parameters for starting a cluster upgrade."]
     pub fn start_cluster_upgrade(
         &self,
         start_cluster_upgrade_description: impl Into<models::StartClusterUpgradeDescription>,
@@ -269,6 +308,10 @@ impl Client {
         }
     }
     #[doc = "Start upgrading the configuration of a Service Fabric standalone cluster."]
+    #[doc = "Validate the supplied configuration upgrade parameters and start upgrading the cluster configuration if the parameters are valid."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `cluster_configuration_upgrade_description`: Parameters for a standalone cluster configuration upgrade."]
     pub fn start_cluster_configuration_upgrade(
         &self,
         cluster_configuration_upgrade_description: impl Into<models::ClusterConfigurationUpgradeDescription>,
@@ -280,6 +323,10 @@ impl Client {
         }
     }
     #[doc = "Update the upgrade parameters of a Service Fabric cluster upgrade."]
+    #[doc = "Update the upgrade parameters used during a Service Fabric cluster upgrade."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `update_cluster_upgrade_description`: Parameters for updating a cluster upgrade."]
     pub fn update_cluster_upgrade(
         &self,
         update_cluster_upgrade_description: impl Into<models::UpdateClusterUpgradeDescription>,
@@ -291,6 +338,7 @@ impl Client {
         }
     }
     #[doc = "Gets the Azure Active Directory metadata used for secured connection to cluster."]
+    #[doc = "Gets the Azure Active Directory metadata used for secured connection to cluster.\nThis API is not supposed to be called separately. It provides information needed to set up an Azure Active Directory secured connection with a Service Fabric cluster."]
     pub fn get_aad_metadata(&self) -> get_aad_metadata::Builder {
         get_aad_metadata::Builder {
             client: self.clone(),
@@ -298,6 +346,7 @@ impl Client {
         }
     }
     #[doc = "Get the current Service Fabric cluster version."]
+    #[doc = "If a cluster upgrade is happening, then this API will return the lowest (older) version of the current and target cluster runtime versions."]
     pub fn get_cluster_version(&self) -> get_cluster_version::Builder {
         get_cluster_version::Builder {
             client: self.clone(),
@@ -305,6 +354,7 @@ impl Client {
         }
     }
     #[doc = "Gets the load of a Service Fabric cluster."]
+    #[doc = "Retrieves the load information of a Service Fabric cluster for all the metrics that have load or capacity defined."]
     pub fn get_cluster_load(&self) -> get_cluster_load::Builder {
         get_cluster_load::Builder {
             client: self.clone(),
@@ -312,6 +362,10 @@ impl Client {
         }
     }
     #[doc = "Changes the verbosity of service placement health reporting."]
+    #[doc = "If verbosity is set to true, then detailed health reports will be generated when replicas cannot be placed or dropped.\nIf verbosity is set to false, then no health reports will be generated when replicas cannot be placed or dropped."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `enabled`: The verbosity of service placement health reporting."]
     pub fn toggle_verbose_service_placement_health_reporting(
         &self,
         enabled: bool,
@@ -323,6 +377,7 @@ impl Client {
         }
     }
     #[doc = "Gets the list of nodes in the Service Fabric cluster."]
+    #[doc = "The response includes the name, status, ID, health, uptime, and other details about the nodes."]
     pub fn get_node_info_list(&self) -> get_node_info_list::Builder {
         get_node_info_list::Builder {
             client: self.clone(),
@@ -333,6 +388,10 @@ impl Client {
         }
     }
     #[doc = "Gets the information about a specific node in the Service Fabric cluster."]
+    #[doc = "The response includes the name, status, ID, health, uptime, and other details about the node."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `node_name`: The name of the node."]
     pub fn get_node_info(&self, node_name: impl Into<String>) -> get_node_info::Builder {
         get_node_info::Builder {
             client: self.clone(),
@@ -341,6 +400,10 @@ impl Client {
         }
     }
     #[doc = "Gets the health of a Service Fabric node."]
+    #[doc = "Gets the health of a Service Fabric node. Use EventsHealthStateFilter to filter the collection of health events reported on the node based on the health state. If the node that you specify by name does not exist in the health store, this returns an error."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `node_name`: The name of the node."]
     pub fn get_node_health(&self, node_name: impl Into<String>) -> get_node_health::Builder {
         get_node_health::Builder {
             client: self.clone(),
@@ -350,6 +413,10 @@ impl Client {
         }
     }
     #[doc = "Gets the health of a Service Fabric node, by using the specified health policy."]
+    #[doc = "Gets the health of a Service Fabric node. Use EventsHealthStateFilter to filter the collection of health events reported on the node based on the health state. Use ClusterHealthPolicy in the POST body to override the health policies used to evaluate the health. If the node that you specify by name does not exist in the health store, this returns an error."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `node_name`: The name of the node."]
     pub fn get_node_health_using_policy(&self, node_name: impl Into<String>) -> get_node_health_using_policy::Builder {
         get_node_health_using_policy::Builder {
             client: self.clone(),
@@ -360,6 +427,11 @@ impl Client {
         }
     }
     #[doc = "Sends a health report on the Service Fabric node."]
+    #[doc = "Reports health state of the specified Service Fabric node. The report must contain the information about the source of the health report and property on which it is reported.\nThe report is sent to a Service Fabric gateway node, which forwards to the health store.\nThe report may be accepted by the gateway, but rejected by the health store after extra validation.\nFor example, the health store may reject the report because of an invalid parameter, like a stale sequence number.\nTo see whether the report was applied in the health store, run GetNodeHealth and check that the report appears in the HealthEvents section."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `node_name`: The name of the node."]
+    #[doc = "* `health_information`: Describes the health information for the health report. This information needs to be present in all of the health reports sent to the health manager."]
     pub fn report_node_health(
         &self,
         node_name: impl Into<String>,
@@ -374,6 +446,10 @@ impl Client {
         }
     }
     #[doc = "Gets the load information of a Service Fabric node."]
+    #[doc = "Retrieves the load information of a Service Fabric node for all the metrics that have load or capacity defined."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `node_name`: The name of the node."]
     pub fn get_node_load_info(&self, node_name: impl Into<String>) -> get_node_load_info::Builder {
         get_node_load_info::Builder {
             client: self.clone(),
@@ -382,6 +458,11 @@ impl Client {
         }
     }
     #[doc = "Deactivate a Service Fabric cluster node with the specified deactivation intent."]
+    #[doc = "Deactivate a Service Fabric cluster node with the specified deactivation intent. Once the deactivation is in progress, the deactivation intent can be increased, but not decreased (for example, a node that is deactivated with the Pause intent can be deactivated further with Restart, but not the other way around. Nodes may be reactivated using the Activate a node operation any time after they are deactivated. If the deactivation is not complete, this will cancel the deactivation. A node that goes down and comes back up while deactivated will still need to be reactivated before services will be placed on that node."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `node_name`: The name of the node."]
+    #[doc = "* `deactivation_intent_description`: Describes the intent or reason for deactivating the node."]
     pub fn disable_node(
         &self,
         node_name: impl Into<String>,
@@ -395,6 +476,10 @@ impl Client {
         }
     }
     #[doc = "Activate a Service Fabric cluster node that is currently deactivated."]
+    #[doc = "Activates a Service Fabric cluster node that is currently deactivated. Once activated, the node will again become a viable target for placing new replicas, and any deactivated replicas remaining on the node will be reactivated."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `node_name`: The name of the node."]
     pub fn enable_node(&self, node_name: impl Into<String>) -> enable_node::Builder {
         enable_node::Builder {
             client: self.clone(),
@@ -403,6 +488,10 @@ impl Client {
         }
     }
     #[doc = "Notifies Service Fabric that the persisted state on a node has been permanently removed or lost."]
+    #[doc = "This implies that it is not possible to recover the persisted state of that node. This generally happens if a hard disk has been wiped clean, or if a hard disk crashes. The node has to be down for this operation to be successful. This operation lets Service Fabric know that the replicas on that node no longer exist, and that Service Fabric should stop waiting for those replicas to come back up. Do not run this cmdlet if the state on the node has not been removed and the node can come back up with its state intact. Starting from Service Fabric 6.5, in order to use this API for seed nodes, please change the seed nodes to regular (non-seed) nodes and then invoke this API to remove the node state. If the cluster is running on Azure, after the seed node goes down, Service Fabric will try to change it to a non-seed node automatically. To make this happen, make sure the number of non-seed nodes in the primary node type is no less than the number of Down seed nodes. If necessary, add more nodes to the primary node type to achieve this. For standalone cluster, if the Down seed node is not expected to come back up with its state intact, please remove the node from the cluster, see https://docs.microsoft.com/azure/service-fabric/service-fabric-cluster-windows-server-add-remove-nodes"]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `node_name`: The name of the node."]
     pub fn remove_node_state(&self, node_name: impl Into<String>) -> remove_node_state::Builder {
         remove_node_state::Builder {
             client: self.clone(),
@@ -411,6 +500,11 @@ impl Client {
         }
     }
     #[doc = "Restarts a Service Fabric cluster node."]
+    #[doc = "Restarts a Service Fabric cluster node that is already started."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `node_name`: The name of the node."]
+    #[doc = "* `restart_node_description`: The instance of the node to be restarted and a flag indicating the need to take dump of the fabric process."]
     pub fn restart_node(
         &self,
         node_name: impl Into<String>,
@@ -424,6 +518,10 @@ impl Client {
         }
     }
     #[doc = "Removes configuration overrides on the specified node."]
+    #[doc = "This api allows removing all existing configuration overrides on specified node."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `node_name`: The name of the node."]
     pub fn remove_configuration_overrides(&self, node_name: impl Into<String>) -> remove_configuration_overrides::Builder {
         remove_configuration_overrides::Builder {
             client: self.clone(),
@@ -432,6 +530,10 @@ impl Client {
         }
     }
     #[doc = "Gets the list of configuration overrides on the specified node."]
+    #[doc = "This api allows getting all existing configuration overrides on the specified node."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `node_name`: The name of the node."]
     pub fn get_configuration_overrides(&self, node_name: impl Into<String>) -> get_configuration_overrides::Builder {
         get_configuration_overrides::Builder {
             client: self.clone(),
@@ -440,6 +542,11 @@ impl Client {
         }
     }
     #[doc = "Adds the list of configuration overrides on the specified node."]
+    #[doc = "This api allows adding all existing configuration overrides on the specified node."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `node_name`: The name of the node."]
+    #[doc = "* `config_parameter_override_list`: Description for adding list of configuration overrides."]
     pub fn add_configuration_parameter_overrides(
         &self,
         node_name: impl Into<String>,
@@ -454,6 +561,11 @@ impl Client {
         }
     }
     #[doc = "Removes the list of tags from the specified node."]
+    #[doc = "This api allows removing set of tags from the specified node."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `node_name`: The name of the node."]
+    #[doc = "* `node_tags`: Description for adding list of node tags."]
     pub fn remove_node_tags(&self, node_name: impl Into<String>, node_tags: impl Into<models::NodeTagsList>) -> remove_node_tags::Builder {
         remove_node_tags::Builder {
             client: self.clone(),
@@ -462,6 +574,11 @@ impl Client {
         }
     }
     #[doc = "Adds the list of tags on the specified node."]
+    #[doc = "This api allows adding tags to the specified node."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `node_name`: The name of the node."]
+    #[doc = "* `node_tags`: Description for adding list of node tags."]
     pub fn add_node_tags(&self, node_name: impl Into<String>, node_tags: impl Into<models::NodeTagsList>) -> add_node_tags::Builder {
         add_node_tags::Builder {
             client: self.clone(),
@@ -470,6 +587,7 @@ impl Client {
         }
     }
     #[doc = "Gets the list of application types in the Service Fabric cluster."]
+    #[doc = "Returns the information about the application types that are provisioned or in the process of being provisioned in the Service Fabric cluster. Each version of an application type is returned as one application type. The response includes the name, version, status, and other details about the application type. This is a paged query, meaning that if not all of the application types fit in a page, one page of results is returned as well as a continuation token, which can be used to get the next page. For example, if there are 10 application types but a page only fits the first three application types, or if max results is set to 3, then three is returned. To access the rest of the results, retrieve subsequent pages by using the returned continuation token in the next query. An empty continuation token is returned if there are no subsequent pages."]
     pub fn get_application_type_info_list(&self) -> get_application_type_info_list::Builder {
         get_application_type_info_list::Builder {
             client: self.clone(),
@@ -481,6 +599,10 @@ impl Client {
         }
     }
     #[doc = "Gets the list of application types in the Service Fabric cluster matching exactly the specified name."]
+    #[doc = "Returns the information about the application types that are provisioned or in the process of being provisioned in the Service Fabric cluster. These results are of application types whose name match exactly the one specified as the parameter, and which comply with the given query parameters. All versions of the application type matching the application type name are returned, with each version returned as one application type. The response includes the name, version, status, and other details about the application type. This is a paged query, meaning that if not all of the application types fit in a page, one page of results is returned as well as a continuation token, which can be used to get the next page. For example, if there are 10 application types but a page only fits the first three application types, or if max results is set to 3, then three is returned. To access the rest of the results, retrieve subsequent pages by using the returned continuation token in the next query. An empty continuation token is returned if there are no subsequent pages."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `application_type_name`: The name of the application type."]
     pub fn get_application_type_info_list_by_name(
         &self,
         application_type_name: impl Into<String>,
@@ -496,6 +618,10 @@ impl Client {
         }
     }
     #[doc = "Provisions or registers a Service Fabric application type with the cluster using the '.sfpkg' package in the external store or using the application package in the image store."]
+    #[doc = "Provisions a Service Fabric application type with the cluster. The provision is required before any new applications can be instantiated.\nThe provision operation can be performed either on the application package specified by the relativePathInImageStore, or by using the URI of the external '.sfpkg'."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `provision_application_type_description_base_required_body_param`: The base type of provision application type description which supports either image store-based provision or external store-based provision."]
     pub fn provision_application_type(
         &self,
         provision_application_type_description_base_required_body_param: impl Into<models::ProvisionApplicationTypeDescriptionBase>,
@@ -508,6 +634,11 @@ impl Client {
         }
     }
     #[doc = "Removes or unregisters a Service Fabric application type from the cluster."]
+    #[doc = "This operation can only be performed if all application instances of the application type have been deleted. Once the application type is unregistered, no new application instances can be created for this particular application type."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `application_type_name`: The name of the application type."]
+    #[doc = "* `unprovision_application_type_description_info`: The relative path for the application package in the image store specified during the prior copy operation."]
     pub fn unprovision_application_type(
         &self,
         application_type_name: impl Into<String>,
@@ -521,6 +652,11 @@ impl Client {
         }
     }
     #[doc = "Gets the list containing the information about service types that are supported by a provisioned application type in a Service Fabric cluster."]
+    #[doc = "Gets the list containing the information about service types that are supported by a provisioned application type in a Service Fabric cluster. The provided application type must exist. Otherwise, a 404 status is returned."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `application_type_name`: The name of the application type."]
+    #[doc = "* `application_type_version`: The version of the application type."]
     pub fn get_service_type_info_list(
         &self,
         application_type_name: impl Into<String>,
@@ -534,6 +670,12 @@ impl Client {
         }
     }
     #[doc = "Gets the information about a specific service type that is supported by a provisioned application type in a Service Fabric cluster."]
+    #[doc = "Gets the information about a specific service type that is supported by a provisioned application type in a Service Fabric cluster. The provided application type must exist. Otherwise, a 404 status is returned. A 204 response is returned if the specified service type is not found in the cluster."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `application_type_name`: The name of the application type."]
+    #[doc = "* `application_type_version`: The version of the application type."]
+    #[doc = "* `service_type_name`: Specifies the name of a Service Fabric service type."]
     pub fn get_service_type_info_by_name(
         &self,
         application_type_name: impl Into<String>,
@@ -549,6 +691,12 @@ impl Client {
         }
     }
     #[doc = "Gets the manifest describing a service type."]
+    #[doc = "Gets the manifest describing a service type. The response contains the service manifest XML as a string."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `application_type_name`: The name of the application type."]
+    #[doc = "* `application_type_version`: The version of the application type."]
+    #[doc = "* `service_manifest_name`: The name of a service manifest registered as part of an application type in a Service Fabric cluster."]
     pub fn get_service_manifest(
         &self,
         application_type_name: impl Into<String>,
@@ -564,6 +712,11 @@ impl Client {
         }
     }
     #[doc = "Gets the list containing the information about service types from the applications deployed on a node in a Service Fabric cluster."]
+    #[doc = "Gets the list containing the information about service types from the applications deployed on a node in a Service Fabric cluster. The response includes the name of the service type, its registration status, the code package that registered it and activation ID of the service package."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `node_name`: The name of the node."]
+    #[doc = "* `application_id`: The identity of the application. This is typically the full name of the application without the 'fabric:' URI scheme.\nStarting from version 6.0, hierarchical names are delimited with the \"~\" character.\nFor example, if the application name is \"fabric:/myapp/app1\", the application identity would be \"myapp~app1\" in 6.0+ and \"myapp/app1\" in previous versions."]
     pub fn get_deployed_service_type_info_list(
         &self,
         node_name: impl Into<String>,
@@ -578,6 +731,12 @@ impl Client {
         }
     }
     #[doc = "Gets the information about a specified service type of the application deployed on a node in a Service Fabric cluster."]
+    #[doc = "Gets the list containing the information about a specific service type from the applications deployed on a node in a Service Fabric cluster. The response includes the name of the service type, its registration status, the code package that registered it and activation ID of the service package. Each entry represents one activation of a service type, differentiated by the activation ID."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `node_name`: The name of the node."]
+    #[doc = "* `application_id`: The identity of the application. This is typically the full name of the application without the 'fabric:' URI scheme.\nStarting from version 6.0, hierarchical names are delimited with the \"~\" character.\nFor example, if the application name is \"fabric:/myapp/app1\", the application identity would be \"myapp~app1\" in 6.0+ and \"myapp/app1\" in previous versions."]
+    #[doc = "* `service_type_name`: Specifies the name of a Service Fabric service type."]
     pub fn get_deployed_service_type_info_by_name(
         &self,
         node_name: impl Into<String>,
@@ -594,6 +753,10 @@ impl Client {
         }
     }
     #[doc = "Creates a Service Fabric application."]
+    #[doc = "Creates a Service Fabric application using the specified description."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `application_description`: Description for creating an application."]
     pub fn create_application(&self, application_description: impl Into<models::ApplicationDescription>) -> create_application::Builder {
         create_application::Builder {
             client: self.clone(),
@@ -602,6 +765,10 @@ impl Client {
         }
     }
     #[doc = "Deletes an existing Service Fabric application."]
+    #[doc = "An application must be created before it can be deleted. Deleting an application will delete all services that are part of that application. By default, Service Fabric will try to close service replicas in a graceful manner and then delete the service. However, if a service is having issues closing the replica gracefully, the delete operation may take a long time or get stuck. Use the optional ForceRemove flag to skip the graceful close sequence and forcefully delete the application and all of its services."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `application_id`: The identity of the application. This is typically the full name of the application without the 'fabric:' URI scheme.\nStarting from version 6.0, hierarchical names are delimited with the \"~\" character.\nFor example, if the application name is \"fabric:/myapp/app1\", the application identity would be \"myapp~app1\" in 6.0+ and \"myapp/app1\" in previous versions."]
     pub fn delete_application(&self, application_id: impl Into<String>) -> delete_application::Builder {
         delete_application::Builder {
             client: self.clone(),
@@ -611,6 +778,10 @@ impl Client {
         }
     }
     #[doc = "Gets load information about a Service Fabric application."]
+    #[doc = "Returns the load information about the application that was created or in the process of being created in the Service Fabric cluster and whose name matches the one specified as the parameter. The response includes the name, minimum nodes, maximum nodes, the number of nodes the application is occupying currently, and application load metric information about the application."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `application_id`: The identity of the application. This is typically the full name of the application without the 'fabric:' URI scheme.\nStarting from version 6.0, hierarchical names are delimited with the \"~\" character.\nFor example, if the application name is \"fabric:/myapp/app1\", the application identity would be \"myapp~app1\" in 6.0+ and \"myapp/app1\" in previous versions."]
     pub fn get_application_load_info(&self, application_id: impl Into<String>) -> get_application_load_info::Builder {
         get_application_load_info::Builder {
             client: self.clone(),
@@ -619,6 +790,7 @@ impl Client {
         }
     }
     #[doc = "Gets the list of applications created in the Service Fabric cluster that match the specified filters."]
+    #[doc = "Gets the information about the applications that were created or in the process of being created in the Service Fabric cluster and match the specified filters. The response includes the name, type, status, parameters, and other details about the application. If the applications do not fit in a page, one page of results is returned as well as a continuation token, which can be used to get the next page. Filters ApplicationTypeName and ApplicationDefinitionKindFilter cannot be specified at the same time."]
     pub fn get_application_info_list(&self) -> get_application_info_list::Builder {
         get_application_info_list::Builder {
             client: self.clone(),
@@ -631,6 +803,10 @@ impl Client {
         }
     }
     #[doc = "Gets information about a Service Fabric application."]
+    #[doc = "Returns the information about the application that was created or in the process of being created in the Service Fabric cluster and whose name matches the one specified as the parameter. The response includes the name, type, status, parameters, and other details about the application."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `application_id`: The identity of the application. This is typically the full name of the application without the 'fabric:' URI scheme.\nStarting from version 6.0, hierarchical names are delimited with the \"~\" character.\nFor example, if the application name is \"fabric:/myapp/app1\", the application identity would be \"myapp~app1\" in 6.0+ and \"myapp/app1\" in previous versions."]
     pub fn get_application_info(&self, application_id: impl Into<String>) -> get_application_info::Builder {
         get_application_info::Builder {
             client: self.clone(),
@@ -640,6 +816,10 @@ impl Client {
         }
     }
     #[doc = "Gets the health of the service fabric application."]
+    #[doc = "Returns the heath state of the service fabric application. The response reports either Ok, Error or Warning health state. If the entity is not found in the health store, it will return Error."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `application_id`: The identity of the application. This is typically the full name of the application without the 'fabric:' URI scheme.\nStarting from version 6.0, hierarchical names are delimited with the \"~\" character.\nFor example, if the application name is \"fabric:/myapp/app1\", the application identity would be \"myapp~app1\" in 6.0+ and \"myapp/app1\" in previous versions."]
     pub fn get_application_health(&self, application_id: impl Into<String>) -> get_application_health::Builder {
         get_application_health::Builder {
             client: self.clone(),
@@ -652,6 +832,10 @@ impl Client {
         }
     }
     #[doc = "Gets the health of a Service Fabric application using the specified policy."]
+    #[doc = "Gets the health of a Service Fabric application. Use EventsHealthStateFilter to filter the collection of health events reported on the node based on the health state. Use ClusterHealthPolicies to override the health policies used to evaluate the health."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `application_id`: The identity of the application. This is typically the full name of the application without the 'fabric:' URI scheme.\nStarting from version 6.0, hierarchical names are delimited with the \"~\" character.\nFor example, if the application name is \"fabric:/myapp/app1\", the application identity would be \"myapp~app1\" in 6.0+ and \"myapp/app1\" in previous versions."]
     pub fn get_application_health_using_policy(&self, application_id: impl Into<String>) -> get_application_health_using_policy::Builder {
         get_application_health_using_policy::Builder {
             client: self.clone(),
@@ -665,6 +849,11 @@ impl Client {
         }
     }
     #[doc = "Sends a health report on the Service Fabric application."]
+    #[doc = "Reports health state of the specified Service Fabric application. The report must contain the information about the source of the health report and property on which it is reported.\nThe report is sent to a Service Fabric gateway Application, which forwards to the health store.\nThe report may be accepted by the gateway, but rejected by the health store after extra validation.\nFor example, the health store may reject the report because of an invalid parameter, like a stale sequence number.\nTo see whether the report was applied in the health store, get application health and check that the report appears in the HealthEvents section."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `application_id`: The identity of the application. This is typically the full name of the application without the 'fabric:' URI scheme.\nStarting from version 6.0, hierarchical names are delimited with the \"~\" character.\nFor example, if the application name is \"fabric:/myapp/app1\", the application identity would be \"myapp~app1\" in 6.0+ and \"myapp/app1\" in previous versions."]
+    #[doc = "* `health_information`: Describes the health information for the health report. This information needs to be present in all of the health reports sent to the health manager."]
     pub fn report_application_health(
         &self,
         application_id: impl Into<String>,
@@ -679,6 +868,11 @@ impl Client {
         }
     }
     #[doc = "Starts upgrading an application in the Service Fabric cluster."]
+    #[doc = "Validates the supplied application upgrade parameters and starts upgrading the application if the parameters are valid.\nNote, [ApplicationParameter](https://docs.microsoft.com/dotnet/api/system.fabric.description.applicationdescription.applicationparameters)s are not preserved across an application upgrade.\nIn order to preserve current application parameters, the user should get the parameters using [GetApplicationInfo](./GetApplicationInfo.md) operation first and pass them into the upgrade API call as shown in the example."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `application_id`: The identity of the application. This is typically the full name of the application without the 'fabric:' URI scheme.\nStarting from version 6.0, hierarchical names are delimited with the \"~\" character.\nFor example, if the application name is \"fabric:/myapp/app1\", the application identity would be \"myapp~app1\" in 6.0+ and \"myapp/app1\" in previous versions."]
+    #[doc = "* `application_upgrade_description`: Parameters for an application upgrade."]
     pub fn start_application_upgrade(
         &self,
         application_id: impl Into<String>,
@@ -692,6 +886,10 @@ impl Client {
         }
     }
     #[doc = "Gets details for the latest upgrade performed on this application."]
+    #[doc = "Returns information about the state of the latest application upgrade along with details to aid debugging application health issues."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `application_id`: The identity of the application. This is typically the full name of the application without the 'fabric:' URI scheme.\nStarting from version 6.0, hierarchical names are delimited with the \"~\" character.\nFor example, if the application name is \"fabric:/myapp/app1\", the application identity would be \"myapp~app1\" in 6.0+ and \"myapp/app1\" in previous versions."]
     pub fn get_application_upgrade(&self, application_id: impl Into<String>) -> get_application_upgrade::Builder {
         get_application_upgrade::Builder {
             client: self.clone(),
@@ -700,6 +898,11 @@ impl Client {
         }
     }
     #[doc = "Updates an ongoing application upgrade in the Service Fabric cluster."]
+    #[doc = "Updates the parameters of an ongoing application upgrade from the ones specified at the time of starting the application upgrade. This may be required to mitigate stuck application upgrades due to incorrect parameters or issues in the application to make progress."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `application_id`: The identity of the application. This is typically the full name of the application without the 'fabric:' URI scheme.\nStarting from version 6.0, hierarchical names are delimited with the \"~\" character.\nFor example, if the application name is \"fabric:/myapp/app1\", the application identity would be \"myapp~app1\" in 6.0+ and \"myapp/app1\" in previous versions."]
+    #[doc = "* `application_upgrade_update_description`: Parameters for updating an existing application upgrade."]
     pub fn update_application_upgrade(
         &self,
         application_id: impl Into<String>,
@@ -713,6 +916,11 @@ impl Client {
         }
     }
     #[doc = "Updates a Service Fabric application."]
+    #[doc = "Updates a Service Fabric application instance. The set of properties that can be updated are a subset of the properties that were specified at the time of creating the application."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `application_id`: The identity of the application. This is typically the full name of the application without the 'fabric:' URI scheme.\nStarting from version 6.0, hierarchical names are delimited with the \"~\" character.\nFor example, if the application name is \"fabric:/myapp/app1\", the application identity would be \"myapp~app1\" in 6.0+ and \"myapp/app1\" in previous versions."]
+    #[doc = "* `application_update_description`: Parameters for updating an existing application instance."]
     pub fn update_application(
         &self,
         application_id: impl Into<String>,
@@ -726,6 +934,11 @@ impl Client {
         }
     }
     #[doc = "Resumes upgrading an application in the Service Fabric cluster."]
+    #[doc = "Resumes an unmonitored manual Service Fabric application upgrade. Service Fabric upgrades one upgrade domain at a time. For unmonitored manual upgrades, after Service Fabric finishes an upgrade domain, it waits for you to call this API before proceeding to the next upgrade domain."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `application_id`: The identity of the application. This is typically the full name of the application without the 'fabric:' URI scheme.\nStarting from version 6.0, hierarchical names are delimited with the \"~\" character.\nFor example, if the application name is \"fabric:/myapp/app1\", the application identity would be \"myapp~app1\" in 6.0+ and \"myapp/app1\" in previous versions."]
+    #[doc = "* `resume_application_upgrade_description`: Describes the parameters for resuming an application upgrade."]
     pub fn resume_application_upgrade(
         &self,
         application_id: impl Into<String>,
@@ -739,6 +952,10 @@ impl Client {
         }
     }
     #[doc = "Starts rolling back the currently on-going upgrade of an application in the Service Fabric cluster."]
+    #[doc = "Starts rolling back the current application upgrade to the previous version. This API can only be used to roll back the current in-progress upgrade that is rolling forward to new version. If the application is not currently being upgraded use StartApplicationUpgrade API to upgrade it to desired version, including rolling back to a previous version."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `application_id`: The identity of the application. This is typically the full name of the application without the 'fabric:' URI scheme.\nStarting from version 6.0, hierarchical names are delimited with the \"~\" character.\nFor example, if the application name is \"fabric:/myapp/app1\", the application identity would be \"myapp~app1\" in 6.0+ and \"myapp/app1\" in previous versions."]
     pub fn rollback_application_upgrade(&self, application_id: impl Into<String>) -> rollback_application_upgrade::Builder {
         rollback_application_upgrade::Builder {
             client: self.clone(),
@@ -747,6 +964,10 @@ impl Client {
         }
     }
     #[doc = "Gets the list of applications deployed on a Service Fabric node."]
+    #[doc = "Gets the list of applications deployed on a Service Fabric node. The results do not include information about deployed system applications unless explicitly queried for by ID. Results encompass deployed applications in active, activating, and downloading states. This query requires that the node name corresponds to a node on the cluster. The query fails if the provided node name does not point to any active Service Fabric nodes on the cluster."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `node_name`: The name of the node."]
     pub fn get_deployed_application_info_list(&self, node_name: impl Into<String>) -> get_deployed_application_info_list::Builder {
         get_deployed_application_info_list::Builder {
             client: self.clone(),
@@ -758,6 +979,11 @@ impl Client {
         }
     }
     #[doc = "Gets the information about an application deployed on a Service Fabric node."]
+    #[doc = "This query returns system application information if the application ID provided is for system application. Results encompass deployed applications in active, activating, and downloading states. This query requires that the node name corresponds to a node on the cluster. The query fails if the provided node name does not point to any active Service Fabric nodes on the cluster."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `node_name`: The name of the node."]
+    #[doc = "* `application_id`: The identity of the application. This is typically the full name of the application without the 'fabric:' URI scheme.\nStarting from version 6.0, hierarchical names are delimited with the \"~\" character.\nFor example, if the application name is \"fabric:/myapp/app1\", the application identity would be \"myapp~app1\" in 6.0+ and \"myapp/app1\" in previous versions."]
     pub fn get_deployed_application_info(
         &self,
         node_name: impl Into<String>,
@@ -772,6 +998,11 @@ impl Client {
         }
     }
     #[doc = "Gets the information about health of an application deployed on a Service Fabric node."]
+    #[doc = "Gets the information about health of an application deployed on a Service Fabric node. Use EventsHealthStateFilter to optionally filter for the collection of HealthEvent objects reported on the deployed application based on health state. Use DeployedServicePackagesHealthStateFilter to optionally filter for DeployedServicePackageHealth children based on health state."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `node_name`: The name of the node."]
+    #[doc = "* `application_id`: The identity of the application. This is typically the full name of the application without the 'fabric:' URI scheme.\nStarting from version 6.0, hierarchical names are delimited with the \"~\" character.\nFor example, if the application name is \"fabric:/myapp/app1\", the application identity would be \"myapp~app1\" in 6.0+ and \"myapp/app1\" in previous versions."]
     pub fn get_deployed_application_health(
         &self,
         node_name: impl Into<String>,
@@ -788,6 +1019,11 @@ impl Client {
         }
     }
     #[doc = "Gets the information about health of an application deployed on a Service Fabric node. using the specified policy."]
+    #[doc = "Gets the information about health of an application deployed on a Service Fabric node using the specified policy. Use EventsHealthStateFilter to optionally filter for the collection of HealthEvent objects reported on the deployed application based on health state. Use DeployedServicePackagesHealthStateFilter to optionally filter for DeployedServicePackageHealth children based on health state. Use ApplicationHealthPolicy to optionally override the health policies used to evaluate the health. This API only uses 'ConsiderWarningAsError' field of the ApplicationHealthPolicy. The rest of the fields are ignored while evaluating the health of the deployed application."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `node_name`: The name of the node."]
+    #[doc = "* `application_id`: The identity of the application. This is typically the full name of the application without the 'fabric:' URI scheme.\nStarting from version 6.0, hierarchical names are delimited with the \"~\" character.\nFor example, if the application name is \"fabric:/myapp/app1\", the application identity would be \"myapp~app1\" in 6.0+ and \"myapp/app1\" in previous versions."]
     pub fn get_deployed_application_health_using_policy(
         &self,
         node_name: impl Into<String>,
@@ -805,6 +1041,12 @@ impl Client {
         }
     }
     #[doc = "Sends a health report on the Service Fabric application deployed on a Service Fabric node."]
+    #[doc = "Reports health state of the application deployed on a Service Fabric node. The report must contain the information about the source of the health report and property on which it is reported.\nThe report is sent to a Service Fabric gateway Service, which forwards to the health store.\nThe report may be accepted by the gateway, but rejected by the health store after extra validation.\nFor example, the health store may reject the report because of an invalid parameter, like a stale sequence number.\nTo see whether the report was applied in the health store, get deployed application health and check that the report appears in the HealthEvents section."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `node_name`: The name of the node."]
+    #[doc = "* `application_id`: The identity of the application. This is typically the full name of the application without the 'fabric:' URI scheme.\nStarting from version 6.0, hierarchical names are delimited with the \"~\" character.\nFor example, if the application name is \"fabric:/myapp/app1\", the application identity would be \"myapp~app1\" in 6.0+ and \"myapp/app1\" in previous versions."]
+    #[doc = "* `health_information`: Describes the health information for the health report. This information needs to be present in all of the health reports sent to the health manager."]
     pub fn report_deployed_application_health(
         &self,
         node_name: impl Into<String>,
@@ -821,6 +1063,11 @@ impl Client {
         }
     }
     #[doc = "Gets the manifest describing an application type."]
+    #[doc = "The response contains the application manifest XML as a string."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `application_type_name`: The name of the application type."]
+    #[doc = "* `application_type_version`: The version of the application type."]
     pub fn get_application_manifest(
         &self,
         application_type_name: impl Into<String>,
@@ -834,6 +1081,10 @@ impl Client {
         }
     }
     #[doc = "Gets the information about all services belonging to the application specified by the application ID."]
+    #[doc = "Returns the information about all services belonging to the application specified by the application ID."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `application_id`: The identity of the application. This is typically the full name of the application without the 'fabric:' URI scheme.\nStarting from version 6.0, hierarchical names are delimited with the \"~\" character.\nFor example, if the application name is \"fabric:/myapp/app1\", the application identity would be \"myapp~app1\" in 6.0+ and \"myapp/app1\" in previous versions."]
     pub fn get_service_info_list(&self, application_id: impl Into<String>) -> get_service_info_list::Builder {
         get_service_info_list::Builder {
             client: self.clone(),
@@ -844,6 +1095,11 @@ impl Client {
         }
     }
     #[doc = "Gets the information about the specific service belonging to the Service Fabric application."]
+    #[doc = "Returns the information about the specified service belonging to the specified Service Fabric application."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `application_id`: The identity of the application. This is typically the full name of the application without the 'fabric:' URI scheme.\nStarting from version 6.0, hierarchical names are delimited with the \"~\" character.\nFor example, if the application name is \"fabric:/myapp/app1\", the application identity would be \"myapp~app1\" in 6.0+ and \"myapp/app1\" in previous versions."]
+    #[doc = "* `service_id`: The identity of the service. This ID is typically the full name of the service without the 'fabric:' URI scheme.\nStarting from version 6.0, hierarchical names are delimited with the \"~\" character.\nFor example, if the service name is \"fabric:/myapp/app1/svc1\", the service identity would be \"myapp~app1~svc1\" in 6.0+ and \"myapp/app1/svc1\" in previous versions."]
     pub fn get_service_info(&self, application_id: impl Into<String>, service_id: impl Into<String>) -> get_service_info::Builder {
         get_service_info::Builder {
             client: self.clone(),
@@ -853,6 +1109,10 @@ impl Client {
         }
     }
     #[doc = "Gets the name of the Service Fabric application for a service."]
+    #[doc = "Gets the name of the application for the specified service. A 404 FABRIC_E_SERVICE_DOES_NOT_EXIST error is returned if a service with the provided service ID does not exist."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `service_id`: The identity of the service. This ID is typically the full name of the service without the 'fabric:' URI scheme.\nStarting from version 6.0, hierarchical names are delimited with the \"~\" character.\nFor example, if the service name is \"fabric:/myapp/app1/svc1\", the service identity would be \"myapp~app1~svc1\" in 6.0+ and \"myapp/app1/svc1\" in previous versions."]
     pub fn get_application_name_info(&self, service_id: impl Into<String>) -> get_application_name_info::Builder {
         get_application_name_info::Builder {
             client: self.clone(),
@@ -861,6 +1121,11 @@ impl Client {
         }
     }
     #[doc = "Creates the specified Service Fabric service."]
+    #[doc = "This api allows creating a new Service Fabric stateless or stateful service under a specified Service Fabric application. The description for creating the service includes partitioning information and optional properties for placement and load balancing. Some of the properties can later be modified using `UpdateService` API."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `application_id`: The identity of the application. This is typically the full name of the application without the 'fabric:' URI scheme.\nStarting from version 6.0, hierarchical names are delimited with the \"~\" character.\nFor example, if the application name is \"fabric:/myapp/app1\", the application identity would be \"myapp~app1\" in 6.0+ and \"myapp/app1\" in previous versions."]
+    #[doc = "* `service_description`: The information necessary to create a service."]
     pub fn create_service(
         &self,
         application_id: impl Into<String>,
@@ -874,6 +1139,11 @@ impl Client {
         }
     }
     #[doc = "Creates a Service Fabric service from the service template."]
+    #[doc = "Creates a Service Fabric service from the service template defined in the application manifest. A service template contains the properties that will be same for the service instance of the same type. The API allows overriding the properties that are usually different for different services of the same service type."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `application_id`: The identity of the application. This is typically the full name of the application without the 'fabric:' URI scheme.\nStarting from version 6.0, hierarchical names are delimited with the \"~\" character.\nFor example, if the application name is \"fabric:/myapp/app1\", the application identity would be \"myapp~app1\" in 6.0+ and \"myapp/app1\" in previous versions."]
+    #[doc = "* `service_from_template_description`: Describes the service that needs to be created from the template defined in the application manifest."]
     pub fn create_service_from_template(
         &self,
         application_id: impl Into<String>,
@@ -887,6 +1157,10 @@ impl Client {
         }
     }
     #[doc = "Deletes an existing Service Fabric service."]
+    #[doc = "A service must be created before it can be deleted. By default, Service Fabric will try to close service replicas in a graceful manner and then delete the service. However, if the service is having issues closing the replica gracefully, the delete operation may take a long time or get stuck. Use the optional ForceRemove flag to skip the graceful close sequence and forcefully delete the service."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `service_id`: The identity of the service. This ID is typically the full name of the service without the 'fabric:' URI scheme.\nStarting from version 6.0, hierarchical names are delimited with the \"~\" character.\nFor example, if the service name is \"fabric:/myapp/app1/svc1\", the service identity would be \"myapp~app1~svc1\" in 6.0+ and \"myapp/app1/svc1\" in previous versions."]
     pub fn delete_service(&self, service_id: impl Into<String>) -> delete_service::Builder {
         delete_service::Builder {
             client: self.clone(),
@@ -896,6 +1170,11 @@ impl Client {
         }
     }
     #[doc = "Updates a Service Fabric service using the specified update description."]
+    #[doc = "This API allows updating properties of a running Service Fabric service. The set of properties that can be updated are a subset of the properties that were specified at the time of creating the service. The current set of properties can be obtained using `GetServiceDescription` API. Note that updating the properties of a running service is different than upgrading your application using `StartApplicationUpgrade` API. The upgrade is a long running background operation that involves moving the application from one version to another, one upgrade domain at a time, whereas update applies the new properties immediately to the service."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `service_id`: The identity of the service. This ID is typically the full name of the service without the 'fabric:' URI scheme.\nStarting from version 6.0, hierarchical names are delimited with the \"~\" character.\nFor example, if the service name is \"fabric:/myapp/app1/svc1\", the service identity would be \"myapp~app1~svc1\" in 6.0+ and \"myapp/app1/svc1\" in previous versions."]
+    #[doc = "* `service_update_description`: The information necessary to update a service."]
     pub fn update_service(
         &self,
         service_id: impl Into<String>,
@@ -909,6 +1188,10 @@ impl Client {
         }
     }
     #[doc = "Gets the description of an existing Service Fabric service."]
+    #[doc = "Gets the description of an existing Service Fabric service. A service must be created before its description can be obtained."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `service_id`: The identity of the service. This ID is typically the full name of the service without the 'fabric:' URI scheme.\nStarting from version 6.0, hierarchical names are delimited with the \"~\" character.\nFor example, if the service name is \"fabric:/myapp/app1/svc1\", the service identity would be \"myapp~app1~svc1\" in 6.0+ and \"myapp/app1/svc1\" in previous versions."]
     pub fn get_service_description(&self, service_id: impl Into<String>) -> get_service_description::Builder {
         get_service_description::Builder {
             client: self.clone(),
@@ -917,6 +1200,10 @@ impl Client {
         }
     }
     #[doc = "Gets the health of the specified Service Fabric service."]
+    #[doc = "Gets the health information of the specified service.\nUse EventsHealthStateFilter to filter the collection of health events reported on the service based on the health state.\nUse PartitionsHealthStateFilter to filter the collection of partitions returned.\nIf you specify a service that does not exist in the health store, this request returns an error."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `service_id`: The identity of the service. This ID is typically the full name of the service without the 'fabric:' URI scheme.\nStarting from version 6.0, hierarchical names are delimited with the \"~\" character.\nFor example, if the service name is \"fabric:/myapp/app1/svc1\", the service identity would be \"myapp~app1~svc1\" in 6.0+ and \"myapp/app1/svc1\" in previous versions."]
     pub fn get_service_health(&self, service_id: impl Into<String>) -> get_service_health::Builder {
         get_service_health::Builder {
             client: self.clone(),
@@ -928,6 +1215,10 @@ impl Client {
         }
     }
     #[doc = "Gets the health of the specified Service Fabric service, by using the specified health policy."]
+    #[doc = "Gets the health information of the specified service.\nIf the application health policy is specified, the health evaluation uses it to get the aggregated health state.\nIf the policy is not specified, the health evaluation uses the application health policy defined in the application manifest, or the default health policy, if no policy is defined in the manifest.\nUse EventsHealthStateFilter to filter the collection of health events reported on the service based on the health state.\nUse PartitionsHealthStateFilter to filter the collection of partitions returned.\nIf you specify a service that does not exist in the health store, this request returns an error."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `service_id`: The identity of the service. This ID is typically the full name of the service without the 'fabric:' URI scheme.\nStarting from version 6.0, hierarchical names are delimited with the \"~\" character.\nFor example, if the service name is \"fabric:/myapp/app1/svc1\", the service identity would be \"myapp~app1~svc1\" in 6.0+ and \"myapp/app1/svc1\" in previous versions."]
     pub fn get_service_health_using_policy(&self, service_id: impl Into<String>) -> get_service_health_using_policy::Builder {
         get_service_health_using_policy::Builder {
             client: self.clone(),
@@ -940,6 +1231,11 @@ impl Client {
         }
     }
     #[doc = "Sends a health report on the Service Fabric service."]
+    #[doc = "Reports health state of the specified Service Fabric service. The report must contain the information about the source of the health report and property on which it is reported.\nThe report is sent to a Service Fabric gateway Service, which forwards to the health store.\nThe report may be accepted by the gateway, but rejected by the health store after extra validation.\nFor example, the health store may reject the report because of an invalid parameter, like a stale sequence number.\nTo see whether the report was applied in the health store, run GetServiceHealth and check that the report appears in the HealthEvents section."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `service_id`: The identity of the service. This ID is typically the full name of the service without the 'fabric:' URI scheme.\nStarting from version 6.0, hierarchical names are delimited with the \"~\" character.\nFor example, if the service name is \"fabric:/myapp/app1/svc1\", the service identity would be \"myapp~app1~svc1\" in 6.0+ and \"myapp/app1/svc1\" in previous versions."]
+    #[doc = "* `health_information`: Describes the health information for the health report. This information needs to be present in all of the health reports sent to the health manager."]
     pub fn report_service_health(
         &self,
         service_id: impl Into<String>,
@@ -954,6 +1250,10 @@ impl Client {
         }
     }
     #[doc = "Resolve a Service Fabric partition."]
+    #[doc = "Resolve a Service Fabric service partition to get the endpoints of the service replicas."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `service_id`: The identity of the service. This ID is typically the full name of the service without the 'fabric:' URI scheme.\nStarting from version 6.0, hierarchical names are delimited with the \"~\" character.\nFor example, if the service name is \"fabric:/myapp/app1/svc1\", the service identity would be \"myapp~app1~svc1\" in 6.0+ and \"myapp/app1/svc1\" in previous versions."]
     pub fn resolve_service(&self, service_id: impl Into<String>) -> resolve_service::Builder {
         resolve_service::Builder {
             client: self.clone(),
@@ -965,6 +1265,10 @@ impl Client {
         }
     }
     #[doc = "Gets the information about unplaced replica of the service."]
+    #[doc = "Returns the information about the unplaced replicas of the service.\nIf PartitionId is specified, then result will contain information only about unplaced replicas for that partition.\nIf PartitionId is not specified, then result will contain information about unplaced replicas for all partitions of that service.\nIf OnlyQueryPrimaries is set to true, then result will contain information only about primary replicas, and will ignore unplaced secondary replicas."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `service_id`: The identity of the service. This ID is typically the full name of the service without the 'fabric:' URI scheme.\nStarting from version 6.0, hierarchical names are delimited with the \"~\" character.\nFor example, if the service name is \"fabric:/myapp/app1/svc1\", the service identity would be \"myapp~app1~svc1\" in 6.0+ and \"myapp/app1/svc1\" in previous versions."]
     pub fn get_unplaced_replica_information(&self, service_id: impl Into<String>) -> get_unplaced_replica_information::Builder {
         get_unplaced_replica_information::Builder {
             client: self.clone(),
@@ -975,6 +1279,10 @@ impl Client {
         }
     }
     #[doc = "Gets ordered list of partitions."]
+    #[doc = "Retrieves partitions which are most/least loaded according to specified metric."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `metric_name`: Name of the metric based on which to get ordered list of partitions."]
     pub fn get_loaded_partition_info_list(&self, metric_name: impl Into<String>) -> get_loaded_partition_info_list::Builder {
         get_loaded_partition_info_list::Builder {
             client: self.clone(),
@@ -986,6 +1294,10 @@ impl Client {
         }
     }
     #[doc = "Gets the list of partitions of a Service Fabric service."]
+    #[doc = "The response includes the partition ID, partitioning scheme information, keys supported by the partition, status, health, and other details about the partition."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `service_id`: The identity of the service. This ID is typically the full name of the service without the 'fabric:' URI scheme.\nStarting from version 6.0, hierarchical names are delimited with the \"~\" character.\nFor example, if the service name is \"fabric:/myapp/app1/svc1\", the service identity would be \"myapp~app1~svc1\" in 6.0+ and \"myapp/app1/svc1\" in previous versions."]
     pub fn get_partition_info_list(&self, service_id: impl Into<String>) -> get_partition_info_list::Builder {
         get_partition_info_list::Builder {
             client: self.clone(),
@@ -995,6 +1307,10 @@ impl Client {
         }
     }
     #[doc = "Gets the information about a Service Fabric partition."]
+    #[doc = "Gets the information about the specified partition. The response includes the partition ID, partitioning scheme information, keys supported by the partition, status, health, and other details about the partition."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `partition_id`: The identity of the partition."]
     pub fn get_partition_info(&self, partition_id: impl Into<String>) -> get_partition_info::Builder {
         get_partition_info::Builder {
             client: self.clone(),
@@ -1003,6 +1319,10 @@ impl Client {
         }
     }
     #[doc = "Gets the name of the Service Fabric service for a partition."]
+    #[doc = "Gets name of the service for the specified partition. A 404 error is returned if the partition ID does not exist in the cluster."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `partition_id`: The identity of the partition."]
     pub fn get_service_name_info(&self, partition_id: impl Into<String>) -> get_service_name_info::Builder {
         get_service_name_info::Builder {
             client: self.clone(),
@@ -1011,6 +1331,10 @@ impl Client {
         }
     }
     #[doc = "Gets the health of the specified Service Fabric partition."]
+    #[doc = "Use EventsHealthStateFilter to filter the collection of health events reported on the service based on the health state.\nUse ReplicasHealthStateFilter to filter the collection of ReplicaHealthState objects on the partition.\nIf you specify a partition that does not exist in the health store, this request returns an error."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `partition_id`: The identity of the partition."]
     pub fn get_partition_health(&self, partition_id: impl Into<String>) -> get_partition_health::Builder {
         get_partition_health::Builder {
             client: self.clone(),
@@ -1022,6 +1346,10 @@ impl Client {
         }
     }
     #[doc = "Gets the health of the specified Service Fabric partition, by using the specified health policy."]
+    #[doc = "Gets the health information of the specified partition.\nIf the application health policy is specified, the health evaluation uses it to get the aggregated health state.\nIf the policy is not specified, the health evaluation uses the application health policy defined in the application manifest, or the default health policy, if no policy is defined in the manifest.\nUse EventsHealthStateFilter to filter the collection of health events reported on the partition based on the health state.\nUse ReplicasHealthStateFilter to filter the collection of ReplicaHealthState objects on the partition. Use ApplicationHealthPolicy in the POST body to override the health policies used to evaluate the health.\nIf you specify a partition that does not exist in the health store, this request returns an error."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `partition_id`: The identity of the partition."]
     pub fn get_partition_health_using_policy(&self, partition_id: impl Into<String>) -> get_partition_health_using_policy::Builder {
         get_partition_health_using_policy::Builder {
             client: self.clone(),
@@ -1034,6 +1362,11 @@ impl Client {
         }
     }
     #[doc = "Sends a health report on the Service Fabric partition."]
+    #[doc = "Reports health state of the specified Service Fabric partition. The report must contain the information about the source of the health report and property on which it is reported.\nThe report is sent to a Service Fabric gateway Partition, which forwards to the health store.\nThe report may be accepted by the gateway, but rejected by the health store after extra validation.\nFor example, the health store may reject the report because of an invalid parameter, like a stale sequence number.\nTo see whether the report was applied in the health store, run GetPartitionHealth and check that the report appears in the HealthEvents section."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `partition_id`: The identity of the partition."]
+    #[doc = "* `health_information`: Describes the health information for the health report. This information needs to be present in all of the health reports sent to the health manager."]
     pub fn report_partition_health(
         &self,
         partition_id: impl Into<String>,
@@ -1048,6 +1381,10 @@ impl Client {
         }
     }
     #[doc = "Gets the load information of the specified Service Fabric partition."]
+    #[doc = "Returns information about the load of a specified partition.\nThe response includes a list of load reports for a Service Fabric partition.\nEach report includes the load metric name, value, and last reported time in UTC."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `partition_id`: The identity of the partition."]
     pub fn get_partition_load_information(&self, partition_id: impl Into<String>) -> get_partition_load_information::Builder {
         get_partition_load_information::Builder {
             client: self.clone(),
@@ -1056,6 +1393,10 @@ impl Client {
         }
     }
     #[doc = "Resets the current load of a Service Fabric partition."]
+    #[doc = "Resets the current load of a Service Fabric partition to the default load for the service."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `partition_id`: The identity of the partition."]
     pub fn reset_partition_load(&self, partition_id: impl Into<String>) -> reset_partition_load::Builder {
         reset_partition_load::Builder {
             client: self.clone(),
@@ -1064,6 +1405,10 @@ impl Client {
         }
     }
     #[doc = "Indicates to the Service Fabric cluster that it should attempt to recover a specific partition that is currently stuck in quorum loss."]
+    #[doc = "This operation should only be performed if it is known that the replicas that are down cannot be recovered. Incorrect use of this API can cause potential data loss."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `partition_id`: The identity of the partition."]
     pub fn recover_partition(&self, partition_id: impl Into<String>) -> recover_partition::Builder {
         recover_partition::Builder {
             client: self.clone(),
@@ -1072,6 +1417,10 @@ impl Client {
         }
     }
     #[doc = "Indicates to the Service Fabric cluster that it should attempt to recover the specified service that is currently stuck in quorum loss."]
+    #[doc = "Indicates to the Service Fabric cluster that it should attempt to recover the specified service that is currently stuck in quorum loss. This operation should only be performed if it is known that the replicas that are down cannot be recovered. Incorrect use of this API can cause potential data loss."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `service_id`: The identity of the service. This ID is typically the full name of the service without the 'fabric:' URI scheme.\nStarting from version 6.0, hierarchical names are delimited with the \"~\" character.\nFor example, if the service name is \"fabric:/myapp/app1/svc1\", the service identity would be \"myapp~app1~svc1\" in 6.0+ and \"myapp/app1/svc1\" in previous versions."]
     pub fn recover_service_partitions(&self, service_id: impl Into<String>) -> recover_service_partitions::Builder {
         recover_service_partitions::Builder {
             client: self.clone(),
@@ -1080,6 +1429,7 @@ impl Client {
         }
     }
     #[doc = "Indicates to the Service Fabric cluster that it should attempt to recover the system services that are currently stuck in quorum loss."]
+    #[doc = "Indicates to the Service Fabric cluster that it should attempt to recover the system services that are currently stuck in quorum loss. This operation should only be performed if it is known that the replicas that are down cannot be recovered. Incorrect use of this API can cause potential data loss."]
     pub fn recover_system_partitions(&self) -> recover_system_partitions::Builder {
         recover_system_partitions::Builder {
             client: self.clone(),
@@ -1087,6 +1437,7 @@ impl Client {
         }
     }
     #[doc = "Indicates to the Service Fabric cluster that it should attempt to recover any services (including system services) which are currently stuck in quorum loss."]
+    #[doc = "This operation should only be performed if it is known that the replicas that are down cannot be recovered. Incorrect use of this API can cause potential data loss."]
     pub fn recover_all_partitions(&self) -> recover_all_partitions::Builder {
         recover_all_partitions::Builder {
             client: self.clone(),
@@ -1094,6 +1445,10 @@ impl Client {
         }
     }
     #[doc = "Moves the primary replica of a partition of a stateful service."]
+    #[doc = "This command moves the primary replica of a partition of a stateful service, respecting all constraints.\nIf NodeName parameter is specified, primary will be moved to the specified node (if constraints allow it).\nIf NodeName parameter is not specified, primary replica will be moved to a random node in the cluster.\nIf IgnoreConstraints parameter is specified and set to true, then primary will be moved regardless of the constraints."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `partition_id`: The identity of the partition."]
     pub fn move_primary_replica(&self, partition_id: impl Into<String>) -> move_primary_replica::Builder {
         move_primary_replica::Builder {
             client: self.clone(),
@@ -1104,6 +1459,11 @@ impl Client {
         }
     }
     #[doc = "Moves the secondary replica of a partition of a stateful service."]
+    #[doc = "This command moves the secondary replica of a partition of a stateful service, respecting all constraints.\nCurrentNodeName parameter must be specified to identify the replica that is moved.\nSource node name must be specified, but new node name can be omitted, and in that case replica is moved to a random node.\nIf IgnoreConstraints parameter is specified and set to true, then secondary will be moved regardless of the constraints."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `partition_id`: The identity of the partition."]
+    #[doc = "* `current_node_name`: The name of the source node for secondary replica move."]
     pub fn move_secondary_replica(
         &self,
         partition_id: impl Into<String>,
@@ -1119,6 +1479,10 @@ impl Client {
         }
     }
     #[doc = "Update the loads of provided partitions for specific metrics."]
+    #[doc = "Updates the load value and predicted load value for all the partitions provided for specified metrics."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `partition_metric_load_description_list`: Description of updating load for list of partitions."]
     pub fn update_partition_load(
         &self,
         partition_metric_load_description_list: impl Into<models::PartitionMetricLoadDescriptionList>,
@@ -1132,6 +1496,11 @@ impl Client {
         }
     }
     #[doc = "Moves the instance of a partition of a stateless service."]
+    #[doc = "This command moves the instance of a partition of a stateless service, respecting all constraints.\nPartition id and service name must be specified to be able to move the instance.\nCurrentNodeName when specified identifies the instance that is moved. If not specified, random instance will be moved \nNew node name can be omitted, and in that case instance is moved to a random node.\nIf IgnoreConstraints parameter is specified and set to true, then instance will be moved regardless of the constraints."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `service_id`: The identity of the service. This ID is typically the full name of the service without the 'fabric:' URI scheme.\nStarting from version 6.0, hierarchical names are delimited with the \"~\" character.\nFor example, if the service name is \"fabric:/myapp/app1/svc1\", the service identity would be \"myapp~app1~svc1\" in 6.0+ and \"myapp/app1/svc1\" in previous versions."]
+    #[doc = "* `partition_id`: The identity of the partition."]
     pub fn move_instance(&self, service_id: impl Into<String>, partition_id: impl Into<String>) -> move_instance::Builder {
         move_instance::Builder {
             client: self.clone(),
@@ -1144,6 +1513,11 @@ impl Client {
         }
     }
     #[doc = "Moves the auxiliary replica of a partition of a stateful service."]
+    #[doc = "This command moves the auxiliary replica of a partition of a stateful service, respecting all constraints.\nCurrentNodeName can be omitted, and in that case a random auxiliary replica is chosen.\nNewNodeName can be omitted, and in that case the auxiliary replica is moved to a random node.\nIf IgnoreConstraints parameter is specified and set to true, then auxiliary will be moved regardless of the constraints."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `service_id`: The identity of the service. This ID is typically the full name of the service without the 'fabric:' URI scheme.\nStarting from version 6.0, hierarchical names are delimited with the \"~\" character.\nFor example, if the service name is \"fabric:/myapp/app1/svc1\", the service identity would be \"myapp~app1~svc1\" in 6.0+ and \"myapp/app1/svc1\" in previous versions."]
+    #[doc = "* `partition_id`: The identity of the partition."]
     pub fn move_auxiliary_replica(
         &self,
         service_id: impl Into<String>,
@@ -1160,6 +1534,10 @@ impl Client {
         }
     }
     #[doc = "Creates a new repair task."]
+    #[doc = "For clusters that have the Repair Manager Service configured,\nthis API provides a way to create repair tasks that run automatically or manually.\nFor repair tasks that run automatically, an appropriate repair executor\nmust be running for each repair action to run automatically.\nThese are currently only available in specially-configured Azure Cloud Services.\n\nTo create a manual repair task, provide the set of impacted node names and the\nexpected impact. When the state of the created repair task changes to approved,\nyou can safely perform repair actions on those nodes.\n\nThis API supports the Service Fabric platform; it is not meant to be used directly from your code."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `repair_task`: Describes the repair task to be created or updated."]
     pub fn create_repair_task(&self, repair_task: impl Into<models::RepairTask>) -> create_repair_task::Builder {
         create_repair_task::Builder {
             client: self.clone(),
@@ -1167,6 +1545,10 @@ impl Client {
         }
     }
     #[doc = "Requests the cancellation of the given repair task."]
+    #[doc = "This API supports the Service Fabric platform; it is not meant to be used directly from your code."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `repair_task_cancel_description`: Describes the repair task to be cancelled."]
     pub fn cancel_repair_task(
         &self,
         repair_task_cancel_description: impl Into<models::RepairTaskCancelDescription>,
@@ -1177,6 +1559,10 @@ impl Client {
         }
     }
     #[doc = "Deletes a completed repair task."]
+    #[doc = "This API supports the Service Fabric platform; it is not meant to be used directly from your code."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `repair_task_delete_description`: Describes the repair task to be deleted."]
     pub fn delete_repair_task(
         &self,
         repair_task_delete_description: impl Into<models::RepairTaskDeleteDescription>,
@@ -1187,6 +1573,7 @@ impl Client {
         }
     }
     #[doc = "Gets a list of repair tasks matching the given filters."]
+    #[doc = "This API supports the Service Fabric platform; it is not meant to be used directly from your code."]
     pub fn get_repair_task_list(&self) -> get_repair_task_list::Builder {
         get_repair_task_list::Builder {
             client: self.clone(),
@@ -1196,6 +1583,10 @@ impl Client {
         }
     }
     #[doc = "Forces the approval of the given repair task."]
+    #[doc = "This API supports the Service Fabric platform; it is not meant to be used directly from your code."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `repair_task_approve_description`: Describes the repair task to be approved."]
     pub fn force_approve_repair_task(
         &self,
         repair_task_approve_description: impl Into<models::RepairTaskApproveDescription>,
@@ -1206,6 +1597,10 @@ impl Client {
         }
     }
     #[doc = "Updates the health policy of the given repair task."]
+    #[doc = "This API supports the Service Fabric platform; it is not meant to be used directly from your code."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `repair_task_update_health_policy_description`: Describes the repair task healthy policy to be updated."]
     pub fn update_repair_task_health_policy(
         &self,
         repair_task_update_health_policy_description: impl Into<models::RepairTaskUpdateHealthPolicyDescription>,
@@ -1216,6 +1611,10 @@ impl Client {
         }
     }
     #[doc = "Updates the execution state of a repair task."]
+    #[doc = "This API supports the Service Fabric platform; it is not meant to be used directly from your code."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `repair_task`: Describes the repair task to be created or updated."]
     pub fn update_repair_execution_state(&self, repair_task: impl Into<models::RepairTask>) -> update_repair_execution_state::Builder {
         update_repair_execution_state::Builder {
             client: self.clone(),
@@ -1223,6 +1622,10 @@ impl Client {
         }
     }
     #[doc = "Gets the information about replicas of a Service Fabric service partition."]
+    #[doc = "The GetReplicas endpoint returns information about the replicas of the specified partition. The response includes the ID, role, status, health, node name, uptime, and other details about the replica."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `partition_id`: The identity of the partition."]
     pub fn get_replica_info_list(&self, partition_id: impl Into<String>) -> get_replica_info_list::Builder {
         get_replica_info_list::Builder {
             client: self.clone(),
@@ -1232,6 +1635,11 @@ impl Client {
         }
     }
     #[doc = "Gets the information about a replica of a Service Fabric partition."]
+    #[doc = "The response includes the ID, role, status, health, node name, uptime, and other details about the replica."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `partition_id`: The identity of the partition."]
+    #[doc = "* `replica_id`: The identifier of the replica."]
     pub fn get_replica_info(&self, partition_id: impl Into<String>, replica_id: impl Into<String>) -> get_replica_info::Builder {
         get_replica_info::Builder {
             client: self.clone(),
@@ -1241,6 +1649,11 @@ impl Client {
         }
     }
     #[doc = "Gets the health of a Service Fabric stateful service replica or stateless service instance."]
+    #[doc = "Gets the health of a Service Fabric replica.\nUse EventsHealthStateFilter to filter the collection of health events reported on the replica based on the health state."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `partition_id`: The identity of the partition."]
+    #[doc = "* `replica_id`: The identifier of the replica."]
     pub fn get_replica_health(&self, partition_id: impl Into<String>, replica_id: impl Into<String>) -> get_replica_health::Builder {
         get_replica_health::Builder {
             client: self.clone(),
@@ -1251,6 +1664,11 @@ impl Client {
         }
     }
     #[doc = "Gets the health of a Service Fabric stateful service replica or stateless service instance using the specified policy."]
+    #[doc = "Gets the health of a Service Fabric stateful service replica or stateless service instance.\nUse EventsHealthStateFilter to filter the collection of health events reported on the cluster based on the health state.\nUse ApplicationHealthPolicy to optionally override the health policies used to evaluate the health. This API only uses 'ConsiderWarningAsError' field of the ApplicationHealthPolicy. The rest of the fields are ignored while evaluating the health of the replica."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `partition_id`: The identity of the partition."]
+    #[doc = "* `replica_id`: The identifier of the replica."]
     pub fn get_replica_health_using_policy(
         &self,
         partition_id: impl Into<String>,
@@ -1266,6 +1684,13 @@ impl Client {
         }
     }
     #[doc = "Sends a health report on the Service Fabric replica."]
+    #[doc = "Reports health state of the specified Service Fabric replica. The report must contain the information about the source of the health report and property on which it is reported.\nThe report is sent to a Service Fabric gateway Replica, which forwards to the health store.\nThe report may be accepted by the gateway, but rejected by the health store after extra validation.\nFor example, the health store may reject the report because of an invalid parameter, like a stale sequence number.\nTo see whether the report was applied in the health store, run GetReplicaHealth and check that the report appears in the HealthEvents section."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `partition_id`: The identity of the partition."]
+    #[doc = "* `replica_id`: The identifier of the replica."]
+    #[doc = "* `service_kind`: The kind of service replica (Stateless or Stateful) for which the health is being reported. Following are the possible values."]
+    #[doc = "* `health_information`: Describes the health information for the health report. This information needs to be present in all of the health reports sent to the health manager."]
     pub fn report_replica_health(
         &self,
         partition_id: impl Into<String>,
@@ -1284,6 +1709,11 @@ impl Client {
         }
     }
     #[doc = "Gets the list of replicas deployed on a Service Fabric node."]
+    #[doc = "Gets the list containing the information about replicas deployed on a Service Fabric node. The information include partition ID, replica ID, status of the replica, name of the service, name of the service type, and other information. Use PartitionId or ServiceManifestName query parameters to return information about the deployed replicas matching the specified values for those parameters."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `node_name`: The name of the node."]
+    #[doc = "* `application_id`: The identity of the application. This is typically the full name of the application without the 'fabric:' URI scheme.\nStarting from version 6.0, hierarchical names are delimited with the \"~\" character.\nFor example, if the application name is \"fabric:/myapp/app1\", the application identity would be \"myapp~app1\" in 6.0+ and \"myapp/app1\" in previous versions."]
     pub fn get_deployed_service_replica_info_list(
         &self,
         node_name: impl Into<String>,
@@ -1299,6 +1729,12 @@ impl Client {
         }
     }
     #[doc = "Gets the details of replica deployed on a Service Fabric node."]
+    #[doc = "Gets the details of the replica deployed on a Service Fabric node. The information includes service kind, service name, current service operation, current service operation start date time, partition ID, replica/instance ID, reported load, and other information."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `node_name`: The name of the node."]
+    #[doc = "* `partition_id`: The identity of the partition."]
+    #[doc = "* `replica_id`: The identifier of the replica."]
     pub fn get_deployed_service_replica_detail_info(
         &self,
         node_name: impl Into<String>,
@@ -1314,6 +1750,11 @@ impl Client {
         }
     }
     #[doc = "Gets the details of replica deployed on a Service Fabric node."]
+    #[doc = "Gets the details of the replica deployed on a Service Fabric node. The information includes service kind, service name, current service operation, current service operation start date time, partition ID, replica/instance ID, reported load, and other information."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `node_name`: The name of the node."]
+    #[doc = "* `partition_id`: The identity of the partition."]
     pub fn get_deployed_service_replica_detail_info_by_partition_id(
         &self,
         node_name: impl Into<String>,
@@ -1327,6 +1768,12 @@ impl Client {
         }
     }
     #[doc = "Restarts a service replica of a persisted service running on a node."]
+    #[doc = "Restarts a service replica of a persisted service running on a node. Warning - There are no safety checks performed when this API is used. Incorrect use of this API can lead to availability loss for stateful services."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `node_name`: The name of the node."]
+    #[doc = "* `partition_id`: The identity of the partition."]
+    #[doc = "* `replica_id`: The identifier of the replica."]
     pub fn restart_replica(
         &self,
         node_name: impl Into<String>,
@@ -1342,6 +1789,12 @@ impl Client {
         }
     }
     #[doc = "Removes a service replica running on a node."]
+    #[doc = "This API simulates a Service Fabric replica failure by removing a replica from a Service Fabric cluster. The removal closes the replica, transitions the replica to the role None, and then removes all of the state information of the replica from the cluster. This API tests the replica state removal path, and simulates the report fault permanent path through client APIs. Warning - There are no safety checks performed when this API is used. Incorrect use of this API can lead to data loss for stateful services. In addition, the forceRemove flag impacts all other replicas hosted in the same process."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `node_name`: The name of the node."]
+    #[doc = "* `partition_id`: The identity of the partition."]
+    #[doc = "* `replica_id`: The identifier of the replica."]
     pub fn remove_replica(
         &self,
         node_name: impl Into<String>,
@@ -1358,6 +1811,11 @@ impl Client {
         }
     }
     #[doc = "Gets the list of service packages deployed on a Service Fabric node."]
+    #[doc = "Returns the information about the service packages deployed on a Service Fabric node for the given application."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `node_name`: The name of the node."]
+    #[doc = "* `application_id`: The identity of the application. This is typically the full name of the application without the 'fabric:' URI scheme.\nStarting from version 6.0, hierarchical names are delimited with the \"~\" character.\nFor example, if the application name is \"fabric:/myapp/app1\", the application identity would be \"myapp~app1\" in 6.0+ and \"myapp/app1\" in previous versions."]
     pub fn get_deployed_service_package_info_list(
         &self,
         node_name: impl Into<String>,
@@ -1371,6 +1829,12 @@ impl Client {
         }
     }
     #[doc = "Gets the list of service packages deployed on a Service Fabric node matching exactly the specified name."]
+    #[doc = "Returns the information about the service packages deployed on a Service Fabric node for the given application. These results are of service packages whose name match exactly the service package name specified as the parameter."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `node_name`: The name of the node."]
+    #[doc = "* `application_id`: The identity of the application. This is typically the full name of the application without the 'fabric:' URI scheme.\nStarting from version 6.0, hierarchical names are delimited with the \"~\" character.\nFor example, if the application name is \"fabric:/myapp/app1\", the application identity would be \"myapp~app1\" in 6.0+ and \"myapp/app1\" in previous versions."]
+    #[doc = "* `service_package_name`: The name of the service package."]
     pub fn get_deployed_service_package_info_list_by_name(
         &self,
         node_name: impl Into<String>,
@@ -1386,6 +1850,12 @@ impl Client {
         }
     }
     #[doc = "Gets the information about health of a service package for a specific application deployed for a Service Fabric node and application."]
+    #[doc = "Gets the information about health of a service package for a specific application deployed on a Service Fabric node. Use EventsHealthStateFilter to optionally filter for the collection of HealthEvent objects reported on the deployed service package based on health state."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `node_name`: The name of the node."]
+    #[doc = "* `application_id`: The identity of the application. This is typically the full name of the application without the 'fabric:' URI scheme.\nStarting from version 6.0, hierarchical names are delimited with the \"~\" character.\nFor example, if the application name is \"fabric:/myapp/app1\", the application identity would be \"myapp~app1\" in 6.0+ and \"myapp/app1\" in previous versions."]
+    #[doc = "* `service_package_name`: The name of the service package."]
     pub fn get_deployed_service_package_health(
         &self,
         node_name: impl Into<String>,
@@ -1402,6 +1872,12 @@ impl Client {
         }
     }
     #[doc = "Gets the information about health of service package for a specific application deployed on a Service Fabric node using the specified policy."]
+    #[doc = "Gets the information about health of a service package for a specific application deployed on a Service Fabric node. using the specified policy. Use EventsHealthStateFilter to optionally filter for the collection of HealthEvent objects reported on the deployed service package based on health state. Use ApplicationHealthPolicy to optionally override the health policies used to evaluate the health. This API only uses 'ConsiderWarningAsError' field of the ApplicationHealthPolicy. The rest of the fields are ignored while evaluating the health of the deployed service package."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `node_name`: The name of the node."]
+    #[doc = "* `application_id`: The identity of the application. This is typically the full name of the application without the 'fabric:' URI scheme.\nStarting from version 6.0, hierarchical names are delimited with the \"~\" character.\nFor example, if the application name is \"fabric:/myapp/app1\", the application identity would be \"myapp~app1\" in 6.0+ and \"myapp/app1\" in previous versions."]
+    #[doc = "* `service_package_name`: The name of the service package."]
     pub fn get_deployed_service_package_health_using_policy(
         &self,
         node_name: impl Into<String>,
@@ -1419,6 +1895,13 @@ impl Client {
         }
     }
     #[doc = "Sends a health report on the Service Fabric deployed service package."]
+    #[doc = "Reports health state of the service package of the application deployed on a Service Fabric node. The report must contain the information about the source of the health report and property on which it is reported.\nThe report is sent to a Service Fabric gateway Service, which forwards to the health store.\nThe report may be accepted by the gateway, but rejected by the health store after extra validation.\nFor example, the health store may reject the report because of an invalid parameter, like a stale sequence number.\nTo see whether the report was applied in the health store, get deployed service package health and check that the report appears in the HealthEvents section."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `node_name`: The name of the node."]
+    #[doc = "* `application_id`: The identity of the application. This is typically the full name of the application without the 'fabric:' URI scheme.\nStarting from version 6.0, hierarchical names are delimited with the \"~\" character.\nFor example, if the application name is \"fabric:/myapp/app1\", the application identity would be \"myapp~app1\" in 6.0+ and \"myapp/app1\" in previous versions."]
+    #[doc = "* `service_package_name`: The name of the service package."]
+    #[doc = "* `health_information`: Describes the health information for the health report. This information needs to be present in all of the health reports sent to the health manager."]
     pub fn report_deployed_service_package_health(
         &self,
         node_name: impl Into<String>,
@@ -1437,6 +1920,11 @@ impl Client {
         }
     }
     #[doc = "Downloads all of the code packages associated with specified service manifest on the specified node."]
+    #[doc = "This API provides a way to download code packages including the container images on a specific node outside of the normal application deployment and upgrade path. This is useful for the large code packages and container images to be present on the node before the actual application deployment and upgrade, thus significantly reducing the total time required for the deployment or upgrade."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `node_name`: The name of the node."]
+    #[doc = "* `deploy_service_package_to_node_description`: Describes information for deploying a service package to a Service Fabric node."]
     pub fn deploy_service_package_to_node(
         &self,
         node_name: impl Into<String>,
@@ -1450,6 +1938,11 @@ impl Client {
         }
     }
     #[doc = "Gets the list of code packages deployed on a Service Fabric node."]
+    #[doc = "Gets the list of code packages deployed on a Service Fabric node for the given application."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `node_name`: The name of the node."]
+    #[doc = "* `application_id`: The identity of the application. This is typically the full name of the application without the 'fabric:' URI scheme.\nStarting from version 6.0, hierarchical names are delimited with the \"~\" character.\nFor example, if the application name is \"fabric:/myapp/app1\", the application identity would be \"myapp~app1\" in 6.0+ and \"myapp/app1\" in previous versions."]
     pub fn get_deployed_code_package_info_list(
         &self,
         node_name: impl Into<String>,
@@ -1465,6 +1958,12 @@ impl Client {
         }
     }
     #[doc = "Restarts a code package deployed on a Service Fabric node in a cluster."]
+    #[doc = "Restarts a code package deployed on a Service Fabric node in a cluster. This aborts the code package process, which will restart all the user service replicas hosted in that process."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `node_name`: The name of the node."]
+    #[doc = "* `application_id`: The identity of the application. This is typically the full name of the application without the 'fabric:' URI scheme.\nStarting from version 6.0, hierarchical names are delimited with the \"~\" character.\nFor example, if the application name is \"fabric:/myapp/app1\", the application identity would be \"myapp~app1\" in 6.0+ and \"myapp/app1\" in previous versions."]
+    #[doc = "* `restart_deployed_code_package_description`: Describes the deployed code package on Service Fabric node to restart."]
     pub fn restart_deployed_code_package(
         &self,
         node_name: impl Into<String>,
@@ -1480,6 +1979,13 @@ impl Client {
         }
     }
     #[doc = "Gets the container logs for container deployed on a Service Fabric node."]
+    #[doc = "Gets the container logs for container deployed on a Service Fabric node for the given code package."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `node_name`: The name of the node."]
+    #[doc = "* `application_id`: The identity of the application. This is typically the full name of the application without the 'fabric:' URI scheme.\nStarting from version 6.0, hierarchical names are delimited with the \"~\" character.\nFor example, if the application name is \"fabric:/myapp/app1\", the application identity would be \"myapp~app1\" in 6.0+ and \"myapp/app1\" in previous versions."]
+    #[doc = "* `service_manifest_name`: The name of a service manifest registered as part of an application type in a Service Fabric cluster."]
+    #[doc = "* `code_package_name`: The name of code package specified in service manifest registered as part of an application type in a Service Fabric cluster."]
     pub fn get_container_logs_deployed_on_node(
         &self,
         node_name: impl Into<String>,
@@ -1499,6 +2005,15 @@ impl Client {
         }
     }
     #[doc = "Invoke container API on a container deployed on a Service Fabric node."]
+    #[doc = "Invoke container API on a container deployed on a Service Fabric node for the given code package."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `node_name`: The name of the node."]
+    #[doc = "* `application_id`: The identity of the application. This is typically the full name of the application without the 'fabric:' URI scheme.\nStarting from version 6.0, hierarchical names are delimited with the \"~\" character.\nFor example, if the application name is \"fabric:/myapp/app1\", the application identity would be \"myapp~app1\" in 6.0+ and \"myapp/app1\" in previous versions."]
+    #[doc = "* `service_manifest_name`: The name of a service manifest registered as part of an application type in a Service Fabric cluster."]
+    #[doc = "* `code_package_name`: The name of code package specified in service manifest registered as part of an application type in a Service Fabric cluster."]
+    #[doc = "* `code_package_instance_id`: ID that uniquely identifies a code package instance deployed on a service fabric node."]
+    #[doc = "* `container_api_request_body`: Parameters for making container API call"]
     pub fn invoke_container_api(
         &self,
         node_name: impl Into<String>,
@@ -1520,6 +2035,10 @@ impl Client {
         }
     }
     #[doc = "Creates a Service Fabric compose deployment."]
+    #[doc = "Compose is a file format that describes multi-container applications. This API allows deploying container based applications defined in compose format in a Service Fabric cluster. Once the deployment is created, its status can be tracked via the `GetComposeDeploymentStatus` API."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `create_compose_deployment_description`: Describes the compose deployment that needs to be created."]
     pub fn create_compose_deployment(
         &self,
         create_compose_deployment_description: impl Into<models::CreateComposeDeploymentDescription>,
@@ -1531,6 +2050,10 @@ impl Client {
         }
     }
     #[doc = "Gets information about a Service Fabric compose deployment."]
+    #[doc = "Returns the status of the compose deployment that was created or in the process of being created in the Service Fabric cluster and whose name matches the one specified as the parameter. The response includes the name, status, and other details about the deployment."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `deployment_name`: The identity of the deployment."]
     pub fn get_compose_deployment_status(&self, deployment_name: impl Into<String>) -> get_compose_deployment_status::Builder {
         get_compose_deployment_status::Builder {
             client: self.clone(),
@@ -1539,6 +2062,7 @@ impl Client {
         }
     }
     #[doc = "Gets the list of compose deployments created in the Service Fabric cluster."]
+    #[doc = "Gets the status about the compose deployments that were created or in the process of being created in the Service Fabric cluster. The response includes the name, status, and other details about the compose deployments. If the list of deployments do not fit in a page, one page of results is returned as well as a continuation token, which can be used to get the next page."]
     pub fn get_compose_deployment_status_list(&self) -> get_compose_deployment_status_list::Builder {
         get_compose_deployment_status_list::Builder {
             client: self.clone(),
@@ -1548,6 +2072,10 @@ impl Client {
         }
     }
     #[doc = "Gets details for the latest upgrade performed on this Service Fabric compose deployment."]
+    #[doc = "Returns the information about the state of the compose deployment upgrade along with details to aid debugging application health issues."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `deployment_name`: The identity of the deployment."]
     pub fn get_compose_deployment_upgrade_progress(
         &self,
         deployment_name: impl Into<String>,
@@ -1559,6 +2087,10 @@ impl Client {
         }
     }
     #[doc = "Deletes an existing Service Fabric compose deployment from cluster."]
+    #[doc = "Deletes an existing Service Fabric compose deployment."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `deployment_name`: The identity of the deployment."]
     pub fn remove_compose_deployment(&self, deployment_name: impl Into<String>) -> remove_compose_deployment::Builder {
         remove_compose_deployment::Builder {
             client: self.clone(),
@@ -1567,6 +2099,11 @@ impl Client {
         }
     }
     #[doc = "Starts upgrading a compose deployment in the Service Fabric cluster."]
+    #[doc = "Validates the supplied upgrade parameters and starts upgrading the deployment if the parameters are valid."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `deployment_name`: The identity of the deployment."]
+    #[doc = "* `compose_deployment_upgrade_description`: Parameters for upgrading compose deployment."]
     pub fn start_compose_deployment_upgrade(
         &self,
         deployment_name: impl Into<String>,
@@ -1580,6 +2117,10 @@ impl Client {
         }
     }
     #[doc = "Starts rolling back a compose deployment upgrade in the Service Fabric cluster."]
+    #[doc = "Rollback a service fabric compose deployment upgrade."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `deployment_name`: The identity of the deployment."]
     pub fn start_rollback_compose_deployment_upgrade(
         &self,
         deployment_name: impl Into<String>,
@@ -1591,6 +2132,7 @@ impl Client {
         }
     }
     #[doc = "Get the status of Chaos."]
+    #[doc = "Get the status of Chaos indicating whether or not Chaos is running, the Chaos parameters used for running Chaos and the status of the Chaos Schedule."]
     pub fn get_chaos(&self) -> get_chaos::Builder {
         get_chaos::Builder {
             client: self.clone(),
@@ -1598,6 +2140,10 @@ impl Client {
         }
     }
     #[doc = "Starts Chaos in the cluster."]
+    #[doc = "If Chaos is not already running in the cluster, it starts Chaos with the passed in Chaos parameters.\nIf Chaos is already running when this call is made, the call fails with the error code FABRIC_E_CHAOS_ALREADY_RUNNING.\nRefer to the article [Induce controlled Chaos in Service Fabric clusters](https://docs.microsoft.com/azure/service-fabric/service-fabric-controlled-chaos) for more details."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `chaos_parameters`: Describes all the parameters to configure a Chaos run."]
     pub fn start_chaos(&self, chaos_parameters: impl Into<models::ChaosParameters>) -> start_chaos::Builder {
         start_chaos::Builder {
             client: self.clone(),
@@ -1606,6 +2152,7 @@ impl Client {
         }
     }
     #[doc = "Stops Chaos if it is running in the cluster and put the Chaos Schedule in a stopped state."]
+    #[doc = "Stops Chaos from executing new faults. In-flight faults will continue to execute until they are complete. The current Chaos Schedule is put into a stopped state.\nOnce a schedule is stopped, it will stay in the stopped state and not be used to Chaos Schedule new runs of Chaos. A new Chaos Schedule must be set in order to resume scheduling."]
     pub fn stop_chaos(&self) -> stop_chaos::Builder {
         stop_chaos::Builder {
             client: self.clone(),
@@ -1613,6 +2160,7 @@ impl Client {
         }
     }
     #[doc = "Gets the next segment of the Chaos events based on the continuation token or the time range."]
+    #[doc = "To get the next segment of the Chaos events, you can specify the ContinuationToken. To get the start of a new segment of Chaos events, you can specify the time range\nthrough StartTimeUtc and EndTimeUtc. You cannot specify both the ContinuationToken and the time range in the same call.\nWhen there are more than 100 Chaos events, the Chaos events are returned in multiple segments where a segment contains no more than 100 Chaos events and to get the next segment you make a call to this API with the continuation token."]
     pub fn get_chaos_events(&self) -> get_chaos_events::Builder {
         get_chaos_events::Builder {
             client: self.clone(),
@@ -1624,6 +2172,7 @@ impl Client {
         }
     }
     #[doc = "Get the Chaos Schedule defining when and how to run Chaos."]
+    #[doc = "Gets the version of the Chaos Schedule in use and the Chaos Schedule that defines when and how to run Chaos."]
     pub fn get_chaos_schedule(&self) -> get_chaos_schedule::Builder {
         get_chaos_schedule::Builder {
             client: self.clone(),
@@ -1631,6 +2180,10 @@ impl Client {
         }
     }
     #[doc = "Set the schedule used by Chaos."]
+    #[doc = "Chaos will automatically schedule runs based on the Chaos Schedule.\nThe Chaos Schedule will be updated if the provided version matches the version on the server.\nWhen updating the Chaos Schedule, the version on the server is incremented by 1.\nThe version on the server will wrap back to 0 after reaching a large number.\nIf Chaos is running when this call is made, the call will fail."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `chaos_schedule`: Describes the schedule used by Chaos."]
     pub fn post_chaos_schedule(&self, chaos_schedule: impl Into<models::ChaosScheduleDescription>) -> post_chaos_schedule::Builder {
         post_chaos_schedule::Builder {
             client: self.clone(),
@@ -1639,6 +2192,10 @@ impl Client {
         }
     }
     #[doc = "Gets the image store content information."]
+    #[doc = "Returns the information about the image store content at the specified contentPath. The contentPath is relative to the root of the image store."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `content_path`: Relative path to file or folder in the image store from its root."]
     pub fn get_image_store_content(&self, content_path: impl Into<String>) -> get_image_store_content::Builder {
         get_image_store_content::Builder {
             client: self.clone(),
@@ -1647,6 +2204,10 @@ impl Client {
         }
     }
     #[doc = "Uploads contents of the file to the image store."]
+    #[doc = "Uploads contents of the file to the image store. Use this API if the file is small enough to upload again if the connection fails. The file's data needs to be added to the request body. The contents will be uploaded to the specified path. Image store service uses a mark file to indicate the availability of the folder. The mark file is an empty file named \"_.dir\". The mark file is generated by the image store service when all files in a folder are uploaded. When using File-by-File approach to upload application package in REST, the image store service isn't aware of the file hierarchy of the application package; you need to create a mark file per folder and upload it last, to let the image store service know that the folder is complete."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `content_path`: Relative path to file or folder in the image store from its root."]
     pub fn upload_file(&self, content_path: impl Into<String>) -> upload_file::Builder {
         upload_file::Builder {
             client: self.clone(),
@@ -1655,6 +2216,10 @@ impl Client {
         }
     }
     #[doc = "Deletes existing image store content."]
+    #[doc = "Deletes existing image store content being found within the given image store relative path. This command can be used to delete uploaded application packages once they are provisioned."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `content_path`: Relative path to file or folder in the image store from its root."]
     pub fn delete_image_store_content(&self, content_path: impl Into<String>) -> delete_image_store_content::Builder {
         delete_image_store_content::Builder {
             client: self.clone(),
@@ -1663,6 +2228,7 @@ impl Client {
         }
     }
     #[doc = "Gets the content information at the root of the image store."]
+    #[doc = "Returns the information about the image store content at the root of the image store."]
     pub fn get_image_store_root_content(&self) -> get_image_store_root_content::Builder {
         get_image_store_root_content::Builder {
             client: self.clone(),
@@ -1670,6 +2236,10 @@ impl Client {
         }
     }
     #[doc = "Copies image store content internally"]
+    #[doc = "Copies the image store content from the source image store relative path to the destination image store relative path."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `image_store_copy_description`: Describes the copy description for the image store."]
     pub fn copy_image_store_content(
         &self,
         image_store_copy_description: impl Into<models::ImageStoreCopyDescription>,
@@ -1681,6 +2251,10 @@ impl Client {
         }
     }
     #[doc = "Cancels an image store upload session."]
+    #[doc = "The DELETE request will cause the existing upload session to expire and remove any previously uploaded file chunks."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `session_id`: A GUID generated by the user for a file uploading. It identifies an image store upload session which keeps track of all file chunks until it is committed."]
     pub fn delete_image_store_upload_session(&self, session_id: impl Into<String>) -> delete_image_store_upload_session::Builder {
         delete_image_store_upload_session::Builder {
             client: self.clone(),
@@ -1689,6 +2263,10 @@ impl Client {
         }
     }
     #[doc = "Commit an image store upload session."]
+    #[doc = "When all file chunks have been uploaded, the upload session needs to be committed explicitly to complete the upload. Image store preserves the upload session until the expiration time, which is 30 minutes after the last chunk received. "]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `session_id`: A GUID generated by the user for a file uploading. It identifies an image store upload session which keeps track of all file chunks until it is committed."]
     pub fn commit_image_store_upload_session(&self, session_id: impl Into<String>) -> commit_image_store_upload_session::Builder {
         commit_image_store_upload_session::Builder {
             client: self.clone(),
@@ -1697,6 +2275,10 @@ impl Client {
         }
     }
     #[doc = "Get the image store upload session by ID."]
+    #[doc = "Gets the image store upload session identified by the given ID. User can query the upload session at any time during uploading. "]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `session_id`: A GUID generated by the user for a file uploading. It identifies an image store upload session which keeps track of all file chunks until it is committed."]
     pub fn get_image_store_upload_session_by_id(&self, session_id: impl Into<String>) -> get_image_store_upload_session_by_id::Builder {
         get_image_store_upload_session_by_id::Builder {
             client: self.clone(),
@@ -1705,6 +2287,10 @@ impl Client {
         }
     }
     #[doc = "Get the image store upload session by relative path."]
+    #[doc = "Gets the image store upload session associated with the given image store relative path. User can query the upload session at any time during uploading. "]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `content_path`: Relative path to file or folder in the image store from its root."]
     pub fn get_image_store_upload_session_by_path(
         &self,
         content_path: impl Into<String>,
@@ -1716,6 +2302,12 @@ impl Client {
         }
     }
     #[doc = "Uploads a file chunk to the image store relative path."]
+    #[doc = "Uploads a file chunk to the image store with the specified upload session ID and image store relative path. This API allows user to resume the file upload operation. user doesn't have to restart the file upload from scratch whenever there is a network interruption. Use this option if the file size is large.\n\nTo perform a resumable file upload, user need to break the file into multiple chunks and upload these chunks to the image store one-by-one. Chunks don't have to be uploaded in order. If the file represented by the image store relative path already exists, it will be overwritten when the upload session commits."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `content_path`: Relative path to file or folder in the image store from its root."]
+    #[doc = "* `session_id`: A GUID generated by the user for a file uploading. It identifies an image store upload session which keeps track of all file chunks until it is committed."]
+    #[doc = "* `content_range`: When uploading file chunks to the image store, the Content-Range header field need to be configured and sent with a request. The format should looks like \"bytes {First-Byte-Position}-{Last-Byte-Position}/{File-Length}\". For example, Content-Range:bytes 300-5000/20000 indicates that user is sending bytes 300 through 5,000 and the total file length is 20,000 bytes."]
     pub fn upload_file_chunk(
         &self,
         content_path: impl Into<String>,
@@ -1731,6 +2323,7 @@ impl Client {
         }
     }
     #[doc = "Get the folder size at the root of the image store."]
+    #[doc = "Returns the total size of files at the root and children folders in image store."]
     pub fn get_image_store_root_folder_size(&self) -> get_image_store_root_folder_size::Builder {
         get_image_store_root_folder_size::Builder {
             client: self.clone(),
@@ -1738,6 +2331,10 @@ impl Client {
         }
     }
     #[doc = "Get the size of a folder in image store"]
+    #[doc = "Gets the total size of file under a image store folder, specified by contentPath. The contentPath is relative to the root of the image store."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `content_path`: Relative path to file or folder in the image store from its root."]
     pub fn get_image_store_folder_size(&self, content_path: impl Into<String>) -> get_image_store_folder_size::Builder {
         get_image_store_folder_size::Builder {
             client: self.clone(),
@@ -1746,6 +2343,7 @@ impl Client {
         }
     }
     #[doc = "Gets the overall ImageStore information"]
+    #[doc = "Returns information about the primary ImageStore replica, such as disk capacity and available disk space at the node it is on, and several categories of the ImageStore's file system usage."]
     pub fn get_image_store_info(&self) -> get_image_store_info::Builder {
         get_image_store_info::Builder {
             client: self.clone(),
@@ -1753,6 +2351,10 @@ impl Client {
         }
     }
     #[doc = "Invokes an administrative command on the given Infrastructure Service instance."]
+    #[doc = "For clusters that have one or more instances of the Infrastructure Service configured,\nthis API provides a way to send infrastructure-specific commands to a particular\ninstance of the Infrastructure Service.\n\nAvailable commands and their corresponding response formats vary depending upon\nthe infrastructure on which the cluster is running.\n\nThis API supports the Service Fabric platform; it is not meant to be used directly from your code."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `command`: The text of the command to be invoked. The content of the command is infrastructure-specific."]
     pub fn invoke_infrastructure_command(&self, command: impl Into<String>) -> invoke_infrastructure_command::Builder {
         invoke_infrastructure_command::Builder {
             client: self.clone(),
@@ -1762,6 +2364,10 @@ impl Client {
         }
     }
     #[doc = "Invokes a read-only query on the given infrastructure service instance."]
+    #[doc = "For clusters that have one or more instances of the Infrastructure Service configured,\nthis API provides a way to send infrastructure-specific queries to a particular\ninstance of the Infrastructure Service.\n\nAvailable commands and their corresponding response formats vary depending upon\nthe infrastructure on which the cluster is running.\n\nThis API supports the Service Fabric platform; it is not meant to be used directly from your code."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `command`: The text of the command to be invoked. The content of the command is infrastructure-specific."]
     pub fn invoke_infrastructure_query(&self, command: impl Into<String>) -> invoke_infrastructure_query::Builder {
         invoke_infrastructure_query::Builder {
             client: self.clone(),
@@ -1771,6 +2377,13 @@ impl Client {
         }
     }
     #[doc = "This API will induce data loss for the specified partition. It will trigger a call to the OnDataLossAsync API of the partition."]
+    #[doc = "This API will induce data loss for the specified partition. It will trigger a call to the OnDataLoss API of the partition.\nActual data loss will depend on the specified DataLossMode.\n\n- PartialDataLoss - Only a quorum of replicas are removed and OnDataLoss is triggered for the partition but actual data loss depends on the presence of in-flight replication.\n- FullDataLoss - All replicas are removed hence all data is lost and OnDataLoss is triggered.\n\nThis API should only be called with a stateful service as the target.\n\nCalling this API with a system service as the target is not advised.\n\nNote:  Once this API has been called, it cannot be reversed. Calling CancelOperation will only stop execution and clean up internal system state.\nIt will not restore data if the command has progressed far enough to cause data loss.\n\nCall the GetDataLossProgress API with the same OperationId to return information on the operation started with this API."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `service_id`: The identity of the service. This ID is typically the full name of the service without the 'fabric:' URI scheme.\nStarting from version 6.0, hierarchical names are delimited with the \"~\" character.\nFor example, if the service name is \"fabric:/myapp/app1/svc1\", the service identity would be \"myapp~app1~svc1\" in 6.0+ and \"myapp/app1/svc1\" in previous versions."]
+    #[doc = "* `partition_id`: The identity of the partition."]
+    #[doc = "* `operation_id`: A GUID that identifies a call of this API.  This is passed into the corresponding GetProgress API"]
+    #[doc = "* `data_loss_mode`: This enum is passed to the StartDataLoss API to indicate what type of data loss to induce."]
     pub fn start_data_loss(
         &self,
         service_id: impl Into<String>,
@@ -1788,6 +2401,12 @@ impl Client {
         }
     }
     #[doc = "Gets the progress of a partition data loss operation started using the StartDataLoss API."]
+    #[doc = "Gets the progress of a data loss operation started with StartDataLoss, using the OperationId."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `service_id`: The identity of the service. This ID is typically the full name of the service without the 'fabric:' URI scheme.\nStarting from version 6.0, hierarchical names are delimited with the \"~\" character.\nFor example, if the service name is \"fabric:/myapp/app1/svc1\", the service identity would be \"myapp~app1~svc1\" in 6.0+ and \"myapp/app1/svc1\" in previous versions."]
+    #[doc = "* `partition_id`: The identity of the partition."]
+    #[doc = "* `operation_id`: A GUID that identifies a call of this API.  This is passed into the corresponding GetProgress API"]
     pub fn get_data_loss_progress(
         &self,
         service_id: impl Into<String>,
@@ -1803,6 +2422,14 @@ impl Client {
         }
     }
     #[doc = "Induces quorum loss for a given stateful service partition."]
+    #[doc = "This API is useful for a temporary quorum loss situation on your service.\n\nCall the GetQuorumLossProgress API with the same OperationId to return information on the operation started with this API.\n\nThis can only be called on stateful persisted (HasPersistedState==true) services.  Do not use this API on stateless services or stateful in-memory only services."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `service_id`: The identity of the service. This ID is typically the full name of the service without the 'fabric:' URI scheme.\nStarting from version 6.0, hierarchical names are delimited with the \"~\" character.\nFor example, if the service name is \"fabric:/myapp/app1/svc1\", the service identity would be \"myapp~app1~svc1\" in 6.0+ and \"myapp/app1/svc1\" in previous versions."]
+    #[doc = "* `partition_id`: The identity of the partition."]
+    #[doc = "* `operation_id`: A GUID that identifies a call of this API.  This is passed into the corresponding GetProgress API"]
+    #[doc = "* `quorum_loss_mode`: This enum is passed to the StartQuorumLoss API to indicate what type of quorum loss to induce."]
+    #[doc = "* `quorum_loss_duration`: The amount of time for which the partition will be kept in quorum loss.  This must be specified in seconds."]
     pub fn start_quorum_loss(
         &self,
         service_id: impl Into<String>,
@@ -1822,6 +2449,12 @@ impl Client {
         }
     }
     #[doc = "Gets the progress of a quorum loss operation on a partition started using the StartQuorumLoss API."]
+    #[doc = "Gets the progress of a quorum loss operation started with StartQuorumLoss, using the provided OperationId."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `service_id`: The identity of the service. This ID is typically the full name of the service without the 'fabric:' URI scheme.\nStarting from version 6.0, hierarchical names are delimited with the \"~\" character.\nFor example, if the service name is \"fabric:/myapp/app1/svc1\", the service identity would be \"myapp~app1~svc1\" in 6.0+ and \"myapp/app1/svc1\" in previous versions."]
+    #[doc = "* `partition_id`: The identity of the partition."]
+    #[doc = "* `operation_id`: A GUID that identifies a call of this API.  This is passed into the corresponding GetProgress API"]
     pub fn get_quorum_loss_progress(
         &self,
         service_id: impl Into<String>,
@@ -1837,6 +2470,13 @@ impl Client {
         }
     }
     #[doc = "This API will restart some or all replicas or instances of the specified partition."]
+    #[doc = "This API is useful for testing failover.\n\nIf used to target a stateless service partition, RestartPartitionMode must be AllReplicasOrInstances.\n\nCall the GetPartitionRestartProgress API using the same OperationId to get the progress."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `service_id`: The identity of the service. This ID is typically the full name of the service without the 'fabric:' URI scheme.\nStarting from version 6.0, hierarchical names are delimited with the \"~\" character.\nFor example, if the service name is \"fabric:/myapp/app1/svc1\", the service identity would be \"myapp~app1~svc1\" in 6.0+ and \"myapp/app1/svc1\" in previous versions."]
+    #[doc = "* `partition_id`: The identity of the partition."]
+    #[doc = "* `operation_id`: A GUID that identifies a call of this API.  This is passed into the corresponding GetProgress API"]
+    #[doc = "* `restart_partition_mode`: Describe which partitions to restart."]
     pub fn start_partition_restart(
         &self,
         service_id: impl Into<String>,
@@ -1854,6 +2494,12 @@ impl Client {
         }
     }
     #[doc = "Gets the progress of a PartitionRestart operation started using StartPartitionRestart."]
+    #[doc = "Gets the progress of a PartitionRestart started with StartPartitionRestart using the provided OperationId."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `service_id`: The identity of the service. This ID is typically the full name of the service without the 'fabric:' URI scheme.\nStarting from version 6.0, hierarchical names are delimited with the \"~\" character.\nFor example, if the service name is \"fabric:/myapp/app1/svc1\", the service identity would be \"myapp~app1~svc1\" in 6.0+ and \"myapp/app1/svc1\" in previous versions."]
+    #[doc = "* `partition_id`: The identity of the partition."]
+    #[doc = "* `operation_id`: A GUID that identifies a call of this API.  This is passed into the corresponding GetProgress API"]
     pub fn get_partition_restart_progress(
         &self,
         service_id: impl Into<String>,
@@ -1869,6 +2515,14 @@ impl Client {
         }
     }
     #[doc = "Starts or stops a cluster node."]
+    #[doc = "Starts or stops a cluster node.  A cluster node is a process, not the OS instance itself.  To start a node, pass in \"Start\" for the NodeTransitionType parameter.\nTo stop a node, pass in \"Stop\" for the NodeTransitionType parameter.  This API starts the operation - when the API returns the node may not have finished transitioning yet.\nCall GetNodeTransitionProgress with the same OperationId to get the progress of the operation."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `node_name`: The name of the node."]
+    #[doc = "* `operation_id`: A GUID that identifies a call of this API.  This is passed into the corresponding GetProgress API"]
+    #[doc = "* `node_transition_type`: Indicates the type of transition to perform.  NodeTransitionType.Start will start a stopped node.  NodeTransitionType.Stop will stop a node that is up."]
+    #[doc = "* `node_instance_id`: The node instance ID of the target node.  This can be determined through GetNodeInfo API."]
+    #[doc = "* `stop_duration_in_seconds`: The duration, in seconds, to keep the node stopped.  The minimum value is 600, the maximum is 14400.  After this time expires, the node will automatically come back up."]
     pub fn start_node_transition(
         &self,
         node_name: impl Into<String>,
@@ -1888,6 +2542,11 @@ impl Client {
         }
     }
     #[doc = "Gets the progress of an operation started using StartNodeTransition."]
+    #[doc = "Gets the progress of an operation started with StartNodeTransition using the provided OperationId."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `node_name`: The name of the node."]
+    #[doc = "* `operation_id`: A GUID that identifies a call of this API.  This is passed into the corresponding GetProgress API"]
     pub fn get_node_transition_progress(
         &self,
         node_name: impl Into<String>,
@@ -1901,6 +2560,11 @@ impl Client {
         }
     }
     #[doc = "Gets a list of user-induced fault operations filtered by provided input."]
+    #[doc = "Gets the list of user-induced fault operations filtered by provided input."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `type_filter`: Used to filter on OperationType for user-induced operations.\n\n- 65535 - select all\n- 1 - select PartitionDataLoss.\n- 2 - select PartitionQuorumLoss.\n- 4 - select PartitionRestart.\n- 8 - select NodeTransition."]
+    #[doc = "* `state_filter`: Used to filter on OperationState's for user-induced operations.\n\n- 65535 - select All\n- 1 - select Running\n- 2 - select RollingBack\n- 8 - select Completed\n- 16 - select Faulted\n- 32 - select Cancelled\n- 64 - select ForceCancelled"]
     pub fn get_fault_operation_list(&self, type_filter: i64, state_filter: i64) -> get_fault_operation_list::Builder {
         get_fault_operation_list::Builder {
             client: self.clone(),
@@ -1910,6 +2574,11 @@ impl Client {
         }
     }
     #[doc = "Cancels a user-induced fault operation."]
+    #[doc = "The following APIs start fault operations that may be cancelled by using CancelOperation: StartDataLoss, StartQuorumLoss, StartPartitionRestart, StartNodeTransition.\n\nIf force is false, then the specified user-induced operation will be gracefully stopped and cleaned up.  If force is true, the command will be aborted, and some internal state\nmay be left behind.  Specifying force as true should be used with care.  Calling this API with force set to true is not allowed until this API has already\nbeen called on the same test command with force set to false first, or unless the test command already has an OperationState of OperationState.RollingBack.\nClarification: OperationState.RollingBack means that the system will be/is cleaning up internal system state caused by executing the command.  It will not restore data if the\ntest command was to cause data loss.  For example, if you call StartDataLoss then call this API, the system will only clean up internal state from running the command.\nIt will not restore the target partition's data, if the command progressed far enough to cause data loss.\n\nImportant note:  if this API is invoked with force==true, internal state may be left behind."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `operation_id`: A GUID that identifies a call of this API.  This is passed into the corresponding GetProgress API"]
+    #[doc = "* `force`: Indicates whether to gracefully roll back and clean up internal system state modified by executing the user-induced operation."]
     pub fn cancel_operation(&self, operation_id: impl Into<String>, force: bool) -> cancel_operation::Builder {
         cancel_operation::Builder {
             client: self.clone(),
@@ -1919,6 +2588,10 @@ impl Client {
         }
     }
     #[doc = "Creates a backup policy."]
+    #[doc = "Creates a backup policy which can be associated later with a Service Fabric application, service or a partition for periodic backup."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `backup_policy_description`: Describes the backup policy."]
     pub fn create_backup_policy(
         &self,
         backup_policy_description: impl Into<models::BackupPolicyDescription>,
@@ -1931,6 +2604,10 @@ impl Client {
         }
     }
     #[doc = "Deletes the backup policy."]
+    #[doc = "Deletes an existing backup policy. A backup policy must be created before it can be deleted. A currently active backup policy, associated with any Service Fabric application, service or partition, cannot be deleted without first deleting the mapping."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `backup_policy_name`: The name of the backup policy."]
     pub fn delete_backup_policy(&self, backup_policy_name: impl Into<String>) -> delete_backup_policy::Builder {
         delete_backup_policy::Builder {
             client: self.clone(),
@@ -1939,6 +2616,7 @@ impl Client {
         }
     }
     #[doc = "Gets all the backup policies configured."]
+    #[doc = "Get a list of all the backup policies configured."]
     pub fn get_backup_policy_list(&self) -> get_backup_policy_list::Builder {
         get_backup_policy_list::Builder {
             client: self.clone(),
@@ -1948,6 +2626,10 @@ impl Client {
         }
     }
     #[doc = "Gets a particular backup policy by name."]
+    #[doc = "Gets a particular backup policy identified by {backupPolicyName}"]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `backup_policy_name`: The name of the backup policy."]
     pub fn get_backup_policy_by_name(&self, backup_policy_name: impl Into<String>) -> get_backup_policy_by_name::Builder {
         get_backup_policy_by_name::Builder {
             client: self.clone(),
@@ -1956,6 +2638,10 @@ impl Client {
         }
     }
     #[doc = "Gets the list of backup entities that are associated with this policy."]
+    #[doc = "Returns a list of Service Fabric application, service or partition which are associated with this backup policy."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `backup_policy_name`: The name of the backup policy."]
     pub fn get_all_entities_backed_up_by_policy(
         &self,
         backup_policy_name: impl Into<String>,
@@ -1969,6 +2655,11 @@ impl Client {
         }
     }
     #[doc = "Updates the backup policy."]
+    #[doc = "Updates the backup policy identified by {backupPolicyName}"]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `backup_policy_description`: Describes the backup policy."]
+    #[doc = "* `backup_policy_name`: The name of the backup policy."]
     pub fn update_backup_policy(
         &self,
         backup_policy_description: impl Into<models::BackupPolicyDescription>,
@@ -1983,6 +2674,11 @@ impl Client {
         }
     }
     #[doc = "Enables periodic backup of stateful partitions under this Service Fabric application."]
+    #[doc = "Enables periodic backup of stateful partitions which are part of this Service Fabric application. Each partition is backed up individually as per the specified backup policy description. \nNote only C# based Reliable Actor and Reliable Stateful services are currently supported for periodic backup."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `application_id`: The identity of the application. This is typically the full name of the application without the 'fabric:' URI scheme.\nStarting from version 6.0, hierarchical names are delimited with the \"~\" character.\nFor example, if the application name is \"fabric:/myapp/app1\", the application identity would be \"myapp~app1\" in 6.0+ and \"myapp/app1\" in previous versions."]
+    #[doc = "* `enable_backup_description`: Specifies the parameters for enabling backup."]
     pub fn enable_application_backup(
         &self,
         application_id: impl Into<String>,
@@ -1996,6 +2692,10 @@ impl Client {
         }
     }
     #[doc = "Disables periodic backup of Service Fabric application."]
+    #[doc = "Disables periodic backup of Service Fabric application which was previously enabled."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `application_id`: The identity of the application. This is typically the full name of the application without the 'fabric:' URI scheme.\nStarting from version 6.0, hierarchical names are delimited with the \"~\" character.\nFor example, if the application name is \"fabric:/myapp/app1\", the application identity would be \"myapp~app1\" in 6.0+ and \"myapp/app1\" in previous versions."]
     pub fn disable_application_backup(&self, application_id: impl Into<String>) -> disable_application_backup::Builder {
         disable_application_backup::Builder {
             client: self.clone(),
@@ -2005,6 +2705,10 @@ impl Client {
         }
     }
     #[doc = "Gets the Service Fabric application backup configuration information."]
+    #[doc = "Gets the Service Fabric backup configuration information for the application and the services and partitions under this application."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `application_id`: The identity of the application. This is typically the full name of the application without the 'fabric:' URI scheme.\nStarting from version 6.0, hierarchical names are delimited with the \"~\" character.\nFor example, if the application name is \"fabric:/myapp/app1\", the application identity would be \"myapp~app1\" in 6.0+ and \"myapp/app1\" in previous versions."]
     pub fn get_application_backup_configuration_info(
         &self,
         application_id: impl Into<String>,
@@ -2018,6 +2722,10 @@ impl Client {
         }
     }
     #[doc = "Gets the list of backups available for every partition in this application."]
+    #[doc = "Returns a list of backups available for every partition in this Service Fabric application. The server enumerates all the backups available at the backup location configured in the backup policy. It also allows filtering of the result based on start and end datetime or just fetching the latest available backup for every partition."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `application_id`: The identity of the application. This is typically the full name of the application without the 'fabric:' URI scheme.\nStarting from version 6.0, hierarchical names are delimited with the \"~\" character.\nFor example, if the application name is \"fabric:/myapp/app1\", the application identity would be \"myapp~app1\" in 6.0+ and \"myapp/app1\" in previous versions."]
     pub fn get_application_backup_list(&self, application_id: impl Into<String>) -> get_application_backup_list::Builder {
         get_application_backup_list::Builder {
             client: self.clone(),
@@ -2031,6 +2739,10 @@ impl Client {
         }
     }
     #[doc = "Suspends periodic backup for the specified Service Fabric application."]
+    #[doc = "The application which is configured to take periodic backups, is suspended for taking further backups till it is resumed again. This operation applies to the entire application's hierarchy. It means all the services and partitions under this application are now suspended for backup."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `application_id`: The identity of the application. This is typically the full name of the application without the 'fabric:' URI scheme.\nStarting from version 6.0, hierarchical names are delimited with the \"~\" character.\nFor example, if the application name is \"fabric:/myapp/app1\", the application identity would be \"myapp~app1\" in 6.0+ and \"myapp/app1\" in previous versions."]
     pub fn suspend_application_backup(&self, application_id: impl Into<String>) -> suspend_application_backup::Builder {
         suspend_application_backup::Builder {
             client: self.clone(),
@@ -2039,6 +2751,10 @@ impl Client {
         }
     }
     #[doc = "Resumes periodic backup of a Service Fabric application which was previously suspended."]
+    #[doc = "The previously suspended Service Fabric application resumes taking periodic backup as per the backup policy currently configured for the same."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `application_id`: The identity of the application. This is typically the full name of the application without the 'fabric:' URI scheme.\nStarting from version 6.0, hierarchical names are delimited with the \"~\" character.\nFor example, if the application name is \"fabric:/myapp/app1\", the application identity would be \"myapp~app1\" in 6.0+ and \"myapp/app1\" in previous versions."]
     pub fn resume_application_backup(&self, application_id: impl Into<String>) -> resume_application_backup::Builder {
         resume_application_backup::Builder {
             client: self.clone(),
@@ -2047,6 +2763,11 @@ impl Client {
         }
     }
     #[doc = "Enables periodic backup of stateful partitions under this Service Fabric service."]
+    #[doc = "Enables periodic backup of stateful partitions which are part of this Service Fabric service. Each partition is backed up individually as per the specified backup policy description. In case the application, which the service is part of, is already enabled for backup then this operation would override the policy being used to take the periodic backup for this service and its partitions (unless explicitly overridden at the partition level).\nNote only C# based Reliable Actor and Reliable Stateful services are currently supported for periodic backup."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `service_id`: The identity of the service. This ID is typically the full name of the service without the 'fabric:' URI scheme.\nStarting from version 6.0, hierarchical names are delimited with the \"~\" character.\nFor example, if the service name is \"fabric:/myapp/app1/svc1\", the service identity would be \"myapp~app1~svc1\" in 6.0+ and \"myapp/app1/svc1\" in previous versions."]
+    #[doc = "* `enable_backup_description`: Specifies the parameters for enabling backup."]
     pub fn enable_service_backup(
         &self,
         service_id: impl Into<String>,
@@ -2060,6 +2781,10 @@ impl Client {
         }
     }
     #[doc = "Disables periodic backup of Service Fabric service which was previously enabled."]
+    #[doc = "Disables periodic backup of Service Fabric service which was previously enabled. Backup must be explicitly enabled before it can be disabled.\nIn case the backup is enabled for the Service Fabric application, which this service is part of, this service would continue to be periodically backed up as per the policy mapped at the application level."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `service_id`: The identity of the service. This ID is typically the full name of the service without the 'fabric:' URI scheme.\nStarting from version 6.0, hierarchical names are delimited with the \"~\" character.\nFor example, if the service name is \"fabric:/myapp/app1/svc1\", the service identity would be \"myapp~app1~svc1\" in 6.0+ and \"myapp/app1/svc1\" in previous versions."]
     pub fn disable_service_backup(&self, service_id: impl Into<String>) -> disable_service_backup::Builder {
         disable_service_backup::Builder {
             client: self.clone(),
@@ -2069,6 +2794,10 @@ impl Client {
         }
     }
     #[doc = "Gets the Service Fabric service backup configuration information."]
+    #[doc = "Gets the Service Fabric backup configuration information for the service and the partitions under this service."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `service_id`: The identity of the service. This ID is typically the full name of the service without the 'fabric:' URI scheme.\nStarting from version 6.0, hierarchical names are delimited with the \"~\" character.\nFor example, if the service name is \"fabric:/myapp/app1/svc1\", the service identity would be \"myapp~app1~svc1\" in 6.0+ and \"myapp/app1/svc1\" in previous versions."]
     pub fn get_service_backup_configuration_info(&self, service_id: impl Into<String>) -> get_service_backup_configuration_info::Builder {
         get_service_backup_configuration_info::Builder {
             client: self.clone(),
@@ -2079,6 +2808,10 @@ impl Client {
         }
     }
     #[doc = "Gets the list of backups available for every partition in this service."]
+    #[doc = "Returns a list of backups available for every partition in this Service Fabric service. The server enumerates all the backups available in the backup store configured in the backup policy. It also allows filtering of the result based on start and end datetime or just fetching the latest available backup for every partition."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `service_id`: The identity of the service. This ID is typically the full name of the service without the 'fabric:' URI scheme.\nStarting from version 6.0, hierarchical names are delimited with the \"~\" character.\nFor example, if the service name is \"fabric:/myapp/app1/svc1\", the service identity would be \"myapp~app1~svc1\" in 6.0+ and \"myapp/app1/svc1\" in previous versions."]
     pub fn get_service_backup_list(&self, service_id: impl Into<String>) -> get_service_backup_list::Builder {
         get_service_backup_list::Builder {
             client: self.clone(),
@@ -2092,6 +2825,10 @@ impl Client {
         }
     }
     #[doc = "Suspends periodic backup for the specified Service Fabric service."]
+    #[doc = "The service which is configured to take periodic backups, is suspended for taking further backups till it is resumed again. This operation applies to the entire service's hierarchy. It means all the partitions under this service are now suspended for backup."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `service_id`: The identity of the service. This ID is typically the full name of the service without the 'fabric:' URI scheme.\nStarting from version 6.0, hierarchical names are delimited with the \"~\" character.\nFor example, if the service name is \"fabric:/myapp/app1/svc1\", the service identity would be \"myapp~app1~svc1\" in 6.0+ and \"myapp/app1/svc1\" in previous versions."]
     pub fn suspend_service_backup(&self, service_id: impl Into<String>) -> suspend_service_backup::Builder {
         suspend_service_backup::Builder {
             client: self.clone(),
@@ -2100,6 +2837,10 @@ impl Client {
         }
     }
     #[doc = "Resumes periodic backup of a Service Fabric service which was previously suspended."]
+    #[doc = "The previously suspended Service Fabric service resumes taking periodic backup as per the backup policy currently configured for the same."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `service_id`: The identity of the service. This ID is typically the full name of the service without the 'fabric:' URI scheme.\nStarting from version 6.0, hierarchical names are delimited with the \"~\" character.\nFor example, if the service name is \"fabric:/myapp/app1/svc1\", the service identity would be \"myapp~app1~svc1\" in 6.0+ and \"myapp/app1/svc1\" in previous versions."]
     pub fn resume_service_backup(&self, service_id: impl Into<String>) -> resume_service_backup::Builder {
         resume_service_backup::Builder {
             client: self.clone(),
@@ -2108,6 +2849,11 @@ impl Client {
         }
     }
     #[doc = "Enables periodic backup of the stateful persisted partition."]
+    #[doc = "Enables periodic backup of stateful persisted partition. Each partition is backed up as per the specified backup policy description. In case the application or service, which is partition is part of, is already enabled for backup then this operation would override the policy being used to take the periodic backup of this partition.\nNote only C# based Reliable Actor and Reliable Stateful services are currently supported for periodic backup."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `partition_id`: The identity of the partition."]
+    #[doc = "* `enable_backup_description`: Specifies the parameters for enabling backup."]
     pub fn enable_partition_backup(
         &self,
         partition_id: impl Into<String>,
@@ -2121,6 +2867,10 @@ impl Client {
         }
     }
     #[doc = "Disables periodic backup of Service Fabric partition which was previously enabled."]
+    #[doc = "Disables periodic backup of partition which was previously enabled. Backup must be explicitly enabled before it can be disabled. \nIn case the backup is enabled for the Service Fabric application or service, which this partition is part of, this partition would continue to be periodically backed up as per the policy mapped at the higher level entity."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `partition_id`: The identity of the partition."]
     pub fn disable_partition_backup(&self, partition_id: impl Into<String>) -> disable_partition_backup::Builder {
         disable_partition_backup::Builder {
             client: self.clone(),
@@ -2130,6 +2880,10 @@ impl Client {
         }
     }
     #[doc = "Gets the partition backup configuration information"]
+    #[doc = "Gets the Service Fabric Backup configuration information for the specified partition."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `partition_id`: The identity of the partition."]
     pub fn get_partition_backup_configuration_info(
         &self,
         partition_id: impl Into<String>,
@@ -2141,6 +2895,10 @@ impl Client {
         }
     }
     #[doc = "Gets the list of backups available for the specified partition."]
+    #[doc = "Returns a list of backups available for the specified partition. The server enumerates all the backups available in the backup store configured in the backup policy. It also allows filtering of the result based on start and end datetime or just fetching the latest available backup for the partition."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `partition_id`: The identity of the partition."]
     pub fn get_partition_backup_list(&self, partition_id: impl Into<String>) -> get_partition_backup_list::Builder {
         get_partition_backup_list::Builder {
             client: self.clone(),
@@ -2152,6 +2910,10 @@ impl Client {
         }
     }
     #[doc = "Suspends periodic backup for the specified partition."]
+    #[doc = "The partition which is configured to take periodic backups, is suspended for taking further backups till it is resumed again."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `partition_id`: The identity of the partition."]
     pub fn suspend_partition_backup(&self, partition_id: impl Into<String>) -> suspend_partition_backup::Builder {
         suspend_partition_backup::Builder {
             client: self.clone(),
@@ -2160,6 +2922,10 @@ impl Client {
         }
     }
     #[doc = "Resumes periodic backup of partition which was previously suspended."]
+    #[doc = "The previously suspended partition resumes taking periodic backup as per the backup policy currently configured for the same."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `partition_id`: The identity of the partition."]
     pub fn resume_partition_backup(&self, partition_id: impl Into<String>) -> resume_partition_backup::Builder {
         resume_partition_backup::Builder {
             client: self.clone(),
@@ -2168,6 +2934,10 @@ impl Client {
         }
     }
     #[doc = "Triggers backup of the partition's state."]
+    #[doc = "Creates a backup of the stateful persisted partition's state. In case the partition is already being periodically backed up, then by default the new backup is created at the same backup storage. One can also override the same by specifying the backup storage details as part of the request body. Once the backup is initiated, its progress can be tracked using the GetBackupProgress operation. \nIn case, the operation times out, specify a greater backup timeout value in the query parameter."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `partition_id`: The identity of the partition."]
     pub fn backup_partition(&self, partition_id: impl Into<String>) -> backup_partition::Builder {
         backup_partition::Builder {
             client: self.clone(),
@@ -2178,6 +2948,10 @@ impl Client {
         }
     }
     #[doc = "Gets details for the latest backup triggered for this partition."]
+    #[doc = "Returns information about the state of the latest backup along with details or failure reason in case of completion."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `partition_id`: The identity of the partition."]
     pub fn get_partition_backup_progress(&self, partition_id: impl Into<String>) -> get_partition_backup_progress::Builder {
         get_partition_backup_progress::Builder {
             client: self.clone(),
@@ -2186,6 +2960,11 @@ impl Client {
         }
     }
     #[doc = "Triggers restore of the state of the partition using the specified restore partition description."]
+    #[doc = "Restores the state of a of the stateful persisted partition using the specified backup point. In case the partition is already being periodically backed up, then by default the backup point is looked for in the storage specified in backup policy. One can also override the same by specifying the backup storage details as part of the restore partition description in body. Once the restore is initiated, its progress can be tracked using the GetRestoreProgress operation. \nIn case, the operation times out, specify a greater restore timeout value in the query parameter."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `partition_id`: The identity of the partition."]
+    #[doc = "* `restore_partition_description`: Describes the parameters to restore the partition."]
     pub fn restore_partition(
         &self,
         partition_id: impl Into<String>,
@@ -2200,6 +2979,10 @@ impl Client {
         }
     }
     #[doc = "Gets details for the latest restore operation triggered for this partition."]
+    #[doc = "Returns information about the state of the latest restore operation along with details or failure reason in case of completion."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `partition_id`: The identity of the partition."]
     pub fn get_partition_restore_progress(&self, partition_id: impl Into<String>) -> get_partition_restore_progress::Builder {
         get_partition_restore_progress::Builder {
             client: self.clone(),
@@ -2208,6 +2991,10 @@ impl Client {
         }
     }
     #[doc = "Gets the list of backups available for the specified backed up entity at the specified backup location."]
+    #[doc = "Gets the list of backups available for the specified backed up entity (Application, Service or Partition) at the specified backup location (FileShare or Azure Blob Storage)."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `get_backup_by_storage_query_description`: Describes the filters and backup storage details to be used for enumerating backups."]
     pub fn get_backups_from_backup_location(
         &self,
         get_backup_by_storage_query_description: impl Into<models::GetBackupByStorageQueryDescription>,
@@ -2221,6 +3008,10 @@ impl Client {
         }
     }
     #[doc = "Creates a Service Fabric name."]
+    #[doc = "Creates the specified Service Fabric name."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `name_description`: Describes the Service Fabric name to be created."]
     pub fn create_name(&self, name_description: impl Into<models::NameDescription>) -> create_name::Builder {
         create_name::Builder {
             client: self.clone(),
@@ -2229,6 +3020,10 @@ impl Client {
         }
     }
     #[doc = "Returns whether the Service Fabric name exists."]
+    #[doc = "Returns whether the specified Service Fabric name exists."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `name_id`: The Service Fabric name, without the 'fabric:' URI scheme."]
     pub fn get_name_exists_info(&self, name_id: impl Into<String>) -> get_name_exists_info::Builder {
         get_name_exists_info::Builder {
             client: self.clone(),
@@ -2237,6 +3032,10 @@ impl Client {
         }
     }
     #[doc = "Deletes a Service Fabric name."]
+    #[doc = "Deletes the specified Service Fabric name. A name must be created before it can be deleted. Deleting a name with child properties will fail."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `name_id`: The Service Fabric name, without the 'fabric:' URI scheme."]
     pub fn delete_name(&self, name_id: impl Into<String>) -> delete_name::Builder {
         delete_name::Builder {
             client: self.clone(),
@@ -2245,6 +3044,10 @@ impl Client {
         }
     }
     #[doc = "Enumerates all the Service Fabric names under a given name."]
+    #[doc = "Enumerates all the Service Fabric names under a given name. If the subnames do not fit in a page, one page of results is returned as well as a continuation token, which can be used to get the next page. Querying a name that doesn't exist will fail."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `name_id`: The Service Fabric name, without the 'fabric:' URI scheme."]
     pub fn get_sub_name_info_list(&self, name_id: impl Into<String>) -> get_sub_name_info_list::Builder {
         get_sub_name_info_list::Builder {
             client: self.clone(),
@@ -2255,6 +3058,10 @@ impl Client {
         }
     }
     #[doc = "Gets information on all Service Fabric properties under a given name."]
+    #[doc = "A Service Fabric name can have one or more named properties that store custom information. This operation gets the information about these properties in a paged list. The information includes name, value, and metadata about each of the properties."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `name_id`: The Service Fabric name, without the 'fabric:' URI scheme."]
     pub fn get_property_info_list(&self, name_id: impl Into<String>) -> get_property_info_list::Builder {
         get_property_info_list::Builder {
             client: self.clone(),
@@ -2265,6 +3072,11 @@ impl Client {
         }
     }
     #[doc = "Gets the specified Service Fabric property."]
+    #[doc = "Gets the specified Service Fabric property under a given name. This will always return both value and metadata."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `name_id`: The Service Fabric name, without the 'fabric:' URI scheme."]
+    #[doc = "* `property_name`: Specifies the name of the property to get."]
     pub fn get_property_info(&self, name_id: impl Into<String>, property_name: impl Into<String>) -> get_property_info::Builder {
         get_property_info::Builder {
             client: self.clone(),
@@ -2274,6 +3086,11 @@ impl Client {
         }
     }
     #[doc = "Creates or updates a Service Fabric property."]
+    #[doc = "Creates or updates the specified Service Fabric property under a given name."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `name_id`: The Service Fabric name, without the 'fabric:' URI scheme."]
+    #[doc = "* `property_description`: Describes the Service Fabric property to be created."]
     pub fn put_property(
         &self,
         name_id: impl Into<String>,
@@ -2287,6 +3104,11 @@ impl Client {
         }
     }
     #[doc = "Deletes the specified Service Fabric property."]
+    #[doc = "Deletes the specified Service Fabric property under a given name. A property must be created before it can be deleted."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `name_id`: The Service Fabric name, without the 'fabric:' URI scheme."]
+    #[doc = "* `property_name`: Specifies the name of the property to get."]
     pub fn delete_property(&self, name_id: impl Into<String>, property_name: impl Into<String>) -> delete_property::Builder {
         delete_property::Builder {
             client: self.clone(),
@@ -2296,6 +3118,11 @@ impl Client {
         }
     }
     #[doc = "Submits a property batch."]
+    #[doc = "Submits a batch of property operations. Either all or none of the operations will be committed."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `name_id`: The Service Fabric name, without the 'fabric:' URI scheme."]
+    #[doc = "* `property_batch_description_list`: Describes the property batch operations to be submitted."]
     pub fn submit_property_batch(
         &self,
         name_id: impl Into<String>,
@@ -2309,6 +3136,11 @@ impl Client {
         }
     }
     #[doc = "Gets all Cluster-related events."]
+    #[doc = "The response is list of ClusterEvent objects."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `start_time_utc`: The start time of a lookup query in ISO UTC yyyy-MM-ddTHH:mm:ssZ."]
+    #[doc = "* `end_time_utc`: The end time of a lookup query in ISO UTC yyyy-MM-ddTHH:mm:ssZ."]
     pub fn get_cluster_event_list(
         &self,
         start_time_utc: impl Into<String>,
@@ -2325,6 +3157,11 @@ impl Client {
         }
     }
     #[doc = "Gets all Containers-related events."]
+    #[doc = "The response is list of ContainerInstanceEvent objects."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `start_time_utc`: The start time of a lookup query in ISO UTC yyyy-MM-ddTHH:mm:ssZ."]
+    #[doc = "* `end_time_utc`: The end time of a lookup query in ISO UTC yyyy-MM-ddTHH:mm:ssZ."]
     pub fn get_containers_event_list(
         &self,
         start_time_utc: impl Into<String>,
@@ -2341,6 +3178,12 @@ impl Client {
         }
     }
     #[doc = "Gets a Node-related events."]
+    #[doc = "The response is list of NodeEvent objects."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `node_name`: The name of the node."]
+    #[doc = "* `start_time_utc`: The start time of a lookup query in ISO UTC yyyy-MM-ddTHH:mm:ssZ."]
+    #[doc = "* `end_time_utc`: The end time of a lookup query in ISO UTC yyyy-MM-ddTHH:mm:ssZ."]
     pub fn get_node_event_list(
         &self,
         node_name: impl Into<String>,
@@ -2359,6 +3202,11 @@ impl Client {
         }
     }
     #[doc = "Gets all Nodes-related Events."]
+    #[doc = "The response is list of NodeEvent objects."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `start_time_utc`: The start time of a lookup query in ISO UTC yyyy-MM-ddTHH:mm:ssZ."]
+    #[doc = "* `end_time_utc`: The end time of a lookup query in ISO UTC yyyy-MM-ddTHH:mm:ssZ."]
     pub fn get_nodes_event_list(
         &self,
         start_time_utc: impl Into<String>,
@@ -2375,6 +3223,12 @@ impl Client {
         }
     }
     #[doc = "Gets an Application-related events."]
+    #[doc = "The response is list of ApplicationEvent objects."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `application_id`: The identity of the application. This is typically the full name of the application without the 'fabric:' URI scheme.\nStarting from version 6.0, hierarchical names are delimited with the \"~\" character.\nFor example, if the application name is \"fabric:/myapp/app1\", the application identity would be \"myapp~app1\" in 6.0+ and \"myapp/app1\" in previous versions."]
+    #[doc = "* `start_time_utc`: The start time of a lookup query in ISO UTC yyyy-MM-ddTHH:mm:ssZ."]
+    #[doc = "* `end_time_utc`: The end time of a lookup query in ISO UTC yyyy-MM-ddTHH:mm:ssZ."]
     pub fn get_application_event_list(
         &self,
         application_id: impl Into<String>,
@@ -2393,6 +3247,11 @@ impl Client {
         }
     }
     #[doc = "Gets all Applications-related events."]
+    #[doc = "The response is list of ApplicationEvent objects."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `start_time_utc`: The start time of a lookup query in ISO UTC yyyy-MM-ddTHH:mm:ssZ."]
+    #[doc = "* `end_time_utc`: The end time of a lookup query in ISO UTC yyyy-MM-ddTHH:mm:ssZ."]
     pub fn get_applications_event_list(
         &self,
         start_time_utc: impl Into<String>,
@@ -2409,6 +3268,12 @@ impl Client {
         }
     }
     #[doc = "Gets a Service-related events."]
+    #[doc = "The response is list of ServiceEvent objects."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `service_id`: The identity of the service. This ID is typically the full name of the service without the 'fabric:' URI scheme.\nStarting from version 6.0, hierarchical names are delimited with the \"~\" character.\nFor example, if the service name is \"fabric:/myapp/app1/svc1\", the service identity would be \"myapp~app1~svc1\" in 6.0+ and \"myapp/app1/svc1\" in previous versions."]
+    #[doc = "* `start_time_utc`: The start time of a lookup query in ISO UTC yyyy-MM-ddTHH:mm:ssZ."]
+    #[doc = "* `end_time_utc`: The end time of a lookup query in ISO UTC yyyy-MM-ddTHH:mm:ssZ."]
     pub fn get_service_event_list(
         &self,
         service_id: impl Into<String>,
@@ -2427,6 +3292,11 @@ impl Client {
         }
     }
     #[doc = "Gets all Services-related events."]
+    #[doc = "The response is list of ServiceEvent objects."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `start_time_utc`: The start time of a lookup query in ISO UTC yyyy-MM-ddTHH:mm:ssZ."]
+    #[doc = "* `end_time_utc`: The end time of a lookup query in ISO UTC yyyy-MM-ddTHH:mm:ssZ."]
     pub fn get_services_event_list(
         &self,
         start_time_utc: impl Into<String>,
@@ -2443,6 +3313,12 @@ impl Client {
         }
     }
     #[doc = "Gets a Partition-related events."]
+    #[doc = "The response is list of PartitionEvent objects."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `partition_id`: The identity of the partition."]
+    #[doc = "* `start_time_utc`: The start time of a lookup query in ISO UTC yyyy-MM-ddTHH:mm:ssZ."]
+    #[doc = "* `end_time_utc`: The end time of a lookup query in ISO UTC yyyy-MM-ddTHH:mm:ssZ."]
     pub fn get_partition_event_list(
         &self,
         partition_id: impl Into<String>,
@@ -2461,6 +3337,11 @@ impl Client {
         }
     }
     #[doc = "Gets all Partitions-related events."]
+    #[doc = "The response is list of PartitionEvent objects."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `start_time_utc`: The start time of a lookup query in ISO UTC yyyy-MM-ddTHH:mm:ssZ."]
+    #[doc = "* `end_time_utc`: The end time of a lookup query in ISO UTC yyyy-MM-ddTHH:mm:ssZ."]
     pub fn get_partitions_event_list(
         &self,
         start_time_utc: impl Into<String>,
@@ -2477,6 +3358,13 @@ impl Client {
         }
     }
     #[doc = "Gets a Partition Replica-related events."]
+    #[doc = "The response is list of ReplicaEvent objects."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `partition_id`: The identity of the partition."]
+    #[doc = "* `replica_id`: The identifier of the replica."]
+    #[doc = "* `start_time_utc`: The start time of a lookup query in ISO UTC yyyy-MM-ddTHH:mm:ssZ."]
+    #[doc = "* `end_time_utc`: The end time of a lookup query in ISO UTC yyyy-MM-ddTHH:mm:ssZ."]
     pub fn get_partition_replica_event_list(
         &self,
         partition_id: impl Into<String>,
@@ -2497,6 +3385,12 @@ impl Client {
         }
     }
     #[doc = "Gets all Replicas-related events for a Partition."]
+    #[doc = "The response is list of ReplicaEvent objects."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `partition_id`: The identity of the partition."]
+    #[doc = "* `start_time_utc`: The start time of a lookup query in ISO UTC yyyy-MM-ddTHH:mm:ssZ."]
+    #[doc = "* `end_time_utc`: The end time of a lookup query in ISO UTC yyyy-MM-ddTHH:mm:ssZ."]
     pub fn get_partition_replicas_event_list(
         &self,
         partition_id: impl Into<String>,
@@ -2515,6 +3409,10 @@ impl Client {
         }
     }
     #[doc = "Gets all correlated events for a given event."]
+    #[doc = "The response is list of FabricEvents."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `event_instance_id`: The EventInstanceId."]
     pub fn get_correlated_event_list(&self, event_instance_id: impl Into<String>) -> get_correlated_event_list::Builder {
         get_correlated_event_list::Builder {
             client: self.clone(),
@@ -2532,6 +3430,7 @@ pub mod get_cluster_manifest {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -2588,26 +3487,32 @@ pub mod get_cluster_health {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "Allows filtering of the node health state objects returned in the result of cluster health query\nbased on their health state. The possible values for this parameter include integer value of one of the\nfollowing health states. Only nodes that match the filter are returned. All nodes are used to evaluate the aggregated health state.\nIf not specified, all entries are returned.\nThe state values are flag-based enumeration, so the value could be a combination of these values obtained using bitwise 'OR' operator.\nFor example, if the provided value is 6 then health state of nodes with HealthState value of OK (2) and Warning (4) are returned.\n\n- Default - Default value. Matches any HealthState. The value is zero.\n- None - Filter that doesn't match any HealthState value. Used in order to return no results on a given collection of states. The value is 1.\n- Ok - Filter that matches input with HealthState value Ok. The value is 2.\n- Warning - Filter that matches input with HealthState value Warning. The value is 4.\n- Error - Filter that matches input with HealthState value Error. The value is 8.\n- All - Filter that matches input with any HealthState value. The value is 65535."]
         pub fn nodes_health_state_filter(mut self, nodes_health_state_filter: i64) -> Self {
             self.nodes_health_state_filter = Some(nodes_health_state_filter);
             self
         }
+        #[doc = "Allows filtering of the application health state objects returned in the result of cluster health\nquery based on their health state.\nThe possible values for this parameter include integer value obtained from members or bitwise operations\non members of HealthStateFilter enumeration. Only applications that match the filter are returned.\nAll applications are used to evaluate the aggregated health state. If not specified, all entries are returned.\nThe state values are flag-based enumeration, so the value could be a combination of these values obtained using bitwise 'OR' operator.\nFor example, if the provided value is 6 then health state of applications with HealthState value of OK (2) and Warning (4) are returned.\n\n- Default - Default value. Matches any HealthState. The value is zero.\n- None - Filter that doesn't match any HealthState value. Used in order to return no results on a given collection of states. The value is 1.\n- Ok - Filter that matches input with HealthState value Ok. The value is 2.\n- Warning - Filter that matches input with HealthState value Warning. The value is 4.\n- Error - Filter that matches input with HealthState value Error. The value is 8.\n- All - Filter that matches input with any HealthState value. The value is 65535."]
         pub fn applications_health_state_filter(mut self, applications_health_state_filter: i64) -> Self {
             self.applications_health_state_filter = Some(applications_health_state_filter);
             self
         }
+        #[doc = "Allows filtering the collection of HealthEvent objects returned based on health state.\nThe possible values for this parameter include integer value of one of the following health states.\nOnly events that match the filter are returned. All events are used to evaluate the aggregated health state.\nIf not specified, all entries are returned. The state values are flag-based enumeration, so the value could be a combination of these values, obtained using the bitwise 'OR' operator. For example, If the provided value is 6 then all of the events with HealthState value of OK (2) and Warning (4) are returned.\n\n- Default - Default value. Matches any HealthState. The value is zero.\n- None - Filter that doesn't match any HealthState value. Used in order to return no results on a given collection of states. The value is 1.\n- Ok - Filter that matches input with HealthState value Ok. The value is 2.\n- Warning - Filter that matches input with HealthState value Warning. The value is 4.\n- Error - Filter that matches input with HealthState value Error. The value is 8.\n- All - Filter that matches input with any HealthState value. The value is 65535."]
         pub fn events_health_state_filter(mut self, events_health_state_filter: i64) -> Self {
             self.events_health_state_filter = Some(events_health_state_filter);
             self
         }
+        #[doc = "Indicates whether the health statistics should be returned as part of the query result. False by default.\nThe statistics show the number of children entities in health state Ok, Warning, and Error."]
         pub fn exclude_health_statistics(mut self, exclude_health_statistics: bool) -> Self {
             self.exclude_health_statistics = Some(exclude_health_statistics);
             self
         }
+        #[doc = "Indicates whether the health statistics should include the fabric:/System application health statistics. False by default.\nIf IncludeSystemApplicationHealthStatistics is set to true, the health statistics include the entities that belong to the fabric:/System application.\nOtherwise, the query result includes health statistics only for user applications.\nThe health statistics must be included in the query result for this parameter to be applied."]
         pub fn include_system_application_health_statistics(mut self, include_system_application_health_statistics: bool) -> Self {
             self.include_system_application_health_statistics = Some(include_system_application_health_statistics);
             self
         }
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -2691,30 +3596,37 @@ pub mod get_cluster_health_using_policy {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "Allows filtering of the node health state objects returned in the result of cluster health query\nbased on their health state. The possible values for this parameter include integer value of one of the\nfollowing health states. Only nodes that match the filter are returned. All nodes are used to evaluate the aggregated health state.\nIf not specified, all entries are returned.\nThe state values are flag-based enumeration, so the value could be a combination of these values obtained using bitwise 'OR' operator.\nFor example, if the provided value is 6 then health state of nodes with HealthState value of OK (2) and Warning (4) are returned.\n\n- Default - Default value. Matches any HealthState. The value is zero.\n- None - Filter that doesn't match any HealthState value. Used in order to return no results on a given collection of states. The value is 1.\n- Ok - Filter that matches input with HealthState value Ok. The value is 2.\n- Warning - Filter that matches input with HealthState value Warning. The value is 4.\n- Error - Filter that matches input with HealthState value Error. The value is 8.\n- All - Filter that matches input with any HealthState value. The value is 65535."]
         pub fn nodes_health_state_filter(mut self, nodes_health_state_filter: i64) -> Self {
             self.nodes_health_state_filter = Some(nodes_health_state_filter);
             self
         }
+        #[doc = "Allows filtering of the application health state objects returned in the result of cluster health\nquery based on their health state.\nThe possible values for this parameter include integer value obtained from members or bitwise operations\non members of HealthStateFilter enumeration. Only applications that match the filter are returned.\nAll applications are used to evaluate the aggregated health state. If not specified, all entries are returned.\nThe state values are flag-based enumeration, so the value could be a combination of these values obtained using bitwise 'OR' operator.\nFor example, if the provided value is 6 then health state of applications with HealthState value of OK (2) and Warning (4) are returned.\n\n- Default - Default value. Matches any HealthState. The value is zero.\n- None - Filter that doesn't match any HealthState value. Used in order to return no results on a given collection of states. The value is 1.\n- Ok - Filter that matches input with HealthState value Ok. The value is 2.\n- Warning - Filter that matches input with HealthState value Warning. The value is 4.\n- Error - Filter that matches input with HealthState value Error. The value is 8.\n- All - Filter that matches input with any HealthState value. The value is 65535."]
         pub fn applications_health_state_filter(mut self, applications_health_state_filter: i64) -> Self {
             self.applications_health_state_filter = Some(applications_health_state_filter);
             self
         }
+        #[doc = "Allows filtering the collection of HealthEvent objects returned based on health state.\nThe possible values for this parameter include integer value of one of the following health states.\nOnly events that match the filter are returned. All events are used to evaluate the aggregated health state.\nIf not specified, all entries are returned. The state values are flag-based enumeration, so the value could be a combination of these values, obtained using the bitwise 'OR' operator. For example, If the provided value is 6 then all of the events with HealthState value of OK (2) and Warning (4) are returned.\n\n- Default - Default value. Matches any HealthState. The value is zero.\n- None - Filter that doesn't match any HealthState value. Used in order to return no results on a given collection of states. The value is 1.\n- Ok - Filter that matches input with HealthState value Ok. The value is 2.\n- Warning - Filter that matches input with HealthState value Warning. The value is 4.\n- Error - Filter that matches input with HealthState value Error. The value is 8.\n- All - Filter that matches input with any HealthState value. The value is 65535."]
         pub fn events_health_state_filter(mut self, events_health_state_filter: i64) -> Self {
             self.events_health_state_filter = Some(events_health_state_filter);
             self
         }
+        #[doc = "Indicates whether the health statistics should be returned as part of the query result. False by default.\nThe statistics show the number of children entities in health state Ok, Warning, and Error."]
         pub fn exclude_health_statistics(mut self, exclude_health_statistics: bool) -> Self {
             self.exclude_health_statistics = Some(exclude_health_statistics);
             self
         }
+        #[doc = "Indicates whether the health statistics should include the fabric:/System application health statistics. False by default.\nIf IncludeSystemApplicationHealthStatistics is set to true, the health statistics include the entities that belong to the fabric:/System application.\nOtherwise, the query result includes health statistics only for user applications.\nThe health statistics must be included in the query result for this parameter to be applied."]
         pub fn include_system_application_health_statistics(mut self, include_system_application_health_statistics: bool) -> Self {
             self.include_system_application_health_statistics = Some(include_system_application_health_statistics);
             self
         }
+        #[doc = "Describes the health policies used to evaluate the cluster health.\nIf not present, the health evaluation uses the cluster health policy defined in the cluster manifest or the default cluster health policy.\nBy default, each application is evaluated using its specific application health policy, defined in the application manifest, or the default health policy, if no policy is defined in manifest.\nIf the application health policy map is specified, and it has an entry for an application, the specified application health policy\nis used to evaluate the application health."]
         pub fn cluster_health_policies(mut self, cluster_health_policies: impl Into<models::ClusterHealthPolicies>) -> Self {
             self.cluster_health_policies = Some(cluster_health_policies.into());
             self
         }
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -2797,6 +3709,7 @@ pub mod get_cluster_health_chunk {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -2849,6 +3762,7 @@ pub mod get_cluster_health_chunk_using_policy_and_advanced_filters {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "Describes the cluster and application health policies used to evaluate the cluster health and the filters to select which cluster entities to be returned.\nIf the cluster health policy is present, it is used to evaluate the cluster events and the cluster nodes. If not present, the health evaluation uses the cluster health policy defined in the cluster manifest or the default cluster health policy.\nBy default, each application is evaluated using its specific application health policy, defined in the application manifest, or the default health policy, if no policy is defined in manifest.\nIf the application health policy map is specified, and it has an entry for an application, the specified application health policy\nis used to evaluate the application health.\nUsers can specify very flexible filters to select which cluster entities to include in response. The selection can be done based on the entities health state and based on the hierarchy.\nThe query can return multi-level children of the entities based on the specified filters. For example, it can return one application with a specified name, and for this application, return\nonly services that are in Error or Warning, and all partitions and replicas for one of these services."]
         pub fn cluster_health_chunk_query_description(
             mut self,
             cluster_health_chunk_query_description: impl Into<models::ClusterHealthChunkQueryDescription>,
@@ -2856,6 +3770,7 @@ pub mod get_cluster_health_chunk_using_policy_and_advanced_filters {
             self.cluster_health_chunk_query_description = Some(cluster_health_chunk_query_description.into());
             self
         }
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -2914,10 +3829,12 @@ pub mod report_cluster_health {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "A flag that indicates whether the report should be sent immediately.\nA health report is sent to a Service Fabric gateway Application, which forwards to the health store.\nIf Immediate is set to true, the report is sent immediately from HTTP Gateway to the health store, regardless of the fabric client settings that the HTTP Gateway Application is using.\nThis is useful for critical reports that should be sent as soon as possible.\nDepending on timing and other conditions, sending the report may still fail, for example if the HTTP Gateway is closed or the message doesn't reach the Gateway.\nIf Immediate is set to false, the report is sent based on the health client settings from the HTTP Gateway. Therefore, it will be batched according to the HealthReportSendInterval configuration.\nThis is the recommended setting because it allows the health client to optimize health reporting messages to health store as well as health report processing.\nBy default, reports are not sent immediately."]
         pub fn immediate(mut self, immediate: bool) -> Self {
             self.immediate = Some(immediate);
             self
         }
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -2970,10 +3887,12 @@ pub mod get_provisioned_fabric_code_version_info_list {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The product version of Service Fabric."]
         pub fn code_version(mut self, code_version: impl Into<String>) -> Self {
             self.code_version = Some(code_version.into());
             self
         }
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -3029,10 +3948,12 @@ pub mod get_provisioned_fabric_config_version_info_list {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The config version of Service Fabric."]
         pub fn config_version(mut self, config_version: impl Into<String>) -> Self {
             self.config_version = Some(config_version.into());
             self
         }
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -3087,6 +4008,7 @@ pub mod get_cluster_upgrade_progress {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -3139,6 +4061,7 @@ pub mod get_cluster_configuration {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -3194,6 +4117,7 @@ pub mod get_cluster_configuration_upgrade_status {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -3245,6 +4169,7 @@ pub mod get_upgrade_orchestration_service_state {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -3297,6 +4222,7 @@ pub mod set_upgrade_orchestration_service_state {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -3350,6 +4276,7 @@ pub mod provision_cluster {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -3399,6 +4326,7 @@ pub mod unprovision_cluster {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -3447,6 +4375,7 @@ pub mod rollback_cluster_upgrade {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -3496,6 +4425,7 @@ pub mod resume_cluster_upgrade {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -3545,6 +4475,7 @@ pub mod start_cluster_upgrade {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -3594,6 +4525,7 @@ pub mod start_cluster_configuration_upgrade {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -3643,6 +4575,7 @@ pub mod update_cluster_upgrade {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -3691,6 +4624,7 @@ pub mod get_aad_metadata {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -3742,6 +4676,7 @@ pub mod get_cluster_version {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -3793,6 +4728,7 @@ pub mod get_cluster_load {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -3845,6 +4781,7 @@ pub mod toggle_verbose_service_placement_health_reporting {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -3901,18 +4838,22 @@ pub mod get_node_info_list {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The continuation token parameter is used to obtain next set of results. A continuation token with a non-empty value is included in the response of the API when the results from the system do not fit in a single response. When this value is passed to the next API call, the API returns next set of results. If there are no further results, then the continuation token does not contain a value. The value of this parameter should not be URL encoded."]
         pub fn continuation_token(mut self, continuation_token: impl Into<String>) -> Self {
             self.continuation_token = Some(continuation_token.into());
             self
         }
+        #[doc = "Allows filtering the nodes based on the NodeStatus. Only the nodes that are matching the specified filter value will be returned. The filter value can be one of the following."]
         pub fn node_status_filter(mut self, node_status_filter: impl Into<String>) -> Self {
             self.node_status_filter = Some(node_status_filter.into());
             self
         }
+        #[doc = "The maximum number of results to be returned as part of the paged queries. This parameter defines the upper bound on the number of results returned. The results returned can be less than the specified maximum results if they do not fit in the message as per the max message size restrictions defined in the configuration. If this parameter is zero or not specified, the paged query includes as many results as possible that fit in the return message."]
         pub fn max_results(mut self, max_results: i64) -> Self {
             self.max_results = Some(max_results);
             self
         }
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -3978,6 +4919,7 @@ pub mod get_node_info {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -4032,10 +4974,12 @@ pub mod get_node_health {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "Allows filtering the collection of HealthEvent objects returned based on health state.\nThe possible values for this parameter include integer value of one of the following health states.\nOnly events that match the filter are returned. All events are used to evaluate the aggregated health state.\nIf not specified, all entries are returned. The state values are flag-based enumeration, so the value could be a combination of these values, obtained using the bitwise 'OR' operator. For example, If the provided value is 6 then all of the events with HealthState value of OK (2) and Warning (4) are returned.\n\n- Default - Default value. Matches any HealthState. The value is zero.\n- None - Filter that doesn't match any HealthState value. Used in order to return no results on a given collection of states. The value is 1.\n- Ok - Filter that matches input with HealthState value Ok. The value is 2.\n- Warning - Filter that matches input with HealthState value Warning. The value is 4.\n- Error - Filter that matches input with HealthState value Error. The value is 8.\n- All - Filter that matches input with any HealthState value. The value is 65535."]
         pub fn events_health_state_filter(mut self, events_health_state_filter: i64) -> Self {
             self.events_health_state_filter = Some(events_health_state_filter);
             self
         }
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -4095,14 +5039,17 @@ pub mod get_node_health_using_policy {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "Allows filtering the collection of HealthEvent objects returned based on health state.\nThe possible values for this parameter include integer value of one of the following health states.\nOnly events that match the filter are returned. All events are used to evaluate the aggregated health state.\nIf not specified, all entries are returned. The state values are flag-based enumeration, so the value could be a combination of these values, obtained using the bitwise 'OR' operator. For example, If the provided value is 6 then all of the events with HealthState value of OK (2) and Warning (4) are returned.\n\n- Default - Default value. Matches any HealthState. The value is zero.\n- None - Filter that doesn't match any HealthState value. Used in order to return no results on a given collection of states. The value is 1.\n- Ok - Filter that matches input with HealthState value Ok. The value is 2.\n- Warning - Filter that matches input with HealthState value Warning. The value is 4.\n- Error - Filter that matches input with HealthState value Error. The value is 8.\n- All - Filter that matches input with any HealthState value. The value is 65535."]
         pub fn events_health_state_filter(mut self, events_health_state_filter: i64) -> Self {
             self.events_health_state_filter = Some(events_health_state_filter);
             self
         }
+        #[doc = "Describes the health policies used to evaluate the health of a cluster or node. If not present, the health evaluation uses the health policy from cluster manifest or the default health policy."]
         pub fn cluster_health_policy(mut self, cluster_health_policy: impl Into<models::ClusterHealthPolicy>) -> Self {
             self.cluster_health_policy = Some(cluster_health_policy.into());
             self
         }
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -4167,10 +5114,12 @@ pub mod report_node_health {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "A flag that indicates whether the report should be sent immediately.\nA health report is sent to a Service Fabric gateway Application, which forwards to the health store.\nIf Immediate is set to true, the report is sent immediately from HTTP Gateway to the health store, regardless of the fabric client settings that the HTTP Gateway Application is using.\nThis is useful for critical reports that should be sent as soon as possible.\nDepending on timing and other conditions, sending the report may still fail, for example if the HTTP Gateway is closed or the message doesn't reach the Gateway.\nIf Immediate is set to false, the report is sent based on the health client settings from the HTTP Gateway. Therefore, it will be batched according to the HealthReportSendInterval configuration.\nThis is the recommended setting because it allows the health client to optimize health reporting messages to health store as well as health report processing.\nBy default, reports are not sent immediately."]
         pub fn immediate(mut self, immediate: bool) -> Self {
             self.immediate = Some(immediate);
             self
         }
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -4223,6 +5172,7 @@ pub mod get_node_load_info {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -4280,6 +5230,7 @@ pub mod disable_node {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -4329,6 +5280,7 @@ pub mod enable_node {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -4378,6 +5330,7 @@ pub mod remove_node_state {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -4428,6 +5381,7 @@ pub mod restart_node {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -4477,6 +5431,7 @@ pub mod remove_configuration_overrides {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -4529,6 +5484,7 @@ pub mod get_configuration_overrides {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -4587,10 +5543,12 @@ pub mod add_configuration_parameter_overrides {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "Force adding configuration overrides on specified nodes."]
         pub fn force(mut self, force: bool) -> Self {
             self.force = Some(force);
             self
         }
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -4734,22 +5692,27 @@ pub mod get_application_type_info_list {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "Used to filter on ApplicationTypeDefinitionKind which is the mechanism used to define a Service Fabric application type.\n- Default - Default value, which performs the same function as selecting \"All\". The value is 0.\n- All - Filter that matches input with any ApplicationTypeDefinitionKind value. The value is 65535.\n- ServiceFabricApplicationPackage - Filter that matches input with ApplicationTypeDefinitionKind value ServiceFabricApplicationPackage. The value is 1.\n- Compose - Filter that matches input with ApplicationTypeDefinitionKind value Compose. The value is 2."]
         pub fn application_type_definition_kind_filter(mut self, application_type_definition_kind_filter: i64) -> Self {
             self.application_type_definition_kind_filter = Some(application_type_definition_kind_filter);
             self
         }
+        #[doc = "The flag that specifies whether application parameters will be excluded from the result."]
         pub fn exclude_application_parameters(mut self, exclude_application_parameters: bool) -> Self {
             self.exclude_application_parameters = Some(exclude_application_parameters);
             self
         }
+        #[doc = "The continuation token parameter is used to obtain next set of results. A continuation token with a non-empty value is included in the response of the API when the results from the system do not fit in a single response. When this value is passed to the next API call, the API returns next set of results. If there are no further results, then the continuation token does not contain a value. The value of this parameter should not be URL encoded."]
         pub fn continuation_token(mut self, continuation_token: impl Into<String>) -> Self {
             self.continuation_token = Some(continuation_token.into());
             self
         }
+        #[doc = "The maximum number of results to be returned as part of the paged queries. This parameter defines the upper bound on the number of results returned. The results returned can be less than the specified maximum results if they do not fit in the message as per the max message size restrictions defined in the configuration. If this parameter is zero or not specified, the paged query includes as many results as possible that fit in the return message."]
         pub fn max_results(mut self, max_results: i64) -> Self {
             self.max_results = Some(max_results);
             self
         }
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -4823,22 +5786,27 @@ pub mod get_application_type_info_list_by_name {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The version of the application type."]
         pub fn application_type_version(mut self, application_type_version: impl Into<String>) -> Self {
             self.application_type_version = Some(application_type_version.into());
             self
         }
+        #[doc = "The flag that specifies whether application parameters will be excluded from the result."]
         pub fn exclude_application_parameters(mut self, exclude_application_parameters: bool) -> Self {
             self.exclude_application_parameters = Some(exclude_application_parameters);
             self
         }
+        #[doc = "The continuation token parameter is used to obtain next set of results. A continuation token with a non-empty value is included in the response of the API when the results from the system do not fit in a single response. When this value is passed to the next API call, the API returns next set of results. If there are no further results, then the continuation token does not contain a value. The value of this parameter should not be URL encoded."]
         pub fn continuation_token(mut self, continuation_token: impl Into<String>) -> Self {
             self.continuation_token = Some(continuation_token.into());
             self
         }
+        #[doc = "The maximum number of results to be returned as part of the paged queries. This parameter defines the upper bound on the number of results returned. The results returned can be less than the specified maximum results if they do not fit in the message as per the max message size restrictions defined in the configuration. If this parameter is zero or not specified, the paged query includes as many results as possible that fit in the return message."]
         pub fn max_results(mut self, max_results: i64) -> Self {
             self.max_results = Some(max_results);
             self
         }
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -4915,6 +5883,7 @@ pub mod provision_application_type {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -4970,6 +5939,7 @@ pub mod unprovision_application_type {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -5025,6 +5995,7 @@ pub mod get_service_type_info_list {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -5091,6 +6062,7 @@ pub mod get_service_type_info_by_name {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -5155,6 +6127,7 @@ pub mod get_service_manifest {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -5221,10 +6194,12 @@ pub mod get_deployed_service_type_info_list {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The name of the service manifest to filter the list of deployed service type information. If specified, the response will only contain the information about service types that are defined in this service manifest."]
         pub fn service_manifest_name(mut self, service_manifest_name: impl Into<String>) -> Self {
             self.service_manifest_name = Some(service_manifest_name.into());
             self
         }
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -5294,10 +6269,12 @@ pub mod get_deployed_service_type_info_by_name {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The name of the service manifest to filter the list of deployed service type information. If specified, the response will only contain the information about service types that are defined in this service manifest."]
         pub fn service_manifest_name(mut self, service_manifest_name: impl Into<String>) -> Self {
             self.service_manifest_name = Some(service_manifest_name.into());
             self
         }
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -5362,6 +6339,7 @@ pub mod create_application {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -5412,10 +6390,12 @@ pub mod delete_application {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "Remove a Service Fabric application or service forcefully without going through the graceful shutdown sequence. This parameter can be used to forcefully delete an application or service for which delete is timing out due to issues in the service code that prevents graceful close of replicas."]
         pub fn force_remove(mut self, force_remove: bool) -> Self {
             self.force_remove = Some(force_remove);
             self
         }
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -5478,6 +6458,7 @@ pub mod get_application_load_info {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -5539,26 +6520,32 @@ pub mod get_application_info_list {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "Used to filter on ApplicationDefinitionKind, which is the mechanism used to define a Service Fabric application.\n- Default - Default value, which performs the same function as selecting \"All\". The value is 0.\n- All - Filter that matches input with any ApplicationDefinitionKind value. The value is 65535.\n- ServiceFabricApplicationDescription - Filter that matches input with ApplicationDefinitionKind value ServiceFabricApplicationDescription. The value is 1.\n- Compose - Filter that matches input with ApplicationDefinitionKind value Compose. The value is 2."]
         pub fn application_definition_kind_filter(mut self, application_definition_kind_filter: i64) -> Self {
             self.application_definition_kind_filter = Some(application_definition_kind_filter);
             self
         }
+        #[doc = "The application type name used to filter the applications to query for. This value should not contain the application type version."]
         pub fn application_type_name(mut self, application_type_name: impl Into<String>) -> Self {
             self.application_type_name = Some(application_type_name.into());
             self
         }
+        #[doc = "The flag that specifies whether application parameters will be excluded from the result."]
         pub fn exclude_application_parameters(mut self, exclude_application_parameters: bool) -> Self {
             self.exclude_application_parameters = Some(exclude_application_parameters);
             self
         }
+        #[doc = "The continuation token parameter is used to obtain next set of results. A continuation token with a non-empty value is included in the response of the API when the results from the system do not fit in a single response. When this value is passed to the next API call, the API returns next set of results. If there are no further results, then the continuation token does not contain a value. The value of this parameter should not be URL encoded."]
         pub fn continuation_token(mut self, continuation_token: impl Into<String>) -> Self {
             self.continuation_token = Some(continuation_token.into());
             self
         }
+        #[doc = "The maximum number of results to be returned as part of the paged queries. This parameter defines the upper bound on the number of results returned. The results returned can be less than the specified maximum results if they do not fit in the message as per the max message size restrictions defined in the configuration. If this parameter is zero or not specified, the paged query includes as many results as possible that fit in the return message."]
         pub fn max_results(mut self, max_results: i64) -> Self {
             self.max_results = Some(max_results);
             self
         }
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -5637,10 +6624,12 @@ pub mod get_application_info {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The flag that specifies whether application parameters will be excluded from the result."]
         pub fn exclude_application_parameters(mut self, exclude_application_parameters: bool) -> Self {
             self.exclude_application_parameters = Some(exclude_application_parameters);
             self
         }
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -5703,22 +6692,27 @@ pub mod get_application_health {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "Allows filtering the collection of HealthEvent objects returned based on health state.\nThe possible values for this parameter include integer value of one of the following health states.\nOnly events that match the filter are returned. All events are used to evaluate the aggregated health state.\nIf not specified, all entries are returned. The state values are flag-based enumeration, so the value could be a combination of these values, obtained using the bitwise 'OR' operator. For example, If the provided value is 6 then all of the events with HealthState value of OK (2) and Warning (4) are returned.\n\n- Default - Default value. Matches any HealthState. The value is zero.\n- None - Filter that doesn't match any HealthState value. Used in order to return no results on a given collection of states. The value is 1.\n- Ok - Filter that matches input with HealthState value Ok. The value is 2.\n- Warning - Filter that matches input with HealthState value Warning. The value is 4.\n- Error - Filter that matches input with HealthState value Error. The value is 8.\n- All - Filter that matches input with any HealthState value. The value is 65535."]
         pub fn events_health_state_filter(mut self, events_health_state_filter: i64) -> Self {
             self.events_health_state_filter = Some(events_health_state_filter);
             self
         }
+        #[doc = "Allows filtering of the deployed applications health state objects returned in the result of application health query based on their health state.\nThe possible values for this parameter include integer value of one of the following health states. Only deployed applications that match the filter will be returned.\nAll deployed applications are used to evaluate the aggregated health state. If not specified, all entries are returned.\nThe state values are flag-based enumeration, so the value could be a combination of these values, obtained using bitwise 'OR' operator.\nFor example, if the provided value is 6 then health state of deployed applications with HealthState value of OK (2) and Warning (4) are returned.\n\n- Default - Default value. Matches any HealthState. The value is zero.\n- None - Filter that doesn't match any HealthState value. Used in order to return no results on a given collection of states. The value is 1.\n- Ok - Filter that matches input with HealthState value Ok. The value is 2.\n- Warning - Filter that matches input with HealthState value Warning. The value is 4.\n- Error - Filter that matches input with HealthState value Error. The value is 8.\n- All - Filter that matches input with any HealthState value. The value is 65535."]
         pub fn deployed_applications_health_state_filter(mut self, deployed_applications_health_state_filter: i64) -> Self {
             self.deployed_applications_health_state_filter = Some(deployed_applications_health_state_filter);
             self
         }
+        #[doc = "Allows filtering of the services health state objects returned in the result of services health query based on their health state.\nThe possible values for this parameter include integer value of one of the following health states.\nOnly services that match the filter are returned. All services are used to evaluate the aggregated health state.\nIf not specified, all entries are returned. The state values are flag-based enumeration, so the value could be a combination of these values,\nobtained using bitwise 'OR' operator. For example, if the provided value is 6 then health state of services with HealthState value of OK (2) and Warning (4) will be returned.\n\n- Default - Default value. Matches any HealthState. The value is zero.\n- None - Filter that doesn't match any HealthState value. Used in order to return no results on a given collection of states. The value is 1.\n- Ok - Filter that matches input with HealthState value Ok. The value is 2.\n- Warning - Filter that matches input with HealthState value Warning. The value is 4.\n- Error - Filter that matches input with HealthState value Error. The value is 8.\n- All - Filter that matches input with any HealthState value. The value is 65535."]
         pub fn services_health_state_filter(mut self, services_health_state_filter: i64) -> Self {
             self.services_health_state_filter = Some(services_health_state_filter);
             self
         }
+        #[doc = "Indicates whether the health statistics should be returned as part of the query result. False by default.\nThe statistics show the number of children entities in health state Ok, Warning, and Error."]
         pub fn exclude_health_statistics(mut self, exclude_health_statistics: bool) -> Self {
             self.exclude_health_statistics = Some(exclude_health_statistics);
             self
         }
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -5801,26 +6795,32 @@ pub mod get_application_health_using_policy {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "Allows filtering the collection of HealthEvent objects returned based on health state.\nThe possible values for this parameter include integer value of one of the following health states.\nOnly events that match the filter are returned. All events are used to evaluate the aggregated health state.\nIf not specified, all entries are returned. The state values are flag-based enumeration, so the value could be a combination of these values, obtained using the bitwise 'OR' operator. For example, If the provided value is 6 then all of the events with HealthState value of OK (2) and Warning (4) are returned.\n\n- Default - Default value. Matches any HealthState. The value is zero.\n- None - Filter that doesn't match any HealthState value. Used in order to return no results on a given collection of states. The value is 1.\n- Ok - Filter that matches input with HealthState value Ok. The value is 2.\n- Warning - Filter that matches input with HealthState value Warning. The value is 4.\n- Error - Filter that matches input with HealthState value Error. The value is 8.\n- All - Filter that matches input with any HealthState value. The value is 65535."]
         pub fn events_health_state_filter(mut self, events_health_state_filter: i64) -> Self {
             self.events_health_state_filter = Some(events_health_state_filter);
             self
         }
+        #[doc = "Allows filtering of the deployed applications health state objects returned in the result of application health query based on their health state.\nThe possible values for this parameter include integer value of one of the following health states. Only deployed applications that match the filter will be returned.\nAll deployed applications are used to evaluate the aggregated health state. If not specified, all entries are returned.\nThe state values are flag-based enumeration, so the value could be a combination of these values, obtained using bitwise 'OR' operator.\nFor example, if the provided value is 6 then health state of deployed applications with HealthState value of OK (2) and Warning (4) are returned.\n\n- Default - Default value. Matches any HealthState. The value is zero.\n- None - Filter that doesn't match any HealthState value. Used in order to return no results on a given collection of states. The value is 1.\n- Ok - Filter that matches input with HealthState value Ok. The value is 2.\n- Warning - Filter that matches input with HealthState value Warning. The value is 4.\n- Error - Filter that matches input with HealthState value Error. The value is 8.\n- All - Filter that matches input with any HealthState value. The value is 65535."]
         pub fn deployed_applications_health_state_filter(mut self, deployed_applications_health_state_filter: i64) -> Self {
             self.deployed_applications_health_state_filter = Some(deployed_applications_health_state_filter);
             self
         }
+        #[doc = "Allows filtering of the services health state objects returned in the result of services health query based on their health state.\nThe possible values for this parameter include integer value of one of the following health states.\nOnly services that match the filter are returned. All services are used to evaluate the aggregated health state.\nIf not specified, all entries are returned. The state values are flag-based enumeration, so the value could be a combination of these values,\nobtained using bitwise 'OR' operator. For example, if the provided value is 6 then health state of services with HealthState value of OK (2) and Warning (4) will be returned.\n\n- Default - Default value. Matches any HealthState. The value is zero.\n- None - Filter that doesn't match any HealthState value. Used in order to return no results on a given collection of states. The value is 1.\n- Ok - Filter that matches input with HealthState value Ok. The value is 2.\n- Warning - Filter that matches input with HealthState value Warning. The value is 4.\n- Error - Filter that matches input with HealthState value Error. The value is 8.\n- All - Filter that matches input with any HealthState value. The value is 65535."]
         pub fn services_health_state_filter(mut self, services_health_state_filter: i64) -> Self {
             self.services_health_state_filter = Some(services_health_state_filter);
             self
         }
+        #[doc = "Indicates whether the health statistics should be returned as part of the query result. False by default.\nThe statistics show the number of children entities in health state Ok, Warning, and Error."]
         pub fn exclude_health_statistics(mut self, exclude_health_statistics: bool) -> Self {
             self.exclude_health_statistics = Some(exclude_health_statistics);
             self
         }
+        #[doc = "Describes the health policies used to evaluate the health of an application or one of its children.\nIf not present, the health evaluation uses the health policy from application manifest or the default health policy."]
         pub fn application_health_policy(mut self, application_health_policy: impl Into<models::ApplicationHealthPolicy>) -> Self {
             self.application_health_policy = Some(application_health_policy.into());
             self
         }
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -5905,10 +6905,12 @@ pub mod report_application_health {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "A flag that indicates whether the report should be sent immediately.\nA health report is sent to a Service Fabric gateway Application, which forwards to the health store.\nIf Immediate is set to true, the report is sent immediately from HTTP Gateway to the health store, regardless of the fabric client settings that the HTTP Gateway Application is using.\nThis is useful for critical reports that should be sent as soon as possible.\nDepending on timing and other conditions, sending the report may still fail, for example if the HTTP Gateway is closed or the message doesn't reach the Gateway.\nIf Immediate is set to false, the report is sent based on the health client settings from the HTTP Gateway. Therefore, it will be batched according to the HealthReportSendInterval configuration.\nThis is the recommended setting because it allows the health client to optimize health reporting messages to health store as well as health report processing.\nBy default, reports are not sent immediately."]
         pub fn immediate(mut self, immediate: bool) -> Self {
             self.immediate = Some(immediate);
             self
         }
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -5966,6 +6968,7 @@ pub mod start_application_upgrade {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -6019,6 +7022,7 @@ pub mod get_application_upgrade {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -6076,6 +7080,7 @@ pub mod update_application_upgrade {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -6130,6 +7135,7 @@ pub mod update_application {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -6184,6 +7190,7 @@ pub mod resume_application_upgrade {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -6237,6 +7244,7 @@ pub mod rollback_application_upgrade {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -6293,18 +7301,22 @@ pub mod get_deployed_application_info_list {
         pub(crate) max_results: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
         }
+        #[doc = "Include the health state of an entity.\nIf this parameter is false or not specified, then the health state returned is \"Unknown\".\nWhen set to true, the query goes in parallel to the node and the health system service before the results are merged.\nAs a result, the query is more expensive and may take a longer time."]
         pub fn include_health_state(mut self, include_health_state: bool) -> Self {
             self.include_health_state = Some(include_health_state);
             self
         }
+        #[doc = "The continuation token parameter is used to obtain next set of results. A continuation token with a non-empty value is included in the response of the API when the results from the system do not fit in a single response. When this value is passed to the next API call, the API returns next set of results. If there are no further results, then the continuation token does not contain a value. The value of this parameter should not be URL encoded."]
         pub fn continuation_token(mut self, continuation_token: impl Into<String>) -> Self {
             self.continuation_token = Some(continuation_token.into());
             self
         }
+        #[doc = "The maximum number of results to be returned as part of the paged queries. This parameter defines the upper bound on the number of results returned. The results returned can be less than the specified maximum results if they do not fit in the message as per the max message size restrictions defined in the configuration. If this parameter is zero or not specified, the paged query includes as many results as possible that fit in the return message."]
         pub fn max_results(mut self, max_results: i64) -> Self {
             self.max_results = Some(max_results);
             self
@@ -6374,10 +7386,12 @@ pub mod get_deployed_application_info {
         pub(crate) include_health_state: Option<bool>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
         }
+        #[doc = "Include the health state of an entity.\nIf this parameter is false or not specified, then the health state returned is \"Unknown\".\nWhen set to true, the query goes in parallel to the node and the health system service before the results are merged.\nAs a result, the query is more expensive and may take a longer time."]
         pub fn include_health_state(mut self, include_health_state: bool) -> Self {
             self.include_health_state = Some(include_health_state);
             self
@@ -6445,18 +7459,22 @@ pub mod get_deployed_application_health {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "Allows filtering the collection of HealthEvent objects returned based on health state.\nThe possible values for this parameter include integer value of one of the following health states.\nOnly events that match the filter are returned. All events are used to evaluate the aggregated health state.\nIf not specified, all entries are returned. The state values are flag-based enumeration, so the value could be a combination of these values, obtained using the bitwise 'OR' operator. For example, If the provided value is 6 then all of the events with HealthState value of OK (2) and Warning (4) are returned.\n\n- Default - Default value. Matches any HealthState. The value is zero.\n- None - Filter that doesn't match any HealthState value. Used in order to return no results on a given collection of states. The value is 1.\n- Ok - Filter that matches input with HealthState value Ok. The value is 2.\n- Warning - Filter that matches input with HealthState value Warning. The value is 4.\n- Error - Filter that matches input with HealthState value Error. The value is 8.\n- All - Filter that matches input with any HealthState value. The value is 65535."]
         pub fn events_health_state_filter(mut self, events_health_state_filter: i64) -> Self {
             self.events_health_state_filter = Some(events_health_state_filter);
             self
         }
+        #[doc = "Allows filtering of the deployed service package health state objects returned in the result of deployed application health query based on their health state.\nThe possible values for this parameter include integer value of one of the following health states.\nOnly deployed service packages that match the filter are returned. All deployed service packages are used to evaluate the aggregated health state of the deployed application.\nIf not specified, all entries are returned.\nThe state values are flag-based enumeration, so the value can be a combination of these values, obtained using the bitwise 'OR' operator.\nFor example, if the provided value is 6 then health state of service packages with HealthState value of OK (2) and Warning (4) are returned.\n\n- Default - Default value. Matches any HealthState. The value is zero.\n- None - Filter that doesn't match any HealthState value. Used in order to return no results on a given collection of states. The value is 1.\n- Ok - Filter that matches input with HealthState value Ok. The value is 2.\n- Warning - Filter that matches input with HealthState value Warning. The value is 4.\n- Error - Filter that matches input with HealthState value Error. The value is 8.\n- All - Filter that matches input with any HealthState value. The value is 65535."]
         pub fn deployed_service_packages_health_state_filter(mut self, deployed_service_packages_health_state_filter: i64) -> Self {
             self.deployed_service_packages_health_state_filter = Some(deployed_service_packages_health_state_filter);
             self
         }
+        #[doc = "Indicates whether the health statistics should be returned as part of the query result. False by default.\nThe statistics show the number of children entities in health state Ok, Warning, and Error."]
         pub fn exclude_health_statistics(mut self, exclude_health_statistics: bool) -> Self {
             self.exclude_health_statistics = Some(exclude_health_statistics);
             self
         }
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -6535,22 +7553,27 @@ pub mod get_deployed_application_health_using_policy {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "Allows filtering the collection of HealthEvent objects returned based on health state.\nThe possible values for this parameter include integer value of one of the following health states.\nOnly events that match the filter are returned. All events are used to evaluate the aggregated health state.\nIf not specified, all entries are returned. The state values are flag-based enumeration, so the value could be a combination of these values, obtained using the bitwise 'OR' operator. For example, If the provided value is 6 then all of the events with HealthState value of OK (2) and Warning (4) are returned.\n\n- Default - Default value. Matches any HealthState. The value is zero.\n- None - Filter that doesn't match any HealthState value. Used in order to return no results on a given collection of states. The value is 1.\n- Ok - Filter that matches input with HealthState value Ok. The value is 2.\n- Warning - Filter that matches input with HealthState value Warning. The value is 4.\n- Error - Filter that matches input with HealthState value Error. The value is 8.\n- All - Filter that matches input with any HealthState value. The value is 65535."]
         pub fn events_health_state_filter(mut self, events_health_state_filter: i64) -> Self {
             self.events_health_state_filter = Some(events_health_state_filter);
             self
         }
+        #[doc = "Allows filtering of the deployed service package health state objects returned in the result of deployed application health query based on their health state.\nThe possible values for this parameter include integer value of one of the following health states.\nOnly deployed service packages that match the filter are returned. All deployed service packages are used to evaluate the aggregated health state of the deployed application.\nIf not specified, all entries are returned.\nThe state values are flag-based enumeration, so the value can be a combination of these values, obtained using the bitwise 'OR' operator.\nFor example, if the provided value is 6 then health state of service packages with HealthState value of OK (2) and Warning (4) are returned.\n\n- Default - Default value. Matches any HealthState. The value is zero.\n- None - Filter that doesn't match any HealthState value. Used in order to return no results on a given collection of states. The value is 1.\n- Ok - Filter that matches input with HealthState value Ok. The value is 2.\n- Warning - Filter that matches input with HealthState value Warning. The value is 4.\n- Error - Filter that matches input with HealthState value Error. The value is 8.\n- All - Filter that matches input with any HealthState value. The value is 65535."]
         pub fn deployed_service_packages_health_state_filter(mut self, deployed_service_packages_health_state_filter: i64) -> Self {
             self.deployed_service_packages_health_state_filter = Some(deployed_service_packages_health_state_filter);
             self
         }
+        #[doc = "Describes the health policies used to evaluate the health of an application or one of its children.\nIf not present, the health evaluation uses the health policy from application manifest or the default health policy."]
         pub fn application_health_policy(mut self, application_health_policy: impl Into<models::ApplicationHealthPolicy>) -> Self {
             self.application_health_policy = Some(application_health_policy.into());
             self
         }
+        #[doc = "Indicates whether the health statistics should be returned as part of the query result. False by default.\nThe statistics show the number of children entities in health state Ok, Warning, and Error."]
         pub fn exclude_health_statistics(mut self, exclude_health_statistics: bool) -> Self {
             self.exclude_health_statistics = Some(exclude_health_statistics);
             self
         }
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -6632,10 +7655,12 @@ pub mod report_deployed_application_health {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "A flag that indicates whether the report should be sent immediately.\nA health report is sent to a Service Fabric gateway Application, which forwards to the health store.\nIf Immediate is set to true, the report is sent immediately from HTTP Gateway to the health store, regardless of the fabric client settings that the HTTP Gateway Application is using.\nThis is useful for critical reports that should be sent as soon as possible.\nDepending on timing and other conditions, sending the report may still fail, for example if the HTTP Gateway is closed or the message doesn't reach the Gateway.\nIf Immediate is set to false, the report is sent based on the health client settings from the HTTP Gateway. Therefore, it will be batched according to the HealthReportSendInterval configuration.\nThis is the recommended setting because it allows the health client to optimize health reporting messages to health store as well as health report processing.\nBy default, reports are not sent immediately."]
         pub fn immediate(mut self, immediate: bool) -> Self {
             self.immediate = Some(immediate);
             self
         }
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -6694,6 +7719,7 @@ pub mod get_application_manifest {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -6756,14 +7782,17 @@ pub mod get_service_info_list {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The service type name used to filter the services to query for."]
         pub fn service_type_name(mut self, service_type_name: impl Into<String>) -> Self {
             self.service_type_name = Some(service_type_name.into());
             self
         }
+        #[doc = "The continuation token parameter is used to obtain next set of results. A continuation token with a non-empty value is included in the response of the API when the results from the system do not fit in a single response. When this value is passed to the next API call, the API returns next set of results. If there are no further results, then the continuation token does not contain a value. The value of this parameter should not be URL encoded."]
         pub fn continuation_token(mut self, continuation_token: impl Into<String>) -> Self {
             self.continuation_token = Some(continuation_token.into());
             self
         }
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -6831,6 +7860,7 @@ pub mod get_service_info {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -6889,6 +7919,7 @@ pub mod get_application_name_info {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -6946,6 +7977,7 @@ pub mod create_service {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -7000,6 +8032,7 @@ pub mod create_service_from_template {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -7054,10 +8087,12 @@ pub mod delete_service {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "Remove a Service Fabric application or service forcefully without going through the graceful shutdown sequence. This parameter can be used to forcefully delete an application or service for which delete is timing out due to issues in the service code that prevents graceful close of replicas."]
         pub fn force_remove(mut self, force_remove: bool) -> Self {
             self.force_remove = Some(force_remove);
             self
         }
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -7113,6 +8148,7 @@ pub mod update_service {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -7162,6 +8198,7 @@ pub mod get_service_description {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -7221,18 +8258,22 @@ pub mod get_service_health {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "Allows filtering the collection of HealthEvent objects returned based on health state.\nThe possible values for this parameter include integer value of one of the following health states.\nOnly events that match the filter are returned. All events are used to evaluate the aggregated health state.\nIf not specified, all entries are returned. The state values are flag-based enumeration, so the value could be a combination of these values, obtained using the bitwise 'OR' operator. For example, If the provided value is 6 then all of the events with HealthState value of OK (2) and Warning (4) are returned.\n\n- Default - Default value. Matches any HealthState. The value is zero.\n- None - Filter that doesn't match any HealthState value. Used in order to return no results on a given collection of states. The value is 1.\n- Ok - Filter that matches input with HealthState value Ok. The value is 2.\n- Warning - Filter that matches input with HealthState value Warning. The value is 4.\n- Error - Filter that matches input with HealthState value Error. The value is 8.\n- All - Filter that matches input with any HealthState value. The value is 65535."]
         pub fn events_health_state_filter(mut self, events_health_state_filter: i64) -> Self {
             self.events_health_state_filter = Some(events_health_state_filter);
             self
         }
+        #[doc = "Allows filtering of the partitions health state objects returned in the result of service health query based on their health state.\nThe possible values for this parameter include integer value of one of the following health states.\nOnly partitions that match the filter are returned. All partitions are used to evaluate the aggregated health state.\nIf not specified, all entries are returned. The state values are flag-based enumeration, so the value could be a combination of these value\nobtained using bitwise 'OR' operator. For example, if the provided value is 6 then health state of partitions with HealthState value of OK (2) and Warning (4) will be returned.\n\n- Default - Default value. Matches any HealthState. The value is zero.\n- None - Filter that doesn't match any HealthState value. Used in order to return no results on a given collection of states. The value is 1.\n- Ok - Filter that matches input with HealthState value Ok. The value is 2.\n- Warning - Filter that matches input with HealthState value Warning. The value is 4.\n- Error - Filter that matches input with HealthState value Error. The value is 8.\n- All - Filter that matches input with any HealthState value. The value is 65535."]
         pub fn partitions_health_state_filter(mut self, partitions_health_state_filter: i64) -> Self {
             self.partitions_health_state_filter = Some(partitions_health_state_filter);
             self
         }
+        #[doc = "Indicates whether the health statistics should be returned as part of the query result. False by default.\nThe statistics show the number of children entities in health state Ok, Warning, and Error."]
         pub fn exclude_health_statistics(mut self, exclude_health_statistics: bool) -> Self {
             self.exclude_health_statistics = Some(exclude_health_statistics);
             self
         }
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -7304,22 +8345,27 @@ pub mod get_service_health_using_policy {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "Allows filtering the collection of HealthEvent objects returned based on health state.\nThe possible values for this parameter include integer value of one of the following health states.\nOnly events that match the filter are returned. All events are used to evaluate the aggregated health state.\nIf not specified, all entries are returned. The state values are flag-based enumeration, so the value could be a combination of these values, obtained using the bitwise 'OR' operator. For example, If the provided value is 6 then all of the events with HealthState value of OK (2) and Warning (4) are returned.\n\n- Default - Default value. Matches any HealthState. The value is zero.\n- None - Filter that doesn't match any HealthState value. Used in order to return no results on a given collection of states. The value is 1.\n- Ok - Filter that matches input with HealthState value Ok. The value is 2.\n- Warning - Filter that matches input with HealthState value Warning. The value is 4.\n- Error - Filter that matches input with HealthState value Error. The value is 8.\n- All - Filter that matches input with any HealthState value. The value is 65535."]
         pub fn events_health_state_filter(mut self, events_health_state_filter: i64) -> Self {
             self.events_health_state_filter = Some(events_health_state_filter);
             self
         }
+        #[doc = "Allows filtering of the partitions health state objects returned in the result of service health query based on their health state.\nThe possible values for this parameter include integer value of one of the following health states.\nOnly partitions that match the filter are returned. All partitions are used to evaluate the aggregated health state.\nIf not specified, all entries are returned. The state values are flag-based enumeration, so the value could be a combination of these value\nobtained using bitwise 'OR' operator. For example, if the provided value is 6 then health state of partitions with HealthState value of OK (2) and Warning (4) will be returned.\n\n- Default - Default value. Matches any HealthState. The value is zero.\n- None - Filter that doesn't match any HealthState value. Used in order to return no results on a given collection of states. The value is 1.\n- Ok - Filter that matches input with HealthState value Ok. The value is 2.\n- Warning - Filter that matches input with HealthState value Warning. The value is 4.\n- Error - Filter that matches input with HealthState value Error. The value is 8.\n- All - Filter that matches input with any HealthState value. The value is 65535."]
         pub fn partitions_health_state_filter(mut self, partitions_health_state_filter: i64) -> Self {
             self.partitions_health_state_filter = Some(partitions_health_state_filter);
             self
         }
+        #[doc = "Describes the health policies used to evaluate the health of an application or one of its children.\nIf not present, the health evaluation uses the health policy from application manifest or the default health policy."]
         pub fn application_health_policy(mut self, application_health_policy: impl Into<models::ApplicationHealthPolicy>) -> Self {
             self.application_health_policy = Some(application_health_policy.into());
             self
         }
+        #[doc = "Indicates whether the health statistics should be returned as part of the query result. False by default.\nThe statistics show the number of children entities in health state Ok, Warning, and Error."]
         pub fn exclude_health_statistics(mut self, exclude_health_statistics: bool) -> Self {
             self.exclude_health_statistics = Some(exclude_health_statistics);
             self
         }
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -7394,10 +8440,12 @@ pub mod report_service_health {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "A flag that indicates whether the report should be sent immediately.\nA health report is sent to a Service Fabric gateway Application, which forwards to the health store.\nIf Immediate is set to true, the report is sent immediately from HTTP Gateway to the health store, regardless of the fabric client settings that the HTTP Gateway Application is using.\nThis is useful for critical reports that should be sent as soon as possible.\nDepending on timing and other conditions, sending the report may still fail, for example if the HTTP Gateway is closed or the message doesn't reach the Gateway.\nIf Immediate is set to false, the report is sent based on the health client settings from the HTTP Gateway. Therefore, it will be batched according to the HealthReportSendInterval configuration.\nThis is the recommended setting because it allows the health client to optimize health reporting messages to health store as well as health report processing.\nBy default, reports are not sent immediately."]
         pub fn immediate(mut self, immediate: bool) -> Self {
             self.immediate = Some(immediate);
             self
         }
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -7453,18 +8501,22 @@ pub mod resolve_service {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "Key type for the partition. This parameter is required if the partition scheme for the service is Int64Range or Named. The possible values are following.\n- None (1) - Indicates that the PartitionKeyValue parameter is not specified. This is valid for the partitions with partitioning scheme as Singleton. This is the default value. The value is 1.\n- Int64Range (2) - Indicates that the PartitionKeyValue parameter is an int64 partition key. This is valid for the partitions with partitioning scheme as Int64Range. The value is 2.\n- Named (3) - Indicates that the PartitionKeyValue parameter is a name of the partition. This is valid for the partitions with partitioning scheme as Named. The value is 3."]
         pub fn partition_key_type(mut self, partition_key_type: i64) -> Self {
             self.partition_key_type = Some(partition_key_type);
             self
         }
+        #[doc = "Partition key. This is required if the partition scheme for the service is Int64Range or Named. \nThis is not the partition ID, but rather, either the integer key value, or the name of the partition ID.\nFor example, if your service is using ranged partitions from 0 to 10, then they PartitionKeyValue would be an\ninteger in that range. Query service description to see the range or name."]
         pub fn partition_key_value(mut self, partition_key_value: impl Into<String>) -> Self {
             self.partition_key_value = Some(partition_key_value.into());
             self
         }
+        #[doc = "The value in the Version field of the response that was received previously. This is required if the user knows that the result that was gotten previously is stale."]
         pub fn previous_rsp_version(mut self, previous_rsp_version: impl Into<String>) -> Self {
             self.previous_rsp_version = Some(previous_rsp_version.into());
             self
         }
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -7538,14 +8590,17 @@ pub mod get_unplaced_replica_information {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The identity of the partition."]
         pub fn partition_id(mut self, partition_id: impl Into<String>) -> Self {
             self.partition_id = Some(partition_id.into());
             self
         }
+        #[doc = "Indicates that unplaced replica information will be queries only for primary replicas."]
         pub fn only_query_primaries(mut self, only_query_primaries: bool) -> Self {
             self.only_query_primaries = Some(only_query_primaries);
             self
         }
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -7613,18 +8668,22 @@ pub mod get_loaded_partition_info_list {
         pub(crate) continuation_token: Option<String>,
     }
     impl Builder {
+        #[doc = "The name of a service."]
         pub fn service_name(mut self, service_name: impl Into<String>) -> Self {
             self.service_name = Some(service_name.into());
             self
         }
+        #[doc = "Ordering of partitions' load."]
         pub fn ordering(mut self, ordering: impl Into<String>) -> Self {
             self.ordering = Some(ordering.into());
             self
         }
+        #[doc = "The maximum number of results to be returned as part of the paged queries. This parameter defines the upper bound on the number of results returned. The results returned can be less than the specified maximum results if they do not fit in the message as per the max message size restrictions defined in the configuration. If this parameter is zero or not specified, the paged query includes as many results as possible that fit in the return message."]
         pub fn max_results(mut self, max_results: i64) -> Self {
             self.max_results = Some(max_results);
             self
         }
+        #[doc = "The continuation token parameter is used to obtain next set of results. A continuation token with a non-empty value is included in the response of the API when the results from the system do not fit in a single response. When this value is passed to the next API call, the API returns next set of results. If there are no further results, then the continuation token does not contain a value. The value of this parameter should not be URL encoded."]
         pub fn continuation_token(mut self, continuation_token: impl Into<String>) -> Self {
             self.continuation_token = Some(continuation_token.into());
             self
@@ -7689,10 +8748,12 @@ pub mod get_partition_info_list {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The continuation token parameter is used to obtain next set of results. A continuation token with a non-empty value is included in the response of the API when the results from the system do not fit in a single response. When this value is passed to the next API call, the API returns next set of results. If there are no further results, then the continuation token does not contain a value. The value of this parameter should not be URL encoded."]
         pub fn continuation_token(mut self, continuation_token: impl Into<String>) -> Self {
             self.continuation_token = Some(continuation_token.into());
             self
         }
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -7752,6 +8813,7 @@ pub mod get_partition_info {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -7805,6 +8867,7 @@ pub mod get_service_name_info {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -7864,18 +8927,22 @@ pub mod get_partition_health {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "Allows filtering the collection of HealthEvent objects returned based on health state.\nThe possible values for this parameter include integer value of one of the following health states.\nOnly events that match the filter are returned. All events are used to evaluate the aggregated health state.\nIf not specified, all entries are returned. The state values are flag-based enumeration, so the value could be a combination of these values, obtained using the bitwise 'OR' operator. For example, If the provided value is 6 then all of the events with HealthState value of OK (2) and Warning (4) are returned.\n\n- Default - Default value. Matches any HealthState. The value is zero.\n- None - Filter that doesn't match any HealthState value. Used in order to return no results on a given collection of states. The value is 1.\n- Ok - Filter that matches input with HealthState value Ok. The value is 2.\n- Warning - Filter that matches input with HealthState value Warning. The value is 4.\n- Error - Filter that matches input with HealthState value Error. The value is 8.\n- All - Filter that matches input with any HealthState value. The value is 65535."]
         pub fn events_health_state_filter(mut self, events_health_state_filter: i64) -> Self {
             self.events_health_state_filter = Some(events_health_state_filter);
             self
         }
+        #[doc = "Allows filtering the collection of ReplicaHealthState objects on the partition. The value can be obtained from members or bitwise operations on members of HealthStateFilter. Only replicas that match the filter will be returned. All replicas will be used to evaluate the aggregated health state. If not specified, all entries will be returned.The state values are flag-based enumeration, so the value could be a combination of these values obtained using bitwise 'OR' operator. For example, If the provided value is 6 then all of the events with HealthState value of OK (2) and Warning (4) will be returned. The possible values for this parameter include integer value of one of the following health states.\n\n- Default - Default value. Matches any HealthState. The value is zero.\n- None - Filter that doesn't match any HealthState value. Used in order to return no results on a given collection of states. The value is 1.\n- Ok - Filter that matches input with HealthState value Ok. The value is 2.\n- Warning - Filter that matches input with HealthState value Warning. The value is 4.\n- Error - Filter that matches input with HealthState value Error. The value is 8.\n- All - Filter that matches input with any HealthState value. The value is 65535."]
         pub fn replicas_health_state_filter(mut self, replicas_health_state_filter: i64) -> Self {
             self.replicas_health_state_filter = Some(replicas_health_state_filter);
             self
         }
+        #[doc = "Indicates whether the health statistics should be returned as part of the query result. False by default.\nThe statistics show the number of children entities in health state Ok, Warning, and Error."]
         pub fn exclude_health_statistics(mut self, exclude_health_statistics: bool) -> Self {
             self.exclude_health_statistics = Some(exclude_health_statistics);
             self
         }
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -7947,22 +9014,27 @@ pub mod get_partition_health_using_policy {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "Allows filtering the collection of HealthEvent objects returned based on health state.\nThe possible values for this parameter include integer value of one of the following health states.\nOnly events that match the filter are returned. All events are used to evaluate the aggregated health state.\nIf not specified, all entries are returned. The state values are flag-based enumeration, so the value could be a combination of these values, obtained using the bitwise 'OR' operator. For example, If the provided value is 6 then all of the events with HealthState value of OK (2) and Warning (4) are returned.\n\n- Default - Default value. Matches any HealthState. The value is zero.\n- None - Filter that doesn't match any HealthState value. Used in order to return no results on a given collection of states. The value is 1.\n- Ok - Filter that matches input with HealthState value Ok. The value is 2.\n- Warning - Filter that matches input with HealthState value Warning. The value is 4.\n- Error - Filter that matches input with HealthState value Error. The value is 8.\n- All - Filter that matches input with any HealthState value. The value is 65535."]
         pub fn events_health_state_filter(mut self, events_health_state_filter: i64) -> Self {
             self.events_health_state_filter = Some(events_health_state_filter);
             self
         }
+        #[doc = "Allows filtering the collection of ReplicaHealthState objects on the partition. The value can be obtained from members or bitwise operations on members of HealthStateFilter. Only replicas that match the filter will be returned. All replicas will be used to evaluate the aggregated health state. If not specified, all entries will be returned.The state values are flag-based enumeration, so the value could be a combination of these values obtained using bitwise 'OR' operator. For example, If the provided value is 6 then all of the events with HealthState value of OK (2) and Warning (4) will be returned. The possible values for this parameter include integer value of one of the following health states.\n\n- Default - Default value. Matches any HealthState. The value is zero.\n- None - Filter that doesn't match any HealthState value. Used in order to return no results on a given collection of states. The value is 1.\n- Ok - Filter that matches input with HealthState value Ok. The value is 2.\n- Warning - Filter that matches input with HealthState value Warning. The value is 4.\n- Error - Filter that matches input with HealthState value Error. The value is 8.\n- All - Filter that matches input with any HealthState value. The value is 65535."]
         pub fn replicas_health_state_filter(mut self, replicas_health_state_filter: i64) -> Self {
             self.replicas_health_state_filter = Some(replicas_health_state_filter);
             self
         }
+        #[doc = "Describes the health policies used to evaluate the health of an application or one of its children.\nIf not present, the health evaluation uses the health policy from application manifest or the default health policy."]
         pub fn application_health_policy(mut self, application_health_policy: impl Into<models::ApplicationHealthPolicy>) -> Self {
             self.application_health_policy = Some(application_health_policy.into());
             self
         }
+        #[doc = "Indicates whether the health statistics should be returned as part of the query result. False by default.\nThe statistics show the number of children entities in health state Ok, Warning, and Error."]
         pub fn exclude_health_statistics(mut self, exclude_health_statistics: bool) -> Self {
             self.exclude_health_statistics = Some(exclude_health_statistics);
             self
         }
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -8037,10 +9109,12 @@ pub mod report_partition_health {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "A flag that indicates whether the report should be sent immediately.\nA health report is sent to a Service Fabric gateway Application, which forwards to the health store.\nIf Immediate is set to true, the report is sent immediately from HTTP Gateway to the health store, regardless of the fabric client settings that the HTTP Gateway Application is using.\nThis is useful for critical reports that should be sent as soon as possible.\nDepending on timing and other conditions, sending the report may still fail, for example if the HTTP Gateway is closed or the message doesn't reach the Gateway.\nIf Immediate is set to false, the report is sent based on the health client settings from the HTTP Gateway. Therefore, it will be batched according to the HealthReportSendInterval configuration.\nThis is the recommended setting because it allows the health client to optimize health reporting messages to health store as well as health report processing.\nBy default, reports are not sent immediately."]
         pub fn immediate(mut self, immediate: bool) -> Self {
             self.immediate = Some(immediate);
             self
         }
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -8097,6 +9171,7 @@ pub mod get_partition_load_information {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -8153,6 +9228,7 @@ pub mod reset_partition_load {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -8202,6 +9278,7 @@ pub mod recover_partition {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -8251,6 +9328,7 @@ pub mod recover_service_partitions {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -8303,6 +9381,7 @@ pub mod recover_system_partitions {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -8351,6 +9430,7 @@ pub mod recover_all_partitions {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -8402,14 +9482,17 @@ pub mod move_primary_replica {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The name of the node."]
         pub fn node_name(mut self, node_name: impl Into<String>) -> Self {
             self.node_name = Some(node_name.into());
             self
         }
+        #[doc = "Ignore constraints when moving a replica or instance. If this parameter is not specified, all constraints are honored."]
         pub fn ignore_constraints(mut self, ignore_constraints: bool) -> Self {
             self.ignore_constraints = Some(ignore_constraints);
             self
         }
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -8474,14 +9557,17 @@ pub mod move_secondary_replica {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The name of the target node for secondary replica or instance move. If not specified, replica or instance is moved to a random node."]
         pub fn new_node_name(mut self, new_node_name: impl Into<String>) -> Self {
             self.new_node_name = Some(new_node_name.into());
             self
         }
+        #[doc = "Ignore constraints when moving a replica or instance. If this parameter is not specified, all constraints are honored."]
         pub fn ignore_constraints(mut self, ignore_constraints: bool) -> Self {
             self.ignore_constraints = Some(ignore_constraints);
             self
         }
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -8547,14 +9633,17 @@ pub mod update_partition_load {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The continuation token parameter is used to obtain next set of results. A continuation token with a non-empty value is included in the response of the API when the results from the system do not fit in a single response. When this value is passed to the next API call, the API returns next set of results. If there are no further results, then the continuation token does not contain a value. The value of this parameter should not be URL encoded."]
         pub fn continuation_token(mut self, continuation_token: impl Into<String>) -> Self {
             self.continuation_token = Some(continuation_token.into());
             self
         }
+        #[doc = "The maximum number of results to be returned as part of the paged queries. This parameter defines the upper bound on the number of results returned. The results returned can be less than the specified maximum results if they do not fit in the message as per the max message size restrictions defined in the configuration. If this parameter is zero or not specified, the paged query includes as many results as possible that fit in the return message."]
         pub fn max_results(mut self, max_results: i64) -> Self {
             self.max_results = Some(max_results);
             self
         }
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -8618,18 +9707,22 @@ pub mod move_instance {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The name of the source node for instance move. If not specified, instance is moved from a random node."]
         pub fn current_node_name(mut self, current_node_name: impl Into<String>) -> Self {
             self.current_node_name = Some(current_node_name.into());
             self
         }
+        #[doc = "The name of the target node for secondary replica or instance move. If not specified, replica or instance is moved to a random node."]
         pub fn new_node_name(mut self, new_node_name: impl Into<String>) -> Self {
             self.new_node_name = Some(new_node_name.into());
             self
         }
+        #[doc = "Ignore constraints when moving a replica or instance. If this parameter is not specified, all constraints are honored."]
         pub fn ignore_constraints(mut self, ignore_constraints: bool) -> Self {
             self.ignore_constraints = Some(ignore_constraints);
             self
         }
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -8699,18 +9792,22 @@ pub mod move_auxiliary_replica {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The name of the source node for instance move. If not specified, instance is moved from a random node."]
         pub fn current_node_name(mut self, current_node_name: impl Into<String>) -> Self {
             self.current_node_name = Some(current_node_name.into());
             self
         }
+        #[doc = "The name of the target node for secondary replica or instance move. If not specified, replica or instance is moved to a random node."]
         pub fn new_node_name(mut self, new_node_name: impl Into<String>) -> Self {
             self.new_node_name = Some(new_node_name.into());
             self
         }
+        #[doc = "Ignore constraints when moving a replica or instance. If this parameter is not specified, all constraints are honored."]
         pub fn ignore_constraints(mut self, ignore_constraints: bool) -> Self {
             self.ignore_constraints = Some(ignore_constraints);
             self
         }
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -8908,14 +10005,17 @@ pub mod get_repair_task_list {
         pub(crate) executor_filter: Option<String>,
     }
     impl Builder {
+        #[doc = "The repair task ID prefix to be matched."]
         pub fn task_id_filter(mut self, task_id_filter: impl Into<String>) -> Self {
             self.task_id_filter = Some(task_id_filter.into());
             self
         }
+        #[doc = "A bitwise-OR of the following values, specifying which task states should be included in the result list.\n\n- 1 - Created\n- 2 - Claimed\n- 4 - Preparing\n- 8 - Approved\n- 16 - Executing\n- 32 - Restoring\n- 64 - Completed"]
         pub fn state_filter(mut self, state_filter: i64) -> Self {
             self.state_filter = Some(state_filter);
             self
         }
+        #[doc = "The name of the repair executor whose claimed tasks should be included in the list."]
         pub fn executor_filter(mut self, executor_filter: impl Into<String>) -> Self {
             self.executor_filter = Some(executor_filter.into());
             self
@@ -9112,10 +10212,12 @@ pub mod get_replica_info_list {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The continuation token parameter is used to obtain next set of results. A continuation token with a non-empty value is included in the response of the API when the results from the system do not fit in a single response. When this value is passed to the next API call, the API returns next set of results. If there are no further results, then the continuation token does not contain a value. The value of this parameter should not be URL encoded."]
         pub fn continuation_token(mut self, continuation_token: impl Into<String>) -> Self {
             self.continuation_token = Some(continuation_token.into());
             self
         }
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -9180,6 +10282,7 @@ pub mod get_replica_info {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -9240,10 +10343,12 @@ pub mod get_replica_health {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "Allows filtering the collection of HealthEvent objects returned based on health state.\nThe possible values for this parameter include integer value of one of the following health states.\nOnly events that match the filter are returned. All events are used to evaluate the aggregated health state.\nIf not specified, all entries are returned. The state values are flag-based enumeration, so the value could be a combination of these values, obtained using the bitwise 'OR' operator. For example, If the provided value is 6 then all of the events with HealthState value of OK (2) and Warning (4) are returned.\n\n- Default - Default value. Matches any HealthState. The value is zero.\n- None - Filter that doesn't match any HealthState value. Used in order to return no results on a given collection of states. The value is 1.\n- Ok - Filter that matches input with HealthState value Ok. The value is 2.\n- Warning - Filter that matches input with HealthState value Warning. The value is 4.\n- Error - Filter that matches input with HealthState value Error. The value is 8.\n- All - Filter that matches input with any HealthState value. The value is 65535."]
         pub fn events_health_state_filter(mut self, events_health_state_filter: i64) -> Self {
             self.events_health_state_filter = Some(events_health_state_filter);
             self
         }
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -9309,14 +10414,17 @@ pub mod get_replica_health_using_policy {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "Allows filtering the collection of HealthEvent objects returned based on health state.\nThe possible values for this parameter include integer value of one of the following health states.\nOnly events that match the filter are returned. All events are used to evaluate the aggregated health state.\nIf not specified, all entries are returned. The state values are flag-based enumeration, so the value could be a combination of these values, obtained using the bitwise 'OR' operator. For example, If the provided value is 6 then all of the events with HealthState value of OK (2) and Warning (4) are returned.\n\n- Default - Default value. Matches any HealthState. The value is zero.\n- None - Filter that doesn't match any HealthState value. Used in order to return no results on a given collection of states. The value is 1.\n- Ok - Filter that matches input with HealthState value Ok. The value is 2.\n- Warning - Filter that matches input with HealthState value Warning. The value is 4.\n- Error - Filter that matches input with HealthState value Error. The value is 8.\n- All - Filter that matches input with any HealthState value. The value is 65535."]
         pub fn events_health_state_filter(mut self, events_health_state_filter: i64) -> Self {
             self.events_health_state_filter = Some(events_health_state_filter);
             self
         }
+        #[doc = "Describes the health policies used to evaluate the health of an application or one of its children.\nIf not present, the health evaluation uses the health policy from application manifest or the default health policy."]
         pub fn application_health_policy(mut self, application_health_policy: impl Into<models::ApplicationHealthPolicy>) -> Self {
             self.application_health_policy = Some(application_health_policy.into());
             self
         }
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -9388,10 +10496,12 @@ pub mod report_replica_health {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "A flag that indicates whether the report should be sent immediately.\nA health report is sent to a Service Fabric gateway Application, which forwards to the health store.\nIf Immediate is set to true, the report is sent immediately from HTTP Gateway to the health store, regardless of the fabric client settings that the HTTP Gateway Application is using.\nThis is useful for critical reports that should be sent as soon as possible.\nDepending on timing and other conditions, sending the report may still fail, for example if the HTTP Gateway is closed or the message doesn't reach the Gateway.\nIf Immediate is set to false, the report is sent based on the health client settings from the HTTP Gateway. Therefore, it will be batched according to the HealthReportSendInterval configuration.\nThis is the recommended setting because it allows the health client to optimize health reporting messages to health store as well as health report processing.\nBy default, reports are not sent immediately."]
         pub fn immediate(mut self, immediate: bool) -> Self {
             self.immediate = Some(immediate);
             self
         }
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -9458,14 +10568,17 @@ pub mod get_deployed_service_replica_info_list {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The identity of the partition."]
         pub fn partition_id(mut self, partition_id: impl Into<String>) -> Self {
             self.partition_id = Some(partition_id.into());
             self
         }
+        #[doc = "The name of a service manifest registered as part of an application type in a Service Fabric cluster."]
         pub fn service_manifest_name(mut self, service_manifest_name: impl Into<String>) -> Self {
             self.service_manifest_name = Some(service_manifest_name.into());
             self
         }
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -9534,6 +10647,7 @@ pub mod get_deployed_service_replica_detail_info {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -9593,6 +10707,7 @@ pub mod get_deployed_service_replica_detail_info_by_partition_id {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -9652,6 +10767,7 @@ pub mod restart_replica {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -9710,10 +10826,12 @@ pub mod remove_replica {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "Remove a Service Fabric application or service forcefully without going through the graceful shutdown sequence. This parameter can be used to forcefully delete an application or service for which delete is timing out due to issues in the service code that prevents graceful close of replicas."]
         pub fn force_remove(mut self, force_remove: bool) -> Self {
             self.force_remove = Some(force_remove);
             self
         }
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -9775,6 +10893,7 @@ pub mod get_deployed_service_package_info_list {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -9838,6 +10957,7 @@ pub mod get_deployed_service_package_info_list_by_name {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -9900,10 +11020,12 @@ pub mod get_deployed_service_package_health {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "Allows filtering the collection of HealthEvent objects returned based on health state.\nThe possible values for this parameter include integer value of one of the following health states.\nOnly events that match the filter are returned. All events are used to evaluate the aggregated health state.\nIf not specified, all entries are returned. The state values are flag-based enumeration, so the value could be a combination of these values, obtained using the bitwise 'OR' operator. For example, If the provided value is 6 then all of the events with HealthState value of OK (2) and Warning (4) are returned.\n\n- Default - Default value. Matches any HealthState. The value is zero.\n- None - Filter that doesn't match any HealthState value. Used in order to return no results on a given collection of states. The value is 1.\n- Ok - Filter that matches input with HealthState value Ok. The value is 2.\n- Warning - Filter that matches input with HealthState value Warning. The value is 4.\n- Error - Filter that matches input with HealthState value Error. The value is 8.\n- All - Filter that matches input with any HealthState value. The value is 65535."]
         pub fn events_health_state_filter(mut self, events_health_state_filter: i64) -> Self {
             self.events_health_state_filter = Some(events_health_state_filter);
             self
         }
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -9971,14 +11093,17 @@ pub mod get_deployed_service_package_health_using_policy {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "Allows filtering the collection of HealthEvent objects returned based on health state.\nThe possible values for this parameter include integer value of one of the following health states.\nOnly events that match the filter are returned. All events are used to evaluate the aggregated health state.\nIf not specified, all entries are returned. The state values are flag-based enumeration, so the value could be a combination of these values, obtained using the bitwise 'OR' operator. For example, If the provided value is 6 then all of the events with HealthState value of OK (2) and Warning (4) are returned.\n\n- Default - Default value. Matches any HealthState. The value is zero.\n- None - Filter that doesn't match any HealthState value. Used in order to return no results on a given collection of states. The value is 1.\n- Ok - Filter that matches input with HealthState value Ok. The value is 2.\n- Warning - Filter that matches input with HealthState value Warning. The value is 4.\n- Error - Filter that matches input with HealthState value Error. The value is 8.\n- All - Filter that matches input with any HealthState value. The value is 65535."]
         pub fn events_health_state_filter(mut self, events_health_state_filter: i64) -> Self {
             self.events_health_state_filter = Some(events_health_state_filter);
             self
         }
+        #[doc = "Describes the health policies used to evaluate the health of an application or one of its children.\nIf not present, the health evaluation uses the health policy from application manifest or the default health policy."]
         pub fn application_health_policy(mut self, application_health_policy: impl Into<models::ApplicationHealthPolicy>) -> Self {
             self.application_health_policy = Some(application_health_policy.into());
             self
         }
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -10051,10 +11176,12 @@ pub mod report_deployed_service_package_health {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "A flag that indicates whether the report should be sent immediately.\nA health report is sent to a Service Fabric gateway Application, which forwards to the health store.\nIf Immediate is set to true, the report is sent immediately from HTTP Gateway to the health store, regardless of the fabric client settings that the HTTP Gateway Application is using.\nThis is useful for critical reports that should be sent as soon as possible.\nDepending on timing and other conditions, sending the report may still fail, for example if the HTTP Gateway is closed or the message doesn't reach the Gateway.\nIf Immediate is set to false, the report is sent based on the health client settings from the HTTP Gateway. Therefore, it will be batched according to the HealthReportSendInterval configuration.\nThis is the recommended setting because it allows the health client to optimize health reporting messages to health store as well as health report processing.\nBy default, reports are not sent immediately."]
         pub fn immediate(mut self, immediate: bool) -> Self {
             self.immediate = Some(immediate);
             self
         }
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -10114,6 +11241,7 @@ pub mod deploy_service_package_to_node {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -10170,14 +11298,17 @@ pub mod get_deployed_code_package_info_list {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The name of a service manifest registered as part of an application type in a Service Fabric cluster."]
         pub fn service_manifest_name(mut self, service_manifest_name: impl Into<String>) -> Self {
             self.service_manifest_name = Some(service_manifest_name.into());
             self
         }
+        #[doc = "The name of code package specified in service manifest registered as part of an application type in a Service Fabric cluster."]
         pub fn code_package_name(mut self, code_package_name: impl Into<String>) -> Self {
             self.code_package_name = Some(code_package_name.into());
             self
         }
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -10245,6 +11376,7 @@ pub mod restart_deployed_code_package {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -10304,14 +11436,17 @@ pub mod get_container_logs_deployed_on_node {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "Number of lines to show from the end of the logs. Default is 100. 'all' to show the complete logs."]
         pub fn tail(mut self, tail: impl Into<String>) -> Self {
             self.tail = Some(tail.into());
             self
         }
+        #[doc = "Specifies whether to get container logs from exited/dead containers of the code package instance."]
         pub fn previous(mut self, previous: bool) -> Self {
             self.previous = Some(previous);
             self
         }
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -10386,6 +11521,7 @@ pub mod invoke_container_api {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -10454,6 +11590,7 @@ pub mod create_compose_deployment {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -10503,6 +11640,7 @@ pub mod get_compose_deployment_status {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -10556,14 +11694,17 @@ pub mod get_compose_deployment_status_list {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The continuation token parameter is used to obtain next set of results. A continuation token with a non-empty value is included in the response of the API when the results from the system do not fit in a single response. When this value is passed to the next API call, the API returns next set of results. If there are no further results, then the continuation token does not contain a value. The value of this parameter should not be URL encoded."]
         pub fn continuation_token(mut self, continuation_token: impl Into<String>) -> Self {
             self.continuation_token = Some(continuation_token.into());
             self
         }
+        #[doc = "The maximum number of results to be returned as part of the paged queries. This parameter defines the upper bound on the number of results returned. The results returned can be less than the specified maximum results if they do not fit in the message as per the max message size restrictions defined in the configuration. If this parameter is zero or not specified, the paged query includes as many results as possible that fit in the return message."]
         pub fn max_results(mut self, max_results: i64) -> Self {
             self.max_results = Some(max_results);
             self
         }
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -10622,6 +11763,7 @@ pub mod get_compose_deployment_upgrade_progress {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -10678,6 +11820,7 @@ pub mod remove_compose_deployment {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -10732,6 +11875,7 @@ pub mod start_compose_deployment_upgrade {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -10785,6 +11929,7 @@ pub mod start_rollback_compose_deployment_upgrade {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -10837,6 +11982,7 @@ pub mod get_chaos {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -10889,6 +12035,7 @@ pub mod start_chaos {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -10937,6 +12084,7 @@ pub mod stop_chaos {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -10989,22 +12137,27 @@ pub mod get_chaos_events {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The continuation token parameter is used to obtain next set of results. A continuation token with a non-empty value is included in the response of the API when the results from the system do not fit in a single response. When this value is passed to the next API call, the API returns next set of results. If there are no further results, then the continuation token does not contain a value. The value of this parameter should not be URL encoded."]
         pub fn continuation_token(mut self, continuation_token: impl Into<String>) -> Self {
             self.continuation_token = Some(continuation_token.into());
             self
         }
+        #[doc = "The Windows file time representing the start time of the time range for which a Chaos report is to be generated. Consult [DateTime.ToFileTimeUtc Method](https://msdn.microsoft.com/library/system.datetime.tofiletimeutc(v=vs.110).aspx) for details."]
         pub fn start_time_utc(mut self, start_time_utc: impl Into<String>) -> Self {
             self.start_time_utc = Some(start_time_utc.into());
             self
         }
+        #[doc = "The Windows file time representing the end time of the time range for which a Chaos report is to be generated. Consult [DateTime.ToFileTimeUtc Method](https://msdn.microsoft.com/library/system.datetime.tofiletimeutc(v=vs.110).aspx) for details."]
         pub fn end_time_utc(mut self, end_time_utc: impl Into<String>) -> Self {
             self.end_time_utc = Some(end_time_utc.into());
             self
         }
+        #[doc = "The maximum number of results to be returned as part of the paged queries. This parameter defines the upper bound on the number of results returned. The results returned can be less than the specified maximum results if they do not fit in the message as per the max message size restrictions defined in the configuration. If this parameter is zero or not specified, the paged query includes as many results as possible that fit in the return message."]
         pub fn max_results(mut self, max_results: i64) -> Self {
             self.max_results = Some(max_results);
             self
         }
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -11068,6 +12221,7 @@ pub mod get_chaos_schedule {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -11120,6 +12274,7 @@ pub mod post_chaos_schedule {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -11169,6 +12324,7 @@ pub mod get_image_store_content {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -11221,6 +12377,7 @@ pub mod upload_file {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -11269,6 +12426,7 @@ pub mod delete_image_store_content {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -11316,6 +12474,7 @@ pub mod get_image_store_root_content {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -11368,6 +12527,7 @@ pub mod copy_image_store_content {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -11417,6 +12577,7 @@ pub mod delete_image_store_upload_session {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -11467,6 +12628,7 @@ pub mod commit_image_store_upload_session {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -11518,6 +12680,7 @@ pub mod get_image_store_upload_session_by_id {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -11572,6 +12735,7 @@ pub mod get_image_store_upload_session_by_path {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -11630,6 +12794,7 @@ pub mod upload_file_chunk {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -11684,6 +12849,7 @@ pub mod get_image_store_root_folder_size {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -11736,6 +12902,7 @@ pub mod get_image_store_folder_size {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -11791,6 +12958,7 @@ pub mod get_image_store_info {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -11844,10 +13012,12 @@ pub mod invoke_infrastructure_command {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The identity of the infrastructure service. This is the full name of the infrastructure service without the 'fabric:' URI scheme. This parameter required only for the cluster that has more than one instance of infrastructure service running."]
         pub fn service_id(mut self, service_id: impl Into<String>) -> Self {
             self.service_id = Some(service_id.into());
             self
         }
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -11907,10 +13077,12 @@ pub mod invoke_infrastructure_query {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The identity of the infrastructure service. This is the full name of the infrastructure service without the 'fabric:' URI scheme. This parameter required only for the cluster that has more than one instance of infrastructure service running."]
         pub fn service_id(mut self, service_id: impl Into<String>) -> Self {
             self.service_id = Some(service_id.into());
             self
         }
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -11971,6 +13143,7 @@ pub mod start_data_loss {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -12031,6 +13204,7 @@ pub mod get_data_loss_progress {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -12094,6 +13268,7 @@ pub mod start_quorum_loss {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -12158,6 +13333,7 @@ pub mod get_quorum_loss_progress {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -12220,6 +13396,7 @@ pub mod start_partition_restart {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -12282,6 +13459,7 @@ pub mod get_partition_restart_progress {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -12345,6 +13523,7 @@ pub mod start_node_transition {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -12411,6 +13590,7 @@ pub mod get_node_transition_progress {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -12470,6 +13650,7 @@ pub mod get_fault_operation_list {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -12529,6 +13710,7 @@ pub mod cancel_operation {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -12583,10 +13765,12 @@ pub mod create_backup_policy {
         pub(crate) validate_connection: Option<bool>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
         }
+        #[doc = "Specifies whether to validate the storage connection and credentials before creating or updating the backup policies."]
         pub fn validate_connection(mut self, validate_connection: bool) -> Self {
             self.validate_connection = Some(validate_connection);
             self
@@ -12641,6 +13825,7 @@ pub mod delete_backup_policy {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -12695,14 +13880,17 @@ pub mod get_backup_policy_list {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The continuation token parameter is used to obtain next set of results. A continuation token with a non-empty value is included in the response of the API when the results from the system do not fit in a single response. When this value is passed to the next API call, the API returns next set of results. If there are no further results, then the continuation token does not contain a value. The value of this parameter should not be URL encoded."]
         pub fn continuation_token(mut self, continuation_token: impl Into<String>) -> Self {
             self.continuation_token = Some(continuation_token.into());
             self
         }
+        #[doc = "The maximum number of results to be returned as part of the paged queries. This parameter defines the upper bound on the number of results returned. The results returned can be less than the specified maximum results if they do not fit in the message as per the max message size restrictions defined in the configuration. If this parameter is zero or not specified, the paged query includes as many results as possible that fit in the return message."]
         pub fn max_results(mut self, max_results: i64) -> Self {
             self.max_results = Some(max_results);
             self
         }
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -12761,6 +13949,7 @@ pub mod get_backup_policy_by_name {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -12819,14 +14008,17 @@ pub mod get_all_entities_backed_up_by_policy {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The continuation token parameter is used to obtain next set of results. A continuation token with a non-empty value is included in the response of the API when the results from the system do not fit in a single response. When this value is passed to the next API call, the API returns next set of results. If there are no further results, then the continuation token does not contain a value. The value of this parameter should not be URL encoded."]
         pub fn continuation_token(mut self, continuation_token: impl Into<String>) -> Self {
             self.continuation_token = Some(continuation_token.into());
             self
         }
+        #[doc = "The maximum number of results to be returned as part of the paged queries. This parameter defines the upper bound on the number of results returned. The results returned can be less than the specified maximum results if they do not fit in the message as per the max message size restrictions defined in the configuration. If this parameter is zero or not specified, the paged query includes as many results as possible that fit in the return message."]
         pub fn max_results(mut self, max_results: i64) -> Self {
             self.max_results = Some(max_results);
             self
         }
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -12891,10 +14083,12 @@ pub mod update_backup_policy {
         pub(crate) validate_connection: Option<bool>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
         }
+        #[doc = "Specifies whether to validate the storage connection and credentials before creating or updating the backup policies."]
         pub fn validate_connection(mut self, validate_connection: bool) -> Self {
             self.validate_connection = Some(validate_connection);
             self
@@ -12954,6 +14148,7 @@ pub mod enable_application_backup {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -13008,10 +14203,12 @@ pub mod disable_application_backup {
         pub(crate) disable_backup_description: Option<models::DisableBackupDescription>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
         }
+        #[doc = "Specifies the parameters to disable backup for any backup entity."]
         pub fn disable_backup_description(mut self, disable_backup_description: impl Into<models::DisableBackupDescription>) -> Self {
             self.disable_backup_description = Some(disable_backup_description.into());
             self
@@ -13071,14 +14268,17 @@ pub mod get_application_backup_configuration_info {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The continuation token parameter is used to obtain next set of results. A continuation token with a non-empty value is included in the response of the API when the results from the system do not fit in a single response. When this value is passed to the next API call, the API returns next set of results. If there are no further results, then the continuation token does not contain a value. The value of this parameter should not be URL encoded."]
         pub fn continuation_token(mut self, continuation_token: impl Into<String>) -> Self {
             self.continuation_token = Some(continuation_token.into());
             self
         }
+        #[doc = "The maximum number of results to be returned as part of the paged queries. This parameter defines the upper bound on the number of results returned. The results returned can be less than the specified maximum results if they do not fit in the message as per the max message size restrictions defined in the configuration. If this parameter is zero or not specified, the paged query includes as many results as possible that fit in the return message."]
         pub fn max_results(mut self, max_results: i64) -> Self {
             self.max_results = Some(max_results);
             self
         }
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -13146,26 +14346,32 @@ pub mod get_application_backup_list {
         pub(crate) max_results: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
         }
+        #[doc = "Specifies whether to get only the most recent backup available for a partition for the specified time range."]
         pub fn latest(mut self, latest: bool) -> Self {
             self.latest = Some(latest);
             self
         }
+        #[doc = "Specify the start date time from which to enumerate backups, in datetime format. The date time must be specified in ISO8601 format. This is an optional parameter. If not specified, all backups from the beginning are enumerated."]
         pub fn start_date_time_filter(mut self, start_date_time_filter: impl Into<String>) -> Self {
             self.start_date_time_filter = Some(start_date_time_filter.into());
             self
         }
+        #[doc = "Specify the end date time till which to enumerate backups, in datetime format. The date time must be specified in ISO8601 format. This is an optional parameter. If not specified, enumeration is done till the most recent backup."]
         pub fn end_date_time_filter(mut self, end_date_time_filter: impl Into<String>) -> Self {
             self.end_date_time_filter = Some(end_date_time_filter.into());
             self
         }
+        #[doc = "The continuation token parameter is used to obtain next set of results. A continuation token with a non-empty value is included in the response of the API when the results from the system do not fit in a single response. When this value is passed to the next API call, the API returns next set of results. If there are no further results, then the continuation token does not contain a value. The value of this parameter should not be URL encoded."]
         pub fn continuation_token(mut self, continuation_token: impl Into<String>) -> Self {
             self.continuation_token = Some(continuation_token.into());
             self
         }
+        #[doc = "The maximum number of results to be returned as part of the paged queries. This parameter defines the upper bound on the number of results returned. The results returned can be less than the specified maximum results if they do not fit in the message as per the max message size restrictions defined in the configuration. If this parameter is zero or not specified, the paged query includes as many results as possible that fit in the return message."]
         pub fn max_results(mut self, max_results: i64) -> Self {
             self.max_results = Some(max_results);
             self
@@ -13241,6 +14447,7 @@ pub mod suspend_application_backup {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -13294,6 +14501,7 @@ pub mod resume_application_backup {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -13348,6 +14556,7 @@ pub mod enable_service_backup {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -13398,10 +14607,12 @@ pub mod disable_service_backup {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "Specifies the parameters to disable backup for any backup entity."]
         pub fn disable_backup_description(mut self, disable_backup_description: impl Into<models::DisableBackupDescription>) -> Self {
             self.disable_backup_description = Some(disable_backup_description.into());
             self
         }
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -13457,14 +14668,17 @@ pub mod get_service_backup_configuration_info {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The continuation token parameter is used to obtain next set of results. A continuation token with a non-empty value is included in the response of the API when the results from the system do not fit in a single response. When this value is passed to the next API call, the API returns next set of results. If there are no further results, then the continuation token does not contain a value. The value of this parameter should not be URL encoded."]
         pub fn continuation_token(mut self, continuation_token: impl Into<String>) -> Self {
             self.continuation_token = Some(continuation_token.into());
             self
         }
+        #[doc = "The maximum number of results to be returned as part of the paged queries. This parameter defines the upper bound on the number of results returned. The results returned can be less than the specified maximum results if they do not fit in the message as per the max message size restrictions defined in the configuration. If this parameter is zero or not specified, the paged query includes as many results as possible that fit in the return message."]
         pub fn max_results(mut self, max_results: i64) -> Self {
             self.max_results = Some(max_results);
             self
         }
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -13532,26 +14746,32 @@ pub mod get_service_backup_list {
         pub(crate) max_results: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
         }
+        #[doc = "Specifies whether to get only the most recent backup available for a partition for the specified time range."]
         pub fn latest(mut self, latest: bool) -> Self {
             self.latest = Some(latest);
             self
         }
+        #[doc = "Specify the start date time from which to enumerate backups, in datetime format. The date time must be specified in ISO8601 format. This is an optional parameter. If not specified, all backups from the beginning are enumerated."]
         pub fn start_date_time_filter(mut self, start_date_time_filter: impl Into<String>) -> Self {
             self.start_date_time_filter = Some(start_date_time_filter.into());
             self
         }
+        #[doc = "Specify the end date time till which to enumerate backups, in datetime format. The date time must be specified in ISO8601 format. This is an optional parameter. If not specified, enumeration is done till the most recent backup."]
         pub fn end_date_time_filter(mut self, end_date_time_filter: impl Into<String>) -> Self {
             self.end_date_time_filter = Some(end_date_time_filter.into());
             self
         }
+        #[doc = "The continuation token parameter is used to obtain next set of results. A continuation token with a non-empty value is included in the response of the API when the results from the system do not fit in a single response. When this value is passed to the next API call, the API returns next set of results. If there are no further results, then the continuation token does not contain a value. The value of this parameter should not be URL encoded."]
         pub fn continuation_token(mut self, continuation_token: impl Into<String>) -> Self {
             self.continuation_token = Some(continuation_token.into());
             self
         }
+        #[doc = "The maximum number of results to be returned as part of the paged queries. This parameter defines the upper bound on the number of results returned. The results returned can be less than the specified maximum results if they do not fit in the message as per the max message size restrictions defined in the configuration. If this parameter is zero or not specified, the paged query includes as many results as possible that fit in the return message."]
         pub fn max_results(mut self, max_results: i64) -> Self {
             self.max_results = Some(max_results);
             self
@@ -13623,6 +14843,7 @@ pub mod suspend_service_backup {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -13672,6 +14893,7 @@ pub mod resume_service_backup {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -13722,6 +14944,7 @@ pub mod enable_partition_backup {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -13776,10 +14999,12 @@ pub mod disable_partition_backup {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "Specifies the parameters to disable backup for any backup entity."]
         pub fn disable_backup_description(mut self, disable_backup_description: impl Into<models::DisableBackupDescription>) -> Self {
             self.disable_backup_description = Some(disable_backup_description.into());
             self
         }
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -13837,6 +15062,7 @@ pub mod get_partition_backup_configuration_info {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -13896,18 +15122,22 @@ pub mod get_partition_backup_list {
         pub(crate) end_date_time_filter: Option<String>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
         }
+        #[doc = "Specifies whether to get only the most recent backup available for a partition for the specified time range."]
         pub fn latest(mut self, latest: bool) -> Self {
             self.latest = Some(latest);
             self
         }
+        #[doc = "Specify the start date time from which to enumerate backups, in datetime format. The date time must be specified in ISO8601 format. This is an optional parameter. If not specified, all backups from the beginning are enumerated."]
         pub fn start_date_time_filter(mut self, start_date_time_filter: impl Into<String>) -> Self {
             self.start_date_time_filter = Some(start_date_time_filter.into());
             self
         }
+        #[doc = "Specify the end date time till which to enumerate backups, in datetime format. The date time must be specified in ISO8601 format. This is an optional parameter. If not specified, enumeration is done till the most recent backup."]
         pub fn end_date_time_filter(mut self, end_date_time_filter: impl Into<String>) -> Self {
             self.end_date_time_filter = Some(end_date_time_filter.into());
             self
@@ -13977,6 +15207,7 @@ pub mod suspend_partition_backup {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -14030,6 +15261,7 @@ pub mod resume_partition_backup {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -14085,14 +15317,17 @@ pub mod backup_partition {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "Describes the parameters to backup the partition now. If not present, backup operation uses default parameters from the backup policy current associated with this partition."]
         pub fn backup_partition_description(mut self, backup_partition_description: impl Into<models::BackupPartitionDescription>) -> Self {
             self.backup_partition_description = Some(backup_partition_description.into());
             self
         }
+        #[doc = "Specifies the maximum amount of time, in minutes, to wait for the backup operation to complete. Post that, the operation completes with timeout error. However, in certain corner cases it could be that though the operation returns back timeout, the backup actually goes through. In case of timeout error, its recommended to invoke this operation again with a greater timeout value. The default value for the same is 10 minutes."]
         pub fn backup_timeout(mut self, backup_timeout: i64) -> Self {
             self.backup_timeout = Some(backup_timeout);
             self
         }
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -14151,6 +15386,7 @@ pub mod get_partition_backup_progress {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -14209,10 +15445,12 @@ pub mod restore_partition {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "Specifies the maximum amount of time to wait, in minutes, for the restore operation to complete. Post that, the operation returns back with timeout error. However, in certain corner cases it could be that the restore operation goes through even though it completes with timeout. In case of timeout error, its recommended to invoke this operation again with a greater timeout value. the default value for the same is 10 minutes."]
         pub fn restore_timeout(mut self, restore_timeout: i64) -> Self {
             self.restore_timeout = Some(restore_timeout);
             self
         }
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -14267,6 +15505,7 @@ pub mod get_partition_restore_progress {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -14325,14 +15564,17 @@ pub mod get_backups_from_backup_location {
         pub(crate) max_results: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
         }
+        #[doc = "The continuation token parameter is used to obtain next set of results. A continuation token with a non-empty value is included in the response of the API when the results from the system do not fit in a single response. When this value is passed to the next API call, the API returns next set of results. If there are no further results, then the continuation token does not contain a value. The value of this parameter should not be URL encoded."]
         pub fn continuation_token(mut self, continuation_token: impl Into<String>) -> Self {
             self.continuation_token = Some(continuation_token.into());
             self
         }
+        #[doc = "The maximum number of results to be returned as part of the paged queries. This parameter defines the upper bound on the number of results returned. The results returned can be less than the specified maximum results if they do not fit in the message as per the max message size restrictions defined in the configuration. If this parameter is zero or not specified, the paged query includes as many results as possible that fit in the return message."]
         pub fn max_results(mut self, max_results: i64) -> Self {
             self.max_results = Some(max_results);
             self
@@ -14392,6 +15634,7 @@ pub mod create_name {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -14441,6 +15684,7 @@ pub mod get_name_exists_info {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -14489,6 +15733,7 @@ pub mod delete_name {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -14539,14 +15784,17 @@ pub mod get_sub_name_info_list {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "Allows specifying that the search performed should be recursive."]
         pub fn recursive(mut self, recursive: bool) -> Self {
             self.recursive = Some(recursive);
             self
         }
+        #[doc = "The continuation token parameter is used to obtain next set of results. A continuation token with a non-empty value is included in the response of the API when the results from the system do not fit in a single response. When this value is passed to the next API call, the API returns next set of results. If there are no further results, then the continuation token does not contain a value. The value of this parameter should not be URL encoded."]
         pub fn continuation_token(mut self, continuation_token: impl Into<String>) -> Self {
             self.continuation_token = Some(continuation_token.into());
             self
         }
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -14607,14 +15855,17 @@ pub mod get_property_info_list {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "Allows specifying whether to include the values of the properties returned. True if values should be returned with the metadata; False to return only property metadata."]
         pub fn include_values(mut self, include_values: bool) -> Self {
             self.include_values = Some(include_values);
             self
         }
+        #[doc = "The continuation token parameter is used to obtain next set of results. A continuation token with a non-empty value is included in the response of the API when the results from the system do not fit in a single response. When this value is passed to the next API call, the API returns next set of results. If there are no further results, then the continuation token does not contain a value. The value of this parameter should not be URL encoded."]
         pub fn continuation_token(mut self, continuation_token: impl Into<String>) -> Self {
             self.continuation_token = Some(continuation_token.into());
             self
         }
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -14676,6 +15927,7 @@ pub mod get_property_info {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -14731,6 +15983,7 @@ pub mod put_property {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -14781,6 +16034,7 @@ pub mod delete_property {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -14832,6 +16086,7 @@ pub mod submit_property_batch {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -14893,18 +16148,22 @@ pub mod get_cluster_event_list {
         pub(crate) skip_correlation_lookup: Option<bool>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
         }
+        #[doc = "This is a comma separated string specifying the types of FabricEvents that should only be included in the response."]
         pub fn events_types_filter(mut self, events_types_filter: impl Into<String>) -> Self {
             self.events_types_filter = Some(events_types_filter.into());
             self
         }
+        #[doc = "This param disables the retrieval of AnalysisEvents if true is passed."]
         pub fn exclude_analysis_events(mut self, exclude_analysis_events: bool) -> Self {
             self.exclude_analysis_events = Some(exclude_analysis_events);
             self
         }
+        #[doc = "This param disables the search of CorrelatedEvents information if true is passed. otherwise the CorrelationEvents get processed and HasCorrelatedEvents field in every FabricEvent gets populated."]
         pub fn skip_correlation_lookup(mut self, skip_correlation_lookup: bool) -> Self {
             self.skip_correlation_lookup = Some(skip_correlation_lookup);
             self
@@ -14980,18 +16239,22 @@ pub mod get_containers_event_list {
         pub(crate) skip_correlation_lookup: Option<bool>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
         }
+        #[doc = "This is a comma separated string specifying the types of FabricEvents that should only be included in the response."]
         pub fn events_types_filter(mut self, events_types_filter: impl Into<String>) -> Self {
             self.events_types_filter = Some(events_types_filter.into());
             self
         }
+        #[doc = "This param disables the retrieval of AnalysisEvents if true is passed."]
         pub fn exclude_analysis_events(mut self, exclude_analysis_events: bool) -> Self {
             self.exclude_analysis_events = Some(exclude_analysis_events);
             self
         }
+        #[doc = "This param disables the search of CorrelatedEvents information if true is passed. otherwise the CorrelationEvents get processed and HasCorrelatedEvents field in every FabricEvent gets populated."]
         pub fn skip_correlation_lookup(mut self, skip_correlation_lookup: bool) -> Self {
             self.skip_correlation_lookup = Some(skip_correlation_lookup);
             self
@@ -15068,18 +16331,22 @@ pub mod get_node_event_list {
         pub(crate) skip_correlation_lookup: Option<bool>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
         }
+        #[doc = "This is a comma separated string specifying the types of FabricEvents that should only be included in the response."]
         pub fn events_types_filter(mut self, events_types_filter: impl Into<String>) -> Self {
             self.events_types_filter = Some(events_types_filter.into());
             self
         }
+        #[doc = "This param disables the retrieval of AnalysisEvents if true is passed."]
         pub fn exclude_analysis_events(mut self, exclude_analysis_events: bool) -> Self {
             self.exclude_analysis_events = Some(exclude_analysis_events);
             self
         }
+        #[doc = "This param disables the search of CorrelatedEvents information if true is passed. otherwise the CorrelationEvents get processed and HasCorrelatedEvents field in every FabricEvent gets populated."]
         pub fn skip_correlation_lookup(mut self, skip_correlation_lookup: bool) -> Self {
             self.skip_correlation_lookup = Some(skip_correlation_lookup);
             self
@@ -15159,18 +16426,22 @@ pub mod get_nodes_event_list {
         pub(crate) skip_correlation_lookup: Option<bool>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
         }
+        #[doc = "This is a comma separated string specifying the types of FabricEvents that should only be included in the response."]
         pub fn events_types_filter(mut self, events_types_filter: impl Into<String>) -> Self {
             self.events_types_filter = Some(events_types_filter.into());
             self
         }
+        #[doc = "This param disables the retrieval of AnalysisEvents if true is passed."]
         pub fn exclude_analysis_events(mut self, exclude_analysis_events: bool) -> Self {
             self.exclude_analysis_events = Some(exclude_analysis_events);
             self
         }
+        #[doc = "This param disables the search of CorrelatedEvents information if true is passed. otherwise the CorrelationEvents get processed and HasCorrelatedEvents field in every FabricEvent gets populated."]
         pub fn skip_correlation_lookup(mut self, skip_correlation_lookup: bool) -> Self {
             self.skip_correlation_lookup = Some(skip_correlation_lookup);
             self
@@ -15247,18 +16518,22 @@ pub mod get_application_event_list {
         pub(crate) skip_correlation_lookup: Option<bool>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
         }
+        #[doc = "This is a comma separated string specifying the types of FabricEvents that should only be included in the response."]
         pub fn events_types_filter(mut self, events_types_filter: impl Into<String>) -> Self {
             self.events_types_filter = Some(events_types_filter.into());
             self
         }
+        #[doc = "This param disables the retrieval of AnalysisEvents if true is passed."]
         pub fn exclude_analysis_events(mut self, exclude_analysis_events: bool) -> Self {
             self.exclude_analysis_events = Some(exclude_analysis_events);
             self
         }
+        #[doc = "This param disables the search of CorrelatedEvents information if true is passed. otherwise the CorrelationEvents get processed and HasCorrelatedEvents field in every FabricEvent gets populated."]
         pub fn skip_correlation_lookup(mut self, skip_correlation_lookup: bool) -> Self {
             self.skip_correlation_lookup = Some(skip_correlation_lookup);
             self
@@ -15338,18 +16613,22 @@ pub mod get_applications_event_list {
         pub(crate) skip_correlation_lookup: Option<bool>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
         }
+        #[doc = "This is a comma separated string specifying the types of FabricEvents that should only be included in the response."]
         pub fn events_types_filter(mut self, events_types_filter: impl Into<String>) -> Self {
             self.events_types_filter = Some(events_types_filter.into());
             self
         }
+        #[doc = "This param disables the retrieval of AnalysisEvents if true is passed."]
         pub fn exclude_analysis_events(mut self, exclude_analysis_events: bool) -> Self {
             self.exclude_analysis_events = Some(exclude_analysis_events);
             self
         }
+        #[doc = "This param disables the search of CorrelatedEvents information if true is passed. otherwise the CorrelationEvents get processed and HasCorrelatedEvents field in every FabricEvent gets populated."]
         pub fn skip_correlation_lookup(mut self, skip_correlation_lookup: bool) -> Self {
             self.skip_correlation_lookup = Some(skip_correlation_lookup);
             self
@@ -15426,18 +16705,22 @@ pub mod get_service_event_list {
         pub(crate) skip_correlation_lookup: Option<bool>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
         }
+        #[doc = "This is a comma separated string specifying the types of FabricEvents that should only be included in the response."]
         pub fn events_types_filter(mut self, events_types_filter: impl Into<String>) -> Self {
             self.events_types_filter = Some(events_types_filter.into());
             self
         }
+        #[doc = "This param disables the retrieval of AnalysisEvents if true is passed."]
         pub fn exclude_analysis_events(mut self, exclude_analysis_events: bool) -> Self {
             self.exclude_analysis_events = Some(exclude_analysis_events);
             self
         }
+        #[doc = "This param disables the search of CorrelatedEvents information if true is passed. otherwise the CorrelationEvents get processed and HasCorrelatedEvents field in every FabricEvent gets populated."]
         pub fn skip_correlation_lookup(mut self, skip_correlation_lookup: bool) -> Self {
             self.skip_correlation_lookup = Some(skip_correlation_lookup);
             self
@@ -15517,18 +16800,22 @@ pub mod get_services_event_list {
         pub(crate) skip_correlation_lookup: Option<bool>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
         }
+        #[doc = "This is a comma separated string specifying the types of FabricEvents that should only be included in the response."]
         pub fn events_types_filter(mut self, events_types_filter: impl Into<String>) -> Self {
             self.events_types_filter = Some(events_types_filter.into());
             self
         }
+        #[doc = "This param disables the retrieval of AnalysisEvents if true is passed."]
         pub fn exclude_analysis_events(mut self, exclude_analysis_events: bool) -> Self {
             self.exclude_analysis_events = Some(exclude_analysis_events);
             self
         }
+        #[doc = "This param disables the search of CorrelatedEvents information if true is passed. otherwise the CorrelationEvents get processed and HasCorrelatedEvents field in every FabricEvent gets populated."]
         pub fn skip_correlation_lookup(mut self, skip_correlation_lookup: bool) -> Self {
             self.skip_correlation_lookup = Some(skip_correlation_lookup);
             self
@@ -15605,18 +16892,22 @@ pub mod get_partition_event_list {
         pub(crate) skip_correlation_lookup: Option<bool>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
         }
+        #[doc = "This is a comma separated string specifying the types of FabricEvents that should only be included in the response."]
         pub fn events_types_filter(mut self, events_types_filter: impl Into<String>) -> Self {
             self.events_types_filter = Some(events_types_filter.into());
             self
         }
+        #[doc = "This param disables the retrieval of AnalysisEvents if true is passed."]
         pub fn exclude_analysis_events(mut self, exclude_analysis_events: bool) -> Self {
             self.exclude_analysis_events = Some(exclude_analysis_events);
             self
         }
+        #[doc = "This param disables the search of CorrelatedEvents information if true is passed. otherwise the CorrelationEvents get processed and HasCorrelatedEvents field in every FabricEvent gets populated."]
         pub fn skip_correlation_lookup(mut self, skip_correlation_lookup: bool) -> Self {
             self.skip_correlation_lookup = Some(skip_correlation_lookup);
             self
@@ -15696,18 +16987,22 @@ pub mod get_partitions_event_list {
         pub(crate) skip_correlation_lookup: Option<bool>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
         }
+        #[doc = "This is a comma separated string specifying the types of FabricEvents that should only be included in the response."]
         pub fn events_types_filter(mut self, events_types_filter: impl Into<String>) -> Self {
             self.events_types_filter = Some(events_types_filter.into());
             self
         }
+        #[doc = "This param disables the retrieval of AnalysisEvents if true is passed."]
         pub fn exclude_analysis_events(mut self, exclude_analysis_events: bool) -> Self {
             self.exclude_analysis_events = Some(exclude_analysis_events);
             self
         }
+        #[doc = "This param disables the search of CorrelatedEvents information if true is passed. otherwise the CorrelationEvents get processed and HasCorrelatedEvents field in every FabricEvent gets populated."]
         pub fn skip_correlation_lookup(mut self, skip_correlation_lookup: bool) -> Self {
             self.skip_correlation_lookup = Some(skip_correlation_lookup);
             self
@@ -15785,18 +17080,22 @@ pub mod get_partition_replica_event_list {
         pub(crate) skip_correlation_lookup: Option<bool>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
         }
+        #[doc = "This is a comma separated string specifying the types of FabricEvents that should only be included in the response."]
         pub fn events_types_filter(mut self, events_types_filter: impl Into<String>) -> Self {
             self.events_types_filter = Some(events_types_filter.into());
             self
         }
+        #[doc = "This param disables the retrieval of AnalysisEvents if true is passed."]
         pub fn exclude_analysis_events(mut self, exclude_analysis_events: bool) -> Self {
             self.exclude_analysis_events = Some(exclude_analysis_events);
             self
         }
+        #[doc = "This param disables the search of CorrelatedEvents information if true is passed. otherwise the CorrelationEvents get processed and HasCorrelatedEvents field in every FabricEvent gets populated."]
         pub fn skip_correlation_lookup(mut self, skip_correlation_lookup: bool) -> Self {
             self.skip_correlation_lookup = Some(skip_correlation_lookup);
             self
@@ -15878,18 +17177,22 @@ pub mod get_partition_replicas_event_list {
         pub(crate) skip_correlation_lookup: Option<bool>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
         }
+        #[doc = "This is a comma separated string specifying the types of FabricEvents that should only be included in the response."]
         pub fn events_types_filter(mut self, events_types_filter: impl Into<String>) -> Self {
             self.events_types_filter = Some(events_types_filter.into());
             self
         }
+        #[doc = "This param disables the retrieval of AnalysisEvents if true is passed."]
         pub fn exclude_analysis_events(mut self, exclude_analysis_events: bool) -> Self {
             self.exclude_analysis_events = Some(exclude_analysis_events);
             self
         }
+        #[doc = "This param disables the search of CorrelatedEvents information if true is passed. otherwise the CorrelationEvents get processed and HasCorrelatedEvents field in every FabricEvent gets populated."]
         pub fn skip_correlation_lookup(mut self, skip_correlation_lookup: bool) -> Self {
             self.skip_correlation_lookup = Some(skip_correlation_lookup);
             self
@@ -15965,6 +17268,7 @@ pub mod get_correlated_event_list {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -16016,6 +17320,10 @@ pub mod mesh_secret {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets the Secret resource with the given name."]
+        #[doc = "Gets the information about the Secret resource with the given name. The information include the description and other properties of the Secret."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `secret_resource_name`: The name of the secret resource."]
         pub fn get(&self, secret_resource_name: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -16023,6 +17331,11 @@ pub mod mesh_secret {
             }
         }
         #[doc = "Creates or updates a Secret resource."]
+        #[doc = "Creates a Secret resource with the specified name, description and properties. If Secret resource with the same name exists, then it is updated with the specified description and properties. Once created, the kind and contentType of a secret resource cannot be updated."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `secret_resource_name`: The name of the secret resource."]
+        #[doc = "* `secret_resource_description`: Description for creating a secret resource."]
         pub fn create_or_update(
             &self,
             secret_resource_name: impl Into<String>,
@@ -16035,6 +17348,10 @@ pub mod mesh_secret {
             }
         }
         #[doc = "Deletes the Secret resource."]
+        #[doc = "Deletes the specified Secret resource and all of its named values."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `secret_resource_name`: The name of the secret resource."]
         pub fn delete(&self, secret_resource_name: impl Into<String>) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),
@@ -16042,6 +17359,7 @@ pub mod mesh_secret {
             }
         }
         #[doc = "Lists all the secret resources."]
+        #[doc = "Gets the information about all secret resources in a given resource group. The information include the description and other properties of the Secret."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -16255,6 +17573,11 @@ pub mod mesh_secret_value {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets the specified secret value resource."]
+        #[doc = "Get the information about the specified named secret value resources. The information does not include the actual value of the secret."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `secret_resource_name`: The name of the secret resource."]
+        #[doc = "* `secret_value_resource_name`: The name of the secret resource value which is typically the version identifier for the value."]
         pub fn get(&self, secret_resource_name: impl Into<String>, secret_value_resource_name: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -16263,6 +17586,12 @@ pub mod mesh_secret_value {
             }
         }
         #[doc = "Adds the specified value as a new version of the specified secret resource."]
+        #[doc = "Creates a new value of the specified secret resource. The name of the value is typically the version identifier. Once created the value cannot be changed."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `secret_resource_name`: The name of the secret resource."]
+        #[doc = "* `secret_value_resource_name`: The name of the secret resource value which is typically the version identifier for the value."]
+        #[doc = "* `secret_value_resource_description`: Description for creating a value of a secret resource."]
         pub fn add_value(
             &self,
             secret_resource_name: impl Into<String>,
@@ -16277,6 +17606,11 @@ pub mod mesh_secret_value {
             }
         }
         #[doc = "Deletes the specified  value of the named secret resource."]
+        #[doc = "Deletes the secret value resource identified by the name. The name of the resource is typically the version associated with that value. Deletion will fail if the specified value is in use."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `secret_resource_name`: The name of the secret resource."]
+        #[doc = "* `secret_value_resource_name`: The name of the secret resource value which is typically the version identifier for the value."]
         pub fn delete(&self, secret_resource_name: impl Into<String>, secret_value_resource_name: impl Into<String>) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),
@@ -16285,6 +17619,10 @@ pub mod mesh_secret_value {
             }
         }
         #[doc = "List names of all values of the specified secret resource."]
+        #[doc = "Gets information about all secret value resources of the specified secret resource. The information includes the names of the secret value resources, but not the actual values."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `secret_resource_name`: The name of the secret resource."]
         pub fn list(&self, secret_resource_name: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -16292,6 +17630,11 @@ pub mod mesh_secret_value {
             }
         }
         #[doc = "Lists the specified value of the secret resource."]
+        #[doc = "Lists the decrypted value of the specified named value of the secret resource. This is a privileged operation."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `secret_resource_name`: The name of the secret resource."]
+        #[doc = "* `secret_value_resource_name`: The name of the secret resource value which is typically the version identifier for the value."]
         pub fn show(&self, secret_resource_name: impl Into<String>, secret_value_resource_name: impl Into<String>) -> show::Builder {
             show::Builder {
                 client: self.0.clone(),
@@ -16571,6 +17914,10 @@ pub mod mesh_volume {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets the Volume resource with the given name."]
+        #[doc = "Gets the information about the Volume resource with the given name. The information include the description and other properties of the Volume."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `volume_resource_name`: The identity of the volume."]
         pub fn get(&self, volume_resource_name: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -16578,6 +17925,11 @@ pub mod mesh_volume {
             }
         }
         #[doc = "Creates or updates a Volume resource."]
+        #[doc = "Creates a Volume resource with the specified name, description and properties. If Volume resource with the same name exists, then it is updated with the specified description and properties."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `volume_resource_name`: The identity of the volume."]
+        #[doc = "* `volume_resource_description`: Description for creating a Volume resource."]
         pub fn create_or_update(
             &self,
             volume_resource_name: impl Into<String>,
@@ -16590,6 +17942,10 @@ pub mod mesh_volume {
             }
         }
         #[doc = "Deletes the Volume resource."]
+        #[doc = "Deletes the Volume resource identified by the name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `volume_resource_name`: The identity of the volume."]
         pub fn delete(&self, volume_resource_name: impl Into<String>) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),
@@ -16597,6 +17953,7 @@ pub mod mesh_volume {
             }
         }
         #[doc = "Lists all the volume resources."]
+        #[doc = "Gets the information about all volume resources in a given resource group. The information include the description and other properties of the Volume."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -16810,6 +18167,10 @@ pub mod mesh_network {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets the Network resource with the given name."]
+        #[doc = "Gets the information about the Network resource with the given name. The information include the description and other properties of the Network."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `network_resource_name`: The identity of the network."]
         pub fn get(&self, network_resource_name: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -16817,6 +18178,11 @@ pub mod mesh_network {
             }
         }
         #[doc = "Creates or updates a Network resource."]
+        #[doc = "Creates a Network resource with the specified name, description and properties. If Network resource with the same name exists, then it is updated with the specified description and properties. Network resource provides connectivity between application services."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `network_resource_name`: The identity of the network."]
+        #[doc = "* `network_resource_description`: Description for creating a Network resource."]
         pub fn create_or_update(
             &self,
             network_resource_name: impl Into<String>,
@@ -16829,6 +18195,10 @@ pub mod mesh_network {
             }
         }
         #[doc = "Deletes the Network resource."]
+        #[doc = "Deletes the Network resource identified by the name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `network_resource_name`: The identity of the network."]
         pub fn delete(&self, network_resource_name: impl Into<String>) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),
@@ -16836,6 +18206,7 @@ pub mod mesh_network {
             }
         }
         #[doc = "Lists all the network resources."]
+        #[doc = "Gets the information about all network resources in a given resource group. The information include the description and other properties of the Network."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -17049,6 +18420,10 @@ pub mod mesh_application {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets the Application resource with the given name."]
+        #[doc = "Gets the information about the Application resource with the given name. The information include the description and other properties of the Application."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `application_resource_name`: The identity of the application."]
         pub fn get(&self, application_resource_name: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -17056,6 +18431,11 @@ pub mod mesh_application {
             }
         }
         #[doc = "Creates or updates a Application resource."]
+        #[doc = "Creates a Application resource with the specified name, description and properties. If Application resource with the same name exists, then it is updated with the specified description and properties."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `application_resource_name`: The identity of the application."]
+        #[doc = "* `application_resource_description`: Description for creating a Application resource."]
         pub fn create_or_update(
             &self,
             application_resource_name: impl Into<String>,
@@ -17068,6 +18448,10 @@ pub mod mesh_application {
             }
         }
         #[doc = "Deletes the Application resource."]
+        #[doc = "Deletes the Application resource identified by the name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `application_resource_name`: The identity of the application."]
         pub fn delete(&self, application_resource_name: impl Into<String>) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),
@@ -17075,10 +18459,15 @@ pub mod mesh_application {
             }
         }
         #[doc = "Lists all the application resources."]
+        #[doc = "Gets the information about all application resources in a given resource group. The information include the description and other properties of the Application."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
         #[doc = "Gets the progress of the latest upgrade performed on this application resource."]
+        #[doc = "Gets the upgrade progress information about the Application resource with the given name. The information include percentage of completion and other upgrade state information of the Application resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `application_resource_name`: The identity of the application."]
         pub fn get_upgrade_progress(&self, application_resource_name: impl Into<String>) -> get_upgrade_progress::Builder {
             get_upgrade_progress::Builder {
                 client: self.0.clone(),
@@ -17343,6 +18732,11 @@ pub mod mesh_service {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets the Service resource with the given name."]
+        #[doc = "Gets the information about the Service resource with the given name. The information include the description and other properties of the Service."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `application_resource_name`: The identity of the application."]
+        #[doc = "* `service_resource_name`: The identity of the service."]
         pub fn get(&self, application_resource_name: impl Into<String>, service_resource_name: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -17351,6 +18745,10 @@ pub mod mesh_service {
             }
         }
         #[doc = "Lists all the service resources."]
+        #[doc = "Gets the information about all services of an application resource. The information include the description and other properties of the Service."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `application_resource_name`: The identity of the application."]
         pub fn list(&self, application_resource_name: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -17462,6 +18860,13 @@ pub mod mesh_code_package {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets the logs from the container."]
+        #[doc = "Gets the logs for the container of the specified code package of the service replica."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `application_resource_name`: The identity of the application."]
+        #[doc = "* `service_resource_name`: The identity of the service."]
+        #[doc = "* `replica_name`: Service Fabric replica name."]
+        #[doc = "* `code_package_name`: The name of code package of the service."]
         pub fn get_container_logs(
             &self,
             application_resource_name: impl Into<String>,
@@ -17492,6 +18897,7 @@ pub mod mesh_code_package {
             pub(crate) tail: Option<String>,
         }
         impl Builder {
+            #[doc = "Number of lines to show from the end of the logs. Default is 100. 'all' to show the complete logs."]
             pub fn tail(mut self, tail: impl Into<String>) -> Self {
                 self.tail = Some(tail.into());
                 self
@@ -17547,6 +18953,12 @@ pub mod mesh_service_replica {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets the given replica of the service of an application."]
+        #[doc = "Gets the information about the service replica with the given name. The information include the description and other properties of the service replica."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `application_resource_name`: The identity of the application."]
+        #[doc = "* `service_resource_name`: The identity of the service."]
+        #[doc = "* `replica_name`: Service Fabric replica name."]
         pub fn get(
             &self,
             application_resource_name: impl Into<String>,
@@ -17561,6 +18973,11 @@ pub mod mesh_service_replica {
             }
         }
         #[doc = "Lists all the replicas of a service."]
+        #[doc = "Gets the information about all replicas of a service. The information include the description and other properties of the service replica."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `application_resource_name`: The identity of the application."]
+        #[doc = "* `service_resource_name`: The identity of the service."]
         pub fn list(&self, application_resource_name: impl Into<String>, service_resource_name: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -17677,6 +19094,10 @@ pub mod mesh_gateway {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets the Gateway resource with the given name."]
+        #[doc = "Gets the information about the Gateway resource with the given name. The information include the description and other properties of the Gateway."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `gateway_resource_name`: The identity of the gateway."]
         pub fn get(&self, gateway_resource_name: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -17684,6 +19105,11 @@ pub mod mesh_gateway {
             }
         }
         #[doc = "Creates or updates a Gateway resource."]
+        #[doc = "Creates a Gateway resource with the specified name, description and properties. If Gateway resource with the same name exists, then it is updated with the specified description and properties. Use Gateway resource to provide public connectivity to application services."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `gateway_resource_name`: The identity of the gateway."]
+        #[doc = "* `gateway_resource_description`: Description for creating a Gateway resource."]
         pub fn create_or_update(
             &self,
             gateway_resource_name: impl Into<String>,
@@ -17696,6 +19122,10 @@ pub mod mesh_gateway {
             }
         }
         #[doc = "Deletes the Gateway resource."]
+        #[doc = "Deletes the Gateway resource identified by the name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `gateway_resource_name`: The identity of the gateway."]
         pub fn delete(&self, gateway_resource_name: impl Into<String>) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),
@@ -17703,6 +19133,7 @@ pub mod mesh_gateway {
             }
         }
         #[doc = "Lists all the gateway resources."]
+        #[doc = "Gets the information about all gateway resources in a given resource group. The information include the description and other properties of the Gateway."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }

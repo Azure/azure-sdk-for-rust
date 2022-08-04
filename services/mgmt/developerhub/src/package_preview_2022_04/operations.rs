@@ -86,6 +86,7 @@ pub mod operations {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets a list of operations."]
+        #[doc = "Returns list of operations."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -136,6 +137,10 @@ pub mod operations {
 }
 impl Client {
     #[doc = "Gets GitHubOAuth info used to authenticate users with the Developer Hub GitHub App."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `subscription_id`: The ID of the target subscription."]
+    #[doc = "* `location`: The name of Azure region."]
     pub fn git_hub_o_auth(&self, subscription_id: impl Into<String>, location: impl Into<String>) -> git_hub_o_auth::Builder {
         git_hub_o_auth::Builder {
             client: self.clone(),
@@ -145,6 +150,12 @@ impl Client {
         }
     }
     #[doc = "Callback URL to hit once authenticated with GitHub App to have the service store the OAuth token."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `subscription_id`: The ID of the target subscription."]
+    #[doc = "* `location`: The name of Azure region."]
+    #[doc = "* `code`: The code response from authenticating the GitHub App."]
+    #[doc = "* `state`: The state response from authenticating the GitHub App."]
     pub fn git_hub_o_auth_callback(
         &self,
         subscription_id: impl Into<String>,
@@ -161,6 +172,10 @@ impl Client {
         }
     }
     #[doc = "Callback URL to hit once authenticated with GitHub App to have the service store the OAuth token."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `subscription_id`: The ID of the target subscription."]
+    #[doc = "* `location`: The name of Azure region."]
     pub fn list_git_hub_o_auth(&self, subscription_id: impl Into<String>, location: impl Into<String>) -> list_git_hub_o_auth::Builder {
         list_git_hub_o_auth::Builder {
             client: self.clone(),
@@ -340,6 +355,9 @@ pub mod workflow {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets a list of workflows associated with the specified subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -347,6 +365,10 @@ pub mod workflow {
             }
         }
         #[doc = "Gets a list of workflows within a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -360,6 +382,11 @@ pub mod workflow {
             }
         }
         #[doc = "Gets a workflow."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workflow_name`: The name of the workflow resource."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -374,6 +401,11 @@ pub mod workflow {
             }
         }
         #[doc = "Creates or updates a workflow"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workflow_name`: The name of the workflow resource."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -390,6 +422,12 @@ pub mod workflow {
             }
         }
         #[doc = "Updates tags on a workflow."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workflow_name`: The name of the workflow resource."]
+        #[doc = "* `parameters`: Parameters supplied to the Update Workflow Tags operation."]
         pub fn update_tags(
             &self,
             subscription_id: impl Into<String>,
@@ -406,6 +444,11 @@ pub mod workflow {
             }
         }
         #[doc = "Deletes a workflow"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workflow_name`: The name of the workflow resource."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -505,6 +548,7 @@ pub mod workflow {
             pub(crate) managed_cluster_resource: Option<String>,
         }
         impl Builder {
+            #[doc = "The ManagedCluster resource associated with the workflows."]
             pub fn managed_cluster_resource(mut self, managed_cluster_resource: impl Into<String>) -> Self {
                 self.managed_cluster_resource = Some(managed_cluster_resource.into());
                 self

@@ -169,6 +169,12 @@ pub mod database_accounts {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieves the properties of an existing Azure Cosmos DB database account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -182,6 +188,13 @@ pub mod database_accounts {
                 account_name: account_name.into(),
             }
         }
+        #[doc = "Creates or updates an Azure Cosmos DB database account. The \"Update\" method is preferred when performing updates on an account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
+        #[doc = "* `create_update_parameters`: The parameters to provide for the current database account."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -197,6 +210,13 @@ pub mod database_accounts {
                 create_update_parameters: create_update_parameters.into(),
             }
         }
+        #[doc = "Updates the properties of an existing Azure Cosmos DB database account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
+        #[doc = "* `update_parameters`: The parameters to provide for the current database account."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -212,6 +232,12 @@ pub mod database_accounts {
                 update_parameters: update_parameters.into(),
             }
         }
+        #[doc = "Deletes an existing Azure Cosmos DB database account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -225,6 +251,13 @@ pub mod database_accounts {
                 account_name: account_name.into(),
             }
         }
+        #[doc = "Changes the failover priority for the Azure Cosmos DB database account. A failover priority of 0 indicates a write region. The maximum value for a failover priority = (total number of regions - 1). Failover priority values must be unique for each of the regions in which the database account exists."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
+        #[doc = "* `failover_parameters`: The new failover policies for the database account."]
         pub fn failover_priority_change(
             &self,
             subscription_id: impl Into<String>,
@@ -240,12 +273,21 @@ pub mod database_accounts {
                 failover_parameters: failover_parameters.into(),
             }
         }
+        #[doc = "Lists all the Azure Cosmos DB database accounts available under the subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists all the Azure Cosmos DB database accounts available under the given resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_by_resource_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -257,6 +299,12 @@ pub mod database_accounts {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists the access keys for the specified Azure Cosmos DB database account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
         pub fn list_keys(
             &self,
             subscription_id: impl Into<String>,
@@ -270,6 +318,12 @@ pub mod database_accounts {
                 account_name: account_name.into(),
             }
         }
+        #[doc = "Lists the connection strings for the specified Azure Cosmos DB database account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
         pub fn list_connection_strings(
             &self,
             subscription_id: impl Into<String>,
@@ -283,6 +337,13 @@ pub mod database_accounts {
                 account_name: account_name.into(),
             }
         }
+        #[doc = "Offline the specified region for the specified Azure Cosmos DB database account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
+        #[doc = "* `region_parameter_for_offline`: Cosmos DB region to offline for the database account."]
         pub fn offline_region(
             &self,
             subscription_id: impl Into<String>,
@@ -298,6 +359,13 @@ pub mod database_accounts {
                 region_parameter_for_offline: region_parameter_for_offline.into(),
             }
         }
+        #[doc = "Online the specified region for the specified Azure Cosmos DB database account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
+        #[doc = "* `region_parameter_for_online`: Cosmos DB region to online for the database account."]
         pub fn online_region(
             &self,
             subscription_id: impl Into<String>,
@@ -313,6 +381,12 @@ pub mod database_accounts {
                 region_parameter_for_online: region_parameter_for_online.into(),
             }
         }
+        #[doc = "Lists the read-only access keys for the specified Azure Cosmos DB database account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
         pub fn get_read_only_keys(
             &self,
             subscription_id: impl Into<String>,
@@ -326,6 +400,12 @@ pub mod database_accounts {
                 account_name: account_name.into(),
             }
         }
+        #[doc = "Lists the read-only access keys for the specified Azure Cosmos DB database account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
         pub fn list_read_only_keys(
             &self,
             subscription_id: impl Into<String>,
@@ -339,6 +419,13 @@ pub mod database_accounts {
                 account_name: account_name.into(),
             }
         }
+        #[doc = "Regenerates an access key for the specified Azure Cosmos DB database account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
+        #[doc = "* `key_to_regenerate`: The name of the key to regenerate."]
         pub fn regenerate_key(
             &self,
             subscription_id: impl Into<String>,
@@ -354,12 +441,23 @@ pub mod database_accounts {
                 key_to_regenerate: key_to_regenerate.into(),
             }
         }
+        #[doc = "Checks that the Azure Cosmos DB account name already exists. A valid account name may contain only lowercase letters, numbers, and the '-' character, and must be between 3 and 50 characters."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
         pub fn check_name_exists(&self, account_name: impl Into<String>) -> check_name_exists::Builder {
             check_name_exists::Builder {
                 client: self.0.clone(),
                 account_name: account_name.into(),
             }
         }
+        #[doc = "Retrieves the metrics determined by the given filter for the given database account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
+        #[doc = "* `filter`: An OData filter expression that describes a subset of metrics to return. The parameters that can be filtered are name.value (name of the metric, can have an or of multiple names), startTime, endTime, and timeGrain. The supported operator is eq."]
         pub fn list_metrics(
             &self,
             subscription_id: impl Into<String>,
@@ -375,6 +473,12 @@ pub mod database_accounts {
                 filter: filter.into(),
             }
         }
+        #[doc = "Retrieves the usages (most recent data) for the given database account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
         pub fn list_usages(
             &self,
             subscription_id: impl Into<String>,
@@ -389,6 +493,12 @@ pub mod database_accounts {
                 filter: None,
             }
         }
+        #[doc = "Retrieves metric definitions for the given database account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
         pub fn list_metric_definitions(
             &self,
             subscription_id: impl Into<String>,
@@ -1254,6 +1364,7 @@ pub mod database_accounts {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "An OData filter expression that describes a subset of usages to return. The supported parameter is name.value (name of the metric, can have an or of multiple names)."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -1361,6 +1472,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all of the available Cosmos DB Resource Provider operations."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -1440,6 +1552,14 @@ pub mod database {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieves the metrics determined by the given filter for the given database account and database."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
+        #[doc = "* `database_rid`: Cosmos DB database rid."]
+        #[doc = "* `filter`: An OData filter expression that describes a subset of metrics to return. The parameters that can be filtered are name.value (name of the metric, can have an or of multiple names), startTime, endTime, and timeGrain. The supported operator is eq."]
         pub fn list_metrics(
             &self,
             subscription_id: impl Into<String>,
@@ -1457,6 +1577,13 @@ pub mod database {
                 filter: filter.into(),
             }
         }
+        #[doc = "Retrieves the usages (most recent data) for the given database."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
+        #[doc = "* `database_rid`: Cosmos DB database rid."]
         pub fn list_usages(
             &self,
             subscription_id: impl Into<String>,
@@ -1473,6 +1600,13 @@ pub mod database {
                 filter: None,
             }
         }
+        #[doc = "Retrieves metric definitions for the given database."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
+        #[doc = "* `database_rid`: Cosmos DB database rid."]
         pub fn list_metric_definitions(
             &self,
             subscription_id: impl Into<String>,
@@ -1560,6 +1694,7 @@ pub mod database {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "An OData filter expression that describes a subset of usages to return. The supported parameter is name.value (name of the metric, can have an or of multiple names)."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -1663,6 +1798,15 @@ pub mod collection {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieves the metrics determined by the given filter for the given database account and collection."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
+        #[doc = "* `database_rid`: Cosmos DB database rid."]
+        #[doc = "* `collection_rid`: Cosmos DB collection rid."]
+        #[doc = "* `filter`: An OData filter expression that describes a subset of metrics to return. The parameters that can be filtered are name.value (name of the metric, can have an or of multiple names), startTime, endTime, and timeGrain. The supported operator is eq."]
         pub fn list_metrics(
             &self,
             subscription_id: impl Into<String>,
@@ -1682,6 +1826,14 @@ pub mod collection {
                 filter: filter.into(),
             }
         }
+        #[doc = "Retrieves the usages (most recent storage data) for the given collection."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
+        #[doc = "* `database_rid`: Cosmos DB database rid."]
+        #[doc = "* `collection_rid`: Cosmos DB collection rid."]
         pub fn list_usages(
             &self,
             subscription_id: impl Into<String>,
@@ -1700,6 +1852,14 @@ pub mod collection {
                 filter: None,
             }
         }
+        #[doc = "Retrieves metric definitions for the given collection."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
+        #[doc = "* `database_rid`: Cosmos DB database rid."]
+        #[doc = "* `collection_rid`: Cosmos DB collection rid."]
         pub fn list_metric_definitions(
             &self,
             subscription_id: impl Into<String>,
@@ -1784,6 +1944,7 @@ pub mod collection {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "An OData filter expression that describes a subset of usages to return. The supported parameter is name.value (name of the metric, can have an or of multiple names)."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -1881,6 +2042,16 @@ pub mod collection_region {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieves the metrics determined by the given filter for the given database account, collection and region."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
+        #[doc = "* `region`: Cosmos DB region, with spaces between words and each word capitalized."]
+        #[doc = "* `database_rid`: Cosmos DB database rid."]
+        #[doc = "* `collection_rid`: Cosmos DB collection rid."]
+        #[doc = "* `filter`: An OData filter expression that describes a subset of metrics to return. The parameters that can be filtered are name.value (name of the metric, can have an or of multiple names), startTime, endTime, and timeGrain. The supported operator is eq."]
         pub fn list_metrics(
             &self,
             subscription_id: impl Into<String>,
@@ -1961,6 +2132,14 @@ pub mod database_account_region {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieves the metrics determined by the given filter for the given database account and region."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
+        #[doc = "* `region`: Cosmos DB region, with spaces between words and each word capitalized."]
+        #[doc = "* `filter`: An OData filter expression that describes a subset of metrics to return. The parameters that can be filtered are name.value (name of the metric, can have an or of multiple names), startTime, endTime, and timeGrain. The supported operator is eq."]
         pub fn list_metrics(
             &self,
             subscription_id: impl Into<String>,
@@ -2042,6 +2221,15 @@ pub mod percentile_source_target {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieves the metrics determined by the given filter for the given account, source and target region. This url is only for PBS and Replication Latency data"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
+        #[doc = "* `source_region`: Source region from which data is written. Cosmos DB region, with spaces between words and each word capitalized."]
+        #[doc = "* `target_region`: Target region to which data is written. Cosmos DB region, with spaces between words and each word capitalized."]
+        #[doc = "* `filter`: An OData filter expression that describes a subset of metrics to return. The parameters that can be filtered are name.value (name of the metric, can have an or of multiple names), startTime, endTime, and timeGrain. The supported operator is eq."]
         pub fn list_metrics(
             &self,
             subscription_id: impl Into<String>,
@@ -2119,6 +2307,14 @@ pub mod percentile_target {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieves the metrics determined by the given filter for the given account target region. This url is only for PBS and Replication Latency data"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
+        #[doc = "* `target_region`: Target region to which data is written. Cosmos DB region, with spaces between words and each word capitalized."]
+        #[doc = "* `filter`: An OData filter expression that describes a subset of metrics to return. The parameters that can be filtered are name.value (name of the metric, can have an or of multiple names), startTime, endTime, and timeGrain. The supported operator is eq."]
         pub fn list_metrics(
             &self,
             subscription_id: impl Into<String>,
@@ -2193,6 +2389,13 @@ pub mod percentile {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieves the metrics determined by the given filter for the given database account. This url is only for PBS and Replication Latency data"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
+        #[doc = "* `filter`: An OData filter expression that describes a subset of metrics to return. The parameters that can be filtered are name.value (name of the metric, can have an or of multiple names), startTime, endTime, and timeGrain. The supported operator is eq."]
         pub fn list_metrics(
             &self,
             subscription_id: impl Into<String>,
@@ -2270,6 +2473,16 @@ pub mod collection_partition_region {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieves the metrics determined by the given filter for the given collection and region, split by partition."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
+        #[doc = "* `region`: Cosmos DB region, with spaces between words and each word capitalized."]
+        #[doc = "* `database_rid`: Cosmos DB database rid."]
+        #[doc = "* `collection_rid`: Cosmos DB collection rid."]
+        #[doc = "* `filter`: An OData filter expression that describes a subset of metrics to return. The parameters that can be filtered are name.value (name of the metric, can have an or of multiple names), startTime, endTime, and timeGrain. The supported operator is eq."]
         pub fn list_metrics(
             &self,
             subscription_id: impl Into<String>,
@@ -2350,6 +2563,15 @@ pub mod collection_partition {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieves the metrics determined by the given filter for the given collection, split by partition."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
+        #[doc = "* `database_rid`: Cosmos DB database rid."]
+        #[doc = "* `collection_rid`: Cosmos DB collection rid."]
+        #[doc = "* `filter`: An OData filter expression that describes a subset of metrics to return. The parameters that can be filtered are name.value (name of the metric, can have an or of multiple names), startTime, endTime, and timeGrain. The supported operator is eq."]
         pub fn list_metrics(
             &self,
             subscription_id: impl Into<String>,
@@ -2369,6 +2591,14 @@ pub mod collection_partition {
                 filter: filter.into(),
             }
         }
+        #[doc = "Retrieves the usages (most recent storage data) for the given collection, split by partition."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
+        #[doc = "* `database_rid`: Cosmos DB database rid."]
+        #[doc = "* `collection_rid`: Cosmos DB collection rid."]
         pub fn list_usages(
             &self,
             subscription_id: impl Into<String>,
@@ -2454,6 +2684,7 @@ pub mod collection_partition {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "An OData filter expression that describes a subset of usages to return. The supported parameter is name.value (name of the metric, can have an or of multiple names)."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -2502,6 +2733,16 @@ pub mod partition_key_range_id {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieves the metrics determined by the given filter for the given partition key range id."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
+        #[doc = "* `database_rid`: Cosmos DB database rid."]
+        #[doc = "* `collection_rid`: Cosmos DB collection rid."]
+        #[doc = "* `partition_key_range_id`: Partition Key Range Id for which to get data."]
+        #[doc = "* `filter`: An OData filter expression that describes a subset of metrics to return. The parameters that can be filtered are name.value (name of the metric, can have an or of multiple names), startTime, endTime, and timeGrain. The supported operator is eq."]
         pub fn list_metrics(
             &self,
             subscription_id: impl Into<String>,
@@ -2582,6 +2823,17 @@ pub mod partition_key_range_id_region {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieves the metrics determined by the given filter for the given partition key range id and region."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
+        #[doc = "* `region`: Cosmos DB region, with spaces between words and each word capitalized."]
+        #[doc = "* `database_rid`: Cosmos DB database rid."]
+        #[doc = "* `collection_rid`: Cosmos DB collection rid."]
+        #[doc = "* `partition_key_range_id`: Partition Key Range Id for which to get data."]
+        #[doc = "* `filter`: An OData filter expression that describes a subset of metrics to return. The parameters that can be filtered are name.value (name of the metric, can have an or of multiple names), startTime, endTime, and timeGrain. The supported operator is eq."]
         pub fn list_metrics(
             &self,
             subscription_id: impl Into<String>,
@@ -2665,6 +2917,12 @@ pub mod sql_resources {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists the SQL databases under an existing Azure Cosmos DB database account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
         pub fn list_sql_databases(
             &self,
             subscription_id: impl Into<String>,
@@ -2678,6 +2936,13 @@ pub mod sql_resources {
                 account_name: account_name.into(),
             }
         }
+        #[doc = "Gets the SQL database under an existing Azure Cosmos DB database account with the provided name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
+        #[doc = "* `database_name`: Cosmos DB database name."]
         pub fn get_sql_database(
             &self,
             subscription_id: impl Into<String>,
@@ -2693,6 +2958,14 @@ pub mod sql_resources {
                 database_name: database_name.into(),
             }
         }
+        #[doc = "Create or update an Azure Cosmos DB SQL database"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
+        #[doc = "* `database_name`: Cosmos DB database name."]
+        #[doc = "* `create_update_sql_database_parameters`: The parameters to provide for the current SQL database."]
         pub fn create_update_sql_database(
             &self,
             subscription_id: impl Into<String>,
@@ -2710,6 +2983,13 @@ pub mod sql_resources {
                 create_update_sql_database_parameters: create_update_sql_database_parameters.into(),
             }
         }
+        #[doc = "Deletes an existing Azure Cosmos DB SQL database."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
+        #[doc = "* `database_name`: Cosmos DB database name."]
         pub fn delete_sql_database(
             &self,
             subscription_id: impl Into<String>,
@@ -2725,6 +3005,13 @@ pub mod sql_resources {
                 database_name: database_name.into(),
             }
         }
+        #[doc = "Gets the RUs per second of the SQL database under an existing Azure Cosmos DB database account with the provided name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
+        #[doc = "* `database_name`: Cosmos DB database name."]
         pub fn get_sql_database_throughput(
             &self,
             subscription_id: impl Into<String>,
@@ -2740,6 +3027,14 @@ pub mod sql_resources {
                 database_name: database_name.into(),
             }
         }
+        #[doc = "Update RUs per second of an Azure Cosmos DB SQL database"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
+        #[doc = "* `database_name`: Cosmos DB database name."]
+        #[doc = "* `update_throughput_parameters`: The parameters to provide for the RUs per second of the current SQL database."]
         pub fn update_sql_database_throughput(
             &self,
             subscription_id: impl Into<String>,
@@ -2757,6 +3052,13 @@ pub mod sql_resources {
                 update_throughput_parameters: update_throughput_parameters.into(),
             }
         }
+        #[doc = "Migrate an Azure Cosmos DB SQL database from manual throughput to autoscale"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
+        #[doc = "* `database_name`: Cosmos DB database name."]
         pub fn migrate_sql_database_to_autoscale(
             &self,
             subscription_id: impl Into<String>,
@@ -2772,6 +3074,13 @@ pub mod sql_resources {
                 database_name: database_name.into(),
             }
         }
+        #[doc = "Migrate an Azure Cosmos DB SQL database from autoscale to manual throughput"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
+        #[doc = "* `database_name`: Cosmos DB database name."]
         pub fn migrate_sql_database_to_manual_throughput(
             &self,
             subscription_id: impl Into<String>,
@@ -2787,6 +3096,13 @@ pub mod sql_resources {
                 database_name: database_name.into(),
             }
         }
+        #[doc = "Lists the SQL container under an existing Azure Cosmos DB database account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
+        #[doc = "* `database_name`: Cosmos DB database name."]
         pub fn list_sql_containers(
             &self,
             subscription_id: impl Into<String>,
@@ -2802,6 +3118,14 @@ pub mod sql_resources {
                 database_name: database_name.into(),
             }
         }
+        #[doc = "Gets the SQL container under an existing Azure Cosmos DB database account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
+        #[doc = "* `database_name`: Cosmos DB database name."]
+        #[doc = "* `container_name`: Cosmos DB container name."]
         pub fn get_sql_container(
             &self,
             subscription_id: impl Into<String>,
@@ -2819,6 +3143,15 @@ pub mod sql_resources {
                 container_name: container_name.into(),
             }
         }
+        #[doc = "Create or update an Azure Cosmos DB SQL container"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
+        #[doc = "* `database_name`: Cosmos DB database name."]
+        #[doc = "* `container_name`: Cosmos DB container name."]
+        #[doc = "* `create_update_sql_container_parameters`: The parameters to provide for the current SQL container."]
         pub fn create_update_sql_container(
             &self,
             subscription_id: impl Into<String>,
@@ -2838,6 +3171,14 @@ pub mod sql_resources {
                 create_update_sql_container_parameters: create_update_sql_container_parameters.into(),
             }
         }
+        #[doc = "Deletes an existing Azure Cosmos DB SQL container."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
+        #[doc = "* `database_name`: Cosmos DB database name."]
+        #[doc = "* `container_name`: Cosmos DB container name."]
         pub fn delete_sql_container(
             &self,
             subscription_id: impl Into<String>,
@@ -2855,6 +3196,14 @@ pub mod sql_resources {
                 container_name: container_name.into(),
             }
         }
+        #[doc = "Gets the RUs per second of the SQL container under an existing Azure Cosmos DB database account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
+        #[doc = "* `database_name`: Cosmos DB database name."]
+        #[doc = "* `container_name`: Cosmos DB container name."]
         pub fn get_sql_container_throughput(
             &self,
             subscription_id: impl Into<String>,
@@ -2872,6 +3221,15 @@ pub mod sql_resources {
                 container_name: container_name.into(),
             }
         }
+        #[doc = "Update RUs per second of an Azure Cosmos DB SQL container"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
+        #[doc = "* `database_name`: Cosmos DB database name."]
+        #[doc = "* `container_name`: Cosmos DB container name."]
+        #[doc = "* `update_throughput_parameters`: The parameters to provide for the RUs per second of the current SQL container."]
         pub fn update_sql_container_throughput(
             &self,
             subscription_id: impl Into<String>,
@@ -2891,6 +3249,14 @@ pub mod sql_resources {
                 update_throughput_parameters: update_throughput_parameters.into(),
             }
         }
+        #[doc = "Migrate an Azure Cosmos DB SQL container from manual throughput to autoscale"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
+        #[doc = "* `database_name`: Cosmos DB database name."]
+        #[doc = "* `container_name`: Cosmos DB container name."]
         pub fn migrate_sql_container_to_autoscale(
             &self,
             subscription_id: impl Into<String>,
@@ -2908,6 +3274,14 @@ pub mod sql_resources {
                 container_name: container_name.into(),
             }
         }
+        #[doc = "Migrate an Azure Cosmos DB SQL container from autoscale to manual throughput"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
+        #[doc = "* `database_name`: Cosmos DB database name."]
+        #[doc = "* `container_name`: Cosmos DB container name."]
         pub fn migrate_sql_container_to_manual_throughput(
             &self,
             subscription_id: impl Into<String>,
@@ -2925,6 +3299,14 @@ pub mod sql_resources {
                 container_name: container_name.into(),
             }
         }
+        #[doc = "Lists the SQL storedProcedure under an existing Azure Cosmos DB database account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
+        #[doc = "* `database_name`: Cosmos DB database name."]
+        #[doc = "* `container_name`: Cosmos DB container name."]
         pub fn list_sql_stored_procedures(
             &self,
             subscription_id: impl Into<String>,
@@ -2942,6 +3324,15 @@ pub mod sql_resources {
                 container_name: container_name.into(),
             }
         }
+        #[doc = "Gets the SQL storedProcedure under an existing Azure Cosmos DB database account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
+        #[doc = "* `database_name`: Cosmos DB database name."]
+        #[doc = "* `container_name`: Cosmos DB container name."]
+        #[doc = "* `stored_procedure_name`: Cosmos DB storedProcedure name."]
         pub fn get_sql_stored_procedure(
             &self,
             subscription_id: impl Into<String>,
@@ -2961,6 +3352,16 @@ pub mod sql_resources {
                 stored_procedure_name: stored_procedure_name.into(),
             }
         }
+        #[doc = "Create or update an Azure Cosmos DB SQL storedProcedure"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
+        #[doc = "* `database_name`: Cosmos DB database name."]
+        #[doc = "* `container_name`: Cosmos DB container name."]
+        #[doc = "* `stored_procedure_name`: Cosmos DB storedProcedure name."]
+        #[doc = "* `create_update_sql_stored_procedure_parameters`: The parameters to provide for the current SQL storedProcedure."]
         pub fn create_update_sql_stored_procedure(
             &self,
             subscription_id: impl Into<String>,
@@ -2982,6 +3383,15 @@ pub mod sql_resources {
                 create_update_sql_stored_procedure_parameters: create_update_sql_stored_procedure_parameters.into(),
             }
         }
+        #[doc = "Deletes an existing Azure Cosmos DB SQL storedProcedure."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
+        #[doc = "* `database_name`: Cosmos DB database name."]
+        #[doc = "* `container_name`: Cosmos DB container name."]
+        #[doc = "* `stored_procedure_name`: Cosmos DB storedProcedure name."]
         pub fn delete_sql_stored_procedure(
             &self,
             subscription_id: impl Into<String>,
@@ -3001,6 +3411,14 @@ pub mod sql_resources {
                 stored_procedure_name: stored_procedure_name.into(),
             }
         }
+        #[doc = "Lists the SQL userDefinedFunction under an existing Azure Cosmos DB database account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
+        #[doc = "* `database_name`: Cosmos DB database name."]
+        #[doc = "* `container_name`: Cosmos DB container name."]
         pub fn list_sql_user_defined_functions(
             &self,
             subscription_id: impl Into<String>,
@@ -3018,6 +3436,15 @@ pub mod sql_resources {
                 container_name: container_name.into(),
             }
         }
+        #[doc = "Gets the SQL userDefinedFunction under an existing Azure Cosmos DB database account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
+        #[doc = "* `database_name`: Cosmos DB database name."]
+        #[doc = "* `container_name`: Cosmos DB container name."]
+        #[doc = "* `user_defined_function_name`: Cosmos DB userDefinedFunction name."]
         pub fn get_sql_user_defined_function(
             &self,
             subscription_id: impl Into<String>,
@@ -3037,6 +3464,16 @@ pub mod sql_resources {
                 user_defined_function_name: user_defined_function_name.into(),
             }
         }
+        #[doc = "Create or update an Azure Cosmos DB SQL userDefinedFunction"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
+        #[doc = "* `database_name`: Cosmos DB database name."]
+        #[doc = "* `container_name`: Cosmos DB container name."]
+        #[doc = "* `user_defined_function_name`: Cosmos DB userDefinedFunction name."]
+        #[doc = "* `create_update_sql_user_defined_function_parameters`: The parameters to provide for the current SQL userDefinedFunction."]
         pub fn create_update_sql_user_defined_function(
             &self,
             subscription_id: impl Into<String>,
@@ -3058,6 +3495,15 @@ pub mod sql_resources {
                 create_update_sql_user_defined_function_parameters: create_update_sql_user_defined_function_parameters.into(),
             }
         }
+        #[doc = "Deletes an existing Azure Cosmos DB SQL userDefinedFunction."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
+        #[doc = "* `database_name`: Cosmos DB database name."]
+        #[doc = "* `container_name`: Cosmos DB container name."]
+        #[doc = "* `user_defined_function_name`: Cosmos DB userDefinedFunction name."]
         pub fn delete_sql_user_defined_function(
             &self,
             subscription_id: impl Into<String>,
@@ -3077,6 +3523,14 @@ pub mod sql_resources {
                 user_defined_function_name: user_defined_function_name.into(),
             }
         }
+        #[doc = "Lists the SQL trigger under an existing Azure Cosmos DB database account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
+        #[doc = "* `database_name`: Cosmos DB database name."]
+        #[doc = "* `container_name`: Cosmos DB container name."]
         pub fn list_sql_triggers(
             &self,
             subscription_id: impl Into<String>,
@@ -3094,6 +3548,15 @@ pub mod sql_resources {
                 container_name: container_name.into(),
             }
         }
+        #[doc = "Gets the SQL trigger under an existing Azure Cosmos DB database account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
+        #[doc = "* `database_name`: Cosmos DB database name."]
+        #[doc = "* `container_name`: Cosmos DB container name."]
+        #[doc = "* `trigger_name`: Cosmos DB trigger name."]
         pub fn get_sql_trigger(
             &self,
             subscription_id: impl Into<String>,
@@ -3113,6 +3576,16 @@ pub mod sql_resources {
                 trigger_name: trigger_name.into(),
             }
         }
+        #[doc = "Create or update an Azure Cosmos DB SQL trigger"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
+        #[doc = "* `database_name`: Cosmos DB database name."]
+        #[doc = "* `container_name`: Cosmos DB container name."]
+        #[doc = "* `trigger_name`: Cosmos DB trigger name."]
+        #[doc = "* `create_update_sql_trigger_parameters`: The parameters to provide for the current SQL trigger."]
         pub fn create_update_sql_trigger(
             &self,
             subscription_id: impl Into<String>,
@@ -3134,6 +3607,15 @@ pub mod sql_resources {
                 create_update_sql_trigger_parameters: create_update_sql_trigger_parameters.into(),
             }
         }
+        #[doc = "Deletes an existing Azure Cosmos DB SQL trigger."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
+        #[doc = "* `database_name`: Cosmos DB database name."]
+        #[doc = "* `container_name`: Cosmos DB container name."]
+        #[doc = "* `trigger_name`: Cosmos DB trigger name."]
         pub fn delete_sql_trigger(
             &self,
             subscription_id: impl Into<String>,
@@ -3153,6 +3635,15 @@ pub mod sql_resources {
                 trigger_name: trigger_name.into(),
             }
         }
+        #[doc = "Retrieves continuous backup information for a container resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
+        #[doc = "* `database_name`: Cosmos DB database name."]
+        #[doc = "* `container_name`: Cosmos DB container name."]
+        #[doc = "* `location`: The name of the continuous backup restore location."]
         pub fn retrieve_continuous_backup_information(
             &self,
             subscription_id: impl Into<String>,
@@ -3172,6 +3663,13 @@ pub mod sql_resources {
                 location: location.into(),
             }
         }
+        #[doc = "Retrieves the properties of an existing Azure Cosmos DB SQL Role Definition with the given Id."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `role_definition_id`: The GUID for the Role Definition."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
         pub fn get_sql_role_definition(
             &self,
             role_definition_id: impl Into<String>,
@@ -3187,6 +3685,14 @@ pub mod sql_resources {
                 account_name: account_name.into(),
             }
         }
+        #[doc = "Creates or updates an Azure Cosmos DB SQL Role Definition."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `role_definition_id`: The GUID for the Role Definition."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
+        #[doc = "* `create_update_sql_role_definition_parameters`: The properties required to create or update a Role Definition."]
         pub fn create_update_sql_role_definition(
             &self,
             role_definition_id: impl Into<String>,
@@ -3204,6 +3710,13 @@ pub mod sql_resources {
                 create_update_sql_role_definition_parameters: create_update_sql_role_definition_parameters.into(),
             }
         }
+        #[doc = "Deletes an existing Azure Cosmos DB SQL Role Definition."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `role_definition_id`: The GUID for the Role Definition."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
         pub fn delete_sql_role_definition(
             &self,
             role_definition_id: impl Into<String>,
@@ -3219,6 +3732,12 @@ pub mod sql_resources {
                 account_name: account_name.into(),
             }
         }
+        #[doc = "Retrieves the list of all Azure Cosmos DB SQL Role Definitions."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
         pub fn list_sql_role_definitions(
             &self,
             subscription_id: impl Into<String>,
@@ -3232,6 +3751,13 @@ pub mod sql_resources {
                 account_name: account_name.into(),
             }
         }
+        #[doc = "Retrieves the properties of an existing Azure Cosmos DB SQL Role Assignment with the given Id."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `role_assignment_id`: The GUID for the Role Assignment."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
         pub fn get_sql_role_assignment(
             &self,
             role_assignment_id: impl Into<String>,
@@ -3247,6 +3773,14 @@ pub mod sql_resources {
                 account_name: account_name.into(),
             }
         }
+        #[doc = "Creates or updates an Azure Cosmos DB SQL Role Assignment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `role_assignment_id`: The GUID for the Role Assignment."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
+        #[doc = "* `create_update_sql_role_assignment_parameters`: The properties required to create or update a Role Assignment."]
         pub fn create_update_sql_role_assignment(
             &self,
             role_assignment_id: impl Into<String>,
@@ -3264,6 +3798,13 @@ pub mod sql_resources {
                 create_update_sql_role_assignment_parameters: create_update_sql_role_assignment_parameters.into(),
             }
         }
+        #[doc = "Deletes an existing Azure Cosmos DB SQL Role Assignment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `role_assignment_id`: The GUID for the Role Assignment."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
         pub fn delete_sql_role_assignment(
             &self,
             role_assignment_id: impl Into<String>,
@@ -3279,6 +3820,12 @@ pub mod sql_resources {
                 account_name: account_name.into(),
             }
         }
+        #[doc = "Retrieves the list of all Azure Cosmos DB SQL Role Assignments."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
         pub fn list_sql_role_assignments(
             &self,
             subscription_id: impl Into<String>,
@@ -5235,6 +5782,12 @@ pub mod mongo_db_resources {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists the MongoDB databases under an existing Azure Cosmos DB database account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
         pub fn list_mongo_db_databases(
             &self,
             subscription_id: impl Into<String>,
@@ -5248,6 +5801,13 @@ pub mod mongo_db_resources {
                 account_name: account_name.into(),
             }
         }
+        #[doc = "Gets the MongoDB databases under an existing Azure Cosmos DB database account with the provided name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
+        #[doc = "* `database_name`: Cosmos DB database name."]
         pub fn get_mongo_db_database(
             &self,
             subscription_id: impl Into<String>,
@@ -5263,6 +5823,14 @@ pub mod mongo_db_resources {
                 database_name: database_name.into(),
             }
         }
+        #[doc = "Create or updates Azure Cosmos DB MongoDB database"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
+        #[doc = "* `database_name`: Cosmos DB database name."]
+        #[doc = "* `create_update_mongo_db_database_parameters`: The parameters to provide for the current MongoDB database."]
         pub fn create_update_mongo_db_database(
             &self,
             subscription_id: impl Into<String>,
@@ -5280,6 +5848,13 @@ pub mod mongo_db_resources {
                 create_update_mongo_db_database_parameters: create_update_mongo_db_database_parameters.into(),
             }
         }
+        #[doc = "Deletes an existing Azure Cosmos DB MongoDB database."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
+        #[doc = "* `database_name`: Cosmos DB database name."]
         pub fn delete_mongo_db_database(
             &self,
             subscription_id: impl Into<String>,
@@ -5295,6 +5870,13 @@ pub mod mongo_db_resources {
                 database_name: database_name.into(),
             }
         }
+        #[doc = "Gets the RUs per second of the MongoDB database under an existing Azure Cosmos DB database account with the provided name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
+        #[doc = "* `database_name`: Cosmos DB database name."]
         pub fn get_mongo_db_database_throughput(
             &self,
             subscription_id: impl Into<String>,
@@ -5310,6 +5892,14 @@ pub mod mongo_db_resources {
                 database_name: database_name.into(),
             }
         }
+        #[doc = "Update RUs per second of the an Azure Cosmos DB MongoDB database"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
+        #[doc = "* `database_name`: Cosmos DB database name."]
+        #[doc = "* `update_throughput_parameters`: The RUs per second of the parameters to provide for the current MongoDB database."]
         pub fn update_mongo_db_database_throughput(
             &self,
             subscription_id: impl Into<String>,
@@ -5327,6 +5917,13 @@ pub mod mongo_db_resources {
                 update_throughput_parameters: update_throughput_parameters.into(),
             }
         }
+        #[doc = "Migrate an Azure Cosmos DB MongoDB database from manual throughput to autoscale"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
+        #[doc = "* `database_name`: Cosmos DB database name."]
         pub fn migrate_mongo_db_database_to_autoscale(
             &self,
             subscription_id: impl Into<String>,
@@ -5342,6 +5939,13 @@ pub mod mongo_db_resources {
                 database_name: database_name.into(),
             }
         }
+        #[doc = "Migrate an Azure Cosmos DB MongoDB database from autoscale to manual throughput"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
+        #[doc = "* `database_name`: Cosmos DB database name."]
         pub fn migrate_mongo_db_database_to_manual_throughput(
             &self,
             subscription_id: impl Into<String>,
@@ -5357,6 +5961,13 @@ pub mod mongo_db_resources {
                 database_name: database_name.into(),
             }
         }
+        #[doc = "Lists the MongoDB collection under an existing Azure Cosmos DB database account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
+        #[doc = "* `database_name`: Cosmos DB database name."]
         pub fn list_mongo_db_collections(
             &self,
             subscription_id: impl Into<String>,
@@ -5372,6 +5983,14 @@ pub mod mongo_db_resources {
                 database_name: database_name.into(),
             }
         }
+        #[doc = "Gets the MongoDB collection under an existing Azure Cosmos DB database account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
+        #[doc = "* `database_name`: Cosmos DB database name."]
+        #[doc = "* `collection_name`: Cosmos DB collection name."]
         pub fn get_mongo_db_collection(
             &self,
             subscription_id: impl Into<String>,
@@ -5389,6 +6008,15 @@ pub mod mongo_db_resources {
                 collection_name: collection_name.into(),
             }
         }
+        #[doc = "Create or update an Azure Cosmos DB MongoDB Collection"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
+        #[doc = "* `database_name`: Cosmos DB database name."]
+        #[doc = "* `collection_name`: Cosmos DB collection name."]
+        #[doc = "* `create_update_mongo_db_collection_parameters`: The parameters to provide for the current MongoDB Collection."]
         pub fn create_update_mongo_db_collection(
             &self,
             subscription_id: impl Into<String>,
@@ -5408,6 +6036,14 @@ pub mod mongo_db_resources {
                 create_update_mongo_db_collection_parameters: create_update_mongo_db_collection_parameters.into(),
             }
         }
+        #[doc = "Deletes an existing Azure Cosmos DB MongoDB Collection."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
+        #[doc = "* `database_name`: Cosmos DB database name."]
+        #[doc = "* `collection_name`: Cosmos DB collection name."]
         pub fn delete_mongo_db_collection(
             &self,
             subscription_id: impl Into<String>,
@@ -5425,6 +6061,14 @@ pub mod mongo_db_resources {
                 collection_name: collection_name.into(),
             }
         }
+        #[doc = "Gets the RUs per second of the MongoDB collection under an existing Azure Cosmos DB database account with the provided name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
+        #[doc = "* `database_name`: Cosmos DB database name."]
+        #[doc = "* `collection_name`: Cosmos DB collection name."]
         pub fn get_mongo_db_collection_throughput(
             &self,
             subscription_id: impl Into<String>,
@@ -5442,6 +6086,15 @@ pub mod mongo_db_resources {
                 collection_name: collection_name.into(),
             }
         }
+        #[doc = "Update the RUs per second of an Azure Cosmos DB MongoDB collection"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
+        #[doc = "* `database_name`: Cosmos DB database name."]
+        #[doc = "* `collection_name`: Cosmos DB collection name."]
+        #[doc = "* `update_throughput_parameters`: The RUs per second of the parameters to provide for the current MongoDB collection."]
         pub fn update_mongo_db_collection_throughput(
             &self,
             subscription_id: impl Into<String>,
@@ -5461,6 +6114,14 @@ pub mod mongo_db_resources {
                 update_throughput_parameters: update_throughput_parameters.into(),
             }
         }
+        #[doc = "Migrate an Azure Cosmos DB MongoDB collection from manual throughput to autoscale"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
+        #[doc = "* `database_name`: Cosmos DB database name."]
+        #[doc = "* `collection_name`: Cosmos DB collection name."]
         pub fn migrate_mongo_db_collection_to_autoscale(
             &self,
             subscription_id: impl Into<String>,
@@ -5478,6 +6139,14 @@ pub mod mongo_db_resources {
                 collection_name: collection_name.into(),
             }
         }
+        #[doc = "Migrate an Azure Cosmos DB MongoDB collection from autoscale to manual throughput"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
+        #[doc = "* `database_name`: Cosmos DB database name."]
+        #[doc = "* `collection_name`: Cosmos DB collection name."]
         pub fn migrate_mongo_db_collection_to_manual_throughput(
             &self,
             subscription_id: impl Into<String>,
@@ -6352,6 +7021,12 @@ pub mod table_resources {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists the Tables under an existing Azure Cosmos DB database account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
         pub fn list_tables(
             &self,
             subscription_id: impl Into<String>,
@@ -6365,6 +7040,13 @@ pub mod table_resources {
                 account_name: account_name.into(),
             }
         }
+        #[doc = "Gets the Tables under an existing Azure Cosmos DB database account with the provided name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
+        #[doc = "* `table_name`: Cosmos DB table name."]
         pub fn get_table(
             &self,
             subscription_id: impl Into<String>,
@@ -6380,6 +7062,14 @@ pub mod table_resources {
                 table_name: table_name.into(),
             }
         }
+        #[doc = "Create or update an Azure Cosmos DB Table"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
+        #[doc = "* `table_name`: Cosmos DB table name."]
+        #[doc = "* `create_update_table_parameters`: The parameters to provide for the current Table."]
         pub fn create_update_table(
             &self,
             subscription_id: impl Into<String>,
@@ -6397,6 +7087,13 @@ pub mod table_resources {
                 create_update_table_parameters: create_update_table_parameters.into(),
             }
         }
+        #[doc = "Deletes an existing Azure Cosmos DB Table."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
+        #[doc = "* `table_name`: Cosmos DB table name."]
         pub fn delete_table(
             &self,
             subscription_id: impl Into<String>,
@@ -6412,6 +7109,13 @@ pub mod table_resources {
                 table_name: table_name.into(),
             }
         }
+        #[doc = "Gets the RUs per second of the Table under an existing Azure Cosmos DB database account with the provided name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
+        #[doc = "* `table_name`: Cosmos DB table name."]
         pub fn get_table_throughput(
             &self,
             subscription_id: impl Into<String>,
@@ -6427,6 +7131,14 @@ pub mod table_resources {
                 table_name: table_name.into(),
             }
         }
+        #[doc = "Update RUs per second of an Azure Cosmos DB Table"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
+        #[doc = "* `table_name`: Cosmos DB table name."]
+        #[doc = "* `update_throughput_parameters`: The parameters to provide for the RUs per second of the current Table."]
         pub fn update_table_throughput(
             &self,
             subscription_id: impl Into<String>,
@@ -6444,6 +7156,13 @@ pub mod table_resources {
                 update_throughput_parameters: update_throughput_parameters.into(),
             }
         }
+        #[doc = "Migrate an Azure Cosmos DB Table from manual throughput to autoscale"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
+        #[doc = "* `table_name`: Cosmos DB table name."]
         pub fn migrate_table_to_autoscale(
             &self,
             subscription_id: impl Into<String>,
@@ -6459,6 +7178,13 @@ pub mod table_resources {
                 table_name: table_name.into(),
             }
         }
+        #[doc = "Migrate an Azure Cosmos DB Table from autoscale to manual throughput"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
+        #[doc = "* `table_name`: Cosmos DB table name."]
         pub fn migrate_table_to_manual_throughput(
             &self,
             subscription_id: impl Into<String>,
@@ -6915,6 +7641,12 @@ pub mod cassandra_resources {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists the Cassandra keyspaces under an existing Azure Cosmos DB database account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
         pub fn list_cassandra_keyspaces(
             &self,
             subscription_id: impl Into<String>,
@@ -6928,6 +7660,13 @@ pub mod cassandra_resources {
                 account_name: account_name.into(),
             }
         }
+        #[doc = "Gets the Cassandra keyspaces under an existing Azure Cosmos DB database account with the provided name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
+        #[doc = "* `keyspace_name`: Cosmos DB keyspace name."]
         pub fn get_cassandra_keyspace(
             &self,
             subscription_id: impl Into<String>,
@@ -6943,6 +7682,14 @@ pub mod cassandra_resources {
                 keyspace_name: keyspace_name.into(),
             }
         }
+        #[doc = "Create or update an Azure Cosmos DB Cassandra keyspace"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
+        #[doc = "* `keyspace_name`: Cosmos DB keyspace name."]
+        #[doc = "* `create_update_cassandra_keyspace_parameters`: The parameters to provide for the current Cassandra keyspace."]
         pub fn create_update_cassandra_keyspace(
             &self,
             subscription_id: impl Into<String>,
@@ -6960,6 +7707,13 @@ pub mod cassandra_resources {
                 create_update_cassandra_keyspace_parameters: create_update_cassandra_keyspace_parameters.into(),
             }
         }
+        #[doc = "Deletes an existing Azure Cosmos DB Cassandra keyspace."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
+        #[doc = "* `keyspace_name`: Cosmos DB keyspace name."]
         pub fn delete_cassandra_keyspace(
             &self,
             subscription_id: impl Into<String>,
@@ -6975,6 +7729,13 @@ pub mod cassandra_resources {
                 keyspace_name: keyspace_name.into(),
             }
         }
+        #[doc = "Gets the RUs per second of the Cassandra Keyspace under an existing Azure Cosmos DB database account with the provided name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
+        #[doc = "* `keyspace_name`: Cosmos DB keyspace name."]
         pub fn get_cassandra_keyspace_throughput(
             &self,
             subscription_id: impl Into<String>,
@@ -6990,6 +7751,14 @@ pub mod cassandra_resources {
                 keyspace_name: keyspace_name.into(),
             }
         }
+        #[doc = "Update RUs per second of an Azure Cosmos DB Cassandra Keyspace"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
+        #[doc = "* `keyspace_name`: Cosmos DB keyspace name."]
+        #[doc = "* `update_throughput_parameters`: The RUs per second of the parameters to provide for the current Cassandra Keyspace."]
         pub fn update_cassandra_keyspace_throughput(
             &self,
             subscription_id: impl Into<String>,
@@ -7007,6 +7776,13 @@ pub mod cassandra_resources {
                 update_throughput_parameters: update_throughput_parameters.into(),
             }
         }
+        #[doc = "Migrate an Azure Cosmos DB Cassandra Keyspace from manual throughput to autoscale"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
+        #[doc = "* `keyspace_name`: Cosmos DB keyspace name."]
         pub fn migrate_cassandra_keyspace_to_autoscale(
             &self,
             subscription_id: impl Into<String>,
@@ -7022,6 +7798,13 @@ pub mod cassandra_resources {
                 keyspace_name: keyspace_name.into(),
             }
         }
+        #[doc = "Migrate an Azure Cosmos DB Cassandra Keyspace from autoscale to manual throughput"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
+        #[doc = "* `keyspace_name`: Cosmos DB keyspace name."]
         pub fn migrate_cassandra_keyspace_to_manual_throughput(
             &self,
             subscription_id: impl Into<String>,
@@ -7037,6 +7820,13 @@ pub mod cassandra_resources {
                 keyspace_name: keyspace_name.into(),
             }
         }
+        #[doc = "Lists the Cassandra table under an existing Azure Cosmos DB database account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
+        #[doc = "* `keyspace_name`: Cosmos DB keyspace name."]
         pub fn list_cassandra_tables(
             &self,
             subscription_id: impl Into<String>,
@@ -7052,6 +7842,14 @@ pub mod cassandra_resources {
                 keyspace_name: keyspace_name.into(),
             }
         }
+        #[doc = "Gets the Cassandra table under an existing Azure Cosmos DB database account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
+        #[doc = "* `keyspace_name`: Cosmos DB keyspace name."]
+        #[doc = "* `table_name`: Cosmos DB table name."]
         pub fn get_cassandra_table(
             &self,
             subscription_id: impl Into<String>,
@@ -7069,6 +7867,15 @@ pub mod cassandra_resources {
                 table_name: table_name.into(),
             }
         }
+        #[doc = "Create or update an Azure Cosmos DB Cassandra Table"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
+        #[doc = "* `keyspace_name`: Cosmos DB keyspace name."]
+        #[doc = "* `table_name`: Cosmos DB table name."]
+        #[doc = "* `create_update_cassandra_table_parameters`: The parameters to provide for the current Cassandra Table."]
         pub fn create_update_cassandra_table(
             &self,
             subscription_id: impl Into<String>,
@@ -7088,6 +7895,14 @@ pub mod cassandra_resources {
                 create_update_cassandra_table_parameters: create_update_cassandra_table_parameters.into(),
             }
         }
+        #[doc = "Deletes an existing Azure Cosmos DB Cassandra table."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
+        #[doc = "* `keyspace_name`: Cosmos DB keyspace name."]
+        #[doc = "* `table_name`: Cosmos DB table name."]
         pub fn delete_cassandra_table(
             &self,
             subscription_id: impl Into<String>,
@@ -7105,6 +7920,14 @@ pub mod cassandra_resources {
                 table_name: table_name.into(),
             }
         }
+        #[doc = "Gets the RUs per second of the Cassandra table under an existing Azure Cosmos DB database account with the provided name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
+        #[doc = "* `keyspace_name`: Cosmos DB keyspace name."]
+        #[doc = "* `table_name`: Cosmos DB table name."]
         pub fn get_cassandra_table_throughput(
             &self,
             subscription_id: impl Into<String>,
@@ -7122,6 +7945,15 @@ pub mod cassandra_resources {
                 table_name: table_name.into(),
             }
         }
+        #[doc = "Update RUs per second of an Azure Cosmos DB Cassandra table"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
+        #[doc = "* `keyspace_name`: Cosmos DB keyspace name."]
+        #[doc = "* `table_name`: Cosmos DB table name."]
+        #[doc = "* `update_throughput_parameters`: The RUs per second of the parameters to provide for the current Cassandra table."]
         pub fn update_cassandra_table_throughput(
             &self,
             subscription_id: impl Into<String>,
@@ -7141,6 +7973,14 @@ pub mod cassandra_resources {
                 update_throughput_parameters: update_throughput_parameters.into(),
             }
         }
+        #[doc = "Migrate an Azure Cosmos DB Cassandra table from manual throughput to autoscale"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
+        #[doc = "* `keyspace_name`: Cosmos DB keyspace name."]
+        #[doc = "* `table_name`: Cosmos DB table name."]
         pub fn migrate_cassandra_table_to_autoscale(
             &self,
             subscription_id: impl Into<String>,
@@ -7158,6 +7998,14 @@ pub mod cassandra_resources {
                 table_name: table_name.into(),
             }
         }
+        #[doc = "Migrate an Azure Cosmos DB Cassandra table from autoscale to manual throughput"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
+        #[doc = "* `keyspace_name`: Cosmos DB keyspace name."]
+        #[doc = "* `table_name`: Cosmos DB table name."]
         pub fn migrate_cassandra_table_to_manual_throughput(
             &self,
             subscription_id: impl Into<String>,
@@ -8011,6 +8859,12 @@ pub mod gremlin_resources {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists the Gremlin databases under an existing Azure Cosmos DB database account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
         pub fn list_gremlin_databases(
             &self,
             subscription_id: impl Into<String>,
@@ -8024,6 +8878,13 @@ pub mod gremlin_resources {
                 account_name: account_name.into(),
             }
         }
+        #[doc = "Gets the Gremlin databases under an existing Azure Cosmos DB database account with the provided name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
+        #[doc = "* `database_name`: Cosmos DB database name."]
         pub fn get_gremlin_database(
             &self,
             subscription_id: impl Into<String>,
@@ -8039,6 +8900,14 @@ pub mod gremlin_resources {
                 database_name: database_name.into(),
             }
         }
+        #[doc = "Create or update an Azure Cosmos DB Gremlin database"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
+        #[doc = "* `database_name`: Cosmos DB database name."]
+        #[doc = "* `create_update_gremlin_database_parameters`: The parameters to provide for the current Gremlin database."]
         pub fn create_update_gremlin_database(
             &self,
             subscription_id: impl Into<String>,
@@ -8056,6 +8925,13 @@ pub mod gremlin_resources {
                 create_update_gremlin_database_parameters: create_update_gremlin_database_parameters.into(),
             }
         }
+        #[doc = "Deletes an existing Azure Cosmos DB Gremlin database."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
+        #[doc = "* `database_name`: Cosmos DB database name."]
         pub fn delete_gremlin_database(
             &self,
             subscription_id: impl Into<String>,
@@ -8071,6 +8947,13 @@ pub mod gremlin_resources {
                 database_name: database_name.into(),
             }
         }
+        #[doc = "Gets the RUs per second of the Gremlin database under an existing Azure Cosmos DB database account with the provided name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
+        #[doc = "* `database_name`: Cosmos DB database name."]
         pub fn get_gremlin_database_throughput(
             &self,
             subscription_id: impl Into<String>,
@@ -8086,6 +8969,14 @@ pub mod gremlin_resources {
                 database_name: database_name.into(),
             }
         }
+        #[doc = "Update RUs per second of an Azure Cosmos DB Gremlin database"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
+        #[doc = "* `database_name`: Cosmos DB database name."]
+        #[doc = "* `update_throughput_parameters`: The RUs per second of the parameters to provide for the current Gremlin database."]
         pub fn update_gremlin_database_throughput(
             &self,
             subscription_id: impl Into<String>,
@@ -8103,6 +8994,13 @@ pub mod gremlin_resources {
                 update_throughput_parameters: update_throughput_parameters.into(),
             }
         }
+        #[doc = "Migrate an Azure Cosmos DB Gremlin database from manual throughput to autoscale"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
+        #[doc = "* `database_name`: Cosmos DB database name."]
         pub fn migrate_gremlin_database_to_autoscale(
             &self,
             subscription_id: impl Into<String>,
@@ -8118,6 +9016,13 @@ pub mod gremlin_resources {
                 database_name: database_name.into(),
             }
         }
+        #[doc = "Migrate an Azure Cosmos DB Gremlin database from autoscale to manual throughput"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
+        #[doc = "* `database_name`: Cosmos DB database name."]
         pub fn migrate_gremlin_database_to_manual_throughput(
             &self,
             subscription_id: impl Into<String>,
@@ -8133,6 +9038,13 @@ pub mod gremlin_resources {
                 database_name: database_name.into(),
             }
         }
+        #[doc = "Lists the Gremlin graph under an existing Azure Cosmos DB database account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
+        #[doc = "* `database_name`: Cosmos DB database name."]
         pub fn list_gremlin_graphs(
             &self,
             subscription_id: impl Into<String>,
@@ -8148,6 +9060,14 @@ pub mod gremlin_resources {
                 database_name: database_name.into(),
             }
         }
+        #[doc = "Gets the Gremlin graph under an existing Azure Cosmos DB database account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
+        #[doc = "* `database_name`: Cosmos DB database name."]
+        #[doc = "* `graph_name`: Cosmos DB graph name."]
         pub fn get_gremlin_graph(
             &self,
             subscription_id: impl Into<String>,
@@ -8165,6 +9085,15 @@ pub mod gremlin_resources {
                 graph_name: graph_name.into(),
             }
         }
+        #[doc = "Create or update an Azure Cosmos DB Gremlin graph"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
+        #[doc = "* `database_name`: Cosmos DB database name."]
+        #[doc = "* `graph_name`: Cosmos DB graph name."]
+        #[doc = "* `create_update_gremlin_graph_parameters`: The parameters to provide for the current Gremlin graph."]
         pub fn create_update_gremlin_graph(
             &self,
             subscription_id: impl Into<String>,
@@ -8184,6 +9113,14 @@ pub mod gremlin_resources {
                 create_update_gremlin_graph_parameters: create_update_gremlin_graph_parameters.into(),
             }
         }
+        #[doc = "Deletes an existing Azure Cosmos DB Gremlin graph."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
+        #[doc = "* `database_name`: Cosmos DB database name."]
+        #[doc = "* `graph_name`: Cosmos DB graph name."]
         pub fn delete_gremlin_graph(
             &self,
             subscription_id: impl Into<String>,
@@ -8201,6 +9138,14 @@ pub mod gremlin_resources {
                 graph_name: graph_name.into(),
             }
         }
+        #[doc = "Gets the Gremlin graph throughput under an existing Azure Cosmos DB database account with the provided name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
+        #[doc = "* `database_name`: Cosmos DB database name."]
+        #[doc = "* `graph_name`: Cosmos DB graph name."]
         pub fn get_gremlin_graph_throughput(
             &self,
             subscription_id: impl Into<String>,
@@ -8218,6 +9163,15 @@ pub mod gremlin_resources {
                 graph_name: graph_name.into(),
             }
         }
+        #[doc = "Update RUs per second of an Azure Cosmos DB Gremlin graph"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
+        #[doc = "* `database_name`: Cosmos DB database name."]
+        #[doc = "* `graph_name`: Cosmos DB graph name."]
+        #[doc = "* `update_throughput_parameters`: The RUs per second of the parameters to provide for the current Gremlin graph."]
         pub fn update_gremlin_graph_throughput(
             &self,
             subscription_id: impl Into<String>,
@@ -8237,6 +9191,14 @@ pub mod gremlin_resources {
                 update_throughput_parameters: update_throughput_parameters.into(),
             }
         }
+        #[doc = "Migrate an Azure Cosmos DB Gremlin graph from manual throughput to autoscale"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
+        #[doc = "* `database_name`: Cosmos DB database name."]
+        #[doc = "* `graph_name`: Cosmos DB graph name."]
         pub fn migrate_gremlin_graph_to_autoscale(
             &self,
             subscription_id: impl Into<String>,
@@ -8254,6 +9216,14 @@ pub mod gremlin_resources {
                 graph_name: graph_name.into(),
             }
         }
+        #[doc = "Migrate an Azure Cosmos DB Gremlin graph from autoscale to manual throughput"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
+        #[doc = "* `database_name`: Cosmos DB database name."]
+        #[doc = "* `graph_name`: Cosmos DB graph name."]
         pub fn migrate_gremlin_graph_to_manual_throughput(
             &self,
             subscription_id: impl Into<String>,
@@ -9128,6 +10098,11 @@ pub mod restorable_database_accounts {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all the restorable Azure Cosmos DB database accounts available under the subscription and in a region.  This call requires 'Microsoft.DocumentDB/locations/restorableDatabaseAccounts/read' permission."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `location`: Cosmos DB region, with spaces between words and each word capitalized."]
         pub fn list_by_location(&self, subscription_id: impl Into<String>, location: impl Into<String>) -> list_by_location::Builder {
             list_by_location::Builder {
                 client: self.0.clone(),
@@ -9135,12 +10110,22 @@ pub mod restorable_database_accounts {
                 location: location.into(),
             }
         }
+        #[doc = "Lists all the restorable Azure Cosmos DB database accounts available under the subscription. This call requires 'Microsoft.DocumentDB/locations/restorableDatabaseAccounts/read' permission."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Retrieves the properties of an existing Azure Cosmos DB restorable database account.  This call requires 'Microsoft.DocumentDB/locations/restorableDatabaseAccounts/read/*' permission."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `location`: Cosmos DB region, with spaces between words and each word capitalized."]
+        #[doc = "* `instance_id`: The instanceId GUID of a restorable database account."]
         pub fn get_by_location(
             &self,
             subscription_id: impl Into<String>,
@@ -9309,12 +10294,21 @@ pub mod restorable_database_accounts {
     }
 }
 impl Client {
+    #[doc = "List Cosmos DB locations and their properties"]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `subscription_id`: The ID of the target subscription."]
     pub fn location_list(&self, subscription_id: impl Into<String>) -> location_list::Builder {
         location_list::Builder {
             client: self.clone(),
             subscription_id: subscription_id.into(),
         }
     }
+    #[doc = "Get the properties of an existing Cosmos DB location"]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `subscription_id`: The ID of the target subscription."]
+    #[doc = "* `location`: Cosmos DB region, with spaces between words and each word capitalized."]
     pub fn location_get(&self, subscription_id: impl Into<String>, location: impl Into<String>) -> location_get::Builder {
         location_get::Builder {
             client: self.clone(),
@@ -9426,6 +10420,12 @@ pub mod private_endpoint_connections {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List all private endpoint connections on a Cosmos DB account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
         pub fn list_by_database_account(
             &self,
             subscription_id: impl Into<String>,
@@ -9439,6 +10439,13 @@ pub mod private_endpoint_connections {
                 account_name: account_name.into(),
             }
         }
+        #[doc = "Gets a private endpoint connection."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
+        #[doc = "* `private_endpoint_connection_name`: The name of the private endpoint connection."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -9454,6 +10461,13 @@ pub mod private_endpoint_connections {
                 private_endpoint_connection_name: private_endpoint_connection_name.into(),
             }
         }
+        #[doc = "Approve or reject a private endpoint connection with a given name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
+        #[doc = "* `private_endpoint_connection_name`: The name of the private endpoint connection."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -9471,6 +10485,13 @@ pub mod private_endpoint_connections {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Deletes a private endpoint connection with a given name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
+        #[doc = "* `private_endpoint_connection_name`: The name of the private endpoint connection."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -9690,12 +10711,21 @@ pub mod cassandra_clusters {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List all managed Cassandra clusters in this subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "List all managed Cassandra clusters in this resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -9707,6 +10737,12 @@ pub mod cassandra_clusters {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Get the properties of a managed Cassandra cluster."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `cluster_name`: Managed Cassandra cluster name."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -9720,6 +10756,13 @@ pub mod cassandra_clusters {
                 cluster_name: cluster_name.into(),
             }
         }
+        #[doc = "Create or update a managed Cassandra cluster. When updating, you must specify all writable properties. To update only some properties, use PATCH."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `cluster_name`: Managed Cassandra cluster name."]
+        #[doc = "* `body`: The properties specifying the desired state of the managed Cassandra cluster."]
         pub fn create_update(
             &self,
             subscription_id: impl Into<String>,
@@ -9735,6 +10778,13 @@ pub mod cassandra_clusters {
                 body: body.into(),
             }
         }
+        #[doc = "Updates some of the properties of a managed Cassandra cluster."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `cluster_name`: Managed Cassandra cluster name."]
+        #[doc = "* `body`: Parameters to provide for specifying the managed Cassandra cluster."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -9750,6 +10800,12 @@ pub mod cassandra_clusters {
                 body: body.into(),
             }
         }
+        #[doc = "Deletes a managed Cassandra cluster."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `cluster_name`: Managed Cassandra cluster name."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -9763,6 +10819,13 @@ pub mod cassandra_clusters {
                 cluster_name: cluster_name.into(),
             }
         }
+        #[doc = "Request that repair begin on this cluster as soon as possible."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `cluster_name`: Managed Cassandra cluster name."]
+        #[doc = "* `body`: Specification of what keyspaces and tables to run repair on."]
         pub fn request_repair(
             &self,
             subscription_id: impl Into<String>,
@@ -9778,6 +10841,12 @@ pub mod cassandra_clusters {
                 body: body.into(),
             }
         }
+        #[doc = "Request the status of all nodes in the cluster (as returned by 'nodetool status')."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `cluster_name`: Managed Cassandra cluster name."]
         pub fn fetch_node_status(
             &self,
             subscription_id: impl Into<String>,
@@ -9791,6 +10860,12 @@ pub mod cassandra_clusters {
                 cluster_name: cluster_name.into(),
             }
         }
+        #[doc = "List the backups of this cluster that are available to restore."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `cluster_name`: Managed Cassandra cluster name."]
         pub fn list_backups(
             &self,
             subscription_id: impl Into<String>,
@@ -9804,6 +10879,13 @@ pub mod cassandra_clusters {
                 cluster_name: cluster_name.into(),
             }
         }
+        #[doc = "Get the properties of an individual backup of this cluster that is available to restore."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `cluster_name`: Managed Cassandra cluster name."]
+        #[doc = "* `backup_id`: Id of a restorable backup of a Cassandra cluster."]
         pub fn get_backup(
             &self,
             subscription_id: impl Into<String>,
@@ -10376,6 +11458,12 @@ pub mod cassandra_data_centers {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List all data centers in a particular managed Cassandra cluster."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `cluster_name`: Managed Cassandra cluster name."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -10389,6 +11477,13 @@ pub mod cassandra_data_centers {
                 cluster_name: cluster_name.into(),
             }
         }
+        #[doc = "Get the properties of a managed Cassandra data center."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `cluster_name`: Managed Cassandra cluster name."]
+        #[doc = "* `data_center_name`: Data center name in a managed Cassandra cluster."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -10404,6 +11499,14 @@ pub mod cassandra_data_centers {
                 data_center_name: data_center_name.into(),
             }
         }
+        #[doc = "Create or update a managed Cassandra data center. When updating, overwrite all properties. To update only some properties, use PATCH."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `cluster_name`: Managed Cassandra cluster name."]
+        #[doc = "* `data_center_name`: Data center name in a managed Cassandra cluster."]
+        #[doc = "* `body`: Parameters specifying the managed Cassandra data center."]
         pub fn create_update(
             &self,
             subscription_id: impl Into<String>,
@@ -10421,6 +11524,14 @@ pub mod cassandra_data_centers {
                 body: body.into(),
             }
         }
+        #[doc = "Update some of the properties of a managed Cassandra data center."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `cluster_name`: Managed Cassandra cluster name."]
+        #[doc = "* `data_center_name`: Data center name in a managed Cassandra cluster."]
+        #[doc = "* `body`: Parameters to provide for specifying the managed Cassandra data center."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -10438,6 +11549,13 @@ pub mod cassandra_data_centers {
                 body: body.into(),
             }
         }
+        #[doc = "Delete a managed Cassandra data center."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `cluster_name`: Managed Cassandra cluster name."]
+        #[doc = "* `data_center_name`: Data center name in a managed Cassandra cluster."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -10754,6 +11872,12 @@ pub mod notebook_workspaces {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the notebook workspace resources of an existing Cosmos DB account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
         pub fn list_by_database_account(
             &self,
             subscription_id: impl Into<String>,
@@ -10767,6 +11891,13 @@ pub mod notebook_workspaces {
                 account_name: account_name.into(),
             }
         }
+        #[doc = "Gets the notebook workspace for a Cosmos DB account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
+        #[doc = "* `notebook_workspace_name`: The name of the notebook workspace resource."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -10782,6 +11913,14 @@ pub mod notebook_workspaces {
                 notebook_workspace_name: notebook_workspace_name.into(),
             }
         }
+        #[doc = "Creates the notebook workspace for a Cosmos DB account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
+        #[doc = "* `notebook_workspace_name`: The name of the notebook workspace resource."]
+        #[doc = "* `notebook_create_update_parameters`: The notebook workspace to create for the current database account."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -10799,6 +11938,13 @@ pub mod notebook_workspaces {
                 notebook_create_update_parameters: notebook_create_update_parameters.into(),
             }
         }
+        #[doc = "Deletes the notebook workspace for a Cosmos DB account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
+        #[doc = "* `notebook_workspace_name`: The name of the notebook workspace resource."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -10814,6 +11960,13 @@ pub mod notebook_workspaces {
                 notebook_workspace_name: notebook_workspace_name.into(),
             }
         }
+        #[doc = "Retrieves the connection info for the notebook workspace"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
+        #[doc = "* `notebook_workspace_name`: The name of the notebook workspace resource."]
         pub fn list_connection_info(
             &self,
             subscription_id: impl Into<String>,
@@ -10829,6 +11982,13 @@ pub mod notebook_workspaces {
                 notebook_workspace_name: notebook_workspace_name.into(),
             }
         }
+        #[doc = "Regenerates the auth token for the notebook workspace"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
+        #[doc = "* `notebook_workspace_name`: The name of the notebook workspace resource."]
         pub fn regenerate_auth_token(
             &self,
             subscription_id: impl Into<String>,
@@ -10844,6 +12004,13 @@ pub mod notebook_workspaces {
                 notebook_workspace_name: notebook_workspace_name.into(),
             }
         }
+        #[doc = "Starts the notebook workspace"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
+        #[doc = "* `notebook_workspace_name`: The name of the notebook workspace resource."]
         pub fn start(
             &self,
             subscription_id: impl Into<String>,
@@ -11212,6 +12379,12 @@ pub mod private_link_resources {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the private link resources that need to be created for a Cosmos DB account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
         pub fn list_by_database_account(
             &self,
             subscription_id: impl Into<String>,
@@ -11225,6 +12398,13 @@ pub mod private_link_resources {
                 account_name: account_name.into(),
             }
         }
+        #[doc = "Gets the private link resources that need to be created for a Cosmos DB account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: Cosmos DB database account name."]
+        #[doc = "* `group_name`: The name of the private link resource."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -11346,6 +12526,12 @@ pub mod restorable_sql_databases {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Show the event feed of all mutations done on all the Azure Cosmos DB SQL databases under the restorable account.  This helps in scenario where database was accidentally deleted to get the deletion time.  This API requires 'Microsoft.DocumentDB/locations/restorableDatabaseAccounts/.../read' permission"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `location`: Cosmos DB region, with spaces between words and each word capitalized."]
+        #[doc = "* `instance_id`: The instanceId GUID of a restorable database account."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -11412,6 +12598,12 @@ pub mod restorable_sql_containers {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Show the event feed of all mutations done on all the Azure Cosmos DB SQL containers under a specific database.  This helps in scenario where container was accidentally deleted.  This API requires 'Microsoft.DocumentDB/locations/restorableDatabaseAccounts/.../read' permission"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `location`: Cosmos DB region, with spaces between words and each word capitalized."]
+        #[doc = "* `instance_id`: The instanceId GUID of a restorable database account."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -11443,14 +12635,17 @@ pub mod restorable_sql_containers {
             pub(crate) end_time: Option<String>,
         }
         impl Builder {
+            #[doc = "The resource ID of the SQL database."]
             pub fn restorable_sql_database_rid(mut self, restorable_sql_database_rid: impl Into<String>) -> Self {
                 self.restorable_sql_database_rid = Some(restorable_sql_database_rid.into());
                 self
             }
+            #[doc = "The snapshot create timestamp after which snapshots need to be listed."]
             pub fn start_time(mut self, start_time: impl Into<String>) -> Self {
                 self.start_time = Some(start_time.into());
                 self
             }
+            #[doc = "The snapshot create timestamp before which snapshots need to be listed."]
             pub fn end_time(mut self, end_time: impl Into<String>) -> Self {
                 self.end_time = Some(end_time.into());
                 self
@@ -11507,6 +12702,12 @@ pub mod restorable_sql_resources {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Return a list of database and container combo that exist on the account at the given timestamp and location. This helps in scenarios to validate what resources exist at given timestamp and location. This API requires 'Microsoft.DocumentDB/locations/restorableDatabaseAccounts/.../read' permission."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `location`: Cosmos DB region, with spaces between words and each word capitalized."]
+        #[doc = "* `instance_id`: The instanceId GUID of a restorable database account."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -11536,10 +12737,12 @@ pub mod restorable_sql_resources {
             pub(crate) restore_timestamp_in_utc: Option<String>,
         }
         impl Builder {
+            #[doc = "The location where the restorable resources are located."]
             pub fn restore_location(mut self, restore_location: impl Into<String>) -> Self {
                 self.restore_location = Some(restore_location.into());
                 self
             }
+            #[doc = "The timestamp when the restorable resources existed."]
             pub fn restore_timestamp_in_utc(mut self, restore_timestamp_in_utc: impl Into<String>) -> Self {
                 self.restore_timestamp_in_utc = Some(restore_timestamp_in_utc.into());
                 self
@@ -11593,6 +12796,12 @@ pub mod restorable_mongodb_databases {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Show the event feed of all mutations done on all the Azure Cosmos DB MongoDB databases under the restorable account.  This helps in scenario where database was accidentally deleted to get the deletion time.  This API requires  'Microsoft.DocumentDB/locations/restorableDatabaseAccounts/.../read' permission"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `location`: Cosmos DB region, with spaces between words and each word capitalized."]
+        #[doc = "* `instance_id`: The instanceId GUID of a restorable database account."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -11659,6 +12868,12 @@ pub mod restorable_mongodb_collections {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Show the event feed of all mutations done on all the Azure Cosmos DB MongoDB collections under a specific database.  This helps in scenario where container was accidentally deleted.  This API requires 'Microsoft.DocumentDB/locations/restorableDatabaseAccounts/.../read' permission"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `location`: Cosmos DB region, with spaces between words and each word capitalized."]
+        #[doc = "* `instance_id`: The instanceId GUID of a restorable database account."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -11686,6 +12901,7 @@ pub mod restorable_mongodb_collections {
             pub(crate) restorable_mongodb_database_rid: Option<String>,
         }
         impl Builder {
+            #[doc = "The resource ID of the MongoDB database."]
             pub fn restorable_mongodb_database_rid(mut self, restorable_mongodb_database_rid: impl Into<String>) -> Self {
                 self.restorable_mongodb_database_rid = Some(restorable_mongodb_database_rid.into());
                 self
@@ -11736,6 +12952,12 @@ pub mod restorable_mongodb_resources {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Return a list of database and collection combo that exist on the account at the given timestamp and location. This helps in scenarios to validate what resources exist at given timestamp and location. This API requires 'Microsoft.DocumentDB/locations/restorableDatabaseAccounts/.../read' permission."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `location`: Cosmos DB region, with spaces between words and each word capitalized."]
+        #[doc = "* `instance_id`: The instanceId GUID of a restorable database account."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -11765,10 +12987,12 @@ pub mod restorable_mongodb_resources {
             pub(crate) restore_timestamp_in_utc: Option<String>,
         }
         impl Builder {
+            #[doc = "The location where the restorable resources are located."]
             pub fn restore_location(mut self, restore_location: impl Into<String>) -> Self {
                 self.restore_location = Some(restore_location.into());
                 self
             }
+            #[doc = "The timestamp when the restorable resources existed."]
             pub fn restore_timestamp_in_utc(mut self, restore_timestamp_in_utc: impl Into<String>) -> Self {
                 self.restore_timestamp_in_utc = Some(restore_timestamp_in_utc.into());
                 self

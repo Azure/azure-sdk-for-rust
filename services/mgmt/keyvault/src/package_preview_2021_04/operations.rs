@@ -100,6 +100,12 @@ pub mod vaults {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the specified Azure key vault."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the Resource Group to which the vault belongs."]
+        #[doc = "* `vault_name`: The name of the vault."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -113,6 +119,13 @@ pub mod vaults {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Create or update a key vault in the specified subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the Resource Group to which the server belongs."]
+        #[doc = "* `vault_name`: Name of the vault"]
+        #[doc = "* `parameters`: Parameters to create or update the vault"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -128,6 +141,13 @@ pub mod vaults {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Update a key vault in the specified subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the Resource Group to which the server belongs."]
+        #[doc = "* `vault_name`: Name of the vault"]
+        #[doc = "* `parameters`: Parameters to patch the vault"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -143,6 +163,12 @@ pub mod vaults {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes the specified Azure key vault."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the Resource Group to which the vault belongs."]
+        #[doc = "* `vault_name`: The name of the vault to delete"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -156,6 +182,14 @@ pub mod vaults {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Update access policies in a key vault in the specified subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the Resource Group to which the vault belongs."]
+        #[doc = "* `vault_name`: Name of the vault"]
+        #[doc = "* `operation_kind`: Name of the operation"]
+        #[doc = "* `parameters`: Access policy to merge into the vault"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn update_access_policy(
             &self,
             resource_group_name: impl Into<String>,
@@ -173,6 +207,11 @@ pub mod vaults {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "The List operation gets information about the vaults associated with the subscription and within the specified resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the Resource Group to which the vault belongs."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_resource_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -185,6 +224,10 @@ pub mod vaults {
                 top: None,
             }
         }
+        #[doc = "The List operation gets information about the vaults associated with the subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
@@ -192,12 +235,22 @@ pub mod vaults {
                 top: None,
             }
         }
+        #[doc = "Gets information about the deleted vaults in a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_deleted(&self, subscription_id: impl Into<String>) -> list_deleted::Builder {
             list_deleted::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the deleted Azure key vault."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `vault_name`: The name of the vault."]
+        #[doc = "* `location`: The location of the deleted vault."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get_deleted(
             &self,
             vault_name: impl Into<String>,
@@ -211,6 +264,12 @@ pub mod vaults {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Permanently deletes the specified vault. aka Purges the deleted Azure key vault."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `vault_name`: The name of the soft-deleted vault."]
+        #[doc = "* `location`: The location of the soft-deleted vault."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn purge_deleted(
             &self,
             vault_name: impl Into<String>,
@@ -224,6 +283,11 @@ pub mod vaults {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "The List operation gets information about the vaults associated with the subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `filter`: The filter to apply on the operation."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(&self, filter: impl Into<String>, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -232,6 +296,11 @@ pub mod vaults {
                 top: None,
             }
         }
+        #[doc = "Checks that the vault name is valid and is not already in use."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `vault_name`: The name of the vault."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn check_name_availability(
             &self,
             vault_name: impl Into<models::VaultCheckNameAvailabilityParameters>,
@@ -552,6 +621,7 @@ pub mod vaults {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "Maximum number of results to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -635,6 +705,7 @@ pub mod vaults {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "Maximum number of results to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -899,6 +970,7 @@ pub mod vaults {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "Maximum number of results to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -1028,6 +1100,13 @@ pub mod private_endpoint_connections {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the specified private endpoint connection associated with the key vault."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Name of the resource group that contains the key vault."]
+        #[doc = "* `vault_name`: The name of the key vault."]
+        #[doc = "* `private_endpoint_connection_name`: Name of the private endpoint connection associated with the key vault."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1043,6 +1122,14 @@ pub mod private_endpoint_connections {
                 private_endpoint_connection_name: private_endpoint_connection_name.into(),
             }
         }
+        #[doc = "Updates the specified private endpoint connection associated with the key vault."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Name of the resource group that contains the key vault."]
+        #[doc = "* `vault_name`: The name of the key vault."]
+        #[doc = "* `private_endpoint_connection_name`: Name of the private endpoint connection associated with the key vault."]
+        #[doc = "* `properties`: The intended state of private endpoint connection."]
         pub fn put(
             &self,
             subscription_id: impl Into<String>,
@@ -1060,6 +1147,13 @@ pub mod private_endpoint_connections {
                 properties: properties.into(),
             }
         }
+        #[doc = "Deletes the specified private endpoint connection associated with the key vault."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Name of the resource group that contains the key vault."]
+        #[doc = "* `vault_name`: The name of the key vault."]
+        #[doc = "* `private_endpoint_connection_name`: Name of the private endpoint connection associated with the key vault."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1075,6 +1169,12 @@ pub mod private_endpoint_connections {
                 private_endpoint_connection_name: private_endpoint_connection_name.into(),
             }
         }
+        #[doc = "The List operation gets information about the private endpoint connections associated with the vault."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Name of the resource group that contains the key vault."]
+        #[doc = "* `vault_name`: The name of the key vault."]
         pub fn list_by_resource(
             &self,
             subscription_id: impl Into<String>,
@@ -1349,6 +1449,12 @@ pub mod private_link_resources {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the private link resources supported for the key vault."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Name of the resource group that contains the key vault."]
+        #[doc = "* `vault_name`: The name of the key vault."]
         pub fn list_by_vault(
             &self,
             subscription_id: impl Into<String>,
@@ -1420,6 +1526,12 @@ pub mod managed_hsms {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the specified managed HSM Pool."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group that contains the managed HSM pool."]
+        #[doc = "* `name`: The name of the managed HSM Pool."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -1433,6 +1545,13 @@ pub mod managed_hsms {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Create or update a managed HSM Pool in the specified subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group that contains the managed HSM pool."]
+        #[doc = "* `name`: Name of the managed HSM Pool"]
+        #[doc = "* `parameters`: Parameters to create or update the managed HSM Pool"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -1448,6 +1567,13 @@ pub mod managed_hsms {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Update a managed HSM Pool in the specified subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group that contains the managed HSM pool."]
+        #[doc = "* `name`: Name of the managed HSM Pool"]
+        #[doc = "* `parameters`: Parameters to patch the managed HSM Pool"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -1463,6 +1589,12 @@ pub mod managed_hsms {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes the specified managed HSM Pool."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group that contains the managed HSM pool."]
+        #[doc = "* `name`: The name of the managed HSM Pool to delete"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -1476,6 +1608,11 @@ pub mod managed_hsms {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "The List operation gets information about the managed HSM Pools associated with the subscription and within the specified resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group that contains the managed HSM pool."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_resource_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -1488,6 +1625,10 @@ pub mod managed_hsms {
                 top: None,
             }
         }
+        #[doc = "The List operation gets information about the managed HSM Pools associated with the subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
@@ -1495,12 +1636,22 @@ pub mod managed_hsms {
                 top: None,
             }
         }
+        #[doc = "The List operation gets information about the deleted managed HSMs associated with the subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_deleted(&self, subscription_id: impl Into<String>) -> list_deleted::Builder {
             list_deleted::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the specified deleted managed HSM."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `name`: The name of the deleted managed HSM."]
+        #[doc = "* `location`: The location of the deleted managed HSM."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get_deleted(
             &self,
             name: impl Into<String>,
@@ -1514,6 +1665,12 @@ pub mod managed_hsms {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Permanently deletes the specified managed HSM."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `name`: The name of the soft-deleted managed HSM."]
+        #[doc = "* `location`: The location of the soft-deleted managed HSM."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn purge_deleted(
             &self,
             name: impl Into<String>,
@@ -1782,6 +1939,7 @@ pub mod managed_hsms {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "Maximum number of results to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -1865,6 +2023,7 @@ pub mod managed_hsms {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "Maximum number of results to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -2118,6 +2277,12 @@ pub mod mhsm_private_endpoint_connections {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "The List operation gets information about the private endpoint connections associated with the managed HSM Pool."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Name of the resource group that contains the managed HSM pool."]
+        #[doc = "* `name`: Name of the managed HSM Pool"]
         pub fn list_by_resource(
             &self,
             subscription_id: impl Into<String>,
@@ -2131,6 +2296,13 @@ pub mod mhsm_private_endpoint_connections {
                 name: name.into(),
             }
         }
+        #[doc = "Gets the specified private endpoint connection associated with the managed HSM Pool."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Name of the resource group that contains the managed HSM pool."]
+        #[doc = "* `name`: Name of the managed HSM Pool"]
+        #[doc = "* `private_endpoint_connection_name`: Name of the private endpoint connection associated with the managed hsm pool."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -2146,6 +2318,14 @@ pub mod mhsm_private_endpoint_connections {
                 private_endpoint_connection_name: private_endpoint_connection_name.into(),
             }
         }
+        #[doc = "Updates the specified private endpoint connection associated with the managed hsm pool."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Name of the resource group that contains the managed HSM pool."]
+        #[doc = "* `name`: Name of the managed HSM Pool"]
+        #[doc = "* `private_endpoint_connection_name`: Name of the private endpoint connection associated with the managed hsm pool."]
+        #[doc = "* `properties`: The intended state of private endpoint connection."]
         pub fn put(
             &self,
             subscription_id: impl Into<String>,
@@ -2163,6 +2343,13 @@ pub mod mhsm_private_endpoint_connections {
                 properties: properties.into(),
             }
         }
+        #[doc = "Deletes the specified private endpoint connection associated with the managed hsm pool."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Name of the resource group that contains the managed HSM pool."]
+        #[doc = "* `name`: Name of the managed HSM Pool"]
+        #[doc = "* `private_endpoint_connection_name`: Name of the private endpoint connection associated with the managed hsm pool."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -2413,6 +2600,12 @@ pub mod mhsm_private_link_resources {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the private link resources supported for the managed hsm pool."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Name of the resource group that contains the managed HSM pool."]
+        #[doc = "* `name`: Name of the managed HSM Pool"]
         pub fn list_by_mhsm_resource(
             &self,
             subscription_id: impl Into<String>,
@@ -2484,6 +2677,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all of the available Key Vault Rest API operations."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }

@@ -423,6 +423,12 @@ pub mod application_gateways {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the specified application gateway."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `application_gateway_name`: The name of the application gateway."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -436,6 +442,13 @@ pub mod application_gateways {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates the specified application gateway."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `application_gateway_name`: The name of the application gateway."]
+        #[doc = "* `parameters`: Parameters supplied to the create or update application gateway operation."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -451,6 +464,13 @@ pub mod application_gateways {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates the specified application gateway tags."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `application_gateway_name`: The name of the application gateway."]
+        #[doc = "* `parameters`: Parameters supplied to update application gateway tags."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn update_tags(
             &self,
             resource_group_name: impl Into<String>,
@@ -466,6 +486,12 @@ pub mod application_gateways {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes the specified application gateway."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `application_gateway_name`: The name of the application gateway."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -479,6 +505,11 @@ pub mod application_gateways {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists all application gateways in a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(&self, resource_group_name: impl Into<String>, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -486,12 +517,22 @@ pub mod application_gateways {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets all the application gateways in a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_all(&self, subscription_id: impl Into<String>) -> list_all::Builder {
             list_all::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Starts the specified application gateway."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `application_gateway_name`: The name of the application gateway."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn start(
             &self,
             resource_group_name: impl Into<String>,
@@ -505,6 +546,12 @@ pub mod application_gateways {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Stops the specified application gateway in a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `application_gateway_name`: The name of the application gateway."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn stop(
             &self,
             resource_group_name: impl Into<String>,
@@ -518,6 +565,12 @@ pub mod application_gateways {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the backend health of the specified application gateway in a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `application_gateway_name`: The name of the application gateway."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn backend_health(
             &self,
             resource_group_name: impl Into<String>,
@@ -532,6 +585,13 @@ pub mod application_gateways {
                 expand: None,
             }
         }
+        #[doc = "Gets the backend health for given combination of backend pool and http setting of the specified application gateway in a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `application_gateway_name`: The name of the application gateway."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `probe_request`: Request body for on-demand test probe operation."]
         pub fn backend_health_on_demand(
             &self,
             resource_group_name: impl Into<String>,
@@ -548,36 +608,60 @@ pub mod application_gateways {
                 expand: None,
             }
         }
+        #[doc = "Lists all available server variables."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_available_server_variables(&self, subscription_id: impl Into<String>) -> list_available_server_variables::Builder {
             list_available_server_variables::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists all available request headers."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_available_request_headers(&self, subscription_id: impl Into<String>) -> list_available_request_headers::Builder {
             list_available_request_headers::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists all available response headers."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_available_response_headers(&self, subscription_id: impl Into<String>) -> list_available_response_headers::Builder {
             list_available_response_headers::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists all available web application firewall rule sets."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_available_waf_rule_sets(&self, subscription_id: impl Into<String>) -> list_available_waf_rule_sets::Builder {
             list_available_waf_rule_sets::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists available Ssl options for configuring Ssl policy."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_available_ssl_options(&self, subscription_id: impl Into<String>) -> list_available_ssl_options::Builder {
             list_available_ssl_options::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists all SSL predefined policies for configuring Ssl policy."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_available_ssl_predefined_policies(
             &self,
             subscription_id: impl Into<String>,
@@ -587,6 +671,11 @@ pub mod application_gateways {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets Ssl predefined policy with the specified policy name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `predefined_policy_name`: Name of Ssl predefined policy."]
         pub fn get_ssl_predefined_policy(
             &self,
             subscription_id: impl Into<String>,
@@ -1101,6 +1190,7 @@ pub mod application_gateways {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "Expands BackendAddressPool and BackendHttpSettings referenced in backend health."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -1169,6 +1259,7 @@ pub mod application_gateways {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "Expands BackendAddressPool and BackendHttpSettings referenced in backend health."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -1577,6 +1668,12 @@ pub mod application_gateway_private_link_resources {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all private link resources on an application gateway."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `application_gateway_name`: The name of the application gateway."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(
             &self,
             resource_group_name: impl Into<String>,
@@ -1674,6 +1771,13 @@ pub mod application_gateway_private_endpoint_connections {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the specified private endpoint connection on application gateway."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `application_gateway_name`: The name of the application gateway."]
+        #[doc = "* `connection_name`: The name of the application gateway private endpoint connection."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -1689,6 +1793,14 @@ pub mod application_gateway_private_endpoint_connections {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates the specified private endpoint connection on application gateway."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `application_gateway_name`: The name of the application gateway."]
+        #[doc = "* `connection_name`: The name of the application gateway private endpoint connection."]
+        #[doc = "* `parameters`: Parameters supplied to update application gateway private endpoint connection operation."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -1706,6 +1818,13 @@ pub mod application_gateway_private_endpoint_connections {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes the specified private endpoint connection on application gateway."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `application_gateway_name`: The name of the application gateway."]
+        #[doc = "* `connection_name`: The name of the application gateway private endpoint connection."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -1721,6 +1840,12 @@ pub mod application_gateway_private_endpoint_connections {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists all private endpoint connections on an application gateway."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `application_gateway_name`: The name of the application gateway."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(
             &self,
             resource_group_name: impl Into<String>,
@@ -1966,6 +2091,12 @@ pub mod network_interfaces {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets information about the specified network interface."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `network_interface_name`: The name of the network interface."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -1980,6 +2111,13 @@ pub mod network_interfaces {
                 expand: None,
             }
         }
+        #[doc = "Creates or updates a network interface."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `network_interface_name`: The name of the network interface."]
+        #[doc = "* `parameters`: Parameters supplied to the create or update network interface operation."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -1995,6 +2133,13 @@ pub mod network_interfaces {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates a network interface tags."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `network_interface_name`: The name of the network interface."]
+        #[doc = "* `parameters`: Parameters supplied to update network interface tags."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn update_tags(
             &self,
             resource_group_name: impl Into<String>,
@@ -2010,6 +2155,12 @@ pub mod network_interfaces {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes the specified network interface."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `network_interface_name`: The name of the network interface."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -2023,12 +2174,21 @@ pub mod network_interfaces {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets all network interfaces in a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_all(&self, subscription_id: impl Into<String>) -> list_all::Builder {
             list_all::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets all network interfaces in a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(&self, resource_group_name: impl Into<String>, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -2036,6 +2196,12 @@ pub mod network_interfaces {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets all route tables applied to a network interface."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `network_interface_name`: The name of the network interface."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get_effective_route_table(
             &self,
             resource_group_name: impl Into<String>,
@@ -2049,6 +2215,12 @@ pub mod network_interfaces {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets all network security groups applied to a network interface."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `network_interface_name`: The name of the network interface."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_effective_network_security_groups(
             &self,
             resource_group_name: impl Into<String>,
@@ -2062,6 +2234,13 @@ pub mod network_interfaces {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets information about all network interfaces in a role instance in a cloud service."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `cloud_service_name`: The name of the cloud service."]
+        #[doc = "* `role_instance_name`: The name of role instance."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_cloud_service_role_instance_network_interfaces(
             &self,
             resource_group_name: impl Into<String>,
@@ -2077,6 +2256,12 @@ pub mod network_interfaces {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets all network interfaces in a cloud service."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `cloud_service_name`: The name of the cloud service."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_cloud_service_network_interfaces(
             &self,
             resource_group_name: impl Into<String>,
@@ -2090,6 +2275,14 @@ pub mod network_interfaces {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get the specified network interface in a cloud service."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `cloud_service_name`: The name of the cloud service."]
+        #[doc = "* `role_instance_name`: The name of role instance."]
+        #[doc = "* `network_interface_name`: The name of the network interface."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get_cloud_service_network_interface(
             &self,
             resource_group_name: impl Into<String>,
@@ -2108,6 +2301,13 @@ pub mod network_interfaces {
                 expand: None,
             }
         }
+        #[doc = "Gets information about all network interfaces in a virtual machine in a virtual machine scale set."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `virtual_machine_scale_set_name`: The name of the virtual machine scale set."]
+        #[doc = "* `virtualmachine_index`: The virtual machine index."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_virtual_machine_scale_set_vm_network_interfaces(
             &self,
             resource_group_name: impl Into<String>,
@@ -2123,6 +2323,12 @@ pub mod network_interfaces {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets all network interfaces in a virtual machine scale set."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `virtual_machine_scale_set_name`: The name of the virtual machine scale set."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_virtual_machine_scale_set_network_interfaces(
             &self,
             resource_group_name: impl Into<String>,
@@ -2136,6 +2342,14 @@ pub mod network_interfaces {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get the specified network interface in a virtual machine scale set."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `virtual_machine_scale_set_name`: The name of the virtual machine scale set."]
+        #[doc = "* `virtualmachine_index`: The virtual machine index."]
+        #[doc = "* `network_interface_name`: The name of the network interface."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get_virtual_machine_scale_set_network_interface(
             &self,
             resource_group_name: impl Into<String>,
@@ -2154,6 +2368,14 @@ pub mod network_interfaces {
                 expand: None,
             }
         }
+        #[doc = "Get the specified network interface ip configuration in a virtual machine scale set."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `virtual_machine_scale_set_name`: The name of the virtual machine scale set."]
+        #[doc = "* `virtualmachine_index`: The virtual machine index."]
+        #[doc = "* `network_interface_name`: The name of the network interface."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_virtual_machine_scale_set_ip_configurations(
             &self,
             resource_group_name: impl Into<String>,
@@ -2172,6 +2394,15 @@ pub mod network_interfaces {
                 expand: None,
             }
         }
+        #[doc = "Get the specified network interface ip configuration in a virtual machine scale set."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `virtual_machine_scale_set_name`: The name of the virtual machine scale set."]
+        #[doc = "* `virtualmachine_index`: The virtual machine index."]
+        #[doc = "* `network_interface_name`: The name of the network interface."]
+        #[doc = "* `ip_configuration_name`: The name of the ip configuration."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get_virtual_machine_scale_set_ip_configuration(
             &self,
             resource_group_name: impl Into<String>,
@@ -2205,6 +2436,7 @@ pub mod network_interfaces {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "Expands referenced resources."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -2854,6 +3086,7 @@ pub mod network_interfaces {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "Expands referenced resources."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -3055,6 +3288,7 @@ pub mod network_interfaces {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "Expands referenced resources."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -3111,6 +3345,7 @@ pub mod network_interfaces {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "Expands referenced resources."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -3194,6 +3429,7 @@ pub mod network_interfaces {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "Expands referenced resources."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -3241,6 +3477,12 @@ pub mod network_interface_ip_configurations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get all ip configurations in a network interface."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `network_interface_name`: The name of the network interface."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(
             &self,
             resource_group_name: impl Into<String>,
@@ -3254,6 +3496,13 @@ pub mod network_interface_ip_configurations {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the specified network interface ip configuration."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `network_interface_name`: The name of the network interface."]
+        #[doc = "* `ip_configuration_name`: The name of the ip configuration name."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -3407,6 +3656,12 @@ pub mod network_interface_load_balancers {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List all load balancers in a network interface."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `network_interface_name`: The name of the network interface."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(
             &self,
             resource_group_name: impl Into<String>,
@@ -3504,6 +3759,13 @@ pub mod network_interface_tap_configurations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get the specified tap configuration on a network interface."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `network_interface_name`: The name of the network interface."]
+        #[doc = "* `tap_configuration_name`: The name of the tap configuration."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -3519,6 +3781,14 @@ pub mod network_interface_tap_configurations {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates a Tap configuration in the specified NetworkInterface."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `network_interface_name`: The name of the network interface."]
+        #[doc = "* `tap_configuration_name`: The name of the tap configuration."]
+        #[doc = "* `tap_configuration_parameters`: Parameters supplied to the create or update tap configuration operation."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -3536,6 +3806,13 @@ pub mod network_interface_tap_configurations {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes the specified tap configuration from the NetworkInterface."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `network_interface_name`: The name of the network interface."]
+        #[doc = "* `tap_configuration_name`: The name of the tap configuration."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -3551,6 +3828,12 @@ pub mod network_interface_tap_configurations {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get all Tap configurations in a network interface."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `network_interface_name`: The name of the network interface."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(
             &self,
             resource_group_name: impl Into<String>,
@@ -3826,6 +4109,12 @@ pub mod virtual_network_taps {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets information about the specified virtual network tap."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `tap_name`: The name of virtual network tap."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -3839,6 +4128,13 @@ pub mod virtual_network_taps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates a Virtual Network Tap."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `tap_name`: The name of the virtual network tap."]
+        #[doc = "* `parameters`: Parameters supplied to the create or update virtual network tap operation."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -3854,6 +4150,13 @@ pub mod virtual_network_taps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates an VirtualNetworkTap tags."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `tap_name`: The name of the tap."]
+        #[doc = "* `tap_parameters`: Parameters supplied to update VirtualNetworkTap tags."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn update_tags(
             &self,
             resource_group_name: impl Into<String>,
@@ -3869,6 +4172,12 @@ pub mod virtual_network_taps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes the specified virtual network tap."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `tap_name`: The name of the virtual network tap."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -3882,12 +4191,21 @@ pub mod virtual_network_taps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets all the VirtualNetworkTaps in a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_all(&self, subscription_id: impl Into<String>) -> list_all::Builder {
             list_all::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets all the VirtualNetworkTaps in a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_resource_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -4281,6 +4599,12 @@ pub mod load_balancers {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the specified load balancer."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `load_balancer_name`: The name of the load balancer."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -4295,6 +4619,13 @@ pub mod load_balancers {
                 expand: None,
             }
         }
+        #[doc = "Creates or updates a load balancer."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `load_balancer_name`: The name of the load balancer."]
+        #[doc = "* `parameters`: Parameters supplied to the create or update load balancer operation."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -4310,6 +4641,13 @@ pub mod load_balancers {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates a load balancer tags."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `load_balancer_name`: The name of the load balancer."]
+        #[doc = "* `parameters`: Parameters supplied to update load balancer tags."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn update_tags(
             &self,
             resource_group_name: impl Into<String>,
@@ -4325,6 +4663,12 @@ pub mod load_balancers {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes the specified load balancer."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `load_balancer_name`: The name of the load balancer."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -4338,12 +4682,21 @@ pub mod load_balancers {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets all the load balancers in a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_all(&self, subscription_id: impl Into<String>) -> list_all::Builder {
             list_all::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets all the load balancers in a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(&self, resource_group_name: impl Into<String>, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -4351,6 +4704,12 @@ pub mod load_balancers {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Swaps VIPs between two load balancers."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `location`: The region where load balancers are located at."]
+        #[doc = "* `parameters`: Parameters that define which VIPs should be swapped."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn swap_public_ip_addresses(
             &self,
             location: impl Into<String>,
@@ -4364,6 +4723,14 @@ pub mod load_balancers {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "List of inbound NAT rule port mappings."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `group_name`: The name of the resource group."]
+        #[doc = "* `load_balancer_name`: The name of the load balancer."]
+        #[doc = "* `backend_pool_name`: The name of the load balancer backend address pool."]
+        #[doc = "* `parameters`: Query inbound NAT rule port mapping request."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_inbound_nat_rule_port_mappings(
             &self,
             group_name: impl Into<String>,
@@ -4394,6 +4761,7 @@ pub mod load_balancers {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "Expands referenced resources."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -4884,6 +5252,12 @@ pub mod load_balancer_backend_address_pools {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets all the load balancer backed address pools."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `load_balancer_name`: The name of the load balancer."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(
             &self,
             resource_group_name: impl Into<String>,
@@ -4897,6 +5271,13 @@ pub mod load_balancer_backend_address_pools {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets load balancer backend address pool."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `load_balancer_name`: The name of the load balancer."]
+        #[doc = "* `backend_address_pool_name`: The name of the backend address pool."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -4912,6 +5293,14 @@ pub mod load_balancer_backend_address_pools {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates a load balancer backend address pool."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `load_balancer_name`: The name of the load balancer."]
+        #[doc = "* `backend_address_pool_name`: The name of the backend address pool."]
+        #[doc = "* `parameters`: Parameters supplied to the create or update load balancer backend address pool operation."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -4929,6 +5318,13 @@ pub mod load_balancer_backend_address_pools {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes the specified load balancer backend address pool."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `load_balancer_name`: The name of the load balancer."]
+        #[doc = "* `backend_address_pool_name`: The name of the backend address pool."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -5206,6 +5602,12 @@ pub mod load_balancer_frontend_ip_configurations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets all the load balancer frontend IP configurations."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `load_balancer_name`: The name of the load balancer."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(
             &self,
             resource_group_name: impl Into<String>,
@@ -5219,6 +5621,13 @@ pub mod load_balancer_frontend_ip_configurations {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets load balancer frontend IP configuration."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `load_balancer_name`: The name of the load balancer."]
+        #[doc = "* `frontend_ip_configuration_name`: The name of the frontend IP configuration."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -5365,6 +5774,12 @@ pub mod inbound_nat_rules {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets all the inbound NAT rules in a load balancer."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `load_balancer_name`: The name of the load balancer."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(
             &self,
             resource_group_name: impl Into<String>,
@@ -5378,6 +5793,13 @@ pub mod inbound_nat_rules {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the specified load balancer inbound NAT rule."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `load_balancer_name`: The name of the load balancer."]
+        #[doc = "* `inbound_nat_rule_name`: The name of the inbound NAT rule."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -5394,6 +5816,14 @@ pub mod inbound_nat_rules {
                 expand: None,
             }
         }
+        #[doc = "Creates or updates a load balancer inbound NAT rule."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `load_balancer_name`: The name of the load balancer."]
+        #[doc = "* `inbound_nat_rule_name`: The name of the inbound NAT rule."]
+        #[doc = "* `inbound_nat_rule_parameters`: Parameters supplied to the create or update inbound NAT rule operation."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -5411,6 +5841,13 @@ pub mod inbound_nat_rules {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes the specified load balancer inbound NAT rule."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `load_balancer_name`: The name of the load balancer."]
+        #[doc = "* `inbound_nat_rule_name`: The name of the inbound NAT rule."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -5518,6 +5955,7 @@ pub mod inbound_nat_rules {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "Expands referenced resources."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -5696,6 +6134,12 @@ pub mod load_balancer_load_balancing_rules {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets all the load balancing rules in a load balancer."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `load_balancer_name`: The name of the load balancer."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(
             &self,
             resource_group_name: impl Into<String>,
@@ -5709,6 +6153,13 @@ pub mod load_balancer_load_balancing_rules {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the specified load balancer load balancing rule."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `load_balancer_name`: The name of the load balancer."]
+        #[doc = "* `load_balancing_rule_name`: The name of the load balancing rule."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -5862,6 +6313,12 @@ pub mod load_balancer_outbound_rules {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets all the outbound rules in a load balancer."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `load_balancer_name`: The name of the load balancer."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(
             &self,
             resource_group_name: impl Into<String>,
@@ -5875,6 +6332,13 @@ pub mod load_balancer_outbound_rules {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the specified load balancer outbound rule."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `load_balancer_name`: The name of the load balancer."]
+        #[doc = "* `outbound_rule_name`: The name of the outbound rule."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -6028,6 +6492,12 @@ pub mod load_balancer_network_interfaces {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets associated load balancer network interfaces."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `load_balancer_name`: The name of the load balancer."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(
             &self,
             resource_group_name: impl Into<String>,
@@ -6125,6 +6595,12 @@ pub mod load_balancer_probes {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets all the load balancer probes."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `load_balancer_name`: The name of the load balancer."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(
             &self,
             resource_group_name: impl Into<String>,
@@ -6138,6 +6614,13 @@ pub mod load_balancer_probes {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets load balancer probe."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `load_balancer_name`: The name of the load balancer."]
+        #[doc = "* `probe_name`: The name of the probe."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -6291,6 +6774,12 @@ pub mod virtual_networks {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the specified virtual network by resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `virtual_network_name`: The name of the virtual network."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -6305,6 +6794,13 @@ pub mod virtual_networks {
                 expand: None,
             }
         }
+        #[doc = "Creates or updates a virtual network in the specified resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `virtual_network_name`: The name of the virtual network."]
+        #[doc = "* `parameters`: Parameters supplied to the create or update virtual network operation."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -6320,6 +6816,13 @@ pub mod virtual_networks {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates a virtual network tags."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `virtual_network_name`: The name of the virtual network."]
+        #[doc = "* `parameters`: Parameters supplied to update virtual network tags."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn update_tags(
             &self,
             resource_group_name: impl Into<String>,
@@ -6335,6 +6838,12 @@ pub mod virtual_networks {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes the specified virtual network."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `virtual_network_name`: The name of the virtual network."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -6348,12 +6857,21 @@ pub mod virtual_networks {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets all virtual networks in a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_all(&self, subscription_id: impl Into<String>) -> list_all::Builder {
             list_all::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets all virtual networks in a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(&self, resource_group_name: impl Into<String>, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -6361,6 +6879,13 @@ pub mod virtual_networks {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Checks whether a private IP address is available for use."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `virtual_network_name`: The name of the virtual network."]
+        #[doc = "* `ip_address`: The private IP address to be verified."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn check_ip_address_availability(
             &self,
             resource_group_name: impl Into<String>,
@@ -6376,6 +6901,12 @@ pub mod virtual_networks {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists usage stats."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `virtual_network_name`: The name of the virtual network."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_usage(
             &self,
             resource_group_name: impl Into<String>,
@@ -6402,6 +6933,7 @@ pub mod virtual_networks {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "Expands referenced resources."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -6906,6 +7438,13 @@ pub mod subnets {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the specified subnet by virtual network and resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `virtual_network_name`: The name of the virtual network."]
+        #[doc = "* `subnet_name`: The name of the subnet."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -6922,6 +7461,14 @@ pub mod subnets {
                 expand: None,
             }
         }
+        #[doc = "Creates or updates a subnet in the specified virtual network."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `virtual_network_name`: The name of the virtual network."]
+        #[doc = "* `subnet_name`: The name of the subnet."]
+        #[doc = "* `subnet_parameters`: Parameters supplied to the create or update subnet operation."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -6939,6 +7486,13 @@ pub mod subnets {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes the specified subnet."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `virtual_network_name`: The name of the virtual network."]
+        #[doc = "* `subnet_name`: The name of the subnet."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -6954,6 +7508,14 @@ pub mod subnets {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Prepares a subnet by applying network intent policies."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `virtual_network_name`: The name of the virtual network."]
+        #[doc = "* `subnet_name`: The name of the subnet."]
+        #[doc = "* `prepare_network_policies_request_parameters`: Parameters supplied to prepare subnet by applying network intent policies."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn prepare_network_policies(
             &self,
             resource_group_name: impl Into<String>,
@@ -6971,6 +7533,14 @@ pub mod subnets {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Unprepares a subnet by removing network intent policies."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `virtual_network_name`: The name of the virtual network."]
+        #[doc = "* `subnet_name`: The name of the subnet."]
+        #[doc = "* `unprepare_network_policies_request_parameters`: Parameters supplied to unprepare subnet to remove network intent policies."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn unprepare_network_policies(
             &self,
             resource_group_name: impl Into<String>,
@@ -6988,6 +7558,12 @@ pub mod subnets {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets all subnets in a virtual network."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `virtual_network_name`: The name of the virtual network."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(
             &self,
             resource_group_name: impl Into<String>,
@@ -7015,6 +7591,7 @@ pub mod subnets {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "Expands referenced resources."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -7373,6 +7950,13 @@ pub mod resource_navigation_links {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a list of resource navigation links for a subnet."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `virtual_network_name`: The name of the virtual network."]
+        #[doc = "* `subnet_name`: The name of the subnet."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(
             &self,
             resource_group_name: impl Into<String>,
@@ -7441,6 +8025,13 @@ pub mod service_association_links {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a list of service association links for a subnet."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `virtual_network_name`: The name of the virtual network."]
+        #[doc = "* `subnet_name`: The name of the subnet."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(
             &self,
             resource_group_name: impl Into<String>,
@@ -7509,6 +8100,13 @@ pub mod virtual_network_peerings {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the specified virtual network peering."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `virtual_network_name`: The name of the virtual network."]
+        #[doc = "* `virtual_network_peering_name`: The name of the virtual network peering."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -7524,6 +8122,14 @@ pub mod virtual_network_peerings {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates a peering in the specified virtual network."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `virtual_network_name`: The name of the virtual network."]
+        #[doc = "* `virtual_network_peering_name`: The name of the peering."]
+        #[doc = "* `virtual_network_peering_parameters`: Parameters supplied to the create or update virtual network peering operation."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -7542,6 +8148,13 @@ pub mod virtual_network_peerings {
                 sync_remote_address_space: None,
             }
         }
+        #[doc = "Deletes the specified virtual network peering."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `virtual_network_name`: The name of the virtual network."]
+        #[doc = "* `virtual_network_peering_name`: The name of the virtual network peering."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -7557,6 +8170,12 @@ pub mod virtual_network_peerings {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets all virtual network peerings in a virtual network."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `virtual_network_name`: The name of the virtual network."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(
             &self,
             resource_group_name: impl Into<String>,
@@ -7636,6 +8255,7 @@ pub mod virtual_network_peerings {
             pub(crate) sync_remote_address_space: Option<String>,
         }
         impl Builder {
+            #[doc = "Parameter indicates the intention to sync the peering with the current address space on the remote vNet after it's updated."]
             pub fn sync_remote_address_space(mut self, sync_remote_address_space: impl Into<String>) -> Self {
                 self.sync_remote_address_space = Some(sync_remote_address_space.into());
                 self
@@ -7821,6 +8441,12 @@ pub mod network_security_groups {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the specified network security group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `network_security_group_name`: The name of the network security group."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -7835,6 +8461,13 @@ pub mod network_security_groups {
                 expand: None,
             }
         }
+        #[doc = "Creates or updates a network security group in the specified resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `network_security_group_name`: The name of the network security group."]
+        #[doc = "* `parameters`: Parameters supplied to the create or update network security group operation."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -7850,6 +8483,13 @@ pub mod network_security_groups {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates a network security group tags."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `network_security_group_name`: The name of the network security group."]
+        #[doc = "* `parameters`: Parameters supplied to update network security group tags."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn update_tags(
             &self,
             resource_group_name: impl Into<String>,
@@ -7865,6 +8505,12 @@ pub mod network_security_groups {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes the specified network security group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `network_security_group_name`: The name of the network security group."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -7878,12 +8524,21 @@ pub mod network_security_groups {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets all network security groups in a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_all(&self, subscription_id: impl Into<String>) -> list_all::Builder {
             list_all::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets all network security groups in a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(&self, resource_group_name: impl Into<String>, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -7904,6 +8559,7 @@ pub mod network_security_groups {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "Expands referenced resources."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -8281,6 +8937,13 @@ pub mod security_rules {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get the specified network security rule."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `network_security_group_name`: The name of the network security group."]
+        #[doc = "* `security_rule_name`: The name of the security rule."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -8296,6 +8959,14 @@ pub mod security_rules {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates a security rule in the specified network security group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `network_security_group_name`: The name of the network security group."]
+        #[doc = "* `security_rule_name`: The name of the security rule."]
+        #[doc = "* `security_rule_parameters`: Parameters supplied to the create or update network security rule operation."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -8313,6 +8984,13 @@ pub mod security_rules {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes the specified network security rule."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `network_security_group_name`: The name of the network security group."]
+        #[doc = "* `security_rule_name`: The name of the security rule."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -8328,6 +9006,12 @@ pub mod security_rules {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets all security rules in a network security group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `network_security_group_name`: The name of the network security group."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(
             &self,
             resource_group_name: impl Into<String>,
@@ -8603,6 +9287,12 @@ pub mod default_security_rules {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets all default security rules in a network security group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `network_security_group_name`: The name of the network security group."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(
             &self,
             resource_group_name: impl Into<String>,
@@ -8616,6 +9306,13 @@ pub mod default_security_rules {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get the specified default network security rule."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `network_security_group_name`: The name of the network security group."]
+        #[doc = "* `default_security_rule_name`: The name of the default security rule."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -8756,6 +9453,12 @@ pub mod application_security_groups {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets information about the specified application security group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `application_security_group_name`: The name of the application security group."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -8769,6 +9472,13 @@ pub mod application_security_groups {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates an application security group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `application_security_group_name`: The name of the application security group."]
+        #[doc = "* `parameters`: Parameters supplied to the create or update ApplicationSecurityGroup operation."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -8784,6 +9494,13 @@ pub mod application_security_groups {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates an application security group's tags."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `application_security_group_name`: The name of the application security group."]
+        #[doc = "* `parameters`: Parameters supplied to update application security group tags."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn update_tags(
             &self,
             resource_group_name: impl Into<String>,
@@ -8799,6 +9516,12 @@ pub mod application_security_groups {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes the specified application security group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `application_security_group_name`: The name of the application security group."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -8812,12 +9535,21 @@ pub mod application_security_groups {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets all application security groups in a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_all(&self, subscription_id: impl Into<String>) -> list_all::Builder {
             list_all::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets all the application security groups in a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(&self, resource_group_name: impl Into<String>, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -9207,6 +9939,12 @@ pub mod network_watchers {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the specified network watcher by resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `network_watcher_name`: The name of the network watcher."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -9220,6 +9958,13 @@ pub mod network_watchers {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates a network watcher in the specified resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `network_watcher_name`: The name of the network watcher."]
+        #[doc = "* `parameters`: Parameters that define the network watcher resource."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -9235,6 +9980,13 @@ pub mod network_watchers {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates a network watcher tags."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `network_watcher_name`: The name of the network watcher."]
+        #[doc = "* `parameters`: Parameters supplied to update network watcher tags."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn update_tags(
             &self,
             resource_group_name: impl Into<String>,
@@ -9250,6 +10002,12 @@ pub mod network_watchers {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes the specified network watcher resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `network_watcher_name`: The name of the network watcher."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -9263,6 +10021,11 @@ pub mod network_watchers {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets all network watchers by resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(&self, resource_group_name: impl Into<String>, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -9270,12 +10033,23 @@ pub mod network_watchers {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets all network watchers by subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_all(&self, subscription_id: impl Into<String>) -> list_all::Builder {
             list_all::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the current network topology by resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `network_watcher_name`: The name of the network watcher."]
+        #[doc = "* `parameters`: Parameters that define the representation of topology."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get_topology(
             &self,
             resource_group_name: impl Into<String>,
@@ -9291,6 +10065,13 @@ pub mod network_watchers {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Verify IP flow from the specified VM to a location given the currently configured NSG rules."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `network_watcher_name`: The name of the network watcher."]
+        #[doc = "* `parameters`: Parameters that define the IP flow to be verified."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn verify_ip_flow(
             &self,
             resource_group_name: impl Into<String>,
@@ -9306,6 +10087,13 @@ pub mod network_watchers {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the next hop from the specified VM."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `network_watcher_name`: The name of the network watcher."]
+        #[doc = "* `parameters`: Parameters that define the source and destination endpoint."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get_next_hop(
             &self,
             resource_group_name: impl Into<String>,
@@ -9321,6 +10109,13 @@ pub mod network_watchers {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the configured and effective security group rules on the specified VM."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `network_watcher_name`: The name of the network watcher."]
+        #[doc = "* `parameters`: Parameters that define the VM to check security groups for."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get_vm_security_rules(
             &self,
             resource_group_name: impl Into<String>,
@@ -9336,6 +10131,13 @@ pub mod network_watchers {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Initiate troubleshooting on a specified resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `network_watcher_name`: The name of the network watcher resource."]
+        #[doc = "* `parameters`: Parameters that define the resource to troubleshoot."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get_troubleshooting(
             &self,
             resource_group_name: impl Into<String>,
@@ -9351,6 +10153,13 @@ pub mod network_watchers {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get the last completed troubleshooting result on a specified resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `network_watcher_name`: The name of the network watcher resource."]
+        #[doc = "* `parameters`: Parameters that define the resource to query the troubleshooting result."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get_troubleshooting_result(
             &self,
             resource_group_name: impl Into<String>,
@@ -9366,6 +10175,13 @@ pub mod network_watchers {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Configures flow log and traffic analytics (optional) on a specified resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the network watcher resource group."]
+        #[doc = "* `network_watcher_name`: The name of the network watcher resource."]
+        #[doc = "* `parameters`: Parameters that define the configuration of flow log."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn set_flow_log_configuration(
             &self,
             resource_group_name: impl Into<String>,
@@ -9381,6 +10197,13 @@ pub mod network_watchers {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Queries status of flow log and traffic analytics (optional) on a specified resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the network watcher resource group."]
+        #[doc = "* `network_watcher_name`: The name of the network watcher resource."]
+        #[doc = "* `parameters`: Parameters that define a resource to query flow log and traffic analytics (optional) status."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get_flow_log_status(
             &self,
             resource_group_name: impl Into<String>,
@@ -9396,6 +10219,13 @@ pub mod network_watchers {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Verifies the possibility of establishing a direct TCP connection from a virtual machine to a given endpoint including another VM or an arbitrary remote server."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the network watcher resource group."]
+        #[doc = "* `network_watcher_name`: The name of the network watcher resource."]
+        #[doc = "* `parameters`: Parameters that determine how the connectivity check will be performed."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn check_connectivity(
             &self,
             resource_group_name: impl Into<String>,
@@ -9411,6 +10241,13 @@ pub mod network_watchers {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "NOTE: This feature is currently in preview and still being tested for stability. Gets the relative latency score for internet service providers from a specified location to Azure regions."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the network watcher resource group."]
+        #[doc = "* `network_watcher_name`: The name of the network watcher resource."]
+        #[doc = "* `parameters`: Parameters that determine Azure reachability report configuration."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get_azure_reachability_report(
             &self,
             resource_group_name: impl Into<String>,
@@ -9426,6 +10263,13 @@ pub mod network_watchers {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "NOTE: This feature is currently in preview and still being tested for stability. Lists all available internet service providers for a specified Azure region."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the network watcher resource group."]
+        #[doc = "* `network_watcher_name`: The name of the network watcher resource."]
+        #[doc = "* `parameters`: Parameters that scope the list of available providers."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_available_providers(
             &self,
             resource_group_name: impl Into<String>,
@@ -9441,6 +10285,13 @@ pub mod network_watchers {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets Network Configuration Diagnostic data to help customers understand and debug network behavior. It provides detailed information on what security rules were applied to a specified traffic flow and the result of evaluating these rules. Customers must provide details of a flow like source, destination, protocol, etc. The API returns whether traffic was allowed or denied, the rules evaluated for the specified flow and the evaluation results."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `network_watcher_name`: The name of the network watcher."]
+        #[doc = "* `parameters`: Parameters to get network configuration diagnostic."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get_network_configuration_diagnostic(
             &self,
             resource_group_name: impl Into<String>,
@@ -10537,6 +11388,13 @@ pub mod packet_captures {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a packet capture session by name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `network_watcher_name`: The name of the network watcher."]
+        #[doc = "* `packet_capture_name`: The name of the packet capture session."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -10552,6 +11410,14 @@ pub mod packet_captures {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Create and start a packet capture on the specified VM."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `network_watcher_name`: The name of the network watcher."]
+        #[doc = "* `packet_capture_name`: The name of the packet capture session."]
+        #[doc = "* `parameters`: Parameters that define the create packet capture operation."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create(
             &self,
             resource_group_name: impl Into<String>,
@@ -10569,6 +11435,13 @@ pub mod packet_captures {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes the specified packet capture session."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `network_watcher_name`: The name of the network watcher."]
+        #[doc = "* `packet_capture_name`: The name of the packet capture session."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -10584,6 +11457,13 @@ pub mod packet_captures {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Stops a specified packet capture session."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `network_watcher_name`: The name of the network watcher."]
+        #[doc = "* `packet_capture_name`: The name of the packet capture session."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn stop(
             &self,
             resource_group_name: impl Into<String>,
@@ -10599,6 +11479,13 @@ pub mod packet_captures {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Query the status of a running packet capture session."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `network_watcher_name`: The name of the Network Watcher resource."]
+        #[doc = "* `packet_capture_name`: The name given to the packet capture session."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get_status(
             &self,
             resource_group_name: impl Into<String>,
@@ -10614,6 +11501,12 @@ pub mod packet_captures {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists all packet capture sessions within the specified resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `network_watcher_name`: The name of the Network Watcher resource."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(
             &self,
             resource_group_name: impl Into<String>,
@@ -10968,6 +11861,13 @@ pub mod connection_monitors {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a connection monitor by name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group containing Network Watcher."]
+        #[doc = "* `network_watcher_name`: The name of the Network Watcher resource."]
+        #[doc = "* `connection_monitor_name`: The name of the connection monitor."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -10983,6 +11883,14 @@ pub mod connection_monitors {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Create or update a connection monitor."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group containing Network Watcher."]
+        #[doc = "* `network_watcher_name`: The name of the Network Watcher resource."]
+        #[doc = "* `connection_monitor_name`: The name of the connection monitor."]
+        #[doc = "* `parameters`: Parameters that define the operation to create a connection monitor."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -11001,6 +11909,14 @@ pub mod connection_monitors {
                 migrate: None,
             }
         }
+        #[doc = "Update tags of the specified connection monitor."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `network_watcher_name`: The name of the network watcher."]
+        #[doc = "* `connection_monitor_name`: The name of the connection monitor."]
+        #[doc = "* `parameters`: Parameters supplied to update connection monitor tags."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn update_tags(
             &self,
             resource_group_name: impl Into<String>,
@@ -11018,6 +11934,13 @@ pub mod connection_monitors {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes the specified connection monitor."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group containing Network Watcher."]
+        #[doc = "* `network_watcher_name`: The name of the Network Watcher resource."]
+        #[doc = "* `connection_monitor_name`: The name of the connection monitor."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -11033,6 +11956,13 @@ pub mod connection_monitors {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Stops the specified connection monitor."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group containing Network Watcher."]
+        #[doc = "* `network_watcher_name`: The name of the Network Watcher resource."]
+        #[doc = "* `connection_monitor_name`: The name of the connection monitor."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn stop(
             &self,
             resource_group_name: impl Into<String>,
@@ -11048,6 +11978,13 @@ pub mod connection_monitors {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Starts the specified connection monitor."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group containing Network Watcher."]
+        #[doc = "* `network_watcher_name`: The name of the Network Watcher resource."]
+        #[doc = "* `connection_monitor_name`: The name of the connection monitor."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn start(
             &self,
             resource_group_name: impl Into<String>,
@@ -11063,6 +12000,13 @@ pub mod connection_monitors {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Query a snapshot of the most recent connection states."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group containing Network Watcher."]
+        #[doc = "* `network_watcher_name`: The name of the Network Watcher resource."]
+        #[doc = "* `connection_monitor_name`: The name given to the connection monitor."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn query(
             &self,
             resource_group_name: impl Into<String>,
@@ -11078,6 +12022,12 @@ pub mod connection_monitors {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists all connection monitors for the specified Network Watcher."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group containing Network Watcher."]
+        #[doc = "* `network_watcher_name`: The name of the Network Watcher resource."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(
             &self,
             resource_group_name: impl Into<String>,
@@ -11164,6 +12114,7 @@ pub mod connection_monitors {
             pub(crate) migrate: Option<String>,
         }
         impl Builder {
+            #[doc = "Value indicating whether connection monitor V1 should be migrated to V2 format."]
             pub fn migrate(mut self, migrate: impl Into<String>) -> Self {
                 self.migrate = Some(migrate.into());
                 self
@@ -11548,6 +12499,13 @@ pub mod flow_logs {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a flow log resource by name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `network_watcher_name`: The name of the network watcher."]
+        #[doc = "* `flow_log_name`: The name of the flow log resource."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -11563,6 +12521,14 @@ pub mod flow_logs {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Create or update a flow log for the specified network security group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `network_watcher_name`: The name of the network watcher."]
+        #[doc = "* `flow_log_name`: The name of the flow log."]
+        #[doc = "* `parameters`: Parameters that define the create or update flow log resource."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -11580,6 +12546,14 @@ pub mod flow_logs {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Update tags of the specified flow log."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `network_watcher_name`: The name of the network watcher."]
+        #[doc = "* `flow_log_name`: The name of the flow log."]
+        #[doc = "* `parameters`: Parameters supplied to update flow log tags."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn update_tags(
             &self,
             resource_group_name: impl Into<String>,
@@ -11597,6 +12571,13 @@ pub mod flow_logs {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes the specified flow log resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `network_watcher_name`: The name of the network watcher."]
+        #[doc = "* `flow_log_name`: The name of the flow log resource."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -11612,6 +12593,12 @@ pub mod flow_logs {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists all flow log resources for the specified Network Watcher."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group containing Network Watcher."]
+        #[doc = "* `network_watcher_name`: The name of the Network Watcher resource."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(
             &self,
             resource_group_name: impl Into<String>,
@@ -11941,6 +12928,12 @@ pub mod route_tables {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the specified route table."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `route_table_name`: The name of the route table."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -11955,6 +12948,13 @@ pub mod route_tables {
                 expand: None,
             }
         }
+        #[doc = "Create or updates a route table in a specified resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `route_table_name`: The name of the route table."]
+        #[doc = "* `parameters`: Parameters supplied to the create or update route table operation."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -11970,6 +12970,13 @@ pub mod route_tables {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates a route table tags."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `route_table_name`: The name of the route table."]
+        #[doc = "* `parameters`: Parameters supplied to update route table tags."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn update_tags(
             &self,
             resource_group_name: impl Into<String>,
@@ -11985,6 +12992,12 @@ pub mod route_tables {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes the specified route table."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `route_table_name`: The name of the route table."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -11998,6 +13011,11 @@ pub mod route_tables {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets all route tables in a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(&self, resource_group_name: impl Into<String>, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -12005,6 +13023,10 @@ pub mod route_tables {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets all route tables in a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_all(&self, subscription_id: impl Into<String>) -> list_all::Builder {
             list_all::Builder {
                 client: self.0.clone(),
@@ -12024,6 +13046,7 @@ pub mod route_tables {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "Expands referenced resources."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -12401,6 +13424,13 @@ pub mod routes {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the specified route from a route table."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `route_table_name`: The name of the route table."]
+        #[doc = "* `route_name`: The name of the route."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -12416,6 +13446,14 @@ pub mod routes {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates a route in the specified route table."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `route_table_name`: The name of the route table."]
+        #[doc = "* `route_name`: The name of the route."]
+        #[doc = "* `route_parameters`: Parameters supplied to the create or update route operation."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -12433,6 +13471,13 @@ pub mod routes {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes the specified route from a route table."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `route_table_name`: The name of the route table."]
+        #[doc = "* `route_name`: The name of the route."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -12448,6 +13493,12 @@ pub mod routes {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets all routes in a route table."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `route_table_name`: The name of the route table."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(
             &self,
             resource_group_name: impl Into<String>,
@@ -12723,6 +13774,12 @@ pub mod service_endpoint_policies {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the specified service Endpoint Policies in a specified resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_endpoint_policy_name`: The name of the service endpoint policy."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -12737,6 +13794,13 @@ pub mod service_endpoint_policies {
                 expand: None,
             }
         }
+        #[doc = "Creates or updates a service Endpoint Policies."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_endpoint_policy_name`: The name of the service endpoint policy."]
+        #[doc = "* `parameters`: Parameters supplied to the create or update service endpoint policy operation."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -12752,6 +13816,13 @@ pub mod service_endpoint_policies {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates tags of a service endpoint policy."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_endpoint_policy_name`: The name of the service endpoint policy."]
+        #[doc = "* `parameters`: Parameters supplied to update service endpoint policy tags."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn update_tags(
             &self,
             resource_group_name: impl Into<String>,
@@ -12767,6 +13838,12 @@ pub mod service_endpoint_policies {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes the specified service endpoint policy."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_endpoint_policy_name`: The name of the service endpoint policy."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -12780,12 +13857,21 @@ pub mod service_endpoint_policies {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets all the service endpoint policies in a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets all service endpoint Policies in a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_resource_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -12810,6 +13896,7 @@ pub mod service_endpoint_policies {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "Expands referenced resources."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -13187,6 +14274,13 @@ pub mod service_endpoint_policy_definitions {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get the specified service endpoint policy definitions from service endpoint policy."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_endpoint_policy_name`: The name of the service endpoint policy name."]
+        #[doc = "* `service_endpoint_policy_definition_name`: The name of the service endpoint policy definition name."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -13202,6 +14296,14 @@ pub mod service_endpoint_policy_definitions {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates a service endpoint policy definition in the specified service endpoint policy."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_endpoint_policy_name`: The name of the service endpoint policy."]
+        #[doc = "* `service_endpoint_policy_definition_name`: The name of the service endpoint policy definition name."]
+        #[doc = "* `service_endpoint_policy_definitions`: Parameters supplied to the create or update service endpoint policy operation."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -13219,6 +14321,13 @@ pub mod service_endpoint_policy_definitions {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes the specified ServiceEndpoint policy definitions."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_endpoint_policy_name`: The name of the Service Endpoint Policy."]
+        #[doc = "* `service_endpoint_policy_definition_name`: The name of the service endpoint policy definition."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -13234,6 +14343,12 @@ pub mod service_endpoint_policy_definitions {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets all service endpoint policy definitions in a service end point policy."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_endpoint_policy_name`: The name of the service endpoint policy name."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_resource_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -13482,6 +14597,12 @@ pub mod private_endpoints {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the specified private endpoint by resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `private_endpoint_name`: The name of the private endpoint."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -13496,6 +14617,13 @@ pub mod private_endpoints {
                 expand: None,
             }
         }
+        #[doc = "Creates or updates an private endpoint in the specified resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `private_endpoint_name`: The name of the private endpoint."]
+        #[doc = "* `parameters`: Parameters supplied to the create or update private endpoint operation."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -13511,6 +14639,12 @@ pub mod private_endpoints {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes the specified private endpoint."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `private_endpoint_name`: The name of the private endpoint."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -13524,6 +14658,11 @@ pub mod private_endpoints {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets all private endpoints in a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(&self, resource_group_name: impl Into<String>, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -13531,6 +14670,10 @@ pub mod private_endpoints {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets all private endpoints in a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
@@ -13550,6 +14693,7 @@ pub mod private_endpoints {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "Expands referenced resources."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -13873,6 +15017,11 @@ pub mod available_private_endpoint_types {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Returns all of the resource types that can be linked to a Private Endpoint in this subscription in this region."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `location`: The location of the domain name."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(&self, location: impl Into<String>, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -13880,6 +15029,12 @@ pub mod available_private_endpoint_types {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Returns all of the resource types that can be linked to a Private Endpoint in this subscription in this region."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `location`: The location of the domain name."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_resource_group(
             &self,
             location: impl Into<String>,
@@ -14053,6 +15208,13 @@ pub mod private_dns_zone_groups {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the private dns zone group resource by specified private dns zone group name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `private_endpoint_name`: The name of the private endpoint."]
+        #[doc = "* `private_dns_zone_group_name`: The name of the private dns zone group."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -14068,6 +15230,14 @@ pub mod private_dns_zone_groups {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates a private dns zone group in the specified private endpoint."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `private_endpoint_name`: The name of the private endpoint."]
+        #[doc = "* `private_dns_zone_group_name`: The name of the private dns zone group."]
+        #[doc = "* `parameters`: Parameters supplied to the create or update private dns zone group operation."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -14085,6 +15255,13 @@ pub mod private_dns_zone_groups {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes the specified private dns zone group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `private_endpoint_name`: The name of the private endpoint."]
+        #[doc = "* `private_dns_zone_group_name`: The name of the private dns zone group."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -14100,6 +15277,12 @@ pub mod private_dns_zone_groups {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets all private dns zone groups in a private endpoint."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `private_endpoint_name`: The name of the private endpoint."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(
             &self,
             private_endpoint_name: impl Into<String>,
@@ -14375,6 +15558,12 @@ pub mod private_link_services {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the specified private link service by resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the private link service."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -14389,6 +15578,13 @@ pub mod private_link_services {
                 expand: None,
             }
         }
+        #[doc = "Creates or updates an private link service in the specified resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the private link service."]
+        #[doc = "* `parameters`: Parameters supplied to the create or update private link service operation."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -14404,6 +15600,12 @@ pub mod private_link_services {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes the specified private link service."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the private link service."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -14417,6 +15619,11 @@ pub mod private_link_services {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets all private link services in a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(&self, resource_group_name: impl Into<String>, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -14424,12 +15631,23 @@ pub mod private_link_services {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets all private link service in a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get the specific private end point connection by specific private link service in the resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the private link service."]
+        #[doc = "* `pe_connection_name`: The name of the private end point connection."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get_private_endpoint_connection(
             &self,
             resource_group_name: impl Into<String>,
@@ -14446,6 +15664,14 @@ pub mod private_link_services {
                 expand: None,
             }
         }
+        #[doc = "Approve or reject private end point connection for a private link service in a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the private link service."]
+        #[doc = "* `pe_connection_name`: The name of the private end point connection."]
+        #[doc = "* `parameters`: Parameters supplied to approve or reject the private end point connection."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn update_private_endpoint_connection(
             &self,
             resource_group_name: impl Into<String>,
@@ -14463,6 +15689,13 @@ pub mod private_link_services {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Delete private end point connection for a private link service in a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the private link service."]
+        #[doc = "* `pe_connection_name`: The name of the private end point connection."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete_private_endpoint_connection(
             &self,
             resource_group_name: impl Into<String>,
@@ -14478,6 +15711,12 @@ pub mod private_link_services {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets all private end point connections for a specific private link service."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `service_name`: The name of the private link service."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_private_endpoint_connections(
             &self,
             resource_group_name: impl Into<String>,
@@ -14491,6 +15730,12 @@ pub mod private_link_services {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Checks whether the subscription is visible to private link service."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `location`: The location of the domain name."]
+        #[doc = "* `parameters`: The request body of CheckPrivateLinkService API call."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn check_private_link_service_visibility(
             &self,
             location: impl Into<String>,
@@ -14504,6 +15749,13 @@ pub mod private_link_services {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Checks whether the subscription is visible to private link service in the specified resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `location`: The location of the domain name."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `parameters`: The request body of CheckPrivateLinkService API call."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn check_private_link_service_visibility_by_resource_group(
             &self,
             location: impl Into<String>,
@@ -14519,6 +15771,11 @@ pub mod private_link_services {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Returns all of the private link service ids that can be linked to a Private Endpoint with auto approved in this subscription in this region."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `location`: The location of the domain name."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_auto_approved_private_link_services(
             &self,
             location: impl Into<String>,
@@ -14530,6 +15787,12 @@ pub mod private_link_services {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Returns all of the private link service ids that can be linked to a Private Endpoint with auto approved in this subscription in this region."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `location`: The location of the domain name."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_auto_approved_private_link_services_by_resource_group(
             &self,
             location: impl Into<String>,
@@ -14556,6 +15819,7 @@ pub mod private_link_services {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "Expands referenced resources."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -14887,6 +16151,7 @@ pub mod private_link_services {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "Expands referenced resources."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -15366,6 +16631,12 @@ pub mod network_profiles {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the specified network profile in a specified resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `network_profile_name`: The name of the public IP prefix."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -15380,6 +16651,13 @@ pub mod network_profiles {
                 expand: None,
             }
         }
+        #[doc = "Creates or updates a network profile."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `network_profile_name`: The name of the network profile."]
+        #[doc = "* `parameters`: Parameters supplied to the create or update network profile operation."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -15395,6 +16673,13 @@ pub mod network_profiles {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates network profile tags."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `network_profile_name`: The name of the network profile."]
+        #[doc = "* `parameters`: Parameters supplied to update network profile tags."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn update_tags(
             &self,
             resource_group_name: impl Into<String>,
@@ -15410,6 +16695,12 @@ pub mod network_profiles {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes the specified network profile."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `network_profile_name`: The name of the NetworkProfile."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -15423,12 +16714,21 @@ pub mod network_profiles {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets all the network profiles in a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_all(&self, subscription_id: impl Into<String>) -> list_all::Builder {
             list_all::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets all network profiles in a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(&self, resource_group_name: impl Into<String>, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -15449,6 +16749,7 @@ pub mod network_profiles {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "Expands referenced resources."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -15825,6 +17126,12 @@ pub mod public_ip_addresses {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the specified public IP address in a specified resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `public_ip_address_name`: The name of the public IP address."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -15839,6 +17146,13 @@ pub mod public_ip_addresses {
                 expand: None,
             }
         }
+        #[doc = "Creates or updates a static or dynamic public IP address."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `public_ip_address_name`: The name of the public IP address."]
+        #[doc = "* `parameters`: Parameters supplied to the create or update public IP address operation."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -15854,6 +17168,13 @@ pub mod public_ip_addresses {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates public IP address tags."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `public_ip_address_name`: The name of the public IP address."]
+        #[doc = "* `parameters`: Parameters supplied to update public IP address tags."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn update_tags(
             &self,
             resource_group_name: impl Into<String>,
@@ -15869,6 +17190,12 @@ pub mod public_ip_addresses {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes the specified public IP address."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `public_ip_address_name`: The name of the public IP address."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -15882,12 +17209,21 @@ pub mod public_ip_addresses {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets all the public IP addresses in a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_all(&self, subscription_id: impl Into<String>) -> list_all::Builder {
             list_all::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets all public IP addresses in a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(&self, resource_group_name: impl Into<String>, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -15895,6 +17231,12 @@ pub mod public_ip_addresses {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets information about all public IP addresses on a cloud service level."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `cloud_service_name`: The name of the cloud service."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_cloud_service_public_ip_addresses(
             &self,
             resource_group_name: impl Into<String>,
@@ -15908,6 +17250,15 @@ pub mod public_ip_addresses {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets information about all public IP addresses in a role instance IP configuration in a cloud service."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `cloud_service_name`: The name of the cloud service."]
+        #[doc = "* `role_instance_name`: The name of role instance."]
+        #[doc = "* `network_interface_name`: The network interface name."]
+        #[doc = "* `ip_configuration_name`: The IP configuration name."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_cloud_service_role_instance_public_ip_addresses(
             &self,
             resource_group_name: impl Into<String>,
@@ -15927,6 +17278,16 @@ pub mod public_ip_addresses {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get the specified public IP address in a cloud service."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `cloud_service_name`: The name of the cloud service."]
+        #[doc = "* `role_instance_name`: The role instance name."]
+        #[doc = "* `network_interface_name`: The name of the network interface."]
+        #[doc = "* `ip_configuration_name`: The name of the IP configuration."]
+        #[doc = "* `public_ip_address_name`: The name of the public IP Address."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get_cloud_service_public_ip_address(
             &self,
             resource_group_name: impl Into<String>,
@@ -15949,6 +17310,12 @@ pub mod public_ip_addresses {
                 expand: None,
             }
         }
+        #[doc = "Gets information about all public IP addresses on a virtual machine scale set level."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `virtual_machine_scale_set_name`: The name of the virtual machine scale set."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_virtual_machine_scale_set_public_ip_addresses(
             &self,
             resource_group_name: impl Into<String>,
@@ -15962,6 +17329,15 @@ pub mod public_ip_addresses {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets information about all public IP addresses in a virtual machine IP configuration in a virtual machine scale set."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `virtual_machine_scale_set_name`: The name of the virtual machine scale set."]
+        #[doc = "* `virtualmachine_index`: The virtual machine index."]
+        #[doc = "* `network_interface_name`: The network interface name."]
+        #[doc = "* `ip_configuration_name`: The IP configuration name."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_virtual_machine_scale_set_vm_public_ip_addresses(
             &self,
             resource_group_name: impl Into<String>,
@@ -15981,6 +17357,16 @@ pub mod public_ip_addresses {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get the specified public IP address in a virtual machine scale set."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `virtual_machine_scale_set_name`: The name of the virtual machine scale set."]
+        #[doc = "* `virtualmachine_index`: The virtual machine index."]
+        #[doc = "* `network_interface_name`: The name of the network interface."]
+        #[doc = "* `ip_configuration_name`: The name of the IP configuration."]
+        #[doc = "* `public_ip_address_name`: The name of the public IP Address."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get_virtual_machine_scale_set_public_ip_address(
             &self,
             resource_group_name: impl Into<String>,
@@ -16016,6 +17402,7 @@ pub mod public_ip_addresses {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "Expands referenced resources."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -16557,6 +17944,7 @@ pub mod public_ip_addresses {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "Expands referenced resources."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -16762,6 +18150,7 @@ pub mod public_ip_addresses {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "Expands referenced resources."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -16809,6 +18198,12 @@ pub mod nat_gateways {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the specified nat gateway in a specified resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `nat_gateway_name`: The name of the nat gateway."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -16823,6 +18218,13 @@ pub mod nat_gateways {
                 expand: None,
             }
         }
+        #[doc = "Creates or updates a nat gateway."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `nat_gateway_name`: The name of the nat gateway."]
+        #[doc = "* `parameters`: Parameters supplied to the create or update nat gateway operation."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -16838,6 +18240,13 @@ pub mod nat_gateways {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates nat gateway tags."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `nat_gateway_name`: The name of the nat gateway."]
+        #[doc = "* `parameters`: Parameters supplied to update nat gateway tags."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn update_tags(
             &self,
             resource_group_name: impl Into<String>,
@@ -16853,6 +18262,12 @@ pub mod nat_gateways {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes the specified nat gateway."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `nat_gateway_name`: The name of the nat gateway."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -16866,12 +18281,21 @@ pub mod nat_gateways {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets all the Nat Gateways in a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_all(&self, subscription_id: impl Into<String>) -> list_all::Builder {
             list_all::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets all nat gateways in a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(&self, resource_group_name: impl Into<String>, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -16892,6 +18316,7 @@ pub mod nat_gateways {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "Expands referenced resources."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -17271,6 +18696,11 @@ pub mod available_delegations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets all of the available subnet delegations for this subscription in this region."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `location`: The location of the subnet."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(&self, location: impl Into<String>, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -17360,6 +18790,12 @@ pub mod available_resource_group_delegations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets all of the available subnet delegations for this resource group in this region."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `location`: The location of the domain name."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(
             &self,
             location: impl Into<String>,
@@ -17457,6 +18893,11 @@ pub mod available_service_aliases {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets all available service aliases for this subscription in this region."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `location`: The location."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(&self, location: impl Into<String>, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -17464,6 +18905,12 @@ pub mod available_service_aliases {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets all available service aliases for this resource group in this region."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `location`: The location."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_resource_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -17637,6 +19084,12 @@ pub mod azure_firewalls {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the specified Azure Firewall."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `azure_firewall_name`: The name of the Azure Firewall."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -17650,6 +19103,13 @@ pub mod azure_firewalls {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates the specified Azure Firewall."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `azure_firewall_name`: The name of the Azure Firewall."]
+        #[doc = "* `parameters`: Parameters supplied to the create or update Azure Firewall operation."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -17665,6 +19125,13 @@ pub mod azure_firewalls {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates tags of an Azure Firewall resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `azure_firewall_name`: The name of the Azure Firewall."]
+        #[doc = "* `parameters`: Parameters supplied to update azure firewall tags."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn update_tags(
             &self,
             resource_group_name: impl Into<String>,
@@ -17680,6 +19147,12 @@ pub mod azure_firewalls {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes the specified Azure Firewall."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `azure_firewall_name`: The name of the Azure Firewall."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -17693,6 +19166,11 @@ pub mod azure_firewalls {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists all Azure Firewalls in a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(&self, resource_group_name: impl Into<String>, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -17700,6 +19178,10 @@ pub mod azure_firewalls {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets all the Azure Firewalls in a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_all(&self, subscription_id: impl Into<String>) -> list_all::Builder {
             list_all::Builder {
                 client: self.0.clone(),
@@ -18094,6 +19576,10 @@ pub mod azure_firewall_fqdn_tags {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets all the Azure Firewall FQDN Tags in a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_all(&self, subscription_id: impl Into<String>) -> list_all::Builder {
             list_all::Builder {
                 client: self.0.clone(),
@@ -18180,6 +19666,11 @@ pub mod web_categories {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the specified Azure Web Category."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `name`: The name of the azureWebCategory."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(&self, name: impl Into<String>, subscription_id: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -18188,6 +19679,10 @@ pub mod web_categories {
                 expand: None,
             }
         }
+        #[doc = "Gets all the Azure Web Categories in a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
@@ -18206,6 +19701,7 @@ pub mod web_categories {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "Expands resourceIds back referenced by the azureWebCategory resource."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -18332,6 +19828,12 @@ pub mod bastion_hosts {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the specified Bastion Host."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `bastion_host_name`: The name of the Bastion Host."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -18345,6 +19847,13 @@ pub mod bastion_hosts {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates the specified Bastion Host."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `bastion_host_name`: The name of the Bastion Host."]
+        #[doc = "* `parameters`: Parameters supplied to the create or update Bastion Host operation."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -18360,6 +19869,13 @@ pub mod bastion_hosts {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates Tags for BastionHost resource"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `bastion_host_name`: The name of the Bastion Host."]
+        #[doc = "* `parameters`: Parameters supplied to update BastionHost tags."]
         pub fn update_tags(
             &self,
             subscription_id: impl Into<String>,
@@ -18375,6 +19891,12 @@ pub mod bastion_hosts {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Deletes the specified Bastion Host."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `bastion_host_name`: The name of the Bastion Host."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -18388,12 +19910,21 @@ pub mod bastion_hosts {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists all Bastion Hosts in a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists all Bastion Hosts in a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_resource_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -18790,6 +20321,13 @@ pub mod bastion_hosts {
     }
 }
 impl Client {
+    #[doc = "Creates a Bastion Shareable Links for all the VMs specified in the request."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `resource_group_name`: The name of the resource group."]
+    #[doc = "* `bastion_host_name`: The name of the Bastion Host."]
+    #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+    #[doc = "* `bsl_request`: Post request for all the Bastion Shareable Link endpoints."]
     pub fn put_bastion_shareable_link(
         &self,
         resource_group_name: impl Into<String>,
@@ -18805,6 +20343,13 @@ impl Client {
             bsl_request: bsl_request.into(),
         }
     }
+    #[doc = "Deletes the Bastion Shareable Links for all the VMs specified in the request."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `resource_group_name`: The name of the resource group."]
+    #[doc = "* `bastion_host_name`: The name of the Bastion Host."]
+    #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+    #[doc = "* `bsl_request`: Post request for all the Bastion Shareable Link endpoints."]
     pub fn delete_bastion_shareable_link(
         &self,
         resource_group_name: impl Into<String>,
@@ -18820,6 +20365,13 @@ impl Client {
             bsl_request: bsl_request.into(),
         }
     }
+    #[doc = "Return the Bastion Shareable Links for all the VMs specified in the request."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `resource_group_name`: The name of the resource group."]
+    #[doc = "* `bastion_host_name`: The name of the Bastion Host."]
+    #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+    #[doc = "* `bsl_request`: Post request for all the Bastion Shareable Link endpoints."]
     pub fn get_bastion_shareable_link(
         &self,
         resource_group_name: impl Into<String>,
@@ -18835,6 +20387,12 @@ impl Client {
             bsl_request: bsl_request.into(),
         }
     }
+    #[doc = "Returns the list of currently active sessions on the Bastion."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `resource_group_name`: The name of the resource group."]
+    #[doc = "* `bastion_host_name`: The name of the Bastion Host."]
+    #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
     pub fn get_active_sessions(
         &self,
         resource_group_name: impl Into<String>,
@@ -18848,6 +20406,13 @@ impl Client {
             subscription_id: subscription_id.into(),
         }
     }
+    #[doc = "Returns the list of currently active sessions on the Bastion."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `resource_group_name`: The name of the resource group."]
+    #[doc = "* `bastion_host_name`: The name of the Bastion Host."]
+    #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+    #[doc = "* `session_ids`: The list of sessionids to disconnect."]
     pub fn disconnect_active_sessions(
         &self,
         resource_group_name: impl Into<String>,
@@ -18863,6 +20428,12 @@ impl Client {
             session_ids: session_ids.into(),
         }
     }
+    #[doc = "Checks whether a domain name in the cloudapp.azure.com zone is available for use."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `location`: The location of the domain name."]
+    #[doc = "* `domain_name_label`: The domain name to be verified. It must conform to the following regular expression: ^[a-z][a-z0-9-]{1,61}[a-z0-9]$."]
+    #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
     pub fn check_dns_name_availability(
         &self,
         location: impl Into<String>,
@@ -18876,6 +20447,12 @@ impl Client {
             subscription_id: subscription_id.into(),
         }
     }
+    #[doc = "Gives the supported security providers for the virtual wan."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+    #[doc = "* `resource_group_name`: The resource group name."]
+    #[doc = "* `virtual_wan_name`: The name of the VirtualWAN for which supported security providers are needed."]
     pub fn supported_security_providers(
         &self,
         subscription_id: impl Into<String>,
@@ -18889,6 +20466,13 @@ impl Client {
             virtual_wan_name: virtual_wan_name.into(),
         }
     }
+    #[doc = "Generates a unique VPN profile for P2S clients for VirtualWan and associated VpnServerConfiguration combination in the specified resource group."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+    #[doc = "* `resource_group_name`: The resource group name."]
+    #[doc = "* `virtual_wan_name`: The name of the VirtualWAN whose associated VpnServerConfigurations is needed."]
+    #[doc = "* `vpn_client_params`: Parameters supplied to the generate VirtualWan VPN profile generation operation."]
     pub fn generatevirtualwanvpnserverconfigurationvpnprofile(
         &self,
         subscription_id: impl Into<String>,
@@ -19477,6 +21061,12 @@ pub mod custom_ip_prefixes {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the specified custom IP prefix in a specified resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `custom_ip_prefix_name`: The name of the custom IP prefix."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -19491,6 +21081,13 @@ pub mod custom_ip_prefixes {
                 expand: None,
             }
         }
+        #[doc = "Creates or updates a custom IP prefix."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `custom_ip_prefix_name`: The name of the custom IP prefix."]
+        #[doc = "* `parameters`: Parameters supplied to the create or update custom IP prefix operation."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -19506,6 +21103,13 @@ pub mod custom_ip_prefixes {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates custom IP prefix tags."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `custom_ip_prefix_name`: The name of the custom IP prefix."]
+        #[doc = "* `parameters`: Parameters supplied to update custom IP prefix tags."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn update_tags(
             &self,
             resource_group_name: impl Into<String>,
@@ -19521,6 +21125,12 @@ pub mod custom_ip_prefixes {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes the specified custom IP prefix."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `custom_ip_prefix_name`: The name of the CustomIpPrefix."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -19534,12 +21144,21 @@ pub mod custom_ip_prefixes {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets all the custom IP prefixes in a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_all(&self, subscription_id: impl Into<String>) -> list_all::Builder {
             list_all::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets all custom IP prefixes in a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(&self, resource_group_name: impl Into<String>, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -19560,6 +21179,7 @@ pub mod custom_ip_prefixes {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "Expands referenced resources."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -19937,6 +21557,12 @@ pub mod ddos_custom_policies {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets information about the specified DDoS custom policy."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `ddos_custom_policy_name`: The name of the DDoS custom policy."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -19950,6 +21576,13 @@ pub mod ddos_custom_policies {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates a DDoS custom policy."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `ddos_custom_policy_name`: The name of the DDoS custom policy."]
+        #[doc = "* `parameters`: Parameters supplied to the create or update operation."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -19965,6 +21598,13 @@ pub mod ddos_custom_policies {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Update a DDoS custom policy tags."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `ddos_custom_policy_name`: The name of the DDoS custom policy."]
+        #[doc = "* `parameters`: Parameters supplied to update DDoS custom policy resource tags."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn update_tags(
             &self,
             resource_group_name: impl Into<String>,
@@ -19980,6 +21620,12 @@ pub mod ddos_custom_policies {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes the specified DDoS custom policy."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `ddos_custom_policy_name`: The name of the DDoS custom policy."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -20225,6 +21871,12 @@ pub mod ddos_protection_plans {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets information about the specified DDoS protection plan."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `ddos_protection_plan_name`: The name of the DDoS protection plan."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -20238,6 +21890,13 @@ pub mod ddos_protection_plans {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates a DDoS protection plan."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `ddos_protection_plan_name`: The name of the DDoS protection plan."]
+        #[doc = "* `parameters`: Parameters supplied to the create or update operation."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -20253,6 +21912,13 @@ pub mod ddos_protection_plans {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Update a DDoS protection plan tags."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `ddos_protection_plan_name`: The name of the DDoS protection plan."]
+        #[doc = "* `parameters`: Parameters supplied to the update DDoS protection plan resource tags."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn update_tags(
             &self,
             resource_group_name: impl Into<String>,
@@ -20268,6 +21934,12 @@ pub mod ddos_protection_plans {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes the specified DDoS protection plan."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `ddos_protection_plan_name`: The name of the DDoS protection plan."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -20281,12 +21953,21 @@ pub mod ddos_protection_plans {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets all DDoS protection plans in a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets all the DDoS protection plans in a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_resource_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -20680,6 +22361,12 @@ pub mod dscp_configuration {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a DSCP Configuration."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `dscp_configuration_name`: The name of the resource."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -20693,6 +22380,13 @@ pub mod dscp_configuration {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates a DSCP Configuration."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `dscp_configuration_name`: The name of the resource."]
+        #[doc = "* `parameters`: Parameters supplied to the create or update dscp configuration operation."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -20708,6 +22402,12 @@ pub mod dscp_configuration {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes a DSCP Configuration."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `dscp_configuration_name`: The name of the resource."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -20721,6 +22421,11 @@ pub mod dscp_configuration {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets a DSCP Configuration."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(&self, resource_group_name: impl Into<String>, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -20728,6 +22433,10 @@ pub mod dscp_configuration {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets all dscp configurations in a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_all(&self, subscription_id: impl Into<String>) -> list_all::Builder {
             list_all::Builder {
                 client: self.0.clone(),
@@ -21062,6 +22771,11 @@ pub mod available_endpoint_services {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List what values of endpoint services are available for use."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `location`: The location to check available endpoint services."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(&self, location: impl Into<String>, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -21151,6 +22865,13 @@ pub mod express_route_circuit_authorizations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the specified authorization from the specified express route circuit."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `circuit_name`: The name of the express route circuit."]
+        #[doc = "* `authorization_name`: The name of the authorization."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -21166,6 +22887,14 @@ pub mod express_route_circuit_authorizations {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates an authorization in the specified express route circuit."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `circuit_name`: The name of the express route circuit."]
+        #[doc = "* `authorization_name`: The name of the authorization."]
+        #[doc = "* `authorization_parameters`: Parameters supplied to the create or update express route circuit authorization operation."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -21183,6 +22912,13 @@ pub mod express_route_circuit_authorizations {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes the specified authorization from the specified express route circuit."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `circuit_name`: The name of the express route circuit."]
+        #[doc = "* `authorization_name`: The name of the authorization."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -21198,6 +22934,12 @@ pub mod express_route_circuit_authorizations {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets all authorizations in an express route circuit."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `circuit_name`: The name of the circuit."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(
             &self,
             resource_group_name: impl Into<String>,
@@ -21473,6 +23215,13 @@ pub mod express_route_circuit_peerings {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the specified peering for the express route circuit."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `circuit_name`: The name of the express route circuit."]
+        #[doc = "* `peering_name`: The name of the peering."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -21488,6 +23237,14 @@ pub mod express_route_circuit_peerings {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates a peering in the specified express route circuits."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `circuit_name`: The name of the express route circuit."]
+        #[doc = "* `peering_name`: The name of the peering."]
+        #[doc = "* `peering_parameters`: Parameters supplied to the create or update express route circuit peering operation."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -21505,6 +23262,13 @@ pub mod express_route_circuit_peerings {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes the specified peering from the specified express route circuit."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `circuit_name`: The name of the express route circuit."]
+        #[doc = "* `peering_name`: The name of the peering."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -21520,6 +23284,12 @@ pub mod express_route_circuit_peerings {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets all peerings in a specified express route circuit."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `circuit_name`: The name of the express route circuit."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(
             &self,
             resource_group_name: impl Into<String>,
@@ -21795,6 +23565,14 @@ pub mod express_route_circuit_connections {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the specified Express Route Circuit Connection from the specified express route circuit."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `circuit_name`: The name of the express route circuit."]
+        #[doc = "* `peering_name`: The name of the peering."]
+        #[doc = "* `connection_name`: The name of the express route circuit connection."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -21812,6 +23590,15 @@ pub mod express_route_circuit_connections {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates a Express Route Circuit Connection in the specified express route circuits."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `circuit_name`: The name of the express route circuit."]
+        #[doc = "* `peering_name`: The name of the peering."]
+        #[doc = "* `connection_name`: The name of the express route circuit connection."]
+        #[doc = "* `express_route_circuit_connection_parameters`: Parameters supplied to the create or update express route circuit connection operation."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -21831,6 +23618,14 @@ pub mod express_route_circuit_connections {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes the specified Express Route Circuit Connection from the specified express route circuit."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `circuit_name`: The name of the express route circuit."]
+        #[doc = "* `peering_name`: The name of the peering."]
+        #[doc = "* `connection_name`: The name of the express route circuit connection."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -21848,6 +23643,13 @@ pub mod express_route_circuit_connections {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets all global reach connections associated with a private peering in an express route circuit."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `circuit_name`: The name of the circuit."]
+        #[doc = "* `peering_name`: The name of the peering."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(
             &self,
             resource_group_name: impl Into<String>,
@@ -22102,6 +23904,14 @@ pub mod peer_express_route_circuit_connections {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the specified Peer Express Route Circuit Connection from the specified express route circuit."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `circuit_name`: The name of the express route circuit."]
+        #[doc = "* `peering_name`: The name of the peering."]
+        #[doc = "* `connection_name`: The name of the peer express route circuit connection."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -22119,6 +23929,13 @@ pub mod peer_express_route_circuit_connections {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets all global reach peer connections associated with a private peering in an express route circuit."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `circuit_name`: The name of the circuit."]
+        #[doc = "* `peering_name`: The name of the peering."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(
             &self,
             resource_group_name: impl Into<String>,
@@ -22261,6 +24078,12 @@ pub mod express_route_circuits {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets information about the specified express route circuit."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `circuit_name`: The name of express route circuit."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -22274,6 +24097,13 @@ pub mod express_route_circuits {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates an express route circuit."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `circuit_name`: The name of the circuit."]
+        #[doc = "* `parameters`: Parameters supplied to the create or update express route circuit operation."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -22289,6 +24119,13 @@ pub mod express_route_circuits {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates an express route circuit tags."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `circuit_name`: The name of the circuit."]
+        #[doc = "* `parameters`: Parameters supplied to update express route circuit tags."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn update_tags(
             &self,
             resource_group_name: impl Into<String>,
@@ -22304,6 +24141,12 @@ pub mod express_route_circuits {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes the specified express route circuit."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `circuit_name`: The name of the express route circuit."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -22317,6 +24160,14 @@ pub mod express_route_circuits {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the currently advertised ARP table associated with the express route circuit in a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `circuit_name`: The name of the express route circuit."]
+        #[doc = "* `peering_name`: The name of the peering."]
+        #[doc = "* `device_path`: The path of the device."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_arp_table(
             &self,
             resource_group_name: impl Into<String>,
@@ -22334,6 +24185,14 @@ pub mod express_route_circuits {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the currently advertised routes table associated with the express route circuit in a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `circuit_name`: The name of the express route circuit."]
+        #[doc = "* `peering_name`: The name of the peering."]
+        #[doc = "* `device_path`: The path of the device."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_routes_table(
             &self,
             resource_group_name: impl Into<String>,
@@ -22351,6 +24210,14 @@ pub mod express_route_circuits {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the currently advertised routes table summary associated with the express route circuit in a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `circuit_name`: The name of the express route circuit."]
+        #[doc = "* `peering_name`: The name of the peering."]
+        #[doc = "* `device_path`: The path of the device."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_routes_table_summary(
             &self,
             resource_group_name: impl Into<String>,
@@ -22368,6 +24235,12 @@ pub mod express_route_circuits {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets all the stats from an express route circuit in a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `circuit_name`: The name of the express route circuit."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get_stats(
             &self,
             resource_group_name: impl Into<String>,
@@ -22381,6 +24254,13 @@ pub mod express_route_circuits {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets all stats from an express route circuit in a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `circuit_name`: The name of the express route circuit."]
+        #[doc = "* `peering_name`: The name of the peering."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get_peering_stats(
             &self,
             resource_group_name: impl Into<String>,
@@ -22396,6 +24276,11 @@ pub mod express_route_circuits {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets all the express route circuits in a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(&self, resource_group_name: impl Into<String>, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -22403,6 +24288,10 @@ pub mod express_route_circuits {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets all the express route circuits in a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_all(&self, subscription_id: impl Into<String>) -> list_all::Builder {
             list_all::Builder {
                 client: self.0.clone(),
@@ -23063,6 +24952,10 @@ pub mod express_route_service_providers {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets all the available express route service providers."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -23149,6 +25042,12 @@ pub mod virtual_wans {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieves the details of a VirtualWAN."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The resource group name of the VirtualWan."]
+        #[doc = "* `virtual_wan_name`: The name of the VirtualWAN being retrieved."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -23162,6 +25061,13 @@ pub mod virtual_wans {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates a VirtualWAN resource if it doesn't exist else updates the existing VirtualWAN."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The resource group name of the VirtualWan."]
+        #[doc = "* `virtual_wan_name`: The name of the VirtualWAN being created or updated."]
+        #[doc = "* `wan_parameters`: Parameters supplied to create or update VirtualWAN."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -23177,6 +25083,13 @@ pub mod virtual_wans {
                 wan_parameters: wan_parameters.into(),
             }
         }
+        #[doc = "Updates a VirtualWAN tags."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The resource group name of the VirtualWan."]
+        #[doc = "* `virtual_wan_name`: The name of the VirtualWAN being updated."]
+        #[doc = "* `wan_parameters`: Parameters supplied to Update VirtualWAN tags."]
         pub fn update_tags(
             &self,
             subscription_id: impl Into<String>,
@@ -23192,6 +25105,12 @@ pub mod virtual_wans {
                 wan_parameters: wan_parameters.into(),
             }
         }
+        #[doc = "Deletes a VirtualWAN."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The resource group name of the VirtualWan."]
+        #[doc = "* `virtual_wan_name`: The name of the VirtualWAN being deleted."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -23205,6 +25124,11 @@ pub mod virtual_wans {
                 virtual_wan_name: virtual_wan_name.into(),
             }
         }
+        #[doc = "Lists all the VirtualWANs in a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The resource group name of the VirtualWan."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -23216,6 +25140,10 @@ pub mod virtual_wans {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Lists all the VirtualWANs in a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -23604,6 +25532,12 @@ pub mod vpn_sites {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieves the details of a VPN site."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The resource group name of the VpnSite."]
+        #[doc = "* `vpn_site_name`: The name of the VpnSite being retrieved."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -23617,6 +25551,13 @@ pub mod vpn_sites {
                 vpn_site_name: vpn_site_name.into(),
             }
         }
+        #[doc = "Creates a VpnSite resource if it doesn't exist else updates the existing VpnSite."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The resource group name of the VpnSite."]
+        #[doc = "* `vpn_site_name`: The name of the VpnSite being created or updated."]
+        #[doc = "* `vpn_site_parameters`: Parameters supplied to create or update VpnSite."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -23632,6 +25573,13 @@ pub mod vpn_sites {
                 vpn_site_parameters: vpn_site_parameters.into(),
             }
         }
+        #[doc = "Updates VpnSite tags."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The resource group name of the VpnSite."]
+        #[doc = "* `vpn_site_name`: The name of the VpnSite being updated."]
+        #[doc = "* `vpn_site_parameters`: Parameters supplied to update VpnSite tags."]
         pub fn update_tags(
             &self,
             subscription_id: impl Into<String>,
@@ -23647,6 +25595,12 @@ pub mod vpn_sites {
                 vpn_site_parameters: vpn_site_parameters.into(),
             }
         }
+        #[doc = "Deletes a VpnSite."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The resource group name of the VpnSite."]
+        #[doc = "* `vpn_site_name`: The name of the VpnSite being deleted."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -23660,6 +25614,11 @@ pub mod vpn_sites {
                 vpn_site_name: vpn_site_name.into(),
             }
         }
+        #[doc = "Lists all the vpnSites in a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The resource group name of the VpnSite."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -23671,6 +25630,10 @@ pub mod vpn_sites {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Lists all the VpnSites in a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -24059,6 +26022,13 @@ pub mod vpn_site_links {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieves the details of a VPN site link."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The resource group name of the VpnSite."]
+        #[doc = "* `vpn_site_name`: The name of the VpnSite."]
+        #[doc = "* `vpn_site_link_name`: The name of the VpnSiteLink being retrieved."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -24074,6 +26044,12 @@ pub mod vpn_site_links {
                 vpn_site_link_name: vpn_site_link_name.into(),
             }
         }
+        #[doc = "Lists all the vpnSiteLinks in a resource group for a vpn site."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The resource group name of the VpnSite."]
+        #[doc = "* `vpn_site_name`: The name of the VpnSite."]
         pub fn list_by_vpn_site(
             &self,
             subscription_id: impl Into<String>,
@@ -24225,6 +26201,13 @@ pub mod vpn_sites_configuration {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gives the sas-url to download the configurations for vpn-sites in a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `virtual_wan_name`: The name of the VirtualWAN for which configuration of all vpn-sites is needed."]
+        #[doc = "* `request`: Parameters supplied to download vpn-sites configuration."]
         pub fn download(
             &self,
             subscription_id: impl Into<String>,
@@ -24302,6 +26285,12 @@ pub mod vpn_server_configurations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieves the details of a VpnServerConfiguration."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The resource group name of the VpnServerConfiguration."]
+        #[doc = "* `vpn_server_configuration_name`: The name of the VpnServerConfiguration being retrieved."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -24315,6 +26304,13 @@ pub mod vpn_server_configurations {
                 vpn_server_configuration_name: vpn_server_configuration_name.into(),
             }
         }
+        #[doc = "Creates a VpnServerConfiguration resource if it doesn't exist else updates the existing VpnServerConfiguration."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The resource group name of the VpnServerConfiguration."]
+        #[doc = "* `vpn_server_configuration_name`: The name of the VpnServerConfiguration being created or updated."]
+        #[doc = "* `vpn_server_configuration_parameters`: Parameters supplied to create or update VpnServerConfiguration."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -24330,6 +26326,13 @@ pub mod vpn_server_configurations {
                 vpn_server_configuration_parameters: vpn_server_configuration_parameters.into(),
             }
         }
+        #[doc = "Updates VpnServerConfiguration tags."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The resource group name of the VpnServerConfiguration."]
+        #[doc = "* `vpn_server_configuration_name`: The name of the VpnServerConfiguration being updated."]
+        #[doc = "* `vpn_server_configuration_parameters`: Parameters supplied to update VpnServerConfiguration tags."]
         pub fn update_tags(
             &self,
             subscription_id: impl Into<String>,
@@ -24345,6 +26348,12 @@ pub mod vpn_server_configurations {
                 vpn_server_configuration_parameters: vpn_server_configuration_parameters.into(),
             }
         }
+        #[doc = "Deletes a VpnServerConfiguration."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The resource group name of the VpnServerConfiguration."]
+        #[doc = "* `vpn_server_configuration_name`: The name of the VpnServerConfiguration being deleted."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -24358,6 +26367,11 @@ pub mod vpn_server_configurations {
                 vpn_server_configuration_name: vpn_server_configuration_name.into(),
             }
         }
+        #[doc = "Lists all the vpnServerConfigurations in a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The resource group name of the VpnServerConfiguration."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -24369,6 +26383,10 @@ pub mod vpn_server_configurations {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Lists all the VpnServerConfigurations in a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -24757,6 +26775,13 @@ pub mod configuration_policy_groups {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieves the details of a ConfigurationPolicyGroup."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The resource group name of the VpnServerConfiguration."]
+        #[doc = "* `vpn_server_configuration_name`: The name of the VpnServerConfiguration."]
+        #[doc = "* `configuration_policy_group_name`: The name of the ConfigurationPolicyGroup being retrieved."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -24772,6 +26797,14 @@ pub mod configuration_policy_groups {
                 configuration_policy_group_name: configuration_policy_group_name.into(),
             }
         }
+        #[doc = "Creates a ConfigurationPolicyGroup if it doesn't exist else updates the existing one."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The resource group name of the ConfigurationPolicyGroup."]
+        #[doc = "* `vpn_server_configuration_name`: The name of the VpnServerConfiguration."]
+        #[doc = "* `configuration_policy_group_name`: The name of the ConfigurationPolicyGroup."]
+        #[doc = "* `vpn_server_configuration_policy_group_parameters`: Parameters supplied to create or update a VpnServerConfiguration PolicyGroup."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -24789,6 +26822,13 @@ pub mod configuration_policy_groups {
                 vpn_server_configuration_policy_group_parameters: vpn_server_configuration_policy_group_parameters.into(),
             }
         }
+        #[doc = "Deletes a ConfigurationPolicyGroup."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The resource group name of the ConfigurationPolicyGroup."]
+        #[doc = "* `vpn_server_configuration_name`: The name of the VpnServerConfiguration."]
+        #[doc = "* `configuration_policy_group_name`: The name of the ConfigurationPolicyGroup."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -24804,6 +26844,12 @@ pub mod configuration_policy_groups {
                 configuration_policy_group_name: configuration_policy_group_name.into(),
             }
         }
+        #[doc = "Lists all the configurationPolicyGroups in a resource group for a vpnServerConfiguration."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The resource group name of the VpnServerConfiguration."]
+        #[doc = "* `vpn_server_configuration_name`: The name of the VpnServerConfiguration."]
         pub fn list_by_vpn_server_configuration(
             &self,
             subscription_id: impl Into<String>,
@@ -25052,6 +27098,12 @@ pub mod virtual_hubs {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieves the details of a VirtualHub."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The resource group name of the VirtualHub."]
+        #[doc = "* `virtual_hub_name`: The name of the VirtualHub."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -25065,6 +27117,13 @@ pub mod virtual_hubs {
                 virtual_hub_name: virtual_hub_name.into(),
             }
         }
+        #[doc = "Creates a VirtualHub resource if it doesn't exist else updates the existing VirtualHub."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The resource group name of the VirtualHub."]
+        #[doc = "* `virtual_hub_name`: The name of the VirtualHub."]
+        #[doc = "* `virtual_hub_parameters`: Parameters supplied to create or update VirtualHub."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -25080,6 +27139,13 @@ pub mod virtual_hubs {
                 virtual_hub_parameters: virtual_hub_parameters.into(),
             }
         }
+        #[doc = "Updates VirtualHub tags."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The resource group name of the VirtualHub."]
+        #[doc = "* `virtual_hub_name`: The name of the VirtualHub."]
+        #[doc = "* `virtual_hub_parameters`: Parameters supplied to update VirtualHub tags."]
         pub fn update_tags(
             &self,
             subscription_id: impl Into<String>,
@@ -25095,6 +27161,12 @@ pub mod virtual_hubs {
                 virtual_hub_parameters: virtual_hub_parameters.into(),
             }
         }
+        #[doc = "Deletes a VirtualHub."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The resource group name of the VirtualHub."]
+        #[doc = "* `virtual_hub_name`: The name of the VirtualHub."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -25108,6 +27180,11 @@ pub mod virtual_hubs {
                 virtual_hub_name: virtual_hub_name.into(),
             }
         }
+        #[doc = "Lists all the VirtualHubs in a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The resource group name of the VirtualHub."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -25119,12 +27196,22 @@ pub mod virtual_hubs {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Lists all the VirtualHubs in a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the effective routes configured for the Virtual Hub resource or the specified resource ."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The resource group name of the VirtualHub."]
+        #[doc = "* `virtual_hub_name`: The name of the VirtualHub."]
         pub fn get_effective_virtual_hub_routes(
             &self,
             subscription_id: impl Into<String>,
@@ -25532,6 +27619,7 @@ pub mod virtual_hubs {
             pub(crate) effective_routes_parameters: Option<models::EffectiveRoutesParameters>,
         }
         impl Builder {
+            #[doc = "Parameters supplied to get the effective routes for a specific resource."]
             pub fn effective_routes_parameters(
                 mut self,
                 effective_routes_parameters: impl Into<models::EffectiveRoutesParameters>,
@@ -25588,6 +27676,13 @@ pub mod hub_virtual_network_connections {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieves the details of a HubVirtualNetworkConnection."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The resource group name of the VirtualHub."]
+        #[doc = "* `virtual_hub_name`: The name of the VirtualHub."]
+        #[doc = "* `connection_name`: The name of the vpn connection."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -25603,6 +27698,14 @@ pub mod hub_virtual_network_connections {
                 connection_name: connection_name.into(),
             }
         }
+        #[doc = "Creates a hub virtual network connection if it doesn't exist else updates the existing one."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The resource group name of the HubVirtualNetworkConnection."]
+        #[doc = "* `virtual_hub_name`: The name of the VirtualHub."]
+        #[doc = "* `connection_name`: The name of the HubVirtualNetworkConnection."]
+        #[doc = "* `hub_virtual_network_connection_parameters`: Parameters supplied to create or update a hub virtual network connection."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -25620,6 +27723,13 @@ pub mod hub_virtual_network_connections {
                 hub_virtual_network_connection_parameters: hub_virtual_network_connection_parameters.into(),
             }
         }
+        #[doc = "Deletes a HubVirtualNetworkConnection."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The resource group name of the VirtualHub."]
+        #[doc = "* `virtual_hub_name`: The name of the VirtualHub."]
+        #[doc = "* `connection_name`: The name of the HubVirtualNetworkConnection."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -25635,6 +27745,12 @@ pub mod hub_virtual_network_connections {
                 connection_name: connection_name.into(),
             }
         }
+        #[doc = "Retrieves the details of all HubVirtualNetworkConnections."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The resource group name of the VirtualHub."]
+        #[doc = "* `virtual_hub_name`: The name of the VirtualHub."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -25889,6 +28005,12 @@ pub mod vpn_gateways {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieves the details of a virtual wan vpn gateway."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The resource group name of the VpnGateway."]
+        #[doc = "* `gateway_name`: The name of the gateway."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -25902,6 +28024,13 @@ pub mod vpn_gateways {
                 gateway_name: gateway_name.into(),
             }
         }
+        #[doc = "Creates a virtual wan vpn gateway if it doesn't exist else updates the existing gateway."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The resource group name of the VpnGateway."]
+        #[doc = "* `gateway_name`: The name of the gateway."]
+        #[doc = "* `vpn_gateway_parameters`: Parameters supplied to create or Update a virtual wan vpn gateway."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -25917,6 +28046,13 @@ pub mod vpn_gateways {
                 vpn_gateway_parameters: vpn_gateway_parameters.into(),
             }
         }
+        #[doc = "Updates virtual wan vpn gateway tags."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The resource group name of the VpnGateway."]
+        #[doc = "* `gateway_name`: The name of the gateway."]
+        #[doc = "* `vpn_gateway_parameters`: Parameters supplied to update a virtual wan vpn gateway tags."]
         pub fn update_tags(
             &self,
             subscription_id: impl Into<String>,
@@ -25932,6 +28068,12 @@ pub mod vpn_gateways {
                 vpn_gateway_parameters: vpn_gateway_parameters.into(),
             }
         }
+        #[doc = "Deletes a virtual wan vpn gateway."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The resource group name of the VpnGateway."]
+        #[doc = "* `gateway_name`: The name of the gateway."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -25945,6 +28087,12 @@ pub mod vpn_gateways {
                 gateway_name: gateway_name.into(),
             }
         }
+        #[doc = "Resets the primary of the vpn gateway in the specified resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The resource group name of the VpnGateway."]
+        #[doc = "* `gateway_name`: The name of the gateway."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn reset(
             &self,
             resource_group_name: impl Into<String>,
@@ -25958,6 +28106,12 @@ pub mod vpn_gateways {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Starts packet capture on vpn gateway in the specified resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The resource group name of the VpnGateway."]
+        #[doc = "* `gateway_name`: The name of the gateway."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn start_packet_capture(
             &self,
             resource_group_name: impl Into<String>,
@@ -25972,6 +28126,12 @@ pub mod vpn_gateways {
                 parameters: None,
             }
         }
+        #[doc = "Stops packet capture on vpn gateway in the specified resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The resource group name of the VpnGateway."]
+        #[doc = "* `gateway_name`: The name of the gateway."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn stop_packet_capture(
             &self,
             resource_group_name: impl Into<String>,
@@ -25986,6 +28146,11 @@ pub mod vpn_gateways {
                 parameters: None,
             }
         }
+        #[doc = "Lists all the VpnGateways in a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The resource group name of the VpnGateway."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -25997,6 +28162,10 @@ pub mod vpn_gateways {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Lists all the VpnGateways in a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -26311,6 +28480,7 @@ pub mod vpn_gateways {
             pub(crate) parameters: Option<models::VpnGatewayPacketCaptureStartParameters>,
         }
         impl Builder {
+            #[doc = "Vpn gateway packet capture parameters supplied to start packet capture on vpn gateway."]
             pub fn parameters(mut self, parameters: impl Into<models::VpnGatewayPacketCaptureStartParameters>) -> Self {
                 self.parameters = Some(parameters.into());
                 self
@@ -26379,6 +28549,7 @@ pub mod vpn_gateways {
             pub(crate) parameters: Option<models::VpnGatewayPacketCaptureStopParameters>,
         }
         impl Builder {
+            #[doc = "Vpn gateway packet capture parameters supplied to stop packet capture on vpn gateway."]
             pub fn parameters(mut self, parameters: impl Into<models::VpnGatewayPacketCaptureStopParameters>) -> Self {
                 self.parameters = Some(parameters.into());
                 self
@@ -26586,6 +28757,14 @@ pub mod vpn_link_connections {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Resets the VpnLink connection specified."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `gateway_name`: The name of the gateway."]
+        #[doc = "* `connection_name`: The name of the vpn connection."]
+        #[doc = "* `link_connection_name`: The name of the vpn link connection."]
         pub fn reset_connection(
             &self,
             subscription_id: impl Into<String>,
@@ -26603,6 +28782,14 @@ pub mod vpn_link_connections {
                 link_connection_name: link_connection_name.into(),
             }
         }
+        #[doc = "Lists IKE Security Associations for Vpn Site Link Connection in the specified resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `gateway_name`: The name of the gateway."]
+        #[doc = "* `connection_name`: The name of the vpn connection."]
+        #[doc = "* `link_connection_name`: The name of the vpn link connection."]
         pub fn get_ike_sas(
             &self,
             subscription_id: impl Into<String>,
@@ -26620,6 +28807,13 @@ pub mod vpn_link_connections {
                 link_connection_name: link_connection_name.into(),
             }
         }
+        #[doc = "Retrieves all vpn site link connections for a particular virtual wan vpn gateway vpn connection."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The resource group name of the vpn gateway."]
+        #[doc = "* `gateway_name`: The name of the gateway."]
+        #[doc = "* `connection_name`: The name of the vpn connection."]
         pub fn list_by_vpn_connection(
             &self,
             subscription_id: impl Into<String>,
@@ -26815,6 +29009,13 @@ pub mod vpn_connections {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieves the details of a vpn connection."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The resource group name of the VpnGateway."]
+        #[doc = "* `gateway_name`: The name of the gateway."]
+        #[doc = "* `connection_name`: The name of the vpn connection."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -26830,6 +29031,14 @@ pub mod vpn_connections {
                 connection_name: connection_name.into(),
             }
         }
+        #[doc = "Creates a vpn connection to a scalable vpn gateway if it doesn't exist else updates the existing connection."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The resource group name of the VpnGateway."]
+        #[doc = "* `gateway_name`: The name of the gateway."]
+        #[doc = "* `connection_name`: The name of the connection."]
+        #[doc = "* `vpn_connection_parameters`: Parameters supplied to create or Update a VPN Connection."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -26847,6 +29056,13 @@ pub mod vpn_connections {
                 vpn_connection_parameters: vpn_connection_parameters.into(),
             }
         }
+        #[doc = "Deletes a vpn connection."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The resource group name of the VpnGateway."]
+        #[doc = "* `gateway_name`: The name of the gateway."]
+        #[doc = "* `connection_name`: The name of the connection."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -26862,6 +29078,13 @@ pub mod vpn_connections {
                 connection_name: connection_name.into(),
             }
         }
+        #[doc = "Starts packet capture on Vpn connection in the specified resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `gateway_name`: The name of the gateway."]
+        #[doc = "* `vpn_connection_name`: The name of the vpn connection."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn start_packet_capture(
             &self,
             resource_group_name: impl Into<String>,
@@ -26878,6 +29101,13 @@ pub mod vpn_connections {
                 parameters: None,
             }
         }
+        #[doc = "Stops packet capture on Vpn connection in the specified resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `gateway_name`: The name of the gateway."]
+        #[doc = "* `vpn_connection_name`: The name of the vpn connection."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn stop_packet_capture(
             &self,
             resource_group_name: impl Into<String>,
@@ -26894,6 +29124,12 @@ pub mod vpn_connections {
                 parameters: None,
             }
         }
+        #[doc = "Retrieves all vpn connections for a particular virtual wan vpn gateway."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The resource group name of the VpnGateway."]
+        #[doc = "* `gateway_name`: The name of the gateway."]
         pub fn list_by_vpn_gateway(
             &self,
             subscription_id: impl Into<String>,
@@ -27103,6 +29339,7 @@ pub mod vpn_connections {
             pub(crate) parameters: Option<models::VpnConnectionPacketCaptureStartParameters>,
         }
         impl Builder {
+            #[doc = "Vpn Connection packet capture parameters supplied to start packet capture on gateway connection."]
             pub fn parameters(mut self, parameters: impl Into<models::VpnConnectionPacketCaptureStartParameters>) -> Self {
                 self.parameters = Some(parameters.into());
                 self
@@ -27166,6 +29403,7 @@ pub mod vpn_connections {
             pub(crate) parameters: Option<models::VpnConnectionPacketCaptureStopParameters>,
         }
         impl Builder {
+            #[doc = "Vpn Connection packet capture parameters supplied to stop packet capture on gateway connection."]
             pub fn parameters(mut self, parameters: impl Into<models::VpnConnectionPacketCaptureStopParameters>) -> Self {
                 self.parameters = Some(parameters.into());
                 self
@@ -27295,6 +29533,14 @@ pub mod vpn_site_link_connections {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieves the details of a vpn site link connection."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The resource group name of the VpnGateway."]
+        #[doc = "* `gateway_name`: The name of the gateway."]
+        #[doc = "* `connection_name`: The name of the vpn connection."]
+        #[doc = "* `link_connection_name`: The name of the vpn connection."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -27366,6 +29612,13 @@ pub mod nat_rules {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieves the details of a nat ruleGet."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The resource group name of the VpnGateway."]
+        #[doc = "* `gateway_name`: The name of the gateway."]
+        #[doc = "* `nat_rule_name`: The name of the nat rule."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -27381,6 +29634,14 @@ pub mod nat_rules {
                 nat_rule_name: nat_rule_name.into(),
             }
         }
+        #[doc = "Creates a nat rule to a scalable vpn gateway if it doesn't exist else updates the existing nat rules."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The resource group name of the VpnGateway."]
+        #[doc = "* `gateway_name`: The name of the gateway."]
+        #[doc = "* `nat_rule_name`: The name of the nat rule."]
+        #[doc = "* `nat_rule_parameters`: Parameters supplied to create or Update a Nat Rule."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -27398,6 +29659,13 @@ pub mod nat_rules {
                 nat_rule_parameters: nat_rule_parameters.into(),
             }
         }
+        #[doc = "Deletes a nat rule."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The resource group name of the VpnGateway."]
+        #[doc = "* `gateway_name`: The name of the gateway."]
+        #[doc = "* `nat_rule_name`: The name of the nat rule."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -27413,6 +29681,12 @@ pub mod nat_rules {
                 nat_rule_name: nat_rule_name.into(),
             }
         }
+        #[doc = "Retrieves all nat rules for a particular virtual wan vpn gateway."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The resource group name of the VpnGateway."]
+        #[doc = "* `gateway_name`: The name of the gateway."]
         pub fn list_by_vpn_gateway(
             &self,
             subscription_id: impl Into<String>,
@@ -27688,6 +29962,12 @@ pub mod p2s_vpn_gateways {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieves the details of a virtual wan p2s vpn gateway."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The resource group name of the P2SVpnGateway."]
+        #[doc = "* `gateway_name`: The name of the gateway."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -27701,6 +29981,13 @@ pub mod p2s_vpn_gateways {
                 gateway_name: gateway_name.into(),
             }
         }
+        #[doc = "Creates a virtual wan p2s vpn gateway if it doesn't exist else updates the existing gateway."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The resource group name of the P2SVpnGateway."]
+        #[doc = "* `gateway_name`: The name of the gateway."]
+        #[doc = "* `p2_s_vpn_gateway_parameters`: Parameters supplied to create or Update a virtual wan p2s vpn gateway."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -27716,6 +30003,13 @@ pub mod p2s_vpn_gateways {
                 p2_s_vpn_gateway_parameters: p2_s_vpn_gateway_parameters.into(),
             }
         }
+        #[doc = "Updates virtual wan p2s vpn gateway tags."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The resource group name of the P2SVpnGateway."]
+        #[doc = "* `gateway_name`: The name of the gateway."]
+        #[doc = "* `p2_s_vpn_gateway_parameters`: Parameters supplied to update a virtual wan p2s vpn gateway tags."]
         pub fn update_tags(
             &self,
             subscription_id: impl Into<String>,
@@ -27731,6 +30025,12 @@ pub mod p2s_vpn_gateways {
                 p2_s_vpn_gateway_parameters: p2_s_vpn_gateway_parameters.into(),
             }
         }
+        #[doc = "Deletes a virtual wan p2s vpn gateway."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The resource group name of the P2SVpnGateway."]
+        #[doc = "* `gateway_name`: The name of the gateway."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -27744,6 +30044,11 @@ pub mod p2s_vpn_gateways {
                 gateway_name: gateway_name.into(),
             }
         }
+        #[doc = "Lists all the P2SVpnGateways in a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The resource group name of the P2SVpnGateway."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -27755,12 +30060,22 @@ pub mod p2s_vpn_gateways {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Lists all the P2SVpnGateways in a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Resets the primary of the p2s vpn gateway in the specified resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The resource group name of the P2SVpnGateway."]
+        #[doc = "* `gateway_name`: The name of the gateway."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn reset(
             &self,
             resource_group_name: impl Into<String>,
@@ -27774,6 +30089,13 @@ pub mod p2s_vpn_gateways {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Generates VPN profile for P2S client of the P2SVpnGateway in the specified resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `gateway_name`: The name of the P2SVpnGateway."]
+        #[doc = "* `parameters`: Parameters supplied to the generate P2SVpnGateway VPN client package operation."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn generate_vpn_profile(
             &self,
             resource_group_name: impl Into<String>,
@@ -27789,6 +30111,12 @@ pub mod p2s_vpn_gateways {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the connection health of P2S clients of the virtual wan P2SVpnGateway in the specified resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `gateway_name`: The name of the P2SVpnGateway."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get_p2s_vpn_connection_health(
             &self,
             resource_group_name: impl Into<String>,
@@ -27802,6 +30130,13 @@ pub mod p2s_vpn_gateways {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the sas url to get the connection health detail of P2S clients of the virtual wan P2SVpnGateway in the specified resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `gateway_name`: The name of the P2SVpnGateway."]
+        #[doc = "* `request`: Request parameters supplied to get p2s vpn connections detailed health."]
         pub fn get_p2s_vpn_connection_health_detailed(
             &self,
             subscription_id: impl Into<String>,
@@ -27817,6 +30152,13 @@ pub mod p2s_vpn_gateways {
                 request: request.into(),
             }
         }
+        #[doc = "Disconnect P2S vpn connections of the virtual wan P2SVpnGateway in the specified resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `p2s_vpn_gateway_name`: The name of the P2S Vpn Gateway."]
+        #[doc = "* `request`: The parameters are supplied to disconnect p2s vpn connections."]
         pub fn disconnect_p2s_vpn_connections(
             &self,
             subscription_id: impl Into<String>,
@@ -28502,6 +30844,12 @@ pub mod vpn_server_configurations_associated_with_virtual_wan {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gives the list of VpnServerConfigurations associated with Virtual Wan in a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `virtual_wan_name`: The name of the VirtualWAN whose associated VpnServerConfigurations is needed."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -28580,6 +30928,13 @@ pub mod virtual_hub_route_table_v2s {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieves the details of a VirtualHubRouteTableV2."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The resource group name of the VirtualHubRouteTableV2."]
+        #[doc = "* `virtual_hub_name`: The name of the VirtualHub."]
+        #[doc = "* `route_table_name`: The name of the VirtualHubRouteTableV2."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -28595,6 +30950,14 @@ pub mod virtual_hub_route_table_v2s {
                 route_table_name: route_table_name.into(),
             }
         }
+        #[doc = "Creates a VirtualHubRouteTableV2 resource if it doesn't exist else updates the existing VirtualHubRouteTableV2."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The resource group name of the VirtualHub."]
+        #[doc = "* `virtual_hub_name`: The name of the VirtualHub."]
+        #[doc = "* `route_table_name`: The name of the VirtualHubRouteTableV2."]
+        #[doc = "* `virtual_hub_route_table_v2_parameters`: Parameters supplied to create or update VirtualHubRouteTableV2."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -28612,6 +30975,13 @@ pub mod virtual_hub_route_table_v2s {
                 virtual_hub_route_table_v2_parameters: virtual_hub_route_table_v2_parameters.into(),
             }
         }
+        #[doc = "Deletes a VirtualHubRouteTableV2."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The resource group name of the VirtualHubRouteTableV2."]
+        #[doc = "* `virtual_hub_name`: The name of the VirtualHub."]
+        #[doc = "* `route_table_name`: The name of the VirtualHubRouteTableV2."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -28627,6 +30997,12 @@ pub mod virtual_hub_route_table_v2s {
                 route_table_name: route_table_name.into(),
             }
         }
+        #[doc = "Retrieves the details of all VirtualHubRouteTableV2s."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The resource group name of the VirtualHub."]
+        #[doc = "* `virtual_hub_name`: The name of the VirtualHub."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -28902,12 +31278,21 @@ pub mod express_route_gateways {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists ExpressRoute gateways under a given subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists ExpressRoute gateways in a given resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_resource_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -28919,6 +31304,12 @@ pub mod express_route_gateways {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Fetches the details of a ExpressRoute gateway in a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `express_route_gateway_name`: The name of the ExpressRoute gateway."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -28932,6 +31323,13 @@ pub mod express_route_gateways {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates a ExpressRoute gateway in a specified resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `express_route_gateway_name`: The name of the ExpressRoute gateway."]
+        #[doc = "* `put_express_route_gateway_parameters`: Parameters required in an ExpressRoute gateway PUT operation."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -28947,6 +31345,13 @@ pub mod express_route_gateways {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates express route gateway tags."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The resource group name of the ExpressRouteGateway."]
+        #[doc = "* `express_route_gateway_name`: The name of the gateway."]
+        #[doc = "* `express_route_gateway_parameters`: Parameters supplied to update a virtual wan express route gateway tags."]
         pub fn update_tags(
             &self,
             subscription_id: impl Into<String>,
@@ -28962,6 +31367,12 @@ pub mod express_route_gateways {
                 express_route_gateway_parameters: express_route_gateway_parameters.into(),
             }
         }
+        #[doc = "Deletes the specified ExpressRoute gateway in a resource group. An ExpressRoute gateway resource can only be deleted when there are no connection subresources."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `express_route_gateway_name`: The name of the ExpressRoute gateway."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -29311,6 +31722,13 @@ pub mod express_route_connections {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the specified ExpressRouteConnection."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `express_route_gateway_name`: The name of the ExpressRoute gateway."]
+        #[doc = "* `connection_name`: The name of the ExpressRoute connection."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -29326,6 +31744,14 @@ pub mod express_route_connections {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates a connection between an ExpressRoute gateway and an ExpressRoute circuit."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `express_route_gateway_name`: The name of the ExpressRoute gateway."]
+        #[doc = "* `connection_name`: The name of the connection subresource."]
+        #[doc = "* `put_express_route_connection_parameters`: Parameters required in an ExpressRouteConnection PUT operation."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -29343,6 +31769,13 @@ pub mod express_route_connections {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes a connection to a ExpressRoute circuit."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `express_route_gateway_name`: The name of the ExpressRoute gateway."]
+        #[doc = "* `connection_name`: The name of the connection subresource."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -29358,6 +31791,12 @@ pub mod express_route_connections {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists ExpressRouteConnections."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `express_route_gateway_name`: The name of the ExpressRoute gateway."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(
             &self,
             resource_group_name: impl Into<String>,
@@ -29580,6 +32019,13 @@ pub mod virtual_hub_bgp_connection {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieves the details of a Virtual Hub Bgp Connection."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The resource group name of the VirtualHub."]
+        #[doc = "* `virtual_hub_name`: The name of the VirtualHub."]
+        #[doc = "* `connection_name`: The name of the connection."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -29595,6 +32041,14 @@ pub mod virtual_hub_bgp_connection {
                 connection_name: connection_name.into(),
             }
         }
+        #[doc = "Creates a VirtualHubBgpConnection resource if it doesn't exist else updates the existing VirtualHubBgpConnection."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The resource group name of the VirtualHub."]
+        #[doc = "* `virtual_hub_name`: The name of the VirtualHub."]
+        #[doc = "* `connection_name`: The name of the connection."]
+        #[doc = "* `parameters`: Parameters of Bgp connection."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -29612,6 +32066,13 @@ pub mod virtual_hub_bgp_connection {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Deletes a VirtualHubBgpConnection."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The resource group name of the VirtualHubBgpConnection."]
+        #[doc = "* `virtual_hub_name`: The name of the VirtualHub."]
+        #[doc = "* `connection_name`: The name of the connection."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -29811,6 +32272,12 @@ pub mod virtual_hub_bgp_connections {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieves the details of all VirtualHubBgpConnections."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The resource group name of the VirtualHub."]
+        #[doc = "* `virtual_hub_name`: The name of the VirtualHub."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -29824,6 +32291,13 @@ pub mod virtual_hub_bgp_connections {
                 virtual_hub_name: virtual_hub_name.into(),
             }
         }
+        #[doc = "Retrieves a list of routes the virtual hub bgp connection has learned."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `hub_name`: The name of the virtual hub."]
+        #[doc = "* `connection_name`: The name of the virtual hub bgp connection."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_learned_routes(
             &self,
             resource_group_name: impl Into<String>,
@@ -29839,6 +32313,13 @@ pub mod virtual_hub_bgp_connections {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Retrieves a list of routes the virtual hub bgp connection is advertising to the specified peer."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `hub_name`: The name of the virtual hub."]
+        #[doc = "* `connection_name`: The name of the virtual hub bgp connection."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_advertised_routes(
             &self,
             resource_group_name: impl Into<String>,
@@ -30046,6 +32527,13 @@ pub mod virtual_hub_ip_configuration {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieves the details of a Virtual Hub Ip configuration."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The resource group name of the VirtualHub."]
+        #[doc = "* `virtual_hub_name`: The name of the VirtualHub."]
+        #[doc = "* `ip_config_name`: The name of the ipconfig."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -30061,6 +32549,14 @@ pub mod virtual_hub_ip_configuration {
                 ip_config_name: ip_config_name.into(),
             }
         }
+        #[doc = "Creates a VirtualHubIpConfiguration resource if it doesn't exist else updates the existing VirtualHubIpConfiguration."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The resource group name of the VirtualHub."]
+        #[doc = "* `virtual_hub_name`: The name of the VirtualHub."]
+        #[doc = "* `ip_config_name`: The name of the ipconfig."]
+        #[doc = "* `parameters`: Hub Ip Configuration parameters."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -30078,6 +32574,13 @@ pub mod virtual_hub_ip_configuration {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Deletes a VirtualHubIpConfiguration."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The resource group name of the VirtualHubBgpConnection."]
+        #[doc = "* `virtual_hub_name`: The name of the VirtualHub."]
+        #[doc = "* `ip_config_name`: The name of the ipconfig."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -30093,6 +32596,12 @@ pub mod virtual_hub_ip_configuration {
                 ip_config_name: ip_config_name.into(),
             }
         }
+        #[doc = "Retrieves the details of all VirtualHubIpConfigurations."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The resource group name of the VirtualHub."]
+        #[doc = "* `virtual_hub_name`: The name of the VirtualHub."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -30368,6 +32877,13 @@ pub mod hub_route_tables {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieves the details of a RouteTable."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The resource group name of the VirtualHub."]
+        #[doc = "* `virtual_hub_name`: The name of the VirtualHub."]
+        #[doc = "* `route_table_name`: The name of the RouteTable."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -30383,6 +32899,14 @@ pub mod hub_route_tables {
                 route_table_name: route_table_name.into(),
             }
         }
+        #[doc = "Creates a RouteTable resource if it doesn't exist else updates the existing RouteTable."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The resource group name of the VirtualHub."]
+        #[doc = "* `virtual_hub_name`: The name of the VirtualHub."]
+        #[doc = "* `route_table_name`: The name of the RouteTable."]
+        #[doc = "* `route_table_parameters`: Parameters supplied to create or update RouteTable."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -30400,6 +32924,13 @@ pub mod hub_route_tables {
                 route_table_parameters: route_table_parameters.into(),
             }
         }
+        #[doc = "Deletes a RouteTable."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The resource group name of the RouteTable."]
+        #[doc = "* `virtual_hub_name`: The name of the VirtualHub."]
+        #[doc = "* `route_table_name`: The name of the RouteTable."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -30415,6 +32946,12 @@ pub mod hub_route_tables {
                 route_table_name: route_table_name.into(),
             }
         }
+        #[doc = "Retrieves the details of all RouteTables."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The resource group name of the VirtualHub."]
+        #[doc = "* `virtual_hub_name`: The name of the VirtualHub."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -30690,6 +33227,13 @@ pub mod routing_intent {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieves the details of a RoutingIntent."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The resource group name of the RoutingIntent."]
+        #[doc = "* `virtual_hub_name`: The name of the VirtualHub."]
+        #[doc = "* `routing_intent_name`: The name of the RoutingIntent."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -30705,6 +33249,14 @@ pub mod routing_intent {
                 routing_intent_name: routing_intent_name.into(),
             }
         }
+        #[doc = "Creates a RoutingIntent resource if it doesn't exist else updates the existing RoutingIntent."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The resource group name of the RoutingIntent."]
+        #[doc = "* `virtual_hub_name`: The name of the VirtualHub."]
+        #[doc = "* `routing_intent_name`: The name of the per VirtualHub singleton Routing Intent resource."]
+        #[doc = "* `routing_intent_parameters`: Parameters supplied to create or update RoutingIntent."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -30722,6 +33274,13 @@ pub mod routing_intent {
                 routing_intent_parameters: routing_intent_parameters.into(),
             }
         }
+        #[doc = "Deletes a RoutingIntent."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The resource group name of the RoutingIntent."]
+        #[doc = "* `virtual_hub_name`: The name of the VirtualHub."]
+        #[doc = "* `routing_intent_name`: The name of the RoutingIntent."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -30737,6 +33296,12 @@ pub mod routing_intent {
                 routing_intent_name: routing_intent_name.into(),
             }
         }
+        #[doc = "Retrieves the details of all RoutingIntent child resources of the VirtualHub."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The resource group name of the VirtualHub."]
+        #[doc = "* `virtual_hub_name`: The name of the VirtualHub."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -31012,6 +33577,12 @@ pub mod virtual_network_gateways {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the specified virtual network gateway by resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `virtual_network_gateway_name`: The name of the virtual network gateway."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -31025,6 +33596,13 @@ pub mod virtual_network_gateways {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates a virtual network gateway in the specified resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `virtual_network_gateway_name`: The name of the virtual network gateway."]
+        #[doc = "* `parameters`: Parameters supplied to create or update virtual network gateway operation."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -31040,6 +33618,13 @@ pub mod virtual_network_gateways {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates a virtual network gateway tags."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `virtual_network_gateway_name`: The name of the virtual network gateway."]
+        #[doc = "* `parameters`: Parameters supplied to update virtual network gateway tags."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn update_tags(
             &self,
             resource_group_name: impl Into<String>,
@@ -31055,6 +33640,12 @@ pub mod virtual_network_gateways {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes the specified virtual network gateway."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `virtual_network_gateway_name`: The name of the virtual network gateway."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -31068,6 +33659,11 @@ pub mod virtual_network_gateways {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets all virtual network gateways by resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(&self, resource_group_name: impl Into<String>, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -31075,6 +33671,12 @@ pub mod virtual_network_gateways {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets all the connections in a virtual network gateway."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `virtual_network_gateway_name`: The name of the virtual network gateway."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_connections(
             &self,
             resource_group_name: impl Into<String>,
@@ -31088,6 +33690,12 @@ pub mod virtual_network_gateways {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Resets the primary of the virtual network gateway in the specified resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `virtual_network_gateway_name`: The name of the virtual network gateway."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn reset(
             &self,
             resource_group_name: impl Into<String>,
@@ -31102,6 +33710,12 @@ pub mod virtual_network_gateways {
                 gateway_vip: None,
             }
         }
+        #[doc = "Resets the VPN client shared key of the virtual network gateway in the specified resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `virtual_network_gateway_name`: The name of the virtual network gateway."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn reset_vpn_client_shared_key(
             &self,
             resource_group_name: impl Into<String>,
@@ -31115,6 +33729,13 @@ pub mod virtual_network_gateways {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Generates VPN client package for P2S client of the virtual network gateway in the specified resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `virtual_network_gateway_name`: The name of the virtual network gateway."]
+        #[doc = "* `parameters`: Parameters supplied to the generate virtual network gateway VPN client package operation."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn generatevpnclientpackage(
             &self,
             resource_group_name: impl Into<String>,
@@ -31130,6 +33751,13 @@ pub mod virtual_network_gateways {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Generates VPN profile for P2S client of the virtual network gateway in the specified resource group. Used for IKEV2 and radius based authentication."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `virtual_network_gateway_name`: The name of the virtual network gateway."]
+        #[doc = "* `parameters`: Parameters supplied to the generate virtual network gateway VPN client package operation."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn generate_vpn_profile(
             &self,
             resource_group_name: impl Into<String>,
@@ -31145,6 +33773,12 @@ pub mod virtual_network_gateways {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets pre-generated VPN profile for P2S client of the virtual network gateway in the specified resource group. The profile needs to be generated first using generateVpnProfile."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `virtual_network_gateway_name`: The name of the virtual network gateway."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get_vpn_profile_package_url(
             &self,
             resource_group_name: impl Into<String>,
@@ -31158,6 +33792,12 @@ pub mod virtual_network_gateways {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "The GetBgpPeerStatus operation retrieves the status of all BGP peers."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `virtual_network_gateway_name`: The name of the virtual network gateway."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get_bgp_peer_status(
             &self,
             resource_group_name: impl Into<String>,
@@ -31172,6 +33812,12 @@ pub mod virtual_network_gateways {
                 peer: None,
             }
         }
+        #[doc = "Gets a xml format representation for supported vpn devices."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `virtual_network_gateway_name`: The name of the virtual network gateway."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn supported_vpn_devices(
             &self,
             resource_group_name: impl Into<String>,
@@ -31185,6 +33831,12 @@ pub mod virtual_network_gateways {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "This operation retrieves a list of routes the virtual network gateway has learned, including routes learned from BGP peers."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `virtual_network_gateway_name`: The name of the virtual network gateway."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get_learned_routes(
             &self,
             resource_group_name: impl Into<String>,
@@ -31198,6 +33850,13 @@ pub mod virtual_network_gateways {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "This operation retrieves a list of routes the virtual network gateway is advertising to the specified peer."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `virtual_network_gateway_name`: The name of the virtual network gateway."]
+        #[doc = "* `peer`: The IP address of the peer."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get_advertised_routes(
             &self,
             resource_group_name: impl Into<String>,
@@ -31213,6 +33872,13 @@ pub mod virtual_network_gateways {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "The Set VpnclientIpsecParameters operation sets the vpnclient ipsec policy for P2S client of virtual network gateway in the specified resource group through Network resource provider."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `virtual_network_gateway_name`: The name of the virtual network gateway."]
+        #[doc = "* `vpnclient_ipsec_params`: Parameters supplied to the Begin Set vpnclient ipsec parameters of Virtual Network Gateway P2S client operation through Network resource provider."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn set_vpnclient_ipsec_parameters(
             &self,
             resource_group_name: impl Into<String>,
@@ -31228,6 +33894,12 @@ pub mod virtual_network_gateways {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "The Get VpnclientIpsecParameters operation retrieves information about the vpnclient ipsec policy for P2S client of virtual network gateway in the specified resource group through Network resource provider."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `virtual_network_gateway_name`: The virtual network gateway name."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get_vpnclient_ipsec_parameters(
             &self,
             resource_group_name: impl Into<String>,
@@ -31241,6 +33913,13 @@ pub mod virtual_network_gateways {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets a xml format representation for vpn device configuration script."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `virtual_network_gateway_connection_name`: The name of the virtual network gateway connection for which the configuration script is generated."]
+        #[doc = "* `parameters`: Parameters supplied to the generate vpn device script operation."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn vpn_device_configuration_script(
             &self,
             resource_group_name: impl Into<String>,
@@ -31256,6 +33935,12 @@ pub mod virtual_network_gateways {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Starts packet capture on virtual network gateway in the specified resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `virtual_network_gateway_name`: The name of the virtual network gateway."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn start_packet_capture(
             &self,
             resource_group_name: impl Into<String>,
@@ -31270,6 +33955,13 @@ pub mod virtual_network_gateways {
                 parameters: None,
             }
         }
+        #[doc = "Stops packet capture on virtual network gateway in the specified resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `virtual_network_gateway_name`: The name of the virtual network gateway."]
+        #[doc = "* `parameters`: Virtual network gateway packet capture parameters supplied to stop packet capture on gateway."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn stop_packet_capture(
             &self,
             resource_group_name: impl Into<String>,
@@ -31285,6 +33977,12 @@ pub mod virtual_network_gateways {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get VPN client connection health detail per P2S client connection of the virtual network gateway in the specified resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `virtual_network_gateway_name`: The name of the virtual network gateway."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get_vpnclient_connection_health(
             &self,
             resource_group_name: impl Into<String>,
@@ -31298,6 +33996,13 @@ pub mod virtual_network_gateways {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Disconnect vpn connections of virtual network gateway in the specified resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `virtual_network_gateway_name`: The name of the virtual network gateway."]
+        #[doc = "* `request`: The parameters are supplied to disconnect vpn connections."]
         pub fn disconnect_virtual_network_gateway_vpn_connections(
             &self,
             subscription_id: impl Into<String>,
@@ -31716,6 +34421,7 @@ pub mod virtual_network_gateways {
             pub(crate) gateway_vip: Option<String>,
         }
         impl Builder {
+            #[doc = "Virtual network gateway vip address supplied to the begin reset of the active-active feature enabled gateway."]
             pub fn gateway_vip(mut self, gateway_vip: impl Into<String>) -> Self {
                 self.gateway_vip = Some(gateway_vip.into());
                 self
@@ -31993,6 +34699,7 @@ pub mod virtual_network_gateways {
             pub(crate) peer: Option<String>,
         }
         impl Builder {
+            #[doc = "The IP address of the peer to retrieve the status of."]
             pub fn peer(mut self, peer: impl Into<String>) -> Self {
                 self.peer = Some(peer.into());
                 self
@@ -32378,6 +35085,7 @@ pub mod virtual_network_gateways {
             pub(crate) parameters: Option<models::VpnPacketCaptureStartParameters>,
         }
         impl Builder {
+            #[doc = "Virtual network gateway packet capture parameters supplied to start packet capture on gateway."]
             pub fn parameters(mut self, parameters: impl Into<models::VpnPacketCaptureStartParameters>) -> Self {
                 self.parameters = Some(parameters.into());
                 self
@@ -32592,6 +35300,12 @@ pub mod virtual_network_gateway_connections {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the specified virtual network gateway connection by resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `virtual_network_gateway_connection_name`: The name of the virtual network gateway connection."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -32605,6 +35319,13 @@ pub mod virtual_network_gateway_connections {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates a virtual network gateway connection in the specified resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `virtual_network_gateway_connection_name`: The name of the virtual network gateway connection."]
+        #[doc = "* `parameters`: Parameters supplied to the create or update virtual network gateway connection operation."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -32620,6 +35341,13 @@ pub mod virtual_network_gateway_connections {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates a virtual network gateway connection tags."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `virtual_network_gateway_connection_name`: The name of the virtual network gateway connection."]
+        #[doc = "* `parameters`: Parameters supplied to update virtual network gateway connection tags."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn update_tags(
             &self,
             resource_group_name: impl Into<String>,
@@ -32635,6 +35363,12 @@ pub mod virtual_network_gateway_connections {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes the specified virtual network Gateway connection."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `virtual_network_gateway_connection_name`: The name of the virtual network gateway connection."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -32648,6 +35382,12 @@ pub mod virtual_network_gateway_connections {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "The Get VirtualNetworkGatewayConnectionSharedKey operation retrieves information about the specified virtual network gateway connection shared key through Network resource provider."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `virtual_network_gateway_connection_name`: The virtual network gateway connection shared key name."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get_shared_key(
             &self,
             resource_group_name: impl Into<String>,
@@ -32661,6 +35401,13 @@ pub mod virtual_network_gateway_connections {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "The Put VirtualNetworkGatewayConnectionSharedKey operation sets the virtual network gateway connection shared key for passed virtual network gateway connection in the specified resource group through Network resource provider."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `virtual_network_gateway_connection_name`: The virtual network gateway connection name."]
+        #[doc = "* `parameters`: Parameters supplied to the Begin Set Virtual Network Gateway connection Shared key operation throughNetwork resource provider."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn set_shared_key(
             &self,
             resource_group_name: impl Into<String>,
@@ -32676,6 +35423,11 @@ pub mod virtual_network_gateway_connections {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "The List VirtualNetworkGatewayConnections operation retrieves all the virtual network gateways connections created."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(&self, resource_group_name: impl Into<String>, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -32683,6 +35435,13 @@ pub mod virtual_network_gateway_connections {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "The VirtualNetworkGatewayConnectionResetSharedKey operation resets the virtual network gateway connection shared key for passed virtual network gateway connection in the specified resource group through Network resource provider."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `virtual_network_gateway_connection_name`: The virtual network gateway connection reset shared key Name."]
+        #[doc = "* `parameters`: Parameters supplied to the begin reset virtual network gateway connection shared key operation through network resource provider."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn reset_shared_key(
             &self,
             resource_group_name: impl Into<String>,
@@ -32698,6 +35457,12 @@ pub mod virtual_network_gateway_connections {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Starts packet capture on virtual network gateway connection in the specified resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `virtual_network_gateway_connection_name`: The name of the virtual network gateway connection."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn start_packet_capture(
             &self,
             resource_group_name: impl Into<String>,
@@ -32712,6 +35477,13 @@ pub mod virtual_network_gateway_connections {
                 parameters: None,
             }
         }
+        #[doc = "Stops packet capture on virtual network gateway connection in the specified resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `virtual_network_gateway_connection_name`: The name of the virtual network gateway Connection."]
+        #[doc = "* `parameters`: Virtual network gateway packet capture parameters supplied to stop packet capture on gateway connection."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn stop_packet_capture(
             &self,
             resource_group_name: impl Into<String>,
@@ -32727,6 +35499,12 @@ pub mod virtual_network_gateway_connections {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists IKE Security Associations for the virtual network gateway connection in the specified resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `virtual_network_gateway_connection_name`: The name of the virtual network gateway Connection."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get_ike_sas(
             &self,
             resource_group_name: impl Into<String>,
@@ -32740,6 +35518,12 @@ pub mod virtual_network_gateway_connections {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Resets the virtual network gateway connection specified."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `virtual_network_gateway_connection_name`: The name of the virtual network gateway Connection."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn reset_connection(
             &self,
             resource_group_name: impl Into<String>,
@@ -33254,6 +36038,7 @@ pub mod virtual_network_gateway_connections {
             pub(crate) parameters: Option<models::VpnPacketCaptureStartParameters>,
         }
         impl Builder {
+            #[doc = "Virtual network gateway packet capture parameters supplied to start packet capture on gateway connection."]
             pub fn parameters(mut self, parameters: impl Into<models::VpnPacketCaptureStartParameters>) -> Self {
                 self.parameters = Some(parameters.into());
                 self
@@ -33480,6 +36265,12 @@ pub mod local_network_gateways {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the specified local network gateway in a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `local_network_gateway_name`: The name of the local network gateway."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -33493,6 +36284,13 @@ pub mod local_network_gateways {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates a local network gateway in the specified resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `local_network_gateway_name`: The name of the local network gateway."]
+        #[doc = "* `parameters`: Parameters supplied to the create or update local network gateway operation."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -33508,6 +36306,13 @@ pub mod local_network_gateways {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates a local network gateway tags."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `local_network_gateway_name`: The name of the local network gateway."]
+        #[doc = "* `parameters`: Parameters supplied to update local network gateway tags."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn update_tags(
             &self,
             resource_group_name: impl Into<String>,
@@ -33523,6 +36328,12 @@ pub mod local_network_gateways {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes the specified local network gateway."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `local_network_gateway_name`: The name of the local network gateway."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -33536,6 +36347,11 @@ pub mod local_network_gateways {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets all the local network gateways in a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(&self, resource_group_name: impl Into<String>, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -33851,6 +36667,13 @@ pub mod virtual_network_gateway_nat_rules {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieves the details of a nat rule."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The resource group name of the Virtual Network Gateway."]
+        #[doc = "* `virtual_network_gateway_name`: The name of the gateway."]
+        #[doc = "* `nat_rule_name`: The name of the nat rule."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -33866,6 +36689,14 @@ pub mod virtual_network_gateway_nat_rules {
                 nat_rule_name: nat_rule_name.into(),
             }
         }
+        #[doc = "Creates a nat rule to a scalable virtual network gateway if it doesn't exist else updates the existing nat rules."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The resource group name of the Virtual Network Gateway."]
+        #[doc = "* `virtual_network_gateway_name`: The name of the gateway."]
+        #[doc = "* `nat_rule_name`: The name of the nat rule."]
+        #[doc = "* `nat_rule_parameters`: Parameters supplied to create or Update a Nat Rule."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -33883,6 +36714,13 @@ pub mod virtual_network_gateway_nat_rules {
                 nat_rule_parameters: nat_rule_parameters.into(),
             }
         }
+        #[doc = "Deletes a nat rule."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The resource group name of the Virtual Network Gateway."]
+        #[doc = "* `virtual_network_gateway_name`: The name of the gateway."]
+        #[doc = "* `nat_rule_name`: The name of the nat rule."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -33898,6 +36736,12 @@ pub mod virtual_network_gateway_nat_rules {
                 nat_rule_name: nat_rule_name.into(),
             }
         }
+        #[doc = "Retrieves all nat rules for a particular virtual network gateway."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The resource group name of the virtual network gateway."]
+        #[doc = "* `virtual_network_gateway_name`: The name of the gateway."]
         pub fn list_by_virtual_network_gateway(
             &self,
             subscription_id: impl Into<String>,
@@ -34173,12 +37017,21 @@ pub mod express_route_cross_connections {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieves all the ExpressRouteCrossConnections in a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Retrieves all the ExpressRouteCrossConnections in a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_resource_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -34190,6 +37043,12 @@ pub mod express_route_cross_connections {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets details about the specified ExpressRouteCrossConnection."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group (peering location of the circuit)."]
+        #[doc = "* `cross_connection_name`: The name of the ExpressRouteCrossConnection (service key of the circuit)."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -34203,6 +37062,13 @@ pub mod express_route_cross_connections {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Update the specified ExpressRouteCrossConnection."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `cross_connection_name`: The name of the ExpressRouteCrossConnection."]
+        #[doc = "* `parameters`: Parameters supplied to the update express route crossConnection operation."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -34218,6 +37084,13 @@ pub mod express_route_cross_connections {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates an express route cross connection tags."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `cross_connection_name`: The name of the cross connection."]
+        #[doc = "* `cross_connection_parameters`: Parameters supplied to update express route cross connection tags."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn update_tags(
             &self,
             resource_group_name: impl Into<String>,
@@ -34233,6 +37106,14 @@ pub mod express_route_cross_connections {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the currently advertised ARP table associated with the express route cross connection in a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `cross_connection_name`: The name of the ExpressRouteCrossConnection."]
+        #[doc = "* `peering_name`: The name of the peering."]
+        #[doc = "* `device_path`: The path of the device."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_arp_table(
             &self,
             resource_group_name: impl Into<String>,
@@ -34250,6 +37131,14 @@ pub mod express_route_cross_connections {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the route table summary associated with the express route cross connection in a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `cross_connection_name`: The name of the ExpressRouteCrossConnection."]
+        #[doc = "* `peering_name`: The name of the peering."]
+        #[doc = "* `device_path`: The path of the device."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_routes_table_summary(
             &self,
             resource_group_name: impl Into<String>,
@@ -34267,6 +37156,14 @@ pub mod express_route_cross_connections {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the currently advertised routes table associated with the express route cross connection in a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `cross_connection_name`: The name of the ExpressRouteCrossConnection."]
+        #[doc = "* `peering_name`: The name of the peering."]
+        #[doc = "* `device_path`: The path of the device."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_routes_table(
             &self,
             resource_group_name: impl Into<String>,
@@ -34767,6 +37664,12 @@ pub mod express_route_cross_connection_peerings {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets all peerings in a specified ExpressRouteCrossConnection."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `cross_connection_name`: The name of the ExpressRouteCrossConnection."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(
             &self,
             resource_group_name: impl Into<String>,
@@ -34780,6 +37683,13 @@ pub mod express_route_cross_connection_peerings {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the specified peering for the ExpressRouteCrossConnection."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `cross_connection_name`: The name of the ExpressRouteCrossConnection."]
+        #[doc = "* `peering_name`: The name of the peering."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -34795,6 +37705,14 @@ pub mod express_route_cross_connection_peerings {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates a peering in the specified ExpressRouteCrossConnection."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `cross_connection_name`: The name of the ExpressRouteCrossConnection."]
+        #[doc = "* `peering_name`: The name of the peering."]
+        #[doc = "* `peering_parameters`: Parameters supplied to the create or update ExpressRouteCrossConnection peering operation."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -34812,6 +37730,13 @@ pub mod express_route_cross_connection_peerings {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes the specified peering from the ExpressRouteCrossConnection."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `cross_connection_name`: The name of the ExpressRouteCrossConnection."]
+        #[doc = "* `peering_name`: The name of the peering."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -35089,12 +38014,21 @@ pub mod express_route_ports_locations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieves all ExpressRoutePort peering locations. Does not return available bandwidths for each location. Available bandwidths can only be obtained when retrieving a specific peering location."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Retrieves a single ExpressRoutePort peering location, including the list of available bandwidths available at said peering location."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `location_name`: Name of the requested ExpressRoutePort peering location."]
         pub fn get(&self, subscription_id: impl Into<String>, location_name: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -35232,6 +38166,12 @@ pub mod express_route_ports {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieves the requested ExpressRoutePort resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `express_route_port_name`: The name of ExpressRoutePort."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -35245,6 +38185,13 @@ pub mod express_route_ports {
                 express_route_port_name: express_route_port_name.into(),
             }
         }
+        #[doc = "Creates or updates the specified ExpressRoutePort resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `express_route_port_name`: The name of the ExpressRoutePort resource."]
+        #[doc = "* `parameters`: Parameters supplied to the create ExpressRoutePort operation."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -35260,6 +38207,13 @@ pub mod express_route_ports {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Update ExpressRoutePort tags."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `express_route_port_name`: The name of the ExpressRoutePort resource."]
+        #[doc = "* `parameters`: Parameters supplied to update ExpressRoutePort resource tags."]
         pub fn update_tags(
             &self,
             subscription_id: impl Into<String>,
@@ -35275,6 +38229,12 @@ pub mod express_route_ports {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Deletes the specified ExpressRoutePort resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `express_route_port_name`: The name of the ExpressRoutePort resource."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -35288,6 +38248,11 @@ pub mod express_route_ports {
                 express_route_port_name: express_route_port_name.into(),
             }
         }
+        #[doc = "List all the ExpressRoutePort resources in the specified resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -35299,12 +38264,23 @@ pub mod express_route_ports {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "List all the ExpressRoutePort resources in the specified subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Generate a letter of authorization for the requested ExpressRoutePort resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `express_route_port_name`: The name of ExpressRoutePort."]
+        #[doc = "* `request`: Request parameters supplied to generate a letter of authorization."]
         pub fn generate_loa(
             &self,
             subscription_id: impl Into<String>,
@@ -35756,6 +38732,13 @@ pub mod express_route_links {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieves the specified ExpressRouteLink resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `express_route_port_name`: The name of the ExpressRoutePort resource."]
+        #[doc = "* `link_name`: The name of the ExpressRouteLink resource."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -35771,6 +38754,12 @@ pub mod express_route_links {
                 link_name: link_name.into(),
             }
         }
+        #[doc = "Retrieve the ExpressRouteLink sub-resources of the specified ExpressRoutePort resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `express_route_port_name`: The name of the ExpressRoutePort resource."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -35922,6 +38911,13 @@ pub mod express_route_port_authorizations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the specified authorization from the specified express route port."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `express_route_port_name`: The name of the express route port."]
+        #[doc = "* `authorization_name`: The name of the authorization."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -35937,6 +38933,14 @@ pub mod express_route_port_authorizations {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates an authorization in the specified express route port."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `express_route_port_name`: The name of the express route port."]
+        #[doc = "* `authorization_name`: The name of the authorization."]
+        #[doc = "* `authorization_parameters`: Parameters supplied to the create or update express route port authorization operation."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -35954,6 +38958,13 @@ pub mod express_route_port_authorizations {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes the specified authorization from the specified express route port."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `express_route_port_name`: The name of the express route port."]
+        #[doc = "* `authorization_name`: The name of the authorization."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -35969,6 +38980,12 @@ pub mod express_route_port_authorizations {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets all authorizations in an express route port."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `express_route_port_name`: The name of the express route port."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(
             &self,
             resource_group_name: impl Into<String>,
@@ -36244,6 +39261,12 @@ pub mod firewall_policies {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the specified Firewall Policy."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `firewall_policy_name`: The name of the Firewall Policy."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -36258,6 +39281,13 @@ pub mod firewall_policies {
                 expand: None,
             }
         }
+        #[doc = "Creates or updates the specified Firewall Policy."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `firewall_policy_name`: The name of the Firewall Policy."]
+        #[doc = "* `parameters`: Parameters supplied to the create or update Firewall Policy operation."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -36273,6 +39303,13 @@ pub mod firewall_policies {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates tags of a Azure Firewall Policy resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `firewall_policy_name`: The name of the Firewall Policy."]
+        #[doc = "* `parameters`: Parameters supplied to update Azure Firewall Policy tags."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn update_tags(
             &self,
             resource_group_name: impl Into<String>,
@@ -36288,6 +39325,12 @@ pub mod firewall_policies {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes the specified Firewall Policy."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `firewall_policy_name`: The name of the Firewall Policy."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -36301,6 +39344,11 @@ pub mod firewall_policies {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists all Firewall Policies in a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(&self, resource_group_name: impl Into<String>, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -36308,6 +39356,10 @@ pub mod firewall_policies {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets all the Firewall Policies in a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_all(&self, subscription_id: impl Into<String>) -> list_all::Builder {
             list_all::Builder {
                 client: self.0.clone(),
@@ -36327,6 +39379,7 @@ pub mod firewall_policies {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "Expands referenced resources."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -36704,6 +39757,13 @@ pub mod firewall_policy_rule_collection_groups {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the specified FirewallPolicyRuleCollectionGroup."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `firewall_policy_name`: The name of the Firewall Policy."]
+        #[doc = "* `rule_collection_group_name`: The name of the FirewallPolicyRuleCollectionGroup."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -36719,6 +39779,14 @@ pub mod firewall_policy_rule_collection_groups {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates the specified FirewallPolicyRuleCollectionGroup."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `firewall_policy_name`: The name of the Firewall Policy."]
+        #[doc = "* `rule_collection_group_name`: The name of the FirewallPolicyRuleCollectionGroup."]
+        #[doc = "* `parameters`: Parameters supplied to the create or update FirewallPolicyRuleCollectionGroup operation."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -36736,6 +39804,13 @@ pub mod firewall_policy_rule_collection_groups {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes the specified FirewallPolicyRuleCollectionGroup."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `firewall_policy_name`: The name of the Firewall Policy."]
+        #[doc = "* `rule_collection_group_name`: The name of the FirewallPolicyRuleCollectionGroup."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -36751,6 +39826,12 @@ pub mod firewall_policy_rule_collection_groups {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists all FirewallPolicyRuleCollectionGroups in a FirewallPolicy resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `firewall_policy_name`: The name of the Firewall Policy."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(
             &self,
             resource_group_name: impl Into<String>,
@@ -37026,6 +40107,12 @@ pub mod firewall_policy_idps_signatures {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieves the current status of IDPS signatures for the relevant policy"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `firewall_policy_name`: The name of the Firewall Policy."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(
             &self,
             resource_group_name: impl Into<String>,
@@ -37101,6 +40188,12 @@ pub mod firewall_policy_idps_signatures_overrides {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Returns all signatures overrides for a specific policy."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `firewall_policy_name`: The name of the Firewall Policy."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -37114,6 +40207,13 @@ pub mod firewall_policy_idps_signatures_overrides {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Will override/create a new signature overrides for the policy's IDPS"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `parameters`: Will contain all properties of the object to put"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `firewall_policy_name`: The name of the Firewall Policy."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn put(
             &self,
             parameters: impl Into<models::SignaturesOverrides>,
@@ -37129,6 +40229,13 @@ pub mod firewall_policy_idps_signatures_overrides {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Will update the status of policy's signature overrides for IDPS"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `parameters`: Will contain all properties of the object to put"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `firewall_policy_name`: The name of the Firewall Policy."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn patch(
             &self,
             parameters: impl Into<models::SignaturesOverrides>,
@@ -37144,6 +40251,12 @@ pub mod firewall_policy_idps_signatures_overrides {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Returns all signatures overrides objects for a specific policy as a list containing a single value."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `firewall_policy_name`: The name of the Firewall Policy."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(
             &self,
             resource_group_name: impl Into<String>,
@@ -37357,6 +40470,12 @@ pub mod firewall_policy_idps_signatures_filter_values {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieves the current filter values for the signatures overrides"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `firewall_policy_name`: The name of the Firewall Policy."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(
             &self,
             parameters: impl Into<models::SignatureOverridesFilterValuesQuery>,
@@ -37432,6 +40551,12 @@ pub mod ip_allocations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the specified IpAllocation by resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `ip_allocation_name`: The name of the IpAllocation."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -37446,6 +40571,13 @@ pub mod ip_allocations {
                 expand: None,
             }
         }
+        #[doc = "Creates or updates an IpAllocation in the specified resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `ip_allocation_name`: The name of the IpAllocation."]
+        #[doc = "* `parameters`: Parameters supplied to the create or update virtual network operation."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -37461,6 +40593,13 @@ pub mod ip_allocations {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates a IpAllocation tags."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `ip_allocation_name`: The name of the IpAllocation."]
+        #[doc = "* `parameters`: Parameters supplied to update IpAllocation tags."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn update_tags(
             &self,
             resource_group_name: impl Into<String>,
@@ -37476,6 +40615,12 @@ pub mod ip_allocations {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes the specified IpAllocation."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `ip_allocation_name`: The name of the IpAllocation."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -37489,12 +40634,21 @@ pub mod ip_allocations {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets all IpAllocations in a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets all IpAllocations in a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_resource_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -37519,6 +40673,7 @@ pub mod ip_allocations {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "Expands referenced resources."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -37896,6 +41051,12 @@ pub mod ip_groups {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the specified ipGroups."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `ip_groups_name`: The name of the ipGroups."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -37910,6 +41071,13 @@ pub mod ip_groups {
                 expand: None,
             }
         }
+        #[doc = "Creates or updates an ipGroups in a specified resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `ip_groups_name`: The name of the ipGroups."]
+        #[doc = "* `parameters`: Parameters supplied to the create or update IpGroups operation."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -37925,6 +41093,13 @@ pub mod ip_groups {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates tags of an IpGroups resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `ip_groups_name`: The name of the ipGroups."]
+        #[doc = "* `parameters`: Parameters supplied to the update ipGroups operation."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn update_groups(
             &self,
             resource_group_name: impl Into<String>,
@@ -37940,6 +41115,12 @@ pub mod ip_groups {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes the specified ipGroups."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `ip_groups_name`: The name of the ipGroups."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -37953,6 +41134,11 @@ pub mod ip_groups {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets all IpGroups in a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_resource_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -37964,6 +41150,10 @@ pub mod ip_groups {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets all IpGroups in a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -37983,6 +41173,7 @@ pub mod ip_groups {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "Expands resourceIds (of Firewalls/Network Security Groups etc.) back referenced by the IpGroups resource."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -38360,6 +41551,12 @@ pub mod network_virtual_appliances {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the specified Network Virtual Appliance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `network_virtual_appliance_name`: The name of Network Virtual Appliance."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -38374,6 +41571,13 @@ pub mod network_virtual_appliances {
                 expand: None,
             }
         }
+        #[doc = "Creates or updates the specified Network Virtual Appliance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `network_virtual_appliance_name`: The name of Network Virtual Appliance."]
+        #[doc = "* `parameters`: Parameters supplied to the create or update Network Virtual Appliance."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -38389,6 +41593,13 @@ pub mod network_virtual_appliances {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates a Network Virtual Appliance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The resource group name of Network Virtual Appliance."]
+        #[doc = "* `network_virtual_appliance_name`: The name of Network Virtual Appliance being updated."]
+        #[doc = "* `parameters`: Parameters supplied to Update Network Virtual Appliance Tags."]
         pub fn update_tags(
             &self,
             subscription_id: impl Into<String>,
@@ -38404,6 +41615,12 @@ pub mod network_virtual_appliances {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Deletes the specified Network Virtual Appliance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `network_virtual_appliance_name`: The name of Network Virtual Appliance."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -38417,6 +41634,11 @@ pub mod network_virtual_appliances {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists all Network Virtual Appliances in a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_resource_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -38428,6 +41650,10 @@ pub mod network_virtual_appliances {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets all Network Virtual Appliances in a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -38447,6 +41673,7 @@ pub mod network_virtual_appliances {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "Expands referenced resources."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -38824,6 +42051,13 @@ pub mod virtual_appliance_sites {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the specified Virtual Appliance Site."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `network_virtual_appliance_name`: The name of the Network Virtual Appliance."]
+        #[doc = "* `site_name`: The name of the site."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -38839,6 +42073,14 @@ pub mod virtual_appliance_sites {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates the specified Network Virtual Appliance Site."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `network_virtual_appliance_name`: The name of the Network Virtual Appliance."]
+        #[doc = "* `site_name`: The name of the site."]
+        #[doc = "* `parameters`: Parameters supplied to the create or update Network Virtual Appliance Site operation."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -38856,6 +42098,13 @@ pub mod virtual_appliance_sites {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes the specified site from a Virtual Appliance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `network_virtual_appliance_name`: The name of the Network Virtual Appliance."]
+        #[doc = "* `site_name`: The name of the site."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -38871,6 +42120,12 @@ pub mod virtual_appliance_sites {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists all Network Virtual Appliance Sites in a Network Virtual Appliance resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `network_virtual_appliance_name`: The name of the Network Virtual Appliance."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(
             &self,
             resource_group_name: impl Into<String>,
@@ -39119,12 +42374,21 @@ pub mod virtual_appliance_skus {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List all SKUs available for a virtual appliance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Retrieves a single available sku for network virtual appliance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `sku_name`: Name of the Sku."]
         pub fn get(&self, subscription_id: impl Into<String>, sku_name: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -39262,6 +42526,14 @@ pub mod inbound_security_rule {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Creates or updates the specified Network Virtual Appliance Inbound Security Rules."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `network_virtual_appliance_name`: The name of the Network Virtual Appliance."]
+        #[doc = "* `rule_collection_name`: The name of security rule collection."]
+        #[doc = "* `parameters`: Parameters supplied to the create or update Network Virtual Appliance Inbound Security Rules operation."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -39344,6 +42616,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all of the available Network Rest API operations."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -39423,6 +42696,12 @@ pub mod public_ip_prefixes {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the specified public IP prefix in a specified resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `public_ip_prefix_name`: The name of the public IP prefix."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -39437,6 +42716,13 @@ pub mod public_ip_prefixes {
                 expand: None,
             }
         }
+        #[doc = "Creates or updates a static or dynamic public IP prefix."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `public_ip_prefix_name`: The name of the public IP prefix."]
+        #[doc = "* `parameters`: Parameters supplied to the create or update public IP prefix operation."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -39452,6 +42738,13 @@ pub mod public_ip_prefixes {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates public IP prefix tags."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `public_ip_prefix_name`: The name of the public IP prefix."]
+        #[doc = "* `parameters`: Parameters supplied to update public IP prefix tags."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn update_tags(
             &self,
             resource_group_name: impl Into<String>,
@@ -39467,6 +42760,12 @@ pub mod public_ip_prefixes {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes the specified public IP prefix."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `public_ip_prefix_name`: The name of the PublicIpPrefix."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -39480,12 +42779,21 @@ pub mod public_ip_prefixes {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets all the public IP prefixes in a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_all(&self, subscription_id: impl Into<String>) -> list_all::Builder {
             list_all::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets all public IP prefixes in a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(&self, resource_group_name: impl Into<String>, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -39506,6 +42814,7 @@ pub mod public_ip_prefixes {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "Expands referenced resources."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -39883,6 +43192,12 @@ pub mod route_filters {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the specified route filter."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `route_filter_name`: The name of the route filter."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -39897,6 +43212,13 @@ pub mod route_filters {
                 expand: None,
             }
         }
+        #[doc = "Creates or updates a route filter in a specified resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `route_filter_name`: The name of the route filter."]
+        #[doc = "* `route_filter_parameters`: Parameters supplied to the create or update route filter operation."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -39912,6 +43234,13 @@ pub mod route_filters {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates tags of a route filter."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `route_filter_name`: The name of the route filter."]
+        #[doc = "* `parameters`: Parameters supplied to update route filter tags."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn update_tags(
             &self,
             resource_group_name: impl Into<String>,
@@ -39927,6 +43256,12 @@ pub mod route_filters {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes the specified route filter."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `route_filter_name`: The name of the route filter."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -39940,6 +43275,11 @@ pub mod route_filters {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets all route filters in a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_resource_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -39951,6 +43291,10 @@ pub mod route_filters {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets all route filters in a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -39970,6 +43314,7 @@ pub mod route_filters {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "Expands referenced express route bgp peering resources."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -40347,6 +43692,13 @@ pub mod route_filter_rules {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the specified rule from a route filter."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `route_filter_name`: The name of the route filter."]
+        #[doc = "* `rule_name`: The name of the rule."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -40362,6 +43714,14 @@ pub mod route_filter_rules {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates a route in the specified route filter."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `route_filter_name`: The name of the route filter."]
+        #[doc = "* `rule_name`: The name of the route filter rule."]
+        #[doc = "* `route_filter_rule_parameters`: Parameters supplied to the create or update route filter rule operation."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -40379,6 +43739,13 @@ pub mod route_filter_rules {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes the specified rule from a route filter."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `route_filter_name`: The name of the route filter."]
+        #[doc = "* `rule_name`: The name of the rule."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -40394,6 +43761,12 @@ pub mod route_filter_rules {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets all RouteFilterRules in a route filter."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `route_filter_name`: The name of the route filter."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_route_filter(
             &self,
             resource_group_name: impl Into<String>,
@@ -40669,6 +44042,12 @@ pub mod security_partner_providers {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the specified Security Partner Provider."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `security_partner_provider_name`: The name of the Security Partner Provider."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -40682,6 +44061,13 @@ pub mod security_partner_providers {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates the specified Security Partner Provider."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `security_partner_provider_name`: The name of the Security Partner Provider."]
+        #[doc = "* `parameters`: Parameters supplied to the create or update Security Partner Provider operation."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -40697,6 +44083,13 @@ pub mod security_partner_providers {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates tags of a Security Partner Provider resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `security_partner_provider_name`: The name of the Security Partner Provider."]
+        #[doc = "* `parameters`: Parameters supplied to update Security Partner Provider tags."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn update_tags(
             &self,
             resource_group_name: impl Into<String>,
@@ -40712,6 +44105,12 @@ pub mod security_partner_providers {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes the specified Security Partner Provider."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `security_partner_provider_name`: The name of the Security Partner Provider."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -40725,6 +44124,11 @@ pub mod security_partner_providers {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists all Security Partner Providers in a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_resource_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -40736,6 +44140,10 @@ pub mod security_partner_providers {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets all the Security Partner Providers in a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -41124,6 +44532,10 @@ pub mod bgp_service_communities {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets all the available bgp service communities."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -41210,6 +44622,11 @@ pub mod service_tags {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a list of service tag information resources."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `location`: The location that will be used as a reference for version (not as a filter based on location, you will get the list of service tags with prefix details across all regions but limited to the cloud that your subscription belongs to)."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(&self, location: impl Into<String>, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -41273,6 +44690,11 @@ pub mod service_tag_information {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a list of service tag information resources with pagination."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `location`: The location that will be used as a reference for cloud (not as a filter based on location, you will get the list of service tags with prefix details across all regions but limited to the cloud that your subscription belongs to)."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(&self, location: impl Into<String>, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -41295,10 +44717,12 @@ pub mod service_tag_information {
             pub(crate) tag_name: Option<String>,
         }
         impl Builder {
+            #[doc = "Do not return address prefixes for the tag(s)."]
             pub fn no_address_prefixes(mut self, no_address_prefixes: bool) -> Self {
                 self.no_address_prefixes = Some(no_address_prefixes);
                 self
             }
+            #[doc = "Return tag information for a particular tag."]
             pub fn tag_name(mut self, tag_name: impl Into<String>) -> Self {
                 self.tag_name = Some(tag_name.into());
                 self
@@ -41382,6 +44806,11 @@ pub mod usages {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List network usages for a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `location`: The location where resource usage is queried."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(&self, location: impl Into<String>, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -41471,6 +44900,12 @@ pub mod virtual_routers {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the specified Virtual Router."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `virtual_router_name`: The name of the Virtual Router."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -41485,6 +44920,13 @@ pub mod virtual_routers {
                 expand: None,
             }
         }
+        #[doc = "Creates or updates the specified Virtual Router."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `virtual_router_name`: The name of the Virtual Router."]
+        #[doc = "* `parameters`: Parameters supplied to the create or update Virtual Router."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -41500,6 +44942,12 @@ pub mod virtual_routers {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes the specified Virtual Router."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `virtual_router_name`: The name of the Virtual Router."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -41513,6 +44961,11 @@ pub mod virtual_routers {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists all Virtual Routers in a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_resource_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -41524,6 +44977,10 @@ pub mod virtual_routers {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets all the Virtual Routers in a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -41543,6 +45000,7 @@ pub mod virtual_routers {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "Expands referenced resources."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -41866,6 +45324,13 @@ pub mod virtual_router_peerings {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the specified Virtual Router Peering."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `virtual_router_name`: The name of the Virtual Router."]
+        #[doc = "* `peering_name`: The name of the Virtual Router Peering."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -41881,6 +45346,14 @@ pub mod virtual_router_peerings {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates the specified Virtual Router Peering."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `virtual_router_name`: The name of the Virtual Router."]
+        #[doc = "* `peering_name`: The name of the Virtual Router Peering."]
+        #[doc = "* `parameters`: Parameters supplied to the create or update Virtual Router Peering operation."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -41898,6 +45371,13 @@ pub mod virtual_router_peerings {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes the specified peering from a Virtual Router."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `virtual_router_name`: The name of the Virtual Router."]
+        #[doc = "* `peering_name`: The name of the peering."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -41913,6 +45393,12 @@ pub mod virtual_router_peerings {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists all Virtual Router Peerings in a Virtual Router resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `virtual_router_name`: The name of the Virtual Router."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(
             &self,
             resource_group_name: impl Into<String>,
@@ -42188,6 +45674,11 @@ pub mod web_application_firewall_policies {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all of the protection policies within a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(&self, resource_group_name: impl Into<String>, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -42195,12 +45686,22 @@ pub mod web_application_firewall_policies {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets all the WAF policies in a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_all(&self, subscription_id: impl Into<String>) -> list_all::Builder {
             list_all::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Retrieve protection policy with specified name within a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `policy_name`: The name of the policy."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -42214,6 +45715,13 @@ pub mod web_application_firewall_policies {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or update policy with specified rule set name within a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `policy_name`: The name of the policy."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `parameters`: Policy to be created."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -42229,6 +45737,12 @@ pub mod web_application_firewall_policies {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Deletes Policy."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `policy_name`: The name of the policy."]
+        #[doc = "* `subscription_id`: The subscription credentials which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,

@@ -121,6 +121,9 @@ impl Client {
         }
     }
     #[doc = "Gets a single key-value."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `key`: The key of the key-value to retrieve."]
     pub fn get_key_value(&self, key: impl Into<String>) -> get_key_value::Builder {
         get_key_value::Builder {
             client: self.clone(),
@@ -134,6 +137,9 @@ impl Client {
         }
     }
     #[doc = "Creates a key-value."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `key`: The key of the key-value to create."]
     pub fn put_key_value(&self, key: impl Into<String>) -> put_key_value::Builder {
         put_key_value::Builder {
             client: self.clone(),
@@ -146,6 +152,9 @@ impl Client {
         }
     }
     #[doc = "Deletes a key-value."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `key`: The key of the key-value to delete."]
     pub fn delete_key_value(&self, key: impl Into<String>) -> delete_key_value::Builder {
         delete_key_value::Builder {
             client: self.clone(),
@@ -156,6 +165,9 @@ impl Client {
         }
     }
     #[doc = "Requests the headers and status of the given resource."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `key`: The key of the key-value to retrieve."]
     pub fn check_key_value(&self, key: impl Into<String>) -> check_key_value::Builder {
         check_key_value::Builder {
             client: self.clone(),
@@ -191,6 +203,9 @@ impl Client {
         }
     }
     #[doc = "Locks a key-value."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `key`: The key of the key-value to lock."]
     pub fn put_lock(&self, key: impl Into<String>) -> put_lock::Builder {
         put_lock::Builder {
             client: self.clone(),
@@ -202,6 +217,9 @@ impl Client {
         }
     }
     #[doc = "Unlocks a key-value."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `key`: The key of the key-value to unlock."]
     pub fn delete_lock(&self, key: impl Into<String>) -> delete_lock::Builder {
         delete_lock::Builder {
             client: self.clone(),
@@ -249,18 +267,22 @@ pub mod get_keys {
         pub(crate) accept_datetime: Option<String>,
     }
     impl Builder {
+        #[doc = "A filter for the name of the returned keys."]
         pub fn name(mut self, name: impl Into<String>) -> Self {
             self.name = Some(name.into());
             self
         }
+        #[doc = "Used to guarantee real-time consistency between requests."]
         pub fn sync_token(mut self, sync_token: impl Into<String>) -> Self {
             self.sync_token = Some(sync_token.into());
             self
         }
+        #[doc = "Instructs the server to return elements that appear after the element referred to by the specified token."]
         pub fn after(mut self, after: impl Into<String>) -> Self {
             self.after = Some(after.into());
             self
         }
+        #[doc = "Requests the server to respond with the state of the resource at the specified time."]
         pub fn accept_datetime(mut self, accept_datetime: impl Into<String>) -> Self {
             self.accept_datetime = Some(accept_datetime.into());
             self
@@ -350,18 +372,22 @@ pub mod check_keys {
         pub(crate) accept_datetime: Option<String>,
     }
     impl Builder {
+        #[doc = "A filter for the name of the returned keys."]
         pub fn name(mut self, name: impl Into<String>) -> Self {
             self.name = Some(name.into());
             self
         }
+        #[doc = "Used to guarantee real-time consistency between requests."]
         pub fn sync_token(mut self, sync_token: impl Into<String>) -> Self {
             self.sync_token = Some(sync_token.into());
             self
         }
+        #[doc = "Instructs the server to return elements that appear after the element referred to by the specified token."]
         pub fn after(mut self, after: impl Into<String>) -> Self {
             self.after = Some(after.into());
             self
         }
+        #[doc = "Requests the server to respond with the state of the resource at the specified time."]
         pub fn accept_datetime(mut self, accept_datetime: impl Into<String>) -> Self {
             self.accept_datetime = Some(accept_datetime.into());
             self
@@ -423,26 +449,32 @@ pub mod get_key_values {
         pub(crate) select: Vec<String>,
     }
     impl Builder {
+        #[doc = "A filter used to match keys."]
         pub fn key(mut self, key: impl Into<String>) -> Self {
             self.key = Some(key.into());
             self
         }
+        #[doc = "A filter used to match labels"]
         pub fn label(mut self, label: impl Into<String>) -> Self {
             self.label = Some(label.into());
             self
         }
+        #[doc = "Used to guarantee real-time consistency between requests."]
         pub fn sync_token(mut self, sync_token: impl Into<String>) -> Self {
             self.sync_token = Some(sync_token.into());
             self
         }
+        #[doc = "Instructs the server to return elements that appear after the element referred to by the specified token."]
         pub fn after(mut self, after: impl Into<String>) -> Self {
             self.after = Some(after.into());
             self
         }
+        #[doc = "Requests the server to respond with the state of the resource at the specified time."]
         pub fn accept_datetime(mut self, accept_datetime: impl Into<String>) -> Self {
             self.accept_datetime = Some(accept_datetime.into());
             self
         }
+        #[doc = "Used to select what fields are present in the returned resource(s)."]
         pub fn select(mut self, select: Vec<String>) -> Self {
             self.select = select;
             self
@@ -537,26 +569,32 @@ pub mod check_key_values {
         pub(crate) select: Vec<String>,
     }
     impl Builder {
+        #[doc = "A filter used to match keys."]
         pub fn key(mut self, key: impl Into<String>) -> Self {
             self.key = Some(key.into());
             self
         }
+        #[doc = "A filter used to match labels"]
         pub fn label(mut self, label: impl Into<String>) -> Self {
             self.label = Some(label.into());
             self
         }
+        #[doc = "Used to guarantee real-time consistency between requests."]
         pub fn sync_token(mut self, sync_token: impl Into<String>) -> Self {
             self.sync_token = Some(sync_token.into());
             self
         }
+        #[doc = "Instructs the server to return elements that appear after the element referred to by the specified token."]
         pub fn after(mut self, after: impl Into<String>) -> Self {
             self.after = Some(after.into());
             self
         }
+        #[doc = "Requests the server to respond with the state of the resource at the specified time."]
         pub fn accept_datetime(mut self, accept_datetime: impl Into<String>) -> Self {
             self.accept_datetime = Some(accept_datetime.into());
             self
         }
+        #[doc = "Used to select what fields are present in the returned resource(s)."]
         pub fn select(mut self, select: Vec<String>) -> Self {
             self.select = select;
             self
@@ -622,26 +660,32 @@ pub mod get_key_value {
         pub(crate) select: Vec<String>,
     }
     impl Builder {
+        #[doc = "The label of the key-value to retrieve."]
         pub fn label(mut self, label: impl Into<String>) -> Self {
             self.label = Some(label.into());
             self
         }
+        #[doc = "Used to guarantee real-time consistency between requests."]
         pub fn sync_token(mut self, sync_token: impl Into<String>) -> Self {
             self.sync_token = Some(sync_token.into());
             self
         }
+        #[doc = "Requests the server to respond with the state of the resource at the specified time."]
         pub fn accept_datetime(mut self, accept_datetime: impl Into<String>) -> Self {
             self.accept_datetime = Some(accept_datetime.into());
             self
         }
+        #[doc = "Used to perform an operation only if the targeted resource's etag matches the value provided."]
         pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
             self.if_match = Some(if_match.into());
             self
         }
+        #[doc = "Used to perform an operation only if the targeted resource's etag does not match the value provided."]
         pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
             self.if_none_match = Some(if_none_match.into());
             self
         }
+        #[doc = "Used to select what fields are present in the returned resource(s)."]
         pub fn select(mut self, select: Vec<String>) -> Self {
             self.select = select;
             self
@@ -710,22 +754,27 @@ pub mod put_key_value {
         pub(crate) if_none_match: Option<String>,
     }
     impl Builder {
+        #[doc = "The label of the key-value to create."]
         pub fn label(mut self, label: impl Into<String>) -> Self {
             self.label = Some(label.into());
             self
         }
+        #[doc = "The key-value to create."]
         pub fn entity(mut self, entity: impl Into<models::KeyValue>) -> Self {
             self.entity = Some(entity.into());
             self
         }
+        #[doc = "Used to guarantee real-time consistency between requests."]
         pub fn sync_token(mut self, sync_token: impl Into<String>) -> Self {
             self.sync_token = Some(sync_token.into());
             self
         }
+        #[doc = "Used to perform an operation only if the targeted resource's etag matches the value provided."]
         pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
             self.if_match = Some(if_match.into());
             self
         }
+        #[doc = "Used to perform an operation only if the targeted resource's etag does not match the value provided."]
         pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
             self.if_none_match = Some(if_none_match.into());
             self
@@ -798,14 +847,17 @@ pub mod delete_key_value {
         pub(crate) if_match: Option<String>,
     }
     impl Builder {
+        #[doc = "The label of the key-value to delete."]
         pub fn label(mut self, label: impl Into<String>) -> Self {
             self.label = Some(label.into());
             self
         }
+        #[doc = "Used to guarantee real-time consistency between requests."]
         pub fn sync_token(mut self, sync_token: impl Into<String>) -> Self {
             self.sync_token = Some(sync_token.into());
             self
         }
+        #[doc = "Used to perform an operation only if the targeted resource's etag matches the value provided."]
         pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
             self.if_match = Some(if_match.into());
             self
@@ -870,26 +922,32 @@ pub mod check_key_value {
         pub(crate) select: Vec<String>,
     }
     impl Builder {
+        #[doc = "The label of the key-value to retrieve."]
         pub fn label(mut self, label: impl Into<String>) -> Self {
             self.label = Some(label.into());
             self
         }
+        #[doc = "Used to guarantee real-time consistency between requests."]
         pub fn sync_token(mut self, sync_token: impl Into<String>) -> Self {
             self.sync_token = Some(sync_token.into());
             self
         }
+        #[doc = "Requests the server to respond with the state of the resource at the specified time."]
         pub fn accept_datetime(mut self, accept_datetime: impl Into<String>) -> Self {
             self.accept_datetime = Some(accept_datetime.into());
             self
         }
+        #[doc = "Used to perform an operation only if the targeted resource's etag matches the value provided."]
         pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
             self.if_match = Some(if_match.into());
             self
         }
+        #[doc = "Used to perform an operation only if the targeted resource's etag does not match the value provided."]
         pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
             self.if_none_match = Some(if_none_match.into());
             self
         }
+        #[doc = "Used to select what fields are present in the returned resource(s)."]
         pub fn select(mut self, select: Vec<String>) -> Self {
             self.select = select;
             self
@@ -953,22 +1011,27 @@ pub mod get_labels {
         pub(crate) select: Vec<String>,
     }
     impl Builder {
+        #[doc = "A filter for the name of the returned labels."]
         pub fn name(mut self, name: impl Into<String>) -> Self {
             self.name = Some(name.into());
             self
         }
+        #[doc = "Used to guarantee real-time consistency between requests."]
         pub fn sync_token(mut self, sync_token: impl Into<String>) -> Self {
             self.sync_token = Some(sync_token.into());
             self
         }
+        #[doc = "Instructs the server to return elements that appear after the element referred to by the specified token."]
         pub fn after(mut self, after: impl Into<String>) -> Self {
             self.after = Some(after.into());
             self
         }
+        #[doc = "Requests the server to respond with the state of the resource at the specified time."]
         pub fn accept_datetime(mut self, accept_datetime: impl Into<String>) -> Self {
             self.accept_datetime = Some(accept_datetime.into());
             self
         }
+        #[doc = "Used to select what fields are present in the returned resource(s)."]
         pub fn select(mut self, select: Vec<String>) -> Self {
             self.select = select;
             self
@@ -1059,22 +1122,27 @@ pub mod check_labels {
         pub(crate) select: Vec<String>,
     }
     impl Builder {
+        #[doc = "A filter for the name of the returned labels."]
         pub fn name(mut self, name: impl Into<String>) -> Self {
             self.name = Some(name.into());
             self
         }
+        #[doc = "Used to guarantee real-time consistency between requests."]
         pub fn sync_token(mut self, sync_token: impl Into<String>) -> Self {
             self.sync_token = Some(sync_token.into());
             self
         }
+        #[doc = "Instructs the server to return elements that appear after the element referred to by the specified token."]
         pub fn after(mut self, after: impl Into<String>) -> Self {
             self.after = Some(after.into());
             self
         }
+        #[doc = "Requests the server to respond with the state of the resource at the specified time."]
         pub fn accept_datetime(mut self, accept_datetime: impl Into<String>) -> Self {
             self.accept_datetime = Some(accept_datetime.into());
             self
         }
+        #[doc = "Used to select what fields are present in the returned resource(s)."]
         pub fn select(mut self, select: Vec<String>) -> Self {
             self.select = select;
             self
@@ -1135,18 +1203,22 @@ pub mod put_lock {
         pub(crate) if_none_match: Option<String>,
     }
     impl Builder {
+        #[doc = "The label, if any, of the key-value to lock."]
         pub fn label(mut self, label: impl Into<String>) -> Self {
             self.label = Some(label.into());
             self
         }
+        #[doc = "Used to guarantee real-time consistency between requests."]
         pub fn sync_token(mut self, sync_token: impl Into<String>) -> Self {
             self.sync_token = Some(sync_token.into());
             self
         }
+        #[doc = "Used to perform an operation only if the targeted resource's etag matches the value provided."]
         pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
             self.if_match = Some(if_match.into());
             self
         }
+        #[doc = "Used to perform an operation only if the targeted resource's etag does not match the value provided."]
         pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
             self.if_none_match = Some(if_none_match.into());
             self
@@ -1211,18 +1283,22 @@ pub mod delete_lock {
         pub(crate) if_none_match: Option<String>,
     }
     impl Builder {
+        #[doc = "The label, if any, of the key-value to unlock."]
         pub fn label(mut self, label: impl Into<String>) -> Self {
             self.label = Some(label.into());
             self
         }
+        #[doc = "Used to guarantee real-time consistency between requests."]
         pub fn sync_token(mut self, sync_token: impl Into<String>) -> Self {
             self.sync_token = Some(sync_token.into());
             self
         }
+        #[doc = "Used to perform an operation only if the targeted resource's etag matches the value provided."]
         pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
             self.if_match = Some(if_match.into());
             self
         }
+        #[doc = "Used to perform an operation only if the targeted resource's etag does not match the value provided."]
         pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
             self.if_none_match = Some(if_none_match.into());
             self
@@ -1288,26 +1364,32 @@ pub mod get_revisions {
         pub(crate) select: Vec<String>,
     }
     impl Builder {
+        #[doc = "A filter used to match keys."]
         pub fn key(mut self, key: impl Into<String>) -> Self {
             self.key = Some(key.into());
             self
         }
+        #[doc = "A filter used to match labels"]
         pub fn label(mut self, label: impl Into<String>) -> Self {
             self.label = Some(label.into());
             self
         }
+        #[doc = "Used to guarantee real-time consistency between requests."]
         pub fn sync_token(mut self, sync_token: impl Into<String>) -> Self {
             self.sync_token = Some(sync_token.into());
             self
         }
+        #[doc = "Instructs the server to return elements that appear after the element referred to by the specified token."]
         pub fn after(mut self, after: impl Into<String>) -> Self {
             self.after = Some(after.into());
             self
         }
+        #[doc = "Requests the server to respond with the state of the resource at the specified time."]
         pub fn accept_datetime(mut self, accept_datetime: impl Into<String>) -> Self {
             self.accept_datetime = Some(accept_datetime.into());
             self
         }
+        #[doc = "Used to select what fields are present in the returned resource(s)."]
         pub fn select(mut self, select: Vec<String>) -> Self {
             self.select = select;
             self
@@ -1402,26 +1484,32 @@ pub mod check_revisions {
         pub(crate) select: Vec<String>,
     }
     impl Builder {
+        #[doc = "A filter used to match keys."]
         pub fn key(mut self, key: impl Into<String>) -> Self {
             self.key = Some(key.into());
             self
         }
+        #[doc = "A filter used to match labels"]
         pub fn label(mut self, label: impl Into<String>) -> Self {
             self.label = Some(label.into());
             self
         }
+        #[doc = "Used to guarantee real-time consistency between requests."]
         pub fn sync_token(mut self, sync_token: impl Into<String>) -> Self {
             self.sync_token = Some(sync_token.into());
             self
         }
+        #[doc = "Instructs the server to return elements that appear after the element referred to by the specified token."]
         pub fn after(mut self, after: impl Into<String>) -> Self {
             self.after = Some(after.into());
             self
         }
+        #[doc = "Requests the server to respond with the state of the resource at the specified time."]
         pub fn accept_datetime(mut self, accept_datetime: impl Into<String>) -> Self {
             self.accept_datetime = Some(accept_datetime.into());
             self
         }
+        #[doc = "Used to select what fields are present in the returned resource(s)."]
         pub fn select(mut self, select: Vec<String>) -> Self {
             self.select = select;
             self

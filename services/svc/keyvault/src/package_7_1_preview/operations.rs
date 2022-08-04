@@ -77,6 +77,7 @@ impl Client {
 }
 impl Client {
     #[doc = "List certificates in a specified key vault"]
+    #[doc = "The GetCertificates operation returns the set of certificates resources in the specified key vault. This operation requires the certificates/list permission."]
     pub fn get_certificates(&self) -> get_certificates::Builder {
         get_certificates::Builder {
             client: self.clone(),
@@ -85,6 +86,10 @@ impl Client {
         }
     }
     #[doc = "Deletes a certificate from a specified key vault."]
+    #[doc = "Deletes all versions of a certificate object along with its associated policy. Delete certificate cannot be used to remove individual versions of a certificate object. This operation requires the certificates/delete permission."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `certificate_name`: The name of the certificate."]
     pub fn delete_certificate(&self, certificate_name: impl Into<String>) -> delete_certificate::Builder {
         delete_certificate::Builder {
             client: self.clone(),
@@ -92,10 +97,15 @@ impl Client {
         }
     }
     #[doc = "Lists the certificate contacts for a specified key vault."]
+    #[doc = "The GetCertificateContacts operation returns the set of certificate contact resources in the specified key vault. This operation requires the certificates/managecontacts permission."]
     pub fn get_certificate_contacts(&self) -> get_certificate_contacts::Builder {
         get_certificate_contacts::Builder { client: self.clone() }
     }
     #[doc = "Sets the certificate contacts for the specified key vault."]
+    #[doc = "Sets the certificate contacts for the specified key vault. This operation requires the certificates/managecontacts permission."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `contacts`: The contacts for the key vault certificate."]
     pub fn set_certificate_contacts(&self, contacts: impl Into<models::Contacts>) -> set_certificate_contacts::Builder {
         set_certificate_contacts::Builder {
             client: self.clone(),
@@ -103,10 +113,12 @@ impl Client {
         }
     }
     #[doc = "Deletes the certificate contacts for a specified key vault."]
+    #[doc = "Deletes the certificate contacts for a specified key vault certificate. This operation requires the certificates/managecontacts permission."]
     pub fn delete_certificate_contacts(&self) -> delete_certificate_contacts::Builder {
         delete_certificate_contacts::Builder { client: self.clone() }
     }
     #[doc = "List certificate issuers for a specified key vault."]
+    #[doc = "The GetCertificateIssuers operation returns the set of certificate issuer resources in the specified key vault. This operation requires the certificates/manageissuers/getissuers permission."]
     pub fn get_certificate_issuers(&self) -> get_certificate_issuers::Builder {
         get_certificate_issuers::Builder {
             client: self.clone(),
@@ -114,6 +126,10 @@ impl Client {
         }
     }
     #[doc = "Lists the specified certificate issuer."]
+    #[doc = "The GetCertificateIssuer operation returns the specified certificate issuer resources in the specified key vault. This operation requires the certificates/manageissuers/getissuers permission."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `issuer_name`: The name of the issuer."]
     pub fn get_certificate_issuer(&self, issuer_name: impl Into<String>) -> get_certificate_issuer::Builder {
         get_certificate_issuer::Builder {
             client: self.clone(),
@@ -121,6 +137,11 @@ impl Client {
         }
     }
     #[doc = "Sets the specified certificate issuer."]
+    #[doc = "The SetCertificateIssuer operation adds or updates the specified certificate issuer. This operation requires the certificates/setissuers permission."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `issuer_name`: The name of the issuer."]
+    #[doc = "* `parameter`: Certificate issuer set parameter."]
     pub fn set_certificate_issuer(
         &self,
         issuer_name: impl Into<String>,
@@ -133,6 +154,11 @@ impl Client {
         }
     }
     #[doc = "Updates the specified certificate issuer."]
+    #[doc = "The UpdateCertificateIssuer operation performs an update on the specified certificate issuer entity. This operation requires the certificates/setissuers permission."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `issuer_name`: The name of the issuer."]
+    #[doc = "* `parameter`: Certificate issuer update parameter."]
     pub fn update_certificate_issuer(
         &self,
         issuer_name: impl Into<String>,
@@ -145,6 +171,10 @@ impl Client {
         }
     }
     #[doc = "Deletes the specified certificate issuer."]
+    #[doc = "The DeleteCertificateIssuer operation permanently removes the specified certificate issuer from the vault. This operation requires the certificates/manageissuers/deleteissuers permission."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `issuer_name`: The name of the issuer."]
     pub fn delete_certificate_issuer(&self, issuer_name: impl Into<String>) -> delete_certificate_issuer::Builder {
         delete_certificate_issuer::Builder {
             client: self.clone(),
@@ -152,6 +182,11 @@ impl Client {
         }
     }
     #[doc = "Creates a new certificate."]
+    #[doc = "If this is the first version, the certificate resource is created. This operation requires the certificates/create permission."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `certificate_name`: The name of the certificate."]
+    #[doc = "* `parameters`: The parameters to create a certificate."]
     pub fn create_certificate(
         &self,
         certificate_name: impl Into<String>,
@@ -164,6 +199,11 @@ impl Client {
         }
     }
     #[doc = "Imports a certificate into a specified key vault."]
+    #[doc = "Imports an existing valid certificate, containing a private key, into Azure Key Vault. The certificate to be imported can be in either PFX or PEM format. If the certificate is in PEM format the PEM file must contain the key as well as x509 certificates. This operation requires the certificates/import permission."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `certificate_name`: The name of the certificate."]
+    #[doc = "* `parameters`: The parameters to import the certificate."]
     pub fn import_certificate(
         &self,
         certificate_name: impl Into<String>,
@@ -176,6 +216,10 @@ impl Client {
         }
     }
     #[doc = "List the versions of a certificate."]
+    #[doc = "The GetCertificateVersions operation returns the versions of a certificate in the specified key vault. This operation requires the certificates/list permission."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `certificate_name`: The name of the certificate."]
     pub fn get_certificate_versions(&self, certificate_name: impl Into<String>) -> get_certificate_versions::Builder {
         get_certificate_versions::Builder {
             client: self.clone(),
@@ -184,6 +228,10 @@ impl Client {
         }
     }
     #[doc = "Lists the policy for a certificate."]
+    #[doc = "The GetCertificatePolicy operation returns the specified certificate policy resources in the specified key vault. This operation requires the certificates/get permission."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `certificate_name`: The name of the certificate in a given key vault."]
     pub fn get_certificate_policy(&self, certificate_name: impl Into<String>) -> get_certificate_policy::Builder {
         get_certificate_policy::Builder {
             client: self.clone(),
@@ -191,6 +239,11 @@ impl Client {
         }
     }
     #[doc = "Updates the policy for a certificate."]
+    #[doc = "Set specified members in the certificate policy. Leave others as null. This operation requires the certificates/update permission."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `certificate_name`: The name of the certificate in the given vault."]
+    #[doc = "* `certificate_policy`: The policy for the certificate."]
     pub fn update_certificate_policy(
         &self,
         certificate_name: impl Into<String>,
@@ -203,6 +256,11 @@ impl Client {
         }
     }
     #[doc = "Gets information about a certificate."]
+    #[doc = "Gets information about a specific certificate. This operation requires the certificates/get permission."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `certificate_name`: The name of the certificate in the given vault."]
+    #[doc = "* `certificate_version`: The version of the certificate. This URI fragment is optional. If not specified, the latest version of the certificate is returned."]
     pub fn get_certificate(&self, certificate_name: impl Into<String>, certificate_version: impl Into<String>) -> get_certificate::Builder {
         get_certificate::Builder {
             client: self.clone(),
@@ -211,6 +269,12 @@ impl Client {
         }
     }
     #[doc = "Updates the specified attributes associated with the given certificate."]
+    #[doc = "The UpdateCertificate operation applies the specified update on the given certificate; the only elements updated are the certificate's attributes. This operation requires the certificates/update permission."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `certificate_name`: The name of the certificate in the given key vault."]
+    #[doc = "* `certificate_version`: The version of the certificate."]
+    #[doc = "* `parameters`: The parameters for certificate update."]
     pub fn update_certificate(
         &self,
         certificate_name: impl Into<String>,
@@ -225,6 +289,10 @@ impl Client {
         }
     }
     #[doc = "Gets the creation operation of a certificate."]
+    #[doc = "Gets the creation operation associated with a specified certificate. This operation requires the certificates/get permission."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `certificate_name`: The name of the certificate."]
     pub fn get_certificate_operation(&self, certificate_name: impl Into<String>) -> get_certificate_operation::Builder {
         get_certificate_operation::Builder {
             client: self.clone(),
@@ -232,6 +300,11 @@ impl Client {
         }
     }
     #[doc = "Updates a certificate operation."]
+    #[doc = "Updates a certificate creation operation that is already in progress. This operation requires the certificates/update permission."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `certificate_name`: The name of the certificate."]
+    #[doc = "* `certificate_operation`: The certificate operation response."]
     pub fn update_certificate_operation(
         &self,
         certificate_name: impl Into<String>,
@@ -244,6 +317,10 @@ impl Client {
         }
     }
     #[doc = "Deletes the creation operation for a specific certificate."]
+    #[doc = "Deletes the creation operation for a specified certificate that is in the process of being created. The certificate is no longer created. This operation requires the certificates/update permission."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `certificate_name`: The name of the certificate."]
     pub fn delete_certificate_operation(&self, certificate_name: impl Into<String>) -> delete_certificate_operation::Builder {
         delete_certificate_operation::Builder {
             client: self.clone(),
@@ -251,6 +328,11 @@ impl Client {
         }
     }
     #[doc = "Merges a certificate or a certificate chain with a key pair existing on the server."]
+    #[doc = "The MergeCertificate operation performs the merging of a certificate or certificate chain with a key pair currently available in the service. This operation requires the certificates/create permission."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `certificate_name`: The name of the certificate."]
+    #[doc = "* `parameters`: The parameters to merge certificate."]
     pub fn merge_certificate(
         &self,
         certificate_name: impl Into<String>,
@@ -263,6 +345,10 @@ impl Client {
         }
     }
     #[doc = "Backs up the specified certificate."]
+    #[doc = "Requests that a backup of the specified certificate be downloaded to the client. All versions of the certificate will be downloaded. This operation requires the certificates/backup permission."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `certificate_name`: The name of the certificate."]
     pub fn backup_certificate(&self, certificate_name: impl Into<String>) -> backup_certificate::Builder {
         backup_certificate::Builder {
             client: self.clone(),
@@ -270,6 +356,10 @@ impl Client {
         }
     }
     #[doc = "Restores a backed up certificate to a vault."]
+    #[doc = "Restores a backed up certificate, and all its versions, to a vault. This operation requires the certificates/restore permission."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `parameters`: The parameters to restore the certificate."]
     pub fn restore_certificate(&self, parameters: impl Into<models::CertificateRestoreParameters>) -> restore_certificate::Builder {
         restore_certificate::Builder {
             client: self.clone(),
@@ -277,6 +367,7 @@ impl Client {
         }
     }
     #[doc = "Lists the deleted certificates in the specified vault currently available for recovery."]
+    #[doc = "The GetDeletedCertificates operation retrieves the certificates in the current vault which are in a deleted state and ready for recovery or purging. This operation includes deletion-specific information. This operation requires the certificates/get/list permission. This operation can only be enabled on soft-delete enabled vaults."]
     pub fn get_deleted_certificates(&self) -> get_deleted_certificates::Builder {
         get_deleted_certificates::Builder {
             client: self.clone(),
@@ -285,6 +376,10 @@ impl Client {
         }
     }
     #[doc = "Retrieves information about the specified deleted certificate."]
+    #[doc = "The GetDeletedCertificate operation retrieves the deleted certificate information plus its attributes, such as retention interval, scheduled permanent deletion and the current deletion recovery level. This operation requires the certificates/get permission."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `certificate_name`: The name of the certificate"]
     pub fn get_deleted_certificate(&self, certificate_name: impl Into<String>) -> get_deleted_certificate::Builder {
         get_deleted_certificate::Builder {
             client: self.clone(),
@@ -292,6 +387,10 @@ impl Client {
         }
     }
     #[doc = "Permanently deletes the specified deleted certificate."]
+    #[doc = "The PurgeDeletedCertificate operation performs an irreversible deletion of the specified certificate, without possibility for recovery. The operation is not available if the recovery level does not specify 'Purgeable'. This operation requires the certificate/purge permission."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `certificate_name`: The name of the certificate"]
     pub fn purge_deleted_certificate(&self, certificate_name: impl Into<String>) -> purge_deleted_certificate::Builder {
         purge_deleted_certificate::Builder {
             client: self.clone(),
@@ -299,6 +398,10 @@ impl Client {
         }
     }
     #[doc = "Recovers the deleted certificate back to its current version under /certificates."]
+    #[doc = "The RecoverDeletedCertificate operation performs the reversal of the Delete operation. The operation is applicable in vaults enabled for soft-delete, and must be issued during the retention interval (available in the deleted certificate's attributes). This operation requires the certificates/recover permission."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `certificate_name`: The name of the deleted certificate"]
     pub fn recover_deleted_certificate(&self, certificate_name: impl Into<String>) -> recover_deleted_certificate::Builder {
         recover_deleted_certificate::Builder {
             client: self.clone(),
@@ -306,6 +409,11 @@ impl Client {
         }
     }
     #[doc = "Creates a new key, stores it, then returns key parameters and attributes to the client."]
+    #[doc = "The create key operation can be used to create any key type in Azure Key Vault. If the named key already exists, Azure Key Vault creates a new version of the key. It requires the keys/create permission."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `key_name`: The name for the new key. The system will generate the version name for the new key."]
+    #[doc = "* `parameters`: The parameters to create a key."]
     pub fn create_key(&self, key_name: impl Into<String>, parameters: impl Into<models::KeyCreateParameters>) -> create_key::Builder {
         create_key::Builder {
             client: self.clone(),
@@ -314,6 +422,11 @@ impl Client {
         }
     }
     #[doc = "Imports an externally created key, stores it, and returns key parameters and attributes to the client."]
+    #[doc = "The import key operation may be used to import any key type into an Azure Key Vault. If the named key already exists, Azure Key Vault creates a new version of the key. This operation requires the keys/import permission."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `key_name`: Name for the imported key."]
+    #[doc = "* `parameters`: The parameters to import a key."]
     pub fn import_key(&self, key_name: impl Into<String>, parameters: impl Into<models::KeyImportParameters>) -> import_key::Builder {
         import_key::Builder {
             client: self.clone(),
@@ -322,6 +435,10 @@ impl Client {
         }
     }
     #[doc = "Deletes a key of any type from storage in Azure Key Vault."]
+    #[doc = "The delete key operation cannot be used to remove individual versions of a key. This operation removes the cryptographic material associated with the key, which means the key is not usable for Sign/Verify, Wrap/Unwrap or Encrypt/Decrypt operations. This operation requires the keys/delete permission."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `key_name`: The name of the key to delete."]
     pub fn delete_key(&self, key_name: impl Into<String>) -> delete_key::Builder {
         delete_key::Builder {
             client: self.clone(),
@@ -329,6 +446,11 @@ impl Client {
         }
     }
     #[doc = "Gets the public part of a stored key."]
+    #[doc = "The get key operation is applicable to all key types. If the requested key is symmetric, then no key material is released in the response. This operation requires the keys/get permission."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `key_name`: The name of the key to get."]
+    #[doc = "* `key_version`: Adding the version parameter retrieves a specific version of a key. This URI fragment is optional. If not specified, the latest version of the key is returned."]
     pub fn get_key(&self, key_name: impl Into<String>, key_version: impl Into<String>) -> get_key::Builder {
         get_key::Builder {
             client: self.clone(),
@@ -337,6 +459,12 @@ impl Client {
         }
     }
     #[doc = "The update key operation changes specified attributes of a stored key and can be applied to any key type and key version stored in Azure Key Vault."]
+    #[doc = "In order to perform this operation, the key must already exist in the Key Vault. Note: The cryptographic material of a key itself cannot be changed. This operation requires the keys/update permission."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `key_name`: The name of key to update."]
+    #[doc = "* `key_version`: The version of the key to update."]
+    #[doc = "* `parameters`: The parameters of the key to update."]
     pub fn update_key(
         &self,
         key_name: impl Into<String>,
@@ -351,6 +479,10 @@ impl Client {
         }
     }
     #[doc = "Retrieves a list of individual key versions with the same key name."]
+    #[doc = "The full key identifier, attributes, and tags are provided in the response. This operation requires the keys/list permission."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `key_name`: The name of the key."]
     pub fn get_key_versions(&self, key_name: impl Into<String>) -> get_key_versions::Builder {
         get_key_versions::Builder {
             client: self.clone(),
@@ -359,6 +491,7 @@ impl Client {
         }
     }
     #[doc = "List keys in the specified vault."]
+    #[doc = "Retrieves a list of the keys in the Key Vault as JSON Web Key structures that contain the public part of a stored key. The LIST operation is applicable to all key types, however only the base key identifier, attributes, and tags are provided in the response. Individual versions of a key are not listed in the response. This operation requires the keys/list permission."]
     pub fn get_keys(&self) -> get_keys::Builder {
         get_keys::Builder {
             client: self.clone(),
@@ -366,6 +499,10 @@ impl Client {
         }
     }
     #[doc = "Requests that a backup of the specified key be downloaded to the client."]
+    #[doc = "The Key Backup operation exports a key from Azure Key Vault in a protected form. Note that this operation does NOT return key material in a form that can be used outside the Azure Key Vault system, the returned key material is either protected to a Azure Key Vault HSM or to Azure Key Vault itself. The intent of this operation is to allow a client to GENERATE a key in one Azure Key Vault instance, BACKUP the key, and then RESTORE it into another Azure Key Vault instance. The BACKUP operation may be used to export, in protected form, any key type from Azure Key Vault. Individual versions of a key cannot be backed up. BACKUP / RESTORE can be performed within geographical boundaries only; meaning that a BACKUP from one geographical area cannot be restored to another geographical area. For example, a backup from the US geographical area cannot be restored in an EU geographical area. This operation requires the key/backup permission."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `key_name`: The name of the key."]
     pub fn backup_key(&self, key_name: impl Into<String>) -> backup_key::Builder {
         backup_key::Builder {
             client: self.clone(),
@@ -373,6 +510,10 @@ impl Client {
         }
     }
     #[doc = "Restores a backed up key to a vault."]
+    #[doc = "Imports a previously backed up key into Azure Key Vault, restoring the key, its key identifier, attributes and access control policies. The RESTORE operation may be used to import a previously backed up key. Individual versions of a key cannot be restored. The key is restored in its entirety with the same key name as it had when it was backed up. If the key name is not available in the target Key Vault, the RESTORE operation will be rejected. While the key name is retained during restore, the final key identifier will change if the key is restored to a different vault. Restore will restore all versions and preserve version identifiers. The RESTORE operation is subject to security constraints: The target Key Vault must be owned by the same Microsoft Azure Subscription as the source Key Vault The user must have RESTORE permission in the target Key Vault. This operation requires the keys/restore permission."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `parameters`: The parameters to restore the key."]
     pub fn restore_key(&self, parameters: impl Into<models::KeyRestoreParameters>) -> restore_key::Builder {
         restore_key::Builder {
             client: self.clone(),
@@ -380,6 +521,12 @@ impl Client {
         }
     }
     #[doc = "Encrypts an arbitrary sequence of bytes using an encryption key that is stored in a key vault."]
+    #[doc = "The ENCRYPT operation encrypts an arbitrary sequence of bytes using an encryption key that is stored in Azure Key Vault. Note that the ENCRYPT operation only supports a single block of data, the size of which is dependent on the target key and the encryption algorithm to be used. The ENCRYPT operation is only strictly necessary for symmetric keys stored in Azure Key Vault since protection with an asymmetric key can be performed using public portion of the key. This operation is supported for asymmetric keys as a convenience for callers that have a key-reference but do not have access to the public key material. This operation requires the keys/encrypt permission."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `key_name`: The name of the key."]
+    #[doc = "* `key_version`: The version of the key."]
+    #[doc = "* `parameters`: The parameters for the encryption operation."]
     pub fn encrypt(
         &self,
         key_name: impl Into<String>,
@@ -394,6 +541,12 @@ impl Client {
         }
     }
     #[doc = "Decrypts a single block of encrypted data."]
+    #[doc = "The DECRYPT operation decrypts a well-formed block of ciphertext using the target encryption key and specified algorithm. This operation is the reverse of the ENCRYPT operation; only a single block of data may be decrypted, the size of this block is dependent on the target key and the algorithm to be used. The DECRYPT operation applies to asymmetric and symmetric keys stored in Azure Key Vault since it uses the private portion of the key. This operation requires the keys/decrypt permission."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `key_name`: The name of the key."]
+    #[doc = "* `key_version`: The version of the key."]
+    #[doc = "* `parameters`: The parameters for the decryption operation."]
     pub fn decrypt(
         &self,
         key_name: impl Into<String>,
@@ -408,6 +561,12 @@ impl Client {
         }
     }
     #[doc = "Creates a signature from a digest using the specified key."]
+    #[doc = "The SIGN operation is applicable to asymmetric and symmetric keys stored in Azure Key Vault since this operation uses the private portion of the key. This operation requires the keys/sign permission."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `key_name`: The name of the key."]
+    #[doc = "* `key_version`: The version of the key."]
+    #[doc = "* `parameters`: The parameters for the signing operation."]
     pub fn sign(
         &self,
         key_name: impl Into<String>,
@@ -422,6 +581,12 @@ impl Client {
         }
     }
     #[doc = "Verifies a signature using a specified key."]
+    #[doc = "The VERIFY operation is applicable to symmetric keys stored in Azure Key Vault. VERIFY is not strictly necessary for asymmetric keys stored in Azure Key Vault since signature verification can be performed using the public portion of the key but this operation is supported as a convenience for callers that only have a key-reference and not the public portion of the key. This operation requires the keys/verify permission."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `key_name`: The name of the key."]
+    #[doc = "* `key_version`: The version of the key."]
+    #[doc = "* `parameters`: The parameters for verify operations."]
     pub fn verify(
         &self,
         key_name: impl Into<String>,
@@ -436,6 +601,12 @@ impl Client {
         }
     }
     #[doc = "Wraps a symmetric key using a specified key."]
+    #[doc = "The WRAP operation supports encryption of a symmetric key using a key encryption key that has previously been stored in an Azure Key Vault. The WRAP operation is only strictly necessary for symmetric keys stored in Azure Key Vault since protection with an asymmetric key can be performed using the public portion of the key. This operation is supported for asymmetric keys as a convenience for callers that have a key-reference but do not have access to the public key material. This operation requires the keys/wrapKey permission."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `key_name`: The name of the key."]
+    #[doc = "* `key_version`: The version of the key."]
+    #[doc = "* `parameters`: The parameters for wrap operation."]
     pub fn wrap_key(
         &self,
         key_name: impl Into<String>,
@@ -450,6 +621,12 @@ impl Client {
         }
     }
     #[doc = "Unwraps a symmetric key using the specified key that was initially used for wrapping that key."]
+    #[doc = "The UNWRAP operation supports decryption of a symmetric key using the target key encryption key. This operation is the reverse of the WRAP operation. The UNWRAP operation applies to asymmetric and symmetric keys stored in Azure Key Vault since it uses the private portion of the key. This operation requires the keys/unwrapKey permission."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `key_name`: The name of the key."]
+    #[doc = "* `key_version`: The version of the key."]
+    #[doc = "* `parameters`: The parameters for the key operation."]
     pub fn unwrap_key(
         &self,
         key_name: impl Into<String>,
@@ -464,6 +641,7 @@ impl Client {
         }
     }
     #[doc = "Lists the deleted keys in the specified vault."]
+    #[doc = "Retrieves a list of the keys in the Key Vault as JSON Web Key structures that contain the public part of a deleted key. This operation includes deletion-specific information. The Get Deleted Keys operation is applicable for vaults enabled for soft-delete. While the operation can be invoked on any vault, it will return an error if invoked on a non soft-delete enabled vault. This operation requires the keys/list permission."]
     pub fn get_deleted_keys(&self) -> get_deleted_keys::Builder {
         get_deleted_keys::Builder {
             client: self.clone(),
@@ -471,6 +649,10 @@ impl Client {
         }
     }
     #[doc = "Gets the public part of a deleted key."]
+    #[doc = "The Get Deleted Key operation is applicable for soft-delete enabled vaults. While the operation can be invoked on any vault, it will return an error if invoked on a non soft-delete enabled vault. This operation requires the keys/get permission. "]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `key_name`: The name of the key."]
     pub fn get_deleted_key(&self, key_name: impl Into<String>) -> get_deleted_key::Builder {
         get_deleted_key::Builder {
             client: self.clone(),
@@ -478,6 +660,10 @@ impl Client {
         }
     }
     #[doc = "Permanently deletes the specified key."]
+    #[doc = "The Purge Deleted Key operation is applicable for soft-delete enabled vaults. While the operation can be invoked on any vault, it will return an error if invoked on a non soft-delete enabled vault. This operation requires the keys/purge permission."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `key_name`: The name of the key"]
     pub fn purge_deleted_key(&self, key_name: impl Into<String>) -> purge_deleted_key::Builder {
         purge_deleted_key::Builder {
             client: self.clone(),
@@ -485,6 +671,10 @@ impl Client {
         }
     }
     #[doc = "Recovers the deleted key to its latest version."]
+    #[doc = "The Recover Deleted Key operation is applicable for deleted keys in soft-delete enabled vaults. It recovers the deleted key back to its latest version under /keys. An attempt to recover an non-deleted key will return an error. Consider this the inverse of the delete operation on soft-delete enabled vaults. This operation requires the keys/recover permission."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `key_name`: The name of the deleted key."]
     pub fn recover_deleted_key(&self, key_name: impl Into<String>) -> recover_deleted_key::Builder {
         recover_deleted_key::Builder {
             client: self.clone(),
@@ -492,6 +682,11 @@ impl Client {
         }
     }
     #[doc = "Sets a secret in a specified key vault."]
+    #[doc = " The SET operation adds a secret to the Azure Key Vault. If the named secret already exists, Azure Key Vault creates a new version of that secret. This operation requires the secrets/set permission."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `secret_name`: The name of the secret."]
+    #[doc = "* `parameters`: The parameters for setting the secret."]
     pub fn set_secret(&self, secret_name: impl Into<String>, parameters: impl Into<models::SecretSetParameters>) -> set_secret::Builder {
         set_secret::Builder {
             client: self.clone(),
@@ -500,6 +695,10 @@ impl Client {
         }
     }
     #[doc = "Deletes a secret from a specified key vault."]
+    #[doc = "The DELETE operation applies to any secret stored in Azure Key Vault. DELETE cannot be applied to an individual version of a secret. This operation requires the secrets/delete permission."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `secret_name`: The name of the secret."]
     pub fn delete_secret(&self, secret_name: impl Into<String>) -> delete_secret::Builder {
         delete_secret::Builder {
             client: self.clone(),
@@ -507,6 +706,11 @@ impl Client {
         }
     }
     #[doc = "Get a specified secret from a given key vault."]
+    #[doc = "The GET operation is applicable to any secret stored in Azure Key Vault. This operation requires the secrets/get permission."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `secret_name`: The name of the secret."]
+    #[doc = "* `secret_version`: The version of the secret. This URI fragment is optional. If not specified, the latest version of the secret is returned."]
     pub fn get_secret(&self, secret_name: impl Into<String>, secret_version: impl Into<String>) -> get_secret::Builder {
         get_secret::Builder {
             client: self.clone(),
@@ -515,6 +719,12 @@ impl Client {
         }
     }
     #[doc = "Updates the attributes associated with a specified secret in a given key vault."]
+    #[doc = "The UPDATE operation changes specified attributes of an existing stored secret. Attributes that are not specified in the request are left unchanged. The value of a secret itself cannot be changed. This operation requires the secrets/set permission."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `secret_name`: The name of the secret."]
+    #[doc = "* `secret_version`: The version of the secret."]
+    #[doc = "* `parameters`: The parameters for update secret operation."]
     pub fn update_secret(
         &self,
         secret_name: impl Into<String>,
@@ -529,6 +739,7 @@ impl Client {
         }
     }
     #[doc = "List secrets in a specified key vault."]
+    #[doc = "The Get Secrets operation is applicable to the entire vault. However, only the base secret identifier and its attributes are provided in the response. Individual secret versions are not listed in the response. This operation requires the secrets/list permission."]
     pub fn get_secrets(&self) -> get_secrets::Builder {
         get_secrets::Builder {
             client: self.clone(),
@@ -536,6 +747,10 @@ impl Client {
         }
     }
     #[doc = "List all versions of the specified secret."]
+    #[doc = "The full secret identifier and attributes are provided in the response. No values are returned for the secrets. This operations requires the secrets/list permission."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `secret_name`: The name of the secret."]
     pub fn get_secret_versions(&self, secret_name: impl Into<String>) -> get_secret_versions::Builder {
         get_secret_versions::Builder {
             client: self.clone(),
@@ -544,6 +759,7 @@ impl Client {
         }
     }
     #[doc = "Lists deleted secrets for the specified vault."]
+    #[doc = "The Get Deleted Secrets operation returns the secrets that have been deleted for a vault enabled for soft-delete. This operation requires the secrets/list permission."]
     pub fn get_deleted_secrets(&self) -> get_deleted_secrets::Builder {
         get_deleted_secrets::Builder {
             client: self.clone(),
@@ -551,6 +767,10 @@ impl Client {
         }
     }
     #[doc = "Gets the specified deleted secret."]
+    #[doc = "The Get Deleted Secret operation returns the specified deleted secret along with its attributes. This operation requires the secrets/get permission."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `secret_name`: The name of the secret."]
     pub fn get_deleted_secret(&self, secret_name: impl Into<String>) -> get_deleted_secret::Builder {
         get_deleted_secret::Builder {
             client: self.clone(),
@@ -558,6 +778,10 @@ impl Client {
         }
     }
     #[doc = "Permanently deletes the specified secret."]
+    #[doc = "The purge deleted secret operation removes the secret permanently, without the possibility of recovery. This operation can only be enabled on a soft-delete enabled vault. This operation requires the secrets/purge permission."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `secret_name`: The name of the secret."]
     pub fn purge_deleted_secret(&self, secret_name: impl Into<String>) -> purge_deleted_secret::Builder {
         purge_deleted_secret::Builder {
             client: self.clone(),
@@ -565,6 +789,10 @@ impl Client {
         }
     }
     #[doc = "Recovers the deleted secret to the latest version."]
+    #[doc = "Recovers the deleted secret in the specified vault. This operation can only be performed on a soft-delete enabled vault. This operation requires the secrets/recover permission."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `secret_name`: The name of the deleted secret."]
     pub fn recover_deleted_secret(&self, secret_name: impl Into<String>) -> recover_deleted_secret::Builder {
         recover_deleted_secret::Builder {
             client: self.clone(),
@@ -572,6 +800,10 @@ impl Client {
         }
     }
     #[doc = "Backs up the specified secret."]
+    #[doc = "Requests that a backup of the specified secret be downloaded to the client. All versions of the secret will be downloaded. This operation requires the secrets/backup permission."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `secret_name`: The name of the secret."]
     pub fn backup_secret(&self, secret_name: impl Into<String>) -> backup_secret::Builder {
         backup_secret::Builder {
             client: self.clone(),
@@ -579,12 +811,17 @@ impl Client {
         }
     }
     #[doc = "Restores a backed up secret to a vault."]
+    #[doc = "Restores a backed up secret, and all its versions, to a vault. This operation requires the secrets/restore permission."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `parameters`: The parameters to restore the secret."]
     pub fn restore_secret(&self, parameters: impl Into<models::SecretRestoreParameters>) -> restore_secret::Builder {
         restore_secret::Builder {
             client: self.clone(),
             parameters: parameters.into(),
         }
     }
+    #[doc = "List storage accounts managed by the specified key vault. This operation requires the storage/list permission."]
     pub fn get_storage_accounts(&self) -> get_storage_accounts::Builder {
         get_storage_accounts::Builder {
             client: self.clone(),
@@ -592,6 +829,7 @@ impl Client {
         }
     }
     #[doc = "Lists deleted storage accounts for the specified vault."]
+    #[doc = "The Get Deleted Storage Accounts operation returns the storage accounts that have been deleted for a vault enabled for soft-delete. This operation requires the storage/list permission."]
     pub fn get_deleted_storage_accounts(&self) -> get_deleted_storage_accounts::Builder {
         get_deleted_storage_accounts::Builder {
             client: self.clone(),
@@ -599,6 +837,10 @@ impl Client {
         }
     }
     #[doc = "Gets the specified deleted storage account."]
+    #[doc = "The Get Deleted Storage Account operation returns the specified deleted storage account along with its attributes. This operation requires the storage/get permission."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `storage_account_name`: The name of the storage account."]
     pub fn get_deleted_storage_account(&self, storage_account_name: impl Into<String>) -> get_deleted_storage_account::Builder {
         get_deleted_storage_account::Builder {
             client: self.clone(),
@@ -606,6 +848,10 @@ impl Client {
         }
     }
     #[doc = "Permanently deletes the specified storage account."]
+    #[doc = "The purge deleted storage account operation removes the secret permanently, without the possibility of recovery. This operation can only be performed on a soft-delete enabled vault. This operation requires the storage/purge permission."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `storage_account_name`: The name of the storage account."]
     pub fn purge_deleted_storage_account(&self, storage_account_name: impl Into<String>) -> purge_deleted_storage_account::Builder {
         purge_deleted_storage_account::Builder {
             client: self.clone(),
@@ -613,6 +859,10 @@ impl Client {
         }
     }
     #[doc = "Recovers the deleted storage account."]
+    #[doc = "Recovers the deleted storage account in the specified vault. This operation can only be performed on a soft-delete enabled vault. This operation requires the storage/recover permission."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `storage_account_name`: The name of the storage account."]
     pub fn recover_deleted_storage_account(&self, storage_account_name: impl Into<String>) -> recover_deleted_storage_account::Builder {
         recover_deleted_storage_account::Builder {
             client: self.clone(),
@@ -620,6 +870,10 @@ impl Client {
         }
     }
     #[doc = "Backs up the specified storage account."]
+    #[doc = "Requests that a backup of the specified storage account be downloaded to the client. This operation requires the storage/backup permission."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `storage_account_name`: The name of the storage account."]
     pub fn backup_storage_account(&self, storage_account_name: impl Into<String>) -> backup_storage_account::Builder {
         backup_storage_account::Builder {
             client: self.clone(),
@@ -627,18 +881,31 @@ impl Client {
         }
     }
     #[doc = "Restores a backed up storage account to a vault."]
+    #[doc = "Restores a backed up storage account to a vault. This operation requires the storage/restore permission."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `parameters`: The parameters to restore the storage account."]
     pub fn restore_storage_account(&self, parameters: impl Into<models::StorageRestoreParameters>) -> restore_storage_account::Builder {
         restore_storage_account::Builder {
             client: self.clone(),
             parameters: parameters.into(),
         }
     }
+    #[doc = "Gets information about a specified storage account. This operation requires the storage/get permission."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `storage_account_name`: The name of the storage account."]
     pub fn get_storage_account(&self, storage_account_name: impl Into<String>) -> get_storage_account::Builder {
         get_storage_account::Builder {
             client: self.clone(),
             storage_account_name: storage_account_name.into(),
         }
     }
+    #[doc = "Creates or updates a new storage account. This operation requires the storage/set permission."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `storage_account_name`: The name of the storage account."]
+    #[doc = "* `parameters`: The parameters to create a storage account."]
     pub fn set_storage_account(
         &self,
         storage_account_name: impl Into<String>,
@@ -650,6 +917,11 @@ impl Client {
             parameters: parameters.into(),
         }
     }
+    #[doc = "Updates the specified attributes associated with the given storage account. This operation requires the storage/set/update permission."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `storage_account_name`: The name of the storage account."]
+    #[doc = "* `parameters`: The parameters to update a storage account."]
     pub fn update_storage_account(
         &self,
         storage_account_name: impl Into<String>,
@@ -661,12 +933,21 @@ impl Client {
             parameters: parameters.into(),
         }
     }
+    #[doc = "Deletes a storage account. This operation requires the storage/delete permission."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `storage_account_name`: The name of the storage account."]
     pub fn delete_storage_account(&self, storage_account_name: impl Into<String>) -> delete_storage_account::Builder {
         delete_storage_account::Builder {
             client: self.clone(),
             storage_account_name: storage_account_name.into(),
         }
     }
+    #[doc = "Regenerates the specified key value for the given storage account. This operation requires the storage/regeneratekey permission."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `storage_account_name`: The name of the storage account."]
+    #[doc = "* `parameters`: The parameters to regenerate storage account key."]
     pub fn regenerate_storage_account_key(
         &self,
         storage_account_name: impl Into<String>,
@@ -678,6 +959,10 @@ impl Client {
             parameters: parameters.into(),
         }
     }
+    #[doc = "List storage SAS definitions for the given storage account. This operation requires the storage/listsas permission."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `storage_account_name`: The name of the storage account."]
     pub fn get_sas_definitions(&self, storage_account_name: impl Into<String>) -> get_sas_definitions::Builder {
         get_sas_definitions::Builder {
             client: self.clone(),
@@ -686,6 +971,10 @@ impl Client {
         }
     }
     #[doc = "Lists deleted SAS definitions for the specified vault and storage account."]
+    #[doc = "The Get Deleted Sas Definitions operation returns the SAS definitions that have been deleted for a vault enabled for soft-delete. This operation requires the storage/listsas permission."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `storage_account_name`: The name of the storage account."]
     pub fn get_deleted_sas_definitions(&self, storage_account_name: impl Into<String>) -> get_deleted_sas_definitions::Builder {
         get_deleted_sas_definitions::Builder {
             client: self.clone(),
@@ -694,6 +983,11 @@ impl Client {
         }
     }
     #[doc = "Gets the specified deleted sas definition."]
+    #[doc = "The Get Deleted SAS Definition operation returns the specified deleted SAS definition along with its attributes. This operation requires the storage/getsas permission."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `storage_account_name`: The name of the storage account."]
+    #[doc = "* `sas_definition_name`: The name of the SAS definition."]
     pub fn get_deleted_sas_definition(
         &self,
         storage_account_name: impl Into<String>,
@@ -706,6 +1000,11 @@ impl Client {
         }
     }
     #[doc = "Recovers the deleted SAS definition."]
+    #[doc = "Recovers the deleted SAS definition for the specified storage account. This operation can only be performed on a soft-delete enabled vault. This operation requires the storage/recover permission."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `storage_account_name`: The name of the storage account."]
+    #[doc = "* `sas_definition_name`: The name of the SAS definition."]
     pub fn recover_deleted_sas_definition(
         &self,
         storage_account_name: impl Into<String>,
@@ -717,6 +1016,11 @@ impl Client {
             sas_definition_name: sas_definition_name.into(),
         }
     }
+    #[doc = "Gets information about a SAS definition for the specified storage account. This operation requires the storage/getsas permission."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `storage_account_name`: The name of the storage account."]
+    #[doc = "* `sas_definition_name`: The name of the SAS definition."]
     pub fn get_sas_definition(
         &self,
         storage_account_name: impl Into<String>,
@@ -728,6 +1032,12 @@ impl Client {
             sas_definition_name: sas_definition_name.into(),
         }
     }
+    #[doc = "Creates or updates a new SAS definition for the specified storage account. This operation requires the storage/setsas permission."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `storage_account_name`: The name of the storage account."]
+    #[doc = "* `sas_definition_name`: The name of the SAS definition."]
+    #[doc = "* `parameters`: The parameters to create a SAS definition."]
     pub fn set_sas_definition(
         &self,
         storage_account_name: impl Into<String>,
@@ -741,6 +1051,12 @@ impl Client {
             parameters: parameters.into(),
         }
     }
+    #[doc = "Updates the specified attributes associated with the given SAS definition. This operation requires the storage/setsas permission."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `storage_account_name`: The name of the storage account."]
+    #[doc = "* `sas_definition_name`: The name of the SAS definition."]
+    #[doc = "* `parameters`: The parameters to update a SAS definition."]
     pub fn update_sas_definition(
         &self,
         storage_account_name: impl Into<String>,
@@ -754,6 +1070,11 @@ impl Client {
             parameters: parameters.into(),
         }
     }
+    #[doc = "Deletes a SAS definition from a specified storage account. This operation requires the storage/deletesas permission."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `storage_account_name`: The name of the storage account."]
+    #[doc = "* `sas_definition_name`: The name of the SAS definition."]
     pub fn delete_sas_definition(
         &self,
         storage_account_name: impl Into<String>,
@@ -776,10 +1097,12 @@ pub mod get_certificates {
         pub(crate) include_pending: Option<bool>,
     }
     impl Builder {
+        #[doc = "Maximum number of results to return in a page. If not specified the service will return up to 25 results."]
         pub fn maxresults(mut self, maxresults: i32) -> Self {
             self.maxresults = Some(maxresults);
             self
         }
+        #[doc = "Specifies whether to include certificates which are not completely provisioned."]
         pub fn include_pending(mut self, include_pending: bool) -> Self {
             self.include_pending = Some(include_pending);
             self
@@ -1037,6 +1360,7 @@ pub mod get_certificate_issuers {
         pub(crate) maxresults: Option<i32>,
     }
     impl Builder {
+        #[doc = "Maximum number of results to return in a page. If not specified the service will return up to 25 results."]
         pub fn maxresults(mut self, maxresults: i32) -> Self {
             self.maxresults = Some(maxresults);
             self
@@ -1395,6 +1719,7 @@ pub mod get_certificate_versions {
         pub(crate) maxresults: Option<i32>,
     }
     impl Builder {
+        #[doc = "Maximum number of results to return in a page. If not specified the service will return up to 25 results."]
         pub fn maxresults(mut self, maxresults: i32) -> Self {
             self.maxresults = Some(maxresults);
             self
@@ -1967,10 +2292,12 @@ pub mod get_deleted_certificates {
         pub(crate) include_pending: Option<bool>,
     }
     impl Builder {
+        #[doc = "Maximum number of results to return in a page. If not specified the service will return up to 25 results."]
         pub fn maxresults(mut self, maxresults: i32) -> Self {
             self.maxresults = Some(maxresults);
             self
         }
+        #[doc = "Specifies whether to include certificates which are not completely provisioned."]
         pub fn include_pending(mut self, include_pending: bool) -> Self {
             self.include_pending = Some(include_pending);
             self
@@ -2423,6 +2750,7 @@ pub mod get_key_versions {
         pub(crate) maxresults: Option<i32>,
     }
     impl Builder {
+        #[doc = "Maximum number of results to return in a page. If not specified the service will return up to 25 results."]
         pub fn maxresults(mut self, maxresults: i32) -> Self {
             self.maxresults = Some(maxresults);
             self
@@ -2500,6 +2828,7 @@ pub mod get_keys {
         pub(crate) maxresults: Option<i32>,
     }
     impl Builder {
+        #[doc = "Maximum number of results to return in a page. If not specified the service will return up to 25 results."]
         pub fn maxresults(mut self, maxresults: i32) -> Self {
             self.maxresults = Some(maxresults);
             self
@@ -2979,6 +3308,7 @@ pub mod get_deleted_keys {
         pub(crate) maxresults: Option<i32>,
     }
     impl Builder {
+        #[doc = "Maximum number of results to return in a page. If not specified the service will return up to 25 results."]
         pub fn maxresults(mut self, maxresults: i32) -> Self {
             self.maxresults = Some(maxresults);
             self
@@ -3377,6 +3707,7 @@ pub mod get_secrets {
         pub(crate) maxresults: Option<i32>,
     }
     impl Builder {
+        #[doc = "Maximum number of results to return in a page. If not specified, the service will return up to 25 results."]
         pub fn maxresults(mut self, maxresults: i32) -> Self {
             self.maxresults = Some(maxresults);
             self
@@ -3455,6 +3786,7 @@ pub mod get_secret_versions {
         pub(crate) maxresults: Option<i32>,
     }
     impl Builder {
+        #[doc = "Maximum number of results to return in a page. If not specified, the service will return up to 25 results."]
         pub fn maxresults(mut self, maxresults: i32) -> Self {
             self.maxresults = Some(maxresults);
             self
@@ -3532,6 +3864,7 @@ pub mod get_deleted_secrets {
         pub(crate) maxresults: Option<i32>,
     }
     impl Builder {
+        #[doc = "Maximum number of results to return in a page. If not specified the service will return up to 25 results."]
         pub fn maxresults(mut self, maxresults: i32) -> Self {
             self.maxresults = Some(maxresults);
             self
@@ -3828,6 +4161,7 @@ pub mod get_storage_accounts {
         pub(crate) maxresults: Option<i32>,
     }
     impl Builder {
+        #[doc = "Maximum number of results to return in a page. If not specified the service will return up to 25 results."]
         pub fn maxresults(mut self, maxresults: i32) -> Self {
             self.maxresults = Some(maxresults);
             self
@@ -3905,6 +4239,7 @@ pub mod get_deleted_storage_accounts {
         pub(crate) maxresults: Option<i32>,
     }
     impl Builder {
+        #[doc = "Maximum number of results to return in a page. If not specified the service will return up to 25 results."]
         pub fn maxresults(mut self, maxresults: i32) -> Self {
             self.maxresults = Some(maxresults);
             self
@@ -4436,6 +4771,7 @@ pub mod get_sas_definitions {
         pub(crate) maxresults: Option<i32>,
     }
     impl Builder {
+        #[doc = "Maximum number of results to return in a page. If not specified the service will return up to 25 results."]
         pub fn maxresults(mut self, maxresults: i32) -> Self {
             self.maxresults = Some(maxresults);
             self
@@ -4515,6 +4851,7 @@ pub mod get_deleted_sas_definitions {
         pub(crate) maxresults: Option<i32>,
     }
     impl Builder {
+        #[doc = "Maximum number of results to return in a page. If not specified the service will return up to 25 results."]
         pub fn maxresults(mut self, maxresults: i32) -> Self {
             self.maxresults = Some(maxresults);
             self

@@ -79,6 +79,10 @@ impl Client {
     }
 }
 impl Client {
+    #[doc = "Queries the resources managed by Azure Resource Manager for scopes specified in the request."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `query`: Request specifying query and its options."]
     pub fn resources(&self, query: impl Into<models::QueryRequest>) -> resources::Builder {
         resources::Builder {
             client: self.clone(),
@@ -135,6 +139,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all of the available REST API operations."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }

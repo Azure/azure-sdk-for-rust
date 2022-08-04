@@ -85,6 +85,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all of the available Windows IoT Services REST API operations."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -164,6 +165,12 @@ pub mod services {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get the non-security related metadata of a Windows IoT Device Service."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the Windows IoT Device Service."]
+        #[doc = "* `device_name`: The name of the Windows IoT Device Service."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -178,6 +185,13 @@ pub mod services {
             }
         }
         #[doc = "Create or update the metadata of a Windows IoT Device Service."]
+        #[doc = "Create or update the metadata of a Windows IoT Device Service. The usual pattern to modify a property is to retrieve the Windows IoT Device Service metadata and security metadata, and then combine them with the modified values in a new body to update the Windows IoT Device Service."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the Windows IoT Device Service."]
+        #[doc = "* `device_name`: The name of the Windows IoT Device Service."]
+        #[doc = "* `device_service`: The Windows IoT Device Service metadata and security metadata."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -195,6 +209,13 @@ pub mod services {
             }
         }
         #[doc = "Updates the metadata of a Windows IoT Device Service."]
+        #[doc = "Updates the metadata of a Windows IoT Device Service. The usual pattern to modify a property is to retrieve the Windows IoT Device Service metadata and security metadata, and then combine them with the modified values in a new body to update the Windows IoT Device Service."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the Windows IoT Device Service."]
+        #[doc = "* `device_name`: The name of the Windows IoT Device Service."]
+        #[doc = "* `device_service`: The Windows IoT Device Service metadata and security metadata."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -211,6 +232,12 @@ pub mod services {
                 if_match: None,
             }
         }
+        #[doc = "Delete a Windows IoT Device Service."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the Windows IoT Device Service."]
+        #[doc = "* `device_name`: The name of the Windows IoT Device Service."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -224,6 +251,11 @@ pub mod services {
                 device_name: device_name.into(),
             }
         }
+        #[doc = "Get all the IoT hubs in a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the Windows IoT Device Service."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -235,12 +267,21 @@ pub mod services {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Get all the IoT hubs in a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Check if a Windows IoT Device Service name is available."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `device_service_check_name_availability_parameters`: Set the name parameter in the DeviceServiceCheckNameAvailabilityParameters structure to the name of the Windows IoT Device Service to check."]
         pub fn check_device_service_name_availability(
             &self,
             subscription_id: impl Into<String>,
@@ -322,6 +363,7 @@ pub mod services {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "ETag of the Windows IoT Device Service. Do not specify for creating a new Windows IoT Device Service. Required to update an existing Windows IoT Device Service."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -389,6 +431,7 @@ pub mod services {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "ETag of the Windows IoT Device Service. Do not specify for creating a brand new Windows IoT Device Service. Required to update an existing Windows IoT Device Service."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self

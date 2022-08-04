@@ -92,6 +92,11 @@ pub mod metrics {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Retrieve metric data"]
+        #[doc = "Gets metric values for a single metric"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `app_id`: ID of the application. This is Application ID from the API Access settings blade in the Azure portal."]
+        #[doc = "* `metric_id`: ID of the metric. This is either a standard AI metric, or an application-specific custom metric."]
         pub fn get(&self, app_id: impl Into<String>, metric_id: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -107,6 +112,11 @@ pub mod metrics {
             }
         }
         #[doc = "Retrieve metric data"]
+        #[doc = "Gets metric values for multiple metrics"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `app_id`: ID of the application. This is Application ID from the API Access settings blade in the Azure portal."]
+        #[doc = "* `body`: The batched metrics query."]
         pub fn get_multiple(&self, app_id: impl Into<String>, body: impl Into<models::MetricsPostBody>) -> get_multiple::Builder {
             get_multiple::Builder {
                 client: self.0.clone(),
@@ -115,6 +125,10 @@ pub mod metrics {
             }
         }
         #[doc = "Retrieve metric metadata"]
+        #[doc = "Gets metadata describing the available metrics"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `app_id`: ID of the application. This is Application ID from the API Access settings blade in the Azure portal."]
         pub fn get_metadata(&self, app_id: impl Into<String>) -> get_metadata::Builder {
             get_metadata::Builder {
                 client: self.0.clone(),
@@ -139,30 +153,37 @@ pub mod metrics {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "The timespan over which to retrieve metric values. This is an ISO8601 time period value. If timespan is omitted, a default time range of `PT12H` (\"last 12 hours\") is used. The actual timespan that is queried may be adjusted by the server based. In all cases, the actual time span used for the query is included in the response."]
             pub fn timespan(mut self, timespan: impl Into<String>) -> Self {
                 self.timespan = Some(timespan.into());
                 self
             }
+            #[doc = "The time interval to use when retrieving metric values. This is an ISO8601 duration. If interval is omitted, the metric value is aggregated across the entire timespan. If interval is supplied, the server may adjust the interval to a more appropriate size based on the timespan used for the query. In all cases, the actual interval used for the query is included in the response."]
             pub fn interval(mut self, interval: impl Into<String>) -> Self {
                 self.interval = Some(interval.into());
                 self
             }
+            #[doc = "The aggregation to use when computing the metric values. To retrieve more than one aggregation at a time, separate them with a comma. If no aggregation is specified, then the default aggregation for the metric is used."]
             pub fn aggregation(mut self, aggregation: Vec<String>) -> Self {
                 self.aggregation = aggregation;
                 self
             }
+            #[doc = "The name of the dimension to segment the metric values by. This dimension must be applicable to the metric you are retrieving. To segment by more than one dimension at a time, separate them with a comma (,). In this case, the metric data will be segmented in the order the dimensions are listed in the parameter."]
             pub fn segment(mut self, segment: Vec<String>) -> Self {
                 self.segment = segment;
                 self
             }
+            #[doc = "The number of segments to return.  This value is only valid when segment is specified."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "The aggregation function and direction to sort the segments by.  This value is only valid when segment is specified."]
             pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
                 self.orderby = Some(orderby.into());
                 self
             }
+            #[doc = "An expression used to filter the results.  This value should be a valid OData filter expression where the keys of each clause should be applicable dimensions for the metric you are retrieving."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -309,6 +330,11 @@ pub mod events {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Execute OData query"]
+        #[doc = "Executes an OData query for events"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `app_id`: ID of the application. This is Application ID from the API Access settings blade in the Azure portal."]
+        #[doc = "* `event_type`: The type of events to query; either a standard event type (`traces`, `customEvents`, `pageViews`, `requests`, `dependencies`, `exceptions`, `availabilityResults`) or `$all` to query across all event types."]
         pub fn get_by_type(&self, app_id: impl Into<String>, event_type: impl Into<String>) -> get_by_type::Builder {
             get_by_type::Builder {
                 client: self.0.clone(),
@@ -327,6 +353,12 @@ pub mod events {
             }
         }
         #[doc = "Get an event"]
+        #[doc = "Gets the data for a single event"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `app_id`: ID of the application. This is Application ID from the API Access settings blade in the Azure portal."]
+        #[doc = "* `event_type`: The type of events to query; either a standard event type (`traces`, `customEvents`, `pageViews`, `requests`, `dependencies`, `exceptions`, `availabilityResults`) or `$all` to query across all event types."]
+        #[doc = "* `event_id`: ID of event."]
         pub fn get(&self, app_id: impl Into<String>, event_type: impl Into<String>, event_id: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -337,6 +369,10 @@ pub mod events {
             }
         }
         #[doc = "Get OData metadata"]
+        #[doc = "Gets OData EDMX metadata describing the event data model"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `app_id`: ID of the application. This is Application ID from the API Access settings blade in the Azure portal."]
         pub fn get_odata_metadata(&self, app_id: impl Into<String>) -> get_odata_metadata::Builder {
             get_odata_metadata::Builder {
                 client: self.0.clone(),
@@ -364,42 +400,52 @@ pub mod events {
             pub(crate) apply: Option<String>,
         }
         impl Builder {
+            #[doc = "Optional. The timespan over which to retrieve events. This is an ISO8601 time period value.  This timespan is applied in addition to any that are specified in the Odata expression."]
             pub fn timespan(mut self, timespan: impl Into<String>) -> Self {
                 self.timespan = Some(timespan.into());
                 self
             }
+            #[doc = "An expression used to filter the returned events"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "A free-text search expression to match for whether a particular event should be returned"]
             pub fn search(mut self, search: impl Into<String>) -> Self {
                 self.search = Some(search.into());
                 self
             }
+            #[doc = "A comma-separated list of properties with \\\"asc\\\" (the default) or \\\"desc\\\" to control the order of returned events"]
             pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
                 self.orderby = Some(orderby.into());
                 self
             }
+            #[doc = "Limits the properties to just those requested on each returned event"]
             pub fn select(mut self, select: impl Into<String>) -> Self {
                 self.select = Some(select.into());
                 self
             }
+            #[doc = "The number of items to skip over before returning events"]
             pub fn skip(mut self, skip: i32) -> Self {
                 self.skip = Some(skip);
                 self
             }
+            #[doc = "The number of events to return"]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Format for the returned events"]
             pub fn format(mut self, format: impl Into<String>) -> Self {
                 self.format = Some(format.into());
                 self
             }
+            #[doc = "Request a count of matching items included with the returned events"]
             pub fn count(mut self, count: bool) -> Self {
                 self.count = Some(count);
                 self
             }
+            #[doc = "An expression used for aggregation over returned events"]
             pub fn apply(mut self, apply: impl Into<String>) -> Self {
                 self.apply = Some(apply.into());
                 self
@@ -483,6 +529,7 @@ pub mod events {
             pub(crate) timespan: Option<String>,
         }
         impl Builder {
+            #[doc = "Optional. The timespan over which to retrieve events. This is an ISO8601 time period value.  This timespan is applied in addition to any that are specified in the Odata expression."]
             pub fn timespan(mut self, timespan: impl Into<String>) -> Self {
                 self.timespan = Some(timespan.into());
                 self
@@ -575,6 +622,11 @@ pub mod query {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Execute an Analytics query"]
+        #[doc = "Executes an Analytics query for data"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `app_id`: ID of the application. This is Application ID from the API Access settings blade in the Azure portal."]
+        #[doc = "* `query`: The Analytics query. Learn more about the [Analytics query syntax](https://azure.microsoft.com/documentation/articles/app-insights-analytics-reference/)"]
         pub fn get(&self, app_id: impl Into<String>, query: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -584,6 +636,11 @@ pub mod query {
             }
         }
         #[doc = "Execute an Analytics query"]
+        #[doc = "Executes an Analytics query for data. [Here](https://dev.applicationinsights.io/documentation/Using-the-API/Query) is an example for using POST with an Analytics query."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `app_id`: ID of the application. This is Application ID from the API Access settings blade in the Azure portal."]
+        #[doc = "* `body`: The Analytics query. Learn more about the [Analytics query syntax](https://azure.microsoft.com/documentation/articles/app-insights-analytics-reference/)"]
         pub fn execute(&self, app_id: impl Into<String>, body: impl Into<models::QueryBody>) -> execute::Builder {
             execute::Builder {
                 client: self.0.clone(),
@@ -603,6 +660,7 @@ pub mod query {
             pub(crate) timespan: Option<String>,
         }
         impl Builder {
+            #[doc = "Optional. The timespan over which to query data. This is an ISO8601 time period value.  This timespan is applied in addition to any that are specified in the query expression."]
             pub fn timespan(mut self, timespan: impl Into<String>) -> Self {
                 self.timespan = Some(timespan.into());
                 self
@@ -693,6 +751,10 @@ pub mod metadata {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets metadata information"]
+        #[doc = "Retrieve the metadata information for the app, including its schema, etc."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `app_id`: ID of the application. This is Application ID from the API Access settings blade in the Azure portal."]
         pub fn get(&self, app_id: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -700,6 +762,10 @@ pub mod metadata {
             }
         }
         #[doc = "Gets metadata information"]
+        #[doc = "Retrieve the metadata information for the app, including its schema, etc."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `app_id`: ID of the application. This is Application ID from the API Access settings blade in the Azure portal."]
         pub fn post(&self, app_id: impl Into<String>) -> post::Builder {
             post::Builder {
                 client: self.0.clone(),

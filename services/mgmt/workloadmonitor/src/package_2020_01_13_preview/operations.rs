@@ -168,6 +168,13 @@ pub mod health_monitors {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get the current health status of all monitors of a virtual machine. Optional parameters: $expand (retrieve the monitor's evidence and configuration) and $filter (filter by monitor name)."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription Id of the virtual machine."]
+        #[doc = "* `resource_group_name`: The resource group of the virtual machine."]
+        #[doc = "* `provider_name`: The provider name (ex: Microsoft.Compute for virtual machines)."]
+        #[doc = "* `resource_collection_name`: The resource collection name (ex: virtualMachines for virtual machines)."]
+        #[doc = "* `resource_name`: The name of the virtual machine."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -188,6 +195,14 @@ pub mod health_monitors {
             }
         }
         #[doc = "Get the current health status of a monitor of a virtual machine. Optional parameter: $expand (retrieve the monitor's evidence and configuration)."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription Id of the virtual machine."]
+        #[doc = "* `resource_group_name`: The resource group of the virtual machine."]
+        #[doc = "* `provider_name`: The provider name (ex: Microsoft.Compute for virtual machines)."]
+        #[doc = "* `resource_collection_name`: The resource collection name (ex: virtualMachines for virtual machines)."]
+        #[doc = "* `resource_name`: The name of the virtual machine."]
+        #[doc = "* `monitor_id`: The monitor Id of the virtual machine."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -209,6 +224,14 @@ pub mod health_monitors {
             }
         }
         #[doc = "Get the health state changes of a monitor of a virtual machine within the provided time window (default is the last 24 hours). Optional parameters: $expand (retrieve the monitor's evidence and configuration) and $filter (filter by heartbeat condition)."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription Id of the virtual machine."]
+        #[doc = "* `resource_group_name`: The resource group of the virtual machine."]
+        #[doc = "* `provider_name`: The provider name (ex: Microsoft.Compute for virtual machines)."]
+        #[doc = "* `resource_collection_name`: The resource collection name (ex: virtualMachines for virtual machines)."]
+        #[doc = "* `resource_name`: The name of the virtual machine."]
+        #[doc = "* `monitor_id`: The monitor Id of the virtual machine."]
         pub fn list_state_changes(
             &self,
             subscription_id: impl Into<String>,
@@ -233,6 +256,15 @@ pub mod health_monitors {
             }
         }
         #[doc = "Get the health state change of a monitor of a virtual machine at the provided timestamp. Optional parameter: $expand (retrieve the monitor's evidence and configuration)."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription Id of the virtual machine."]
+        #[doc = "* `resource_group_name`: The resource group of the virtual machine."]
+        #[doc = "* `provider_name`: The provider name (ex: Microsoft.Compute for virtual machines)."]
+        #[doc = "* `resource_collection_name`: The resource collection name (ex: virtualMachines for virtual machines)."]
+        #[doc = "* `resource_name`: The name of the virtual machine."]
+        #[doc = "* `monitor_id`: The monitor Id of the virtual machine."]
+        #[doc = "* `timestamp_unix`: The timestamp of the state change (unix format)."]
         pub fn get_state_change(
             &self,
             subscription_id: impl Into<String>,
@@ -271,10 +303,12 @@ pub mod health_monitors {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "Optionally filter by monitor name. Example: $filter=monitorName eq 'logical-disks|C:|disk-free-space-mb.'"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Optionally expand the monitor’s evidence and/or configuration. Example: $expand=evidence,configuration."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -369,6 +403,7 @@ pub mod health_monitors {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "Optionally expand the monitor’s evidence and/or configuration. Example: $expand=evidence,configuration."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -438,18 +473,22 @@ pub mod health_monitors {
             pub(crate) end_timestamp_utc: Option<String>,
         }
         impl Builder {
+            #[doc = "Optionally filter by heartbeat condition. Example: $filter=isHeartbeat eq false."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Optionally expand the monitor’s evidence and/or configuration. Example: $expand=evidence,configuration."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
             }
+            #[doc = "The start of the time window."]
             pub fn start_timestamp_utc(mut self, start_timestamp_utc: impl Into<String>) -> Self {
                 self.start_timestamp_utc = Some(start_timestamp_utc.into());
                 self
             }
+            #[doc = "The end of the time window."]
             pub fn end_timestamp_utc(mut self, end_timestamp_utc: impl Into<String>) -> Self {
                 self.end_timestamp_utc = Some(end_timestamp_utc.into());
                 self
@@ -545,6 +584,7 @@ pub mod health_monitors {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "Optionally expand the monitor’s evidence and/or configuration. Example: $expand=evidence,configuration."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self

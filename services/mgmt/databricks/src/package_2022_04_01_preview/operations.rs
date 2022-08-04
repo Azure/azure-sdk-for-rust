@@ -100,6 +100,12 @@ pub mod workspaces {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the workspace."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -113,6 +119,13 @@ pub mod workspaces {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates a new workspace."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `parameters`: Parameters supplied to the create or update a workspace."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn create_or_update(
             &self,
             parameters: impl Into<models::Workspace>,
@@ -128,6 +141,13 @@ pub mod workspaces {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates a workspace."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `parameters`: The update to the workspace."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn update(
             &self,
             parameters: impl Into<models::WorkspaceUpdate>,
@@ -143,6 +163,12 @@ pub mod workspaces {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes the workspace."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -156,6 +182,11 @@ pub mod workspaces {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets all the workspaces within a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_by_resource_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -167,6 +198,10 @@ pub mod workspaces {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets all the workspaces within a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
@@ -561,6 +596,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all of the available RP operations."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -641,6 +677,12 @@ pub mod private_link_resources {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "List private link resources"]
+        #[doc = "List private link resources for a given workspace"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list(
             &self,
             resource_group_name: impl Into<String>,
@@ -655,6 +697,13 @@ pub mod private_link_resources {
             }
         }
         #[doc = "Get the specified private link resource"]
+        #[doc = "Get the specified private link resource for the given group id (sub-resource)"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `group_id`: The name of the private link resource"]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -809,6 +858,12 @@ pub mod private_endpoint_connections {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "List private endpoint connections"]
+        #[doc = "List private endpoint connections of the workspace"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list(
             &self,
             resource_group_name: impl Into<String>,
@@ -823,6 +878,13 @@ pub mod private_endpoint_connections {
             }
         }
         #[doc = "Get private endpoint connection"]
+        #[doc = "Get a private endpoint connection properties for a workspace"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `private_endpoint_connection_name`: The name of the private endpoint connection"]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -839,6 +901,14 @@ pub mod private_endpoint_connections {
             }
         }
         #[doc = "Update private endpoint connection status"]
+        #[doc = "Update the status of a private endpoint connection with the specified name"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `private_endpoint_connection_name`: The name of the private endpoint connection"]
+        #[doc = "* `private_endpoint_connection`: The private endpoint connection with updated properties"]
         pub fn create(
             &self,
             resource_group_name: impl Into<String>,
@@ -857,6 +927,13 @@ pub mod private_endpoint_connections {
             }
         }
         #[doc = "Remove private endpoint connection"]
+        #[doc = "Remove private endpoint connection with the specified name"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `private_endpoint_connection_name`: The name of the private endpoint connection"]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -1114,6 +1191,12 @@ pub mod outbound_network_dependencies_endpoints {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets a list of egress endpoints (network endpoints of all outbound dependencies) in the specified Workspace."]
+        #[doc = "Gets the list of endpoints that VNET Injected Workspace calls Azure Databricks Control Plane. You must configure outbound access with these endpoints. For more information, see https://docs.microsoft.com/en-us/azure/databricks/administration-guide/cloud-configurations/azure/udr"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list(
             &self,
             resource_group_name: impl Into<String>,
@@ -1179,6 +1262,13 @@ pub mod v_net_peering {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the workspace vNet Peering."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `peering_name`: The name of the workspace vNet peering."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -1194,6 +1284,14 @@ pub mod v_net_peering {
                 peering_name: peering_name.into(),
             }
         }
+        #[doc = "Creates vNet Peering for workspace."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `virtual_network_peering_parameters`: Parameters supplied to the create workspace vNet Peering."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `peering_name`: The name of the workspace vNet peering."]
         pub fn create_or_update(
             &self,
             virtual_network_peering_parameters: impl Into<models::VirtualNetworkPeering>,
@@ -1211,6 +1309,13 @@ pub mod v_net_peering {
                 peering_name: peering_name.into(),
             }
         }
+        #[doc = "Deletes the workspace vNetPeering."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `peering_name`: The name of the workspace vNet peering."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -1226,6 +1331,12 @@ pub mod v_net_peering {
                 peering_name: peering_name.into(),
             }
         }
+        #[doc = "Lists the workspace vNet Peerings."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_by_workspace(
             &self,
             resource_group_name: impl Into<String>,
@@ -1506,6 +1617,12 @@ pub mod access_connectors {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets an azure databricks accessConnector."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `connector_name`: The name of the azure databricks accessConnector."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -1519,6 +1636,13 @@ pub mod access_connectors {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates azure databricks accessConnector."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `parameters`: Parameters supplied to the create or update an azure databricks accessConnector."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `connector_name`: The name of the azure databricks accessConnector."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn create_or_update(
             &self,
             parameters: impl Into<models::AccessConnector>,
@@ -1534,6 +1658,13 @@ pub mod access_connectors {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates an azure databricks accessConnector."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `parameters`: The update to the azure databricks accessConnector."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `connector_name`: The name of the azure databricks accessConnector."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn update(
             &self,
             parameters: impl Into<models::AccessConnectorUpdate>,
@@ -1549,6 +1680,12 @@ pub mod access_connectors {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes the azure databricks accessConnector."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `connector_name`: The name of the azure databricks accessConnector."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -1562,6 +1699,11 @@ pub mod access_connectors {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets all the azure databricks accessConnectors within a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_by_resource_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -1573,6 +1715,10 @@ pub mod access_connectors {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets all the azure databricks accessConnectors within a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),

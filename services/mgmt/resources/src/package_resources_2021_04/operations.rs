@@ -103,6 +103,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all of the available Microsoft.Resources REST API operations."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -182,6 +183,11 @@ pub mod deployments {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a deployment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `scope`: The resource scope."]
+        #[doc = "* `deployment_name`: The name of the deployment."]
         pub fn get_at_scope(&self, scope: impl Into<String>, deployment_name: impl Into<String>) -> get_at_scope::Builder {
             get_at_scope::Builder {
                 client: self.0.clone(),
@@ -190,6 +196,12 @@ pub mod deployments {
             }
         }
         #[doc = "Deploys resources at a given scope."]
+        #[doc = "You can provide the template and parameters directly in the request or link to JSON files."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `scope`: The resource scope."]
+        #[doc = "* `deployment_name`: The name of the deployment."]
+        #[doc = "* `parameters`: Additional parameters supplied to the operation."]
         pub fn create_or_update_at_scope(
             &self,
             scope: impl Into<String>,
@@ -204,6 +216,11 @@ pub mod deployments {
             }
         }
         #[doc = "Deletes a deployment from the deployment history."]
+        #[doc = "A template deployment that is currently running cannot be deleted. Deleting a template deployment removes the associated deployment operations. This is an asynchronous operation that returns a status of 202 until the template deployment is successfully deleted. The Location response header contains the URI that is used to obtain the status of the process. While the process is running, a call to the URI in the Location header returns a status of 202. When the process finishes, the URI in the Location header returns a status of 204 on success. If the asynchronous request failed, the URI in the Location header returns an error-level status code."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `scope`: The resource scope."]
+        #[doc = "* `deployment_name`: The name of the deployment."]
         pub fn delete_at_scope(&self, scope: impl Into<String>, deployment_name: impl Into<String>) -> delete_at_scope::Builder {
             delete_at_scope::Builder {
                 client: self.0.clone(),
@@ -211,6 +228,11 @@ pub mod deployments {
                 deployment_name: deployment_name.into(),
             }
         }
+        #[doc = "Checks whether the deployment exists."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `scope`: The resource scope."]
+        #[doc = "* `deployment_name`: The name of the deployment."]
         pub fn check_existence_at_scope(
             &self,
             scope: impl Into<String>,
@@ -223,6 +245,11 @@ pub mod deployments {
             }
         }
         #[doc = "Cancels a currently running template deployment."]
+        #[doc = "You can cancel a deployment only if the provisioningState is Accepted or Running. After the deployment is canceled, the provisioningState is set to Canceled. Canceling a template deployment stops the currently running template deployment and leaves the resources partially deployed."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `scope`: The resource scope."]
+        #[doc = "* `deployment_name`: The name of the deployment."]
         pub fn cancel_at_scope(&self, scope: impl Into<String>, deployment_name: impl Into<String>) -> cancel_at_scope::Builder {
             cancel_at_scope::Builder {
                 client: self.0.clone(),
@@ -230,6 +257,12 @@ pub mod deployments {
                 deployment_name: deployment_name.into(),
             }
         }
+        #[doc = "Validates whether the specified template is syntactically correct and will be accepted by Azure Resource Manager.."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `scope`: The resource scope."]
+        #[doc = "* `deployment_name`: The name of the deployment."]
+        #[doc = "* `parameters`: Parameters to validate."]
         pub fn validate_at_scope(
             &self,
             scope: impl Into<String>,
@@ -243,6 +276,11 @@ pub mod deployments {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Exports the template used for specified deployment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `scope`: The resource scope."]
+        #[doc = "* `deployment_name`: The name of the deployment."]
         pub fn export_template_at_scope(
             &self,
             scope: impl Into<String>,
@@ -254,6 +292,10 @@ pub mod deployments {
                 deployment_name: deployment_name.into(),
             }
         }
+        #[doc = "Get all the deployments at the given scope."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `scope`: The resource scope."]
         pub fn list_at_scope(&self, scope: impl Into<String>) -> list_at_scope::Builder {
             list_at_scope::Builder {
                 client: self.0.clone(),
@@ -262,6 +304,10 @@ pub mod deployments {
                 top: None,
             }
         }
+        #[doc = "Gets a deployment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `deployment_name`: The name of the deployment."]
         pub fn get_at_tenant_scope(&self, deployment_name: impl Into<String>) -> get_at_tenant_scope::Builder {
             get_at_tenant_scope::Builder {
                 client: self.0.clone(),
@@ -269,6 +315,11 @@ pub mod deployments {
             }
         }
         #[doc = "Deploys resources at tenant scope."]
+        #[doc = "You can provide the template and parameters directly in the request or link to JSON files."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `deployment_name`: The name of the deployment."]
+        #[doc = "* `parameters`: Additional parameters supplied to the operation."]
         pub fn create_or_update_at_tenant_scope(
             &self,
             deployment_name: impl Into<String>,
@@ -281,12 +332,20 @@ pub mod deployments {
             }
         }
         #[doc = "Deletes a deployment from the deployment history."]
+        #[doc = "A template deployment that is currently running cannot be deleted. Deleting a template deployment removes the associated deployment operations. This is an asynchronous operation that returns a status of 202 until the template deployment is successfully deleted. The Location response header contains the URI that is used to obtain the status of the process. While the process is running, a call to the URI in the Location header returns a status of 202. When the process finishes, the URI in the Location header returns a status of 204 on success. If the asynchronous request failed, the URI in the Location header returns an error-level status code."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `deployment_name`: The name of the deployment."]
         pub fn delete_at_tenant_scope(&self, deployment_name: impl Into<String>) -> delete_at_tenant_scope::Builder {
             delete_at_tenant_scope::Builder {
                 client: self.0.clone(),
                 deployment_name: deployment_name.into(),
             }
         }
+        #[doc = "Checks whether the deployment exists."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `deployment_name`: The name of the deployment."]
         pub fn check_existence_at_tenant_scope(&self, deployment_name: impl Into<String>) -> check_existence_at_tenant_scope::Builder {
             check_existence_at_tenant_scope::Builder {
                 client: self.0.clone(),
@@ -294,12 +353,21 @@ pub mod deployments {
             }
         }
         #[doc = "Cancels a currently running template deployment."]
+        #[doc = "You can cancel a deployment only if the provisioningState is Accepted or Running. After the deployment is canceled, the provisioningState is set to Canceled. Canceling a template deployment stops the currently running template deployment and leaves the resources partially deployed."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `deployment_name`: The name of the deployment."]
         pub fn cancel_at_tenant_scope(&self, deployment_name: impl Into<String>) -> cancel_at_tenant_scope::Builder {
             cancel_at_tenant_scope::Builder {
                 client: self.0.clone(),
                 deployment_name: deployment_name.into(),
             }
         }
+        #[doc = "Validates whether the specified template is syntactically correct and will be accepted by Azure Resource Manager.."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `deployment_name`: The name of the deployment."]
+        #[doc = "* `parameters`: Parameters to validate."]
         pub fn validate_at_tenant_scope(
             &self,
             deployment_name: impl Into<String>,
@@ -311,6 +379,11 @@ pub mod deployments {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Returns changes that will be made by the deployment if executed at the scope of the tenant group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `deployment_name`: The name of the deployment."]
+        #[doc = "* `parameters`: Parameters to validate."]
         pub fn what_if_at_tenant_scope(
             &self,
             deployment_name: impl Into<String>,
@@ -322,12 +395,17 @@ pub mod deployments {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Exports the template used for specified deployment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `deployment_name`: The name of the deployment."]
         pub fn export_template_at_tenant_scope(&self, deployment_name: impl Into<String>) -> export_template_at_tenant_scope::Builder {
             export_template_at_tenant_scope::Builder {
                 client: self.0.clone(),
                 deployment_name: deployment_name.into(),
             }
         }
+        #[doc = "Get all the deployments at the tenant scope."]
         pub fn list_at_tenant_scope(&self) -> list_at_tenant_scope::Builder {
             list_at_tenant_scope::Builder {
                 client: self.0.clone(),
@@ -335,6 +413,11 @@ pub mod deployments {
                 top: None,
             }
         }
+        #[doc = "Gets a deployment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `group_id`: The management group ID."]
+        #[doc = "* `deployment_name`: The name of the deployment."]
         pub fn get_at_management_group_scope(
             &self,
             group_id: impl Into<String>,
@@ -347,6 +430,12 @@ pub mod deployments {
             }
         }
         #[doc = "Deploys resources at management group scope."]
+        #[doc = "You can provide the template and parameters directly in the request or link to JSON files."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `group_id`: The management group ID."]
+        #[doc = "* `deployment_name`: The name of the deployment."]
+        #[doc = "* `parameters`: Additional parameters supplied to the operation."]
         pub fn create_or_update_at_management_group_scope(
             &self,
             group_id: impl Into<String>,
@@ -361,6 +450,11 @@ pub mod deployments {
             }
         }
         #[doc = "Deletes a deployment from the deployment history."]
+        #[doc = "A template deployment that is currently running cannot be deleted. Deleting a template deployment removes the associated deployment operations. This is an asynchronous operation that returns a status of 202 until the template deployment is successfully deleted. The Location response header contains the URI that is used to obtain the status of the process. While the process is running, a call to the URI in the Location header returns a status of 202. When the process finishes, the URI in the Location header returns a status of 204 on success. If the asynchronous request failed, the URI in the Location header returns an error-level status code."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `group_id`: The management group ID."]
+        #[doc = "* `deployment_name`: The name of the deployment."]
         pub fn delete_at_management_group_scope(
             &self,
             group_id: impl Into<String>,
@@ -372,6 +466,11 @@ pub mod deployments {
                 deployment_name: deployment_name.into(),
             }
         }
+        #[doc = "Checks whether the deployment exists."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `group_id`: The management group ID."]
+        #[doc = "* `deployment_name`: The name of the deployment."]
         pub fn check_existence_at_management_group_scope(
             &self,
             group_id: impl Into<String>,
@@ -384,6 +483,11 @@ pub mod deployments {
             }
         }
         #[doc = "Cancels a currently running template deployment."]
+        #[doc = "You can cancel a deployment only if the provisioningState is Accepted or Running. After the deployment is canceled, the provisioningState is set to Canceled. Canceling a template deployment stops the currently running template deployment and leaves the resources partially deployed."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `group_id`: The management group ID."]
+        #[doc = "* `deployment_name`: The name of the deployment."]
         pub fn cancel_at_management_group_scope(
             &self,
             group_id: impl Into<String>,
@@ -395,6 +499,12 @@ pub mod deployments {
                 deployment_name: deployment_name.into(),
             }
         }
+        #[doc = "Validates whether the specified template is syntactically correct and will be accepted by Azure Resource Manager.."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `group_id`: The management group ID."]
+        #[doc = "* `deployment_name`: The name of the deployment."]
+        #[doc = "* `parameters`: Parameters to validate."]
         pub fn validate_at_management_group_scope(
             &self,
             group_id: impl Into<String>,
@@ -408,6 +518,12 @@ pub mod deployments {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Returns changes that will be made by the deployment if executed at the scope of the management group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `group_id`: The management group ID."]
+        #[doc = "* `deployment_name`: The name of the deployment."]
+        #[doc = "* `parameters`: Parameters to validate."]
         pub fn what_if_at_management_group_scope(
             &self,
             group_id: impl Into<String>,
@@ -421,6 +537,11 @@ pub mod deployments {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Exports the template used for specified deployment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `group_id`: The management group ID."]
+        #[doc = "* `deployment_name`: The name of the deployment."]
         pub fn export_template_at_management_group_scope(
             &self,
             group_id: impl Into<String>,
@@ -432,6 +553,10 @@ pub mod deployments {
                 deployment_name: deployment_name.into(),
             }
         }
+        #[doc = "Get all the deployments for a management group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `group_id`: The management group ID."]
         pub fn list_at_management_group_scope(&self, group_id: impl Into<String>) -> list_at_management_group_scope::Builder {
             list_at_management_group_scope::Builder {
                 client: self.0.clone(),
@@ -440,6 +565,11 @@ pub mod deployments {
                 top: None,
             }
         }
+        #[doc = "Gets a deployment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `deployment_name`: The name of the deployment."]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
         pub fn get_at_subscription_scope(
             &self,
             deployment_name: impl Into<String>,
@@ -452,6 +582,12 @@ pub mod deployments {
             }
         }
         #[doc = "Deploys resources at subscription scope."]
+        #[doc = "You can provide the template and parameters directly in the request or link to JSON files."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `deployment_name`: The name of the deployment."]
+        #[doc = "* `parameters`: Additional parameters supplied to the operation."]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
         pub fn create_or_update_at_subscription_scope(
             &self,
             deployment_name: impl Into<String>,
@@ -466,6 +602,11 @@ pub mod deployments {
             }
         }
         #[doc = "Deletes a deployment from the deployment history."]
+        #[doc = "A template deployment that is currently running cannot be deleted. Deleting a template deployment removes the associated deployment operations. This is an asynchronous operation that returns a status of 202 until the template deployment is successfully deleted. The Location response header contains the URI that is used to obtain the status of the process. While the process is running, a call to the URI in the Location header returns a status of 202. When the process finishes, the URI in the Location header returns a status of 204 on success. If the asynchronous request failed, the URI in the Location header returns an error-level status code."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `deployment_name`: The name of the deployment."]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
         pub fn delete_at_subscription_scope(
             &self,
             deployment_name: impl Into<String>,
@@ -477,6 +618,11 @@ pub mod deployments {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Checks whether the deployment exists."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `deployment_name`: The name of the deployment."]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
         pub fn check_existence_at_subscription_scope(
             &self,
             deployment_name: impl Into<String>,
@@ -489,6 +635,11 @@ pub mod deployments {
             }
         }
         #[doc = "Cancels a currently running template deployment."]
+        #[doc = "You can cancel a deployment only if the provisioningState is Accepted or Running. After the deployment is canceled, the provisioningState is set to Canceled. Canceling a template deployment stops the currently running template deployment and leaves the resources partially deployed."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `deployment_name`: The name of the deployment."]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
         pub fn cancel_at_subscription_scope(
             &self,
             deployment_name: impl Into<String>,
@@ -500,6 +651,12 @@ pub mod deployments {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Validates whether the specified template is syntactically correct and will be accepted by Azure Resource Manager.."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `deployment_name`: The name of the deployment."]
+        #[doc = "* `parameters`: Parameters to validate."]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
         pub fn validate_at_subscription_scope(
             &self,
             deployment_name: impl Into<String>,
@@ -513,6 +670,12 @@ pub mod deployments {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Returns changes that will be made by the deployment if executed at the scope of the subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `deployment_name`: The name of the deployment."]
+        #[doc = "* `parameters`: Parameters to What If."]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
         pub fn what_if_at_subscription_scope(
             &self,
             deployment_name: impl Into<String>,
@@ -526,6 +689,11 @@ pub mod deployments {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Exports the template used for specified deployment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `deployment_name`: The name of the deployment."]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
         pub fn export_template_at_subscription_scope(
             &self,
             deployment_name: impl Into<String>,
@@ -537,6 +705,10 @@ pub mod deployments {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get all the deployments for a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
         pub fn list_at_subscription_scope(&self, subscription_id: impl Into<String>) -> list_at_subscription_scope::Builder {
             list_at_subscription_scope::Builder {
                 client: self.0.clone(),
@@ -545,6 +717,12 @@ pub mod deployments {
                 top: None,
             }
         }
+        #[doc = "Gets a deployment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `deployment_name`: The name of the deployment."]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -559,6 +737,13 @@ pub mod deployments {
             }
         }
         #[doc = "Deploys resources to a resource group."]
+        #[doc = "You can provide the template and parameters directly in the request or link to JSON files."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group to deploy the resources to. The name is case insensitive. The resource group must already exist."]
+        #[doc = "* `deployment_name`: The name of the deployment."]
+        #[doc = "* `parameters`: Additional parameters supplied to the operation."]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -575,6 +760,12 @@ pub mod deployments {
             }
         }
         #[doc = "Deletes a deployment from the deployment history."]
+        #[doc = "A template deployment that is currently running cannot be deleted. Deleting a template deployment removes the associated deployment operations. Deleting a template deployment does not affect the state of the resource group. This is an asynchronous operation that returns a status of 202 until the template deployment is successfully deleted. The Location response header contains the URI that is used to obtain the status of the process. While the process is running, a call to the URI in the Location header returns a status of 202. When the process finishes, the URI in the Location header returns a status of 204 on success. If the asynchronous request failed, the URI in the Location header returns an error-level status code."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group with the deployment to delete. The name is case insensitive."]
+        #[doc = "* `deployment_name`: The name of the deployment."]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -588,6 +779,12 @@ pub mod deployments {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Checks whether the deployment exists."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group with the deployment to check. The name is case insensitive."]
+        #[doc = "* `deployment_name`: The name of the deployment."]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
         pub fn check_existence(
             &self,
             resource_group_name: impl Into<String>,
@@ -602,6 +799,12 @@ pub mod deployments {
             }
         }
         #[doc = "Cancels a currently running template deployment."]
+        #[doc = "You can cancel a deployment only if the provisioningState is Accepted or Running. After the deployment is canceled, the provisioningState is set to Canceled. Canceling a template deployment stops the currently running template deployment and leaves the resource group partially deployed."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `deployment_name`: The name of the deployment."]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
         pub fn cancel(
             &self,
             resource_group_name: impl Into<String>,
@@ -615,6 +818,13 @@ pub mod deployments {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Validates whether the specified template is syntactically correct and will be accepted by Azure Resource Manager.."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group the template will be deployed to. The name is case insensitive."]
+        #[doc = "* `deployment_name`: The name of the deployment."]
+        #[doc = "* `parameters`: Parameters to validate."]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
         pub fn validate(
             &self,
             resource_group_name: impl Into<String>,
@@ -630,6 +840,13 @@ pub mod deployments {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Returns changes that will be made by the deployment if executed at the scope of the resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group the template will be deployed to. The name is case insensitive."]
+        #[doc = "* `deployment_name`: The name of the deployment."]
+        #[doc = "* `parameters`: Parameters to validate."]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
         pub fn what_if(
             &self,
             resource_group_name: impl Into<String>,
@@ -645,6 +862,12 @@ pub mod deployments {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Exports the template used for specified deployment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `deployment_name`: The name of the deployment."]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
         pub fn export_template(
             &self,
             resource_group_name: impl Into<String>,
@@ -658,6 +881,11 @@ pub mod deployments {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get all the deployments for a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group with the deployments to get. The name is case insensitive."]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
         pub fn list_by_resource_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -671,6 +899,10 @@ pub mod deployments {
                 top: None,
             }
         }
+        #[doc = "Calculate the hash of the given template."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `template`: The template provided to calculate hash."]
         pub fn calculate_template_hash(&self, template: impl Into<serde_json::Value>) -> calculate_template_hash::Builder {
             calculate_template_hash::Builder {
                 client: self.0.clone(),
@@ -1055,10 +1287,12 @@ pub mod deployments {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the operation. For example, you can use $filter=provisioningState eq '{state}'."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "The number of results to get. If null is passed, returns all deployments."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -1552,10 +1786,12 @@ pub mod deployments {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the operation. For example, you can use $filter=provisioningState eq '{state}'."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "The number of results to get. If null is passed, returns all deployments."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -2058,10 +2294,12 @@ pub mod deployments {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the operation. For example, you can use $filter=provisioningState eq '{state}'."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "The number of results to get. If null is passed, returns all deployments."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -2572,10 +2810,12 @@ pub mod deployments {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the operation. For example, you can use $filter=provisioningState eq '{state}'."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "The number of results to get. If null is passed, returns all deployments."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -3103,10 +3343,12 @@ pub mod deployments {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the operation. For example, you can use $filter=provisioningState eq '{state}'."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "The number of results to get. If null is passed, returns all deployments."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -3236,6 +3478,11 @@ pub mod providers {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Unregisters a subscription from a resource provider."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_provider_namespace`: The namespace of the resource provider to unregister."]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
         pub fn unregister(
             &self,
             resource_provider_namespace: impl Into<String>,
@@ -3247,6 +3494,11 @@ pub mod providers {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Registers a management group with a resource provider."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_provider_namespace`: The namespace of the resource provider to register."]
+        #[doc = "* `group_id`: The management group ID."]
         pub fn register_at_management_group_scope(
             &self,
             resource_provider_namespace: impl Into<String>,
@@ -3258,6 +3510,11 @@ pub mod providers {
                 group_id: group_id.into(),
             }
         }
+        #[doc = "Get the provider permissions."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_provider_namespace`: The namespace of the resource provider."]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
         pub fn provider_permissions(
             &self,
             resource_provider_namespace: impl Into<String>,
@@ -3269,6 +3526,11 @@ pub mod providers {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Registers a subscription with a resource provider."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_provider_namespace`: The namespace of the resource provider to register."]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
         pub fn register(&self, resource_provider_namespace: impl Into<String>, subscription_id: impl Into<String>) -> register::Builder {
             register::Builder {
                 client: self.0.clone(),
@@ -3277,6 +3539,10 @@ pub mod providers {
                 properties: None,
             }
         }
+        #[doc = "Gets all resource providers for a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -3284,12 +3550,18 @@ pub mod providers {
                 expand: None,
             }
         }
+        #[doc = "Gets all resource providers for the tenant."]
         pub fn list_at_tenant_scope(&self) -> list_at_tenant_scope::Builder {
             list_at_tenant_scope::Builder {
                 client: self.0.clone(),
                 expand: None,
             }
         }
+        #[doc = "Gets the specified resource provider."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_provider_namespace`: The namespace of the resource provider."]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
         pub fn get(&self, resource_provider_namespace: impl Into<String>, subscription_id: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -3298,6 +3570,10 @@ pub mod providers {
                 expand: None,
             }
         }
+        #[doc = "Gets the specified resource provider at the tenant level."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_provider_namespace`: The namespace of the resource provider."]
         pub fn get_at_tenant_scope(&self, resource_provider_namespace: impl Into<String>) -> get_at_tenant_scope::Builder {
             get_at_tenant_scope::Builder {
                 client: self.0.clone(),
@@ -3465,6 +3741,7 @@ pub mod providers {
             pub(crate) properties: Option<models::ProviderRegistrationRequest>,
         }
         impl Builder {
+            #[doc = "The third party consent for S2S."]
             pub fn properties(mut self, properties: impl Into<models::ProviderRegistrationRequest>) -> Self {
                 self.properties = Some(properties.into());
                 self
@@ -3524,6 +3801,7 @@ pub mod providers {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "The properties to include in the results. For example, use &$expand=metadata in the query string to retrieve resource provider metadata. To include property aliases in response, use $expand=resourceTypes/aliases."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -3605,6 +3883,7 @@ pub mod providers {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "The properties to include in the results. For example, use &$expand=metadata in the query string to retrieve resource provider metadata. To include property aliases in response, use $expand=resourceTypes/aliases."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -3684,6 +3963,7 @@ pub mod providers {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "The $expand query parameter. For example, to include property aliases in response, use $expand=resourceTypes/aliases."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -3741,6 +4021,7 @@ pub mod providers {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "The $expand query parameter. For example, to include property aliases in response, use $expand=resourceTypes/aliases."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -3792,6 +4073,11 @@ pub mod provider_resource_types {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List the resource types for a specified resource provider."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_provider_namespace`: The namespace of the resource provider."]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
         pub fn list(&self, resource_provider_namespace: impl Into<String>, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -3812,6 +4098,7 @@ pub mod provider_resource_types {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "The $expand query parameter. For example, to include property aliases in response, use $expand=resourceTypes/aliases."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -3864,6 +4151,11 @@ pub mod resources {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get all the resources for a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The resource group with the resources to get."]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
         pub fn list_by_resource_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -3879,6 +4171,12 @@ pub mod resources {
             }
         }
         #[doc = "Moves resources from one resource group to another resource group."]
+        #[doc = "The resources to be moved must be in the same source resource group in the source subscription being used. The target resource group may be in a different subscription. When moving resources, both the source group and the target group are locked for the duration of the operation. Write and delete operations are blocked on the groups until the move completes. "]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `source_resource_group_name`: The name of the resource group from the source subscription containing the resources to be moved."]
+        #[doc = "* `parameters`: Parameters for moving resources."]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
         pub fn move_resources(
             &self,
             source_resource_group_name: impl Into<String>,
@@ -3893,6 +4191,12 @@ pub mod resources {
             }
         }
         #[doc = "Validates whether resources can be moved from one resource group to another resource group."]
+        #[doc = "This operation checks whether the specified resources can be moved to the target. The resources to be moved must be in the same source resource group in the source subscription being used. The target resource group may be in a different subscription. If validation succeeds, it returns HTTP response code 204 (no content). If validation fails, it returns HTTP response code 409 (Conflict) with an error message. Retrieve the URL in the Location header value to check the result of the long-running operation."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `source_resource_group_name`: The name of the resource group from the source subscription containing the resources to be validated for move."]
+        #[doc = "* `parameters`: Parameters for moving resources."]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
         pub fn validate_move_resources(
             &self,
             source_resource_group_name: impl Into<String>,
@@ -3906,6 +4210,10 @@ pub mod resources {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get all the resources in a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -3915,6 +4223,15 @@ pub mod resources {
                 top: None,
             }
         }
+        #[doc = "Gets a resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group containing the resource to get. The name is case insensitive."]
+        #[doc = "* `resource_provider_namespace`: The namespace of the resource provider."]
+        #[doc = "* `parent_resource_path`: The parent resource identity."]
+        #[doc = "* `resource_type`: The resource type of the resource."]
+        #[doc = "* `resource_name`: The name of the resource to get."]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -3934,6 +4251,16 @@ pub mod resources {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates a resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group for the resource. The name is case insensitive."]
+        #[doc = "* `resource_provider_namespace`: The namespace of the resource provider."]
+        #[doc = "* `parent_resource_path`: The parent resource identity."]
+        #[doc = "* `resource_type`: The resource type of the resource to create."]
+        #[doc = "* `resource_name`: The name of the resource to create."]
+        #[doc = "* `parameters`: Parameters for creating or updating the resource."]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -3955,6 +4282,16 @@ pub mod resources {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates a resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group for the resource. The name is case insensitive."]
+        #[doc = "* `resource_provider_namespace`: The namespace of the resource provider."]
+        #[doc = "* `parent_resource_path`: The parent resource identity."]
+        #[doc = "* `resource_type`: The resource type of the resource to update."]
+        #[doc = "* `resource_name`: The name of the resource to update."]
+        #[doc = "* `parameters`: Parameters for updating the resource."]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -3976,6 +4313,15 @@ pub mod resources {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes a resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource to delete. The name is case insensitive."]
+        #[doc = "* `resource_provider_namespace`: The namespace of the resource provider."]
+        #[doc = "* `parent_resource_path`: The parent resource identity."]
+        #[doc = "* `resource_type`: The resource type."]
+        #[doc = "* `resource_name`: The name of the resource to delete."]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -3995,6 +4341,15 @@ pub mod resources {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Checks whether a resource exists."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group containing the resource to check. The name is case insensitive."]
+        #[doc = "* `resource_provider_namespace`: The resource provider of the resource to check."]
+        #[doc = "* `parent_resource_path`: The parent resource identity."]
+        #[doc = "* `resource_type`: The resource type."]
+        #[doc = "* `resource_name`: The name of the resource to check whether it exists."]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
         pub fn check_existence(
             &self,
             resource_group_name: impl Into<String>,
@@ -4014,12 +4369,21 @@ pub mod resources {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets a resource by ID."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_id`: The fully qualified ID of the resource, including the resource name and resource type. Use the format, /subscriptions/{guid}/resourceGroups/{resource-group-name}/{resource-provider-namespace}/{resource-type}/{resource-name}"]
         pub fn get_by_id(&self, resource_id: impl Into<String>) -> get_by_id::Builder {
             get_by_id::Builder {
                 client: self.0.clone(),
                 resource_id: resource_id.into(),
             }
         }
+        #[doc = "Create a resource by ID."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_id`: The fully qualified ID of the resource, including the resource name and resource type. Use the format, /subscriptions/{guid}/resourceGroups/{resource-group-name}/{resource-provider-namespace}/{resource-type}/{resource-name}"]
+        #[doc = "* `parameters`: Create or update resource parameters."]
         pub fn create_or_update_by_id(
             &self,
             resource_id: impl Into<String>,
@@ -4031,6 +4395,11 @@ pub mod resources {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Updates a resource by ID."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_id`: The fully qualified ID of the resource, including the resource name and resource type. Use the format, /subscriptions/{guid}/resourceGroups/{resource-group-name}/{resource-provider-namespace}/{resource-type}/{resource-name}"]
+        #[doc = "* `parameters`: Update resource parameters."]
         pub fn update_by_id(
             &self,
             resource_id: impl Into<String>,
@@ -4042,12 +4411,20 @@ pub mod resources {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Deletes a resource by ID."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_id`: The fully qualified ID of the resource, including the resource name and resource type. Use the format, /subscriptions/{guid}/resourceGroups/{resource-group-name}/{resource-provider-namespace}/{resource-type}/{resource-name}"]
         pub fn delete_by_id(&self, resource_id: impl Into<String>) -> delete_by_id::Builder {
             delete_by_id::Builder {
                 client: self.0.clone(),
                 resource_id: resource_id.into(),
             }
         }
+        #[doc = "Checks by ID whether a resource exists. This API currently works only for a limited set of Resource providers. In the event that a Resource provider does not implement this API, ARM will respond with a 405. The alternative then is to use the GET API to check for the existence of the resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_id`: The fully qualified ID of the resource, including the resource name and resource type. Use the format, /subscriptions/{guid}/resourceGroups/{resource-group-name}/{resource-provider-namespace}/{resource-type}/{resource-name}"]
         pub fn check_existence_by_id(&self, resource_id: impl Into<String>) -> check_existence_by_id::Builder {
             check_existence_by_id::Builder {
                 client: self.0.clone(),
@@ -4068,14 +4445,17 @@ pub mod resources {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the operation.<br><br>The properties you can use for eq (equals) or ne (not equals) are: location, resourceType, name, resourceGroup, identity, identity/principalId, plan, plan/publisher, plan/product, plan/name, plan/version, and plan/promotionCode.<br><br>For example, to filter by a resource type, use: $filter=resourceType eq 'Microsoft.Network/virtualNetworks'<br><br>You can use substringof(value, property) in the filter. The properties you can use for substring are: name and resourceGroup.<br><br>For example, to get all resources with 'demo' anywhere in the name, use: $filter=substringof('demo', name)<br><br>You can link more than one substringof together by adding and/or operators.<br><br>You can filter by tag names and values. For example, to filter for a tag name and value, use $filter=tagName eq 'tag1' and tagValue eq 'Value1'. When you filter by a tag name and value, the tags for each resource are not returned in the results.<br><br>You can use some properties together when filtering. The combinations you can use are: substringof and/or resourceType, plan and plan/publisher and plan/name, identity and identity/principalId."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Comma-separated list of additional properties to be included in the response. Valid values include `createdTime`, `changedTime` and `provisioningState`. For example, `$expand=createdTime,changedTime`."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
             }
+            #[doc = "The number of results to return. If null is passed, returns all resources."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -4275,14 +4655,17 @@ pub mod resources {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the operation.<br><br>Filter comparison operators include `eq` (equals) and `ne` (not equals) and may be used with the following properties: `location`, `resourceType`, `name`, `resourceGroup`, `identity`, `identity/principalId`, `plan`, `plan/publisher`, `plan/product`, `plan/name`, `plan/version`, and `plan/promotionCode`.<br><br>For example, to filter by a resource type, use `$filter=resourceType eq 'Microsoft.Network/virtualNetworks'`<br><br><br>`substringof(value, property)` can  be used to filter for substrings of the following currently-supported properties: `name` and `resourceGroup`<br><br>For example, to get all resources with 'demo' anywhere in the resource name, use `$filter=substringof('demo', name)`<br><br>Multiple substring operations can also be combined using `and`/`or` operators.<br><br>Note that any truncated number of results queried via `$top` may also not be compatible when using a filter.<br><br><br>Resources can be filtered by tag names and values. For example, to filter for a tag name and value, use `$filter=tagName eq 'tag1' and tagValue eq 'Value1'`. Note that when resources are filtered by tag name and value, <b>the original tags for each resource will not be returned in the results.</b> Any list of additional properties queried via `$expand` may also not be compatible when filtering by tag names/values. <br><br>For tag names only, resources can be filtered by prefix using the following syntax: `$filter=startswith(tagName, 'depart')`. This query will return all resources with a tag name prefixed by the phrase `depart` (i.e.`department`, `departureDate`, `departureTime`, etc.)<br><br><br>Note that some properties can be combined when filtering resources, which include the following: `substringof() and/or resourceType`, `plan and plan/publisher and plan/name`, and `identity and identity/principalId`."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Comma-separated list of additional properties to be included in the response. Valid values include `createdTime`, `changedTime` and `provisioningState`. For example, `$expand=createdTime,changedTime`."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
             }
+            #[doc = "The number of recommendations per page if a paged version of this API is being used."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -4920,6 +5303,11 @@ pub mod resource_groups {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group to get. The name is case insensitive."]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
         pub fn get(&self, resource_group_name: impl Into<String>, subscription_id: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -4927,6 +5315,12 @@ pub mod resource_groups {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group to create or update. Can include alphanumeric, underscore, parentheses, hyphen, period (except at end), and Unicode characters that match the allowed characters."]
+        #[doc = "* `parameters`: Parameters supplied to the create or update a resource group."]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -4941,6 +5335,12 @@ pub mod resource_groups {
             }
         }
         #[doc = "Updates a resource group."]
+        #[doc = "Resource groups can be updated through a simple PATCH operation to a group address. The format of the request is the same as that for creating a resource group. If a field is unspecified, the current value is retained."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group to update. The name is case insensitive."]
+        #[doc = "* `parameters`: Parameters supplied to update a resource group."]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -4955,6 +5355,11 @@ pub mod resource_groups {
             }
         }
         #[doc = "Deletes a resource group."]
+        #[doc = "When you delete a resource group, all of its resources are also deleted. Deleting a resource group deletes all of its template deployments and currently stored operations."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group to delete. The name is case insensitive."]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
         pub fn delete(&self, resource_group_name: impl Into<String>, subscription_id: impl Into<String>) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),
@@ -4963,6 +5368,11 @@ pub mod resource_groups {
                 force_deletion_types: None,
             }
         }
+        #[doc = "Checks whether a resource group exists."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group to check. The name is case insensitive."]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
         pub fn check_existence(
             &self,
             resource_group_name: impl Into<String>,
@@ -4974,6 +5384,12 @@ pub mod resource_groups {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Captures the specified resource group as a template."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `parameters`: Parameters for exporting the template."]
         pub fn export_template(
             &self,
             subscription_id: impl Into<String>,
@@ -4987,6 +5403,10 @@ pub mod resource_groups {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Gets all the resource groups for a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -5174,6 +5594,7 @@ pub mod resource_groups {
             pub(crate) force_deletion_types: Option<String>,
         }
         impl Builder {
+            #[doc = "The resource types you want to force delete. Currently, only the following is supported: forceDeletionTypes=Microsoft.Compute/virtualMachines,Microsoft.Compute/virtualMachineScaleSets"]
             pub fn force_deletion_types(mut self, force_deletion_types: impl Into<String>) -> Self {
                 self.force_deletion_types = Some(force_deletion_types.into());
                 self
@@ -5336,10 +5757,12 @@ pub mod resource_groups {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the operation.<br><br>You can filter by tag names and values. For example, to filter for a tag name and value, use $filter=tagName eq 'tag1' and tagValue eq 'Value1'"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "The number of results to return. If null is passed, returns all resource groups."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -5421,6 +5844,12 @@ pub mod tags {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Creates a predefined value for a predefined tag name."]
+        #[doc = "This operation allows adding a value to the list of predefined values for an existing predefined tag name. A tag value can have a maximum of 256 characters."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `tag_name`: The name of the tag."]
+        #[doc = "* `tag_value`: The value of the tag to create."]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
         pub fn create_or_update_value(
             &self,
             tag_name: impl Into<String>,
@@ -5435,6 +5864,12 @@ pub mod tags {
             }
         }
         #[doc = "Deletes a predefined tag value for a predefined tag name."]
+        #[doc = "This operation allows deleting a value from the list of predefined values for an existing predefined tag name. The value being deleted must not be in use as a tag value for the given tag name for any resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `tag_name`: The name of the tag."]
+        #[doc = "* `tag_value`: The value of the tag to delete."]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
         pub fn delete_value(
             &self,
             tag_name: impl Into<String>,
@@ -5449,6 +5884,11 @@ pub mod tags {
             }
         }
         #[doc = "Creates a predefined tag name."]
+        #[doc = "This operation allows adding a name to the list of predefined tag names for the given subscription. A tag name can have a maximum of 512 characters and is case-insensitive. Tag names cannot have the following prefixes which are reserved for Azure use: 'microsoft', 'azure', 'windows'."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `tag_name`: The name of the tag to create."]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
         pub fn create_or_update(&self, tag_name: impl Into<String>, subscription_id: impl Into<String>) -> create_or_update::Builder {
             create_or_update::Builder {
                 client: self.0.clone(),
@@ -5457,6 +5897,11 @@ pub mod tags {
             }
         }
         #[doc = "Deletes a predefined tag name."]
+        #[doc = "This operation allows deleting a name from the list of predefined tag names for the given subscription. The name being deleted must not be in use as a tag name for any resource. All predefined values for the given name must have already been deleted."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `tag_name`: The name of the tag."]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
         pub fn delete(&self, tag_name: impl Into<String>, subscription_id: impl Into<String>) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),
@@ -5465,6 +5910,10 @@ pub mod tags {
             }
         }
         #[doc = "Gets a summary of tag usage under the subscription."]
+        #[doc = "This operation performs a union of predefined tags, resource tags, resource group tags and subscription tags, and returns a summary of usage for each tag name and value under the given subscription. In case of a large number of tags, this operation may return a previously cached result."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -5472,6 +5921,9 @@ pub mod tags {
             }
         }
         #[doc = "Gets the entire set of tags on a resource or subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `scope`: The resource scope."]
         pub fn get_at_scope(&self, scope: impl Into<String>) -> get_at_scope::Builder {
             get_at_scope::Builder {
                 client: self.0.clone(),
@@ -5479,6 +5931,10 @@ pub mod tags {
             }
         }
         #[doc = "Creates or updates the entire set of tags on a resource or subscription."]
+        #[doc = "This operation allows adding or replacing the entire set of tags on the specified resource or subscription. The specified entity can have a maximum of 50 tags."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `scope`: The resource scope."]
         pub fn create_or_update_at_scope(
             &self,
             scope: impl Into<String>,
@@ -5491,6 +5947,10 @@ pub mod tags {
             }
         }
         #[doc = "Selectively updates the set of tags on a resource or subscription."]
+        #[doc = "This operation allows replacing, merging or selectively deleting tags on the specified resource or subscription. The specified entity can have a maximum of 50 tags at the end of the operation. The 'replace' option replaces the entire set of existing tags with a new set. The 'merge' option allows adding tags with new names and updating the values of tags with existing names. The 'delete' option allows selectively deleting tags based on given names or name/value pairs."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `scope`: The resource scope."]
         pub fn update_at_scope(
             &self,
             scope: impl Into<String>,
@@ -5503,6 +5963,9 @@ pub mod tags {
             }
         }
         #[doc = "Deletes the entire set of tags on a resource or subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `scope`: The resource scope."]
         pub fn delete_at_scope(&self, scope: impl Into<String>) -> delete_at_scope::Builder {
             delete_at_scope::Builder {
                 client: self.0.clone(),
@@ -6005,6 +6468,12 @@ pub mod deployment_operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a deployments operation."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `scope`: The resource scope."]
+        #[doc = "* `deployment_name`: The name of the deployment."]
+        #[doc = "* `operation_id`: The ID of the operation to get."]
         pub fn get_at_scope(
             &self,
             scope: impl Into<String>,
@@ -6018,6 +6487,11 @@ pub mod deployment_operations {
                 operation_id: operation_id.into(),
             }
         }
+        #[doc = "Gets all deployments operations for a deployment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `scope`: The resource scope."]
+        #[doc = "* `deployment_name`: The name of the deployment."]
         pub fn list_at_scope(&self, scope: impl Into<String>, deployment_name: impl Into<String>) -> list_at_scope::Builder {
             list_at_scope::Builder {
                 client: self.0.clone(),
@@ -6026,6 +6500,11 @@ pub mod deployment_operations {
                 top: None,
             }
         }
+        #[doc = "Gets a deployments operation."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `deployment_name`: The name of the deployment."]
+        #[doc = "* `operation_id`: The ID of the operation to get."]
         pub fn get_at_tenant_scope(
             &self,
             deployment_name: impl Into<String>,
@@ -6037,6 +6516,10 @@ pub mod deployment_operations {
                 operation_id: operation_id.into(),
             }
         }
+        #[doc = "Gets all deployments operations for a deployment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `deployment_name`: The name of the deployment."]
         pub fn list_at_tenant_scope(&self, deployment_name: impl Into<String>) -> list_at_tenant_scope::Builder {
             list_at_tenant_scope::Builder {
                 client: self.0.clone(),
@@ -6044,6 +6527,12 @@ pub mod deployment_operations {
                 top: None,
             }
         }
+        #[doc = "Gets a deployments operation."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `group_id`: The management group ID."]
+        #[doc = "* `deployment_name`: The name of the deployment."]
+        #[doc = "* `operation_id`: The ID of the operation to get."]
         pub fn get_at_management_group_scope(
             &self,
             group_id: impl Into<String>,
@@ -6057,6 +6546,11 @@ pub mod deployment_operations {
                 operation_id: operation_id.into(),
             }
         }
+        #[doc = "Gets all deployments operations for a deployment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `group_id`: The management group ID."]
+        #[doc = "* `deployment_name`: The name of the deployment."]
         pub fn list_at_management_group_scope(
             &self,
             group_id: impl Into<String>,
@@ -6069,6 +6563,12 @@ pub mod deployment_operations {
                 top: None,
             }
         }
+        #[doc = "Gets a deployments operation."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `deployment_name`: The name of the deployment."]
+        #[doc = "* `operation_id`: The ID of the operation to get."]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
         pub fn get_at_subscription_scope(
             &self,
             deployment_name: impl Into<String>,
@@ -6082,6 +6582,11 @@ pub mod deployment_operations {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets all deployments operations for a deployment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `deployment_name`: The name of the deployment."]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
         pub fn list_at_subscription_scope(
             &self,
             deployment_name: impl Into<String>,
@@ -6094,6 +6599,13 @@ pub mod deployment_operations {
                 top: None,
             }
         }
+        #[doc = "Gets a deployments operation."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `deployment_name`: The name of the deployment."]
+        #[doc = "* `operation_id`: The ID of the operation to get."]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -6109,6 +6621,12 @@ pub mod deployment_operations {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets all deployments operations for a deployment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `deployment_name`: The name of the deployment."]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
         pub fn list(
             &self,
             resource_group_name: impl Into<String>,
@@ -6187,6 +6705,7 @@ pub mod deployment_operations {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The number of results to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -6320,6 +6839,7 @@ pub mod deployment_operations {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The number of results to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -6449,6 +6969,7 @@ pub mod deployment_operations {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The number of results to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -6585,6 +7106,7 @@ pub mod deployment_operations {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The number of results to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -6724,6 +7246,7 @@ pub mod deployment_operations {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The number of results to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self

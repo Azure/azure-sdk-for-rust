@@ -85,6 +85,12 @@ pub mod service {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the properties of an account's Table service, including properties for Analytics and CORS (Cross-Origin Resource Sharing) rules."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `restype`: Required query string to set the service properties."]
+        #[doc = "* `comp`: Required query string to set the service properties."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn get_properties(
             &self,
             restype: impl Into<String>,
@@ -100,6 +106,13 @@ pub mod service {
                 x_ms_client_request_id: None,
             }
         }
+        #[doc = "Sets properties for an account's Table service endpoint, including properties for Analytics and CORS (Cross-Origin Resource Sharing) rules."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `restype`: Required query string to set the service properties."]
+        #[doc = "* `comp`: Required query string to set the service properties."]
+        #[doc = "* `table_service_properties`: The Table Service properties."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn set_properties(
             &self,
             restype: impl Into<String>,
@@ -117,6 +130,12 @@ pub mod service {
                 x_ms_client_request_id: None,
             }
         }
+        #[doc = "Retrieves statistics related to replication for the Table service. It is only available on the secondary location endpoint when read-access geo-redundant replication is enabled for the account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `restype`: Required query string to get service stats."]
+        #[doc = "* `comp`: Required query string to get service stats."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn get_statistics(
             &self,
             restype: impl Into<String>,
@@ -146,10 +165,12 @@ pub mod service {
             pub(crate) x_ms_client_request_id: Option<String>,
         }
         impl Builder {
+            #[doc = "The timeout parameter is expressed in seconds."]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "Provides a client-generated, opaque value with a 1 KB character limit that is recorded in the analytics logs when analytics logging is enabled."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
@@ -211,10 +232,12 @@ pub mod service {
             pub(crate) x_ms_client_request_id: Option<String>,
         }
         impl Builder {
+            #[doc = "The timeout parameter is expressed in seconds."]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "Provides a client-generated, opaque value with a 1 KB character limit that is recorded in the analytics logs when analytics logging is enabled."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
@@ -272,10 +295,12 @@ pub mod service {
             pub(crate) x_ms_client_request_id: Option<String>,
         }
         impl Builder {
+            #[doc = "The timeout parameter is expressed in seconds."]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "Provides a client-generated, opaque value with a 1 KB character limit that is recorded in the analytics logs when analytics logging is enabled."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
@@ -328,6 +353,11 @@ pub mod table {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Queries tables under the given account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
+        #[doc = "* `data_service_version`: Specifies the data service version."]
         pub fn query(&self, x_ms_version: impl Into<String>, data_service_version: impl Into<String>) -> query::Builder {
             query::Builder {
                 client: self.0.clone(),
@@ -341,6 +371,12 @@ pub mod table {
                 next_table_name: None,
             }
         }
+        #[doc = "Creates a new table under the given account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
+        #[doc = "* `data_service_version`: Specifies the data service version."]
+        #[doc = "* `table_properties`: The Table properties."]
         pub fn create(
             &self,
             x_ms_version: impl Into<String>,
@@ -357,6 +393,11 @@ pub mod table {
                 prefer: None,
             }
         }
+        #[doc = "Operation permanently deletes the specified table."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
+        #[doc = "* `table`: The name of the table."]
         pub fn delete(&self, x_ms_version: impl Into<String>, table: impl Into<String>) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),
@@ -365,6 +406,12 @@ pub mod table {
                 x_ms_client_request_id: None,
             }
         }
+        #[doc = "Queries entities in a table."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
+        #[doc = "* `data_service_version`: Specifies the data service version."]
+        #[doc = "* `table`: The name of the table."]
         pub fn query_entities(
             &self,
             x_ms_version: impl Into<String>,
@@ -386,6 +433,14 @@ pub mod table {
                 next_row_key: None,
             }
         }
+        #[doc = "Queries a single entity in a table."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
+        #[doc = "* `data_service_version`: Specifies the data service version."]
+        #[doc = "* `table`: The name of the table."]
+        #[doc = "* `partition_key`: The partition key of the entity."]
+        #[doc = "* `row_key`: The row key of the entity."]
         pub fn query_entity_with_partition_and_row_key(
             &self,
             x_ms_version: impl Into<String>,
@@ -408,6 +463,14 @@ pub mod table {
                 filter: None,
             }
         }
+        #[doc = "Update entity in a table."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
+        #[doc = "* `data_service_version`: Specifies the data service version."]
+        #[doc = "* `table`: The name of the table."]
+        #[doc = "* `partition_key`: The partition key of the entity."]
+        #[doc = "* `row_key`: The row key of the entity."]
         pub fn update_entity(
             &self,
             x_ms_version: impl Into<String>,
@@ -430,6 +493,14 @@ pub mod table {
                 if_match: None,
             }
         }
+        #[doc = "Merge entity in a table."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
+        #[doc = "* `data_service_version`: Specifies the data service version."]
+        #[doc = "* `table`: The name of the table."]
+        #[doc = "* `partition_key`: The partition key of the entity."]
+        #[doc = "* `row_key`: The row key of the entity."]
         pub fn merge_entity(
             &self,
             x_ms_version: impl Into<String>,
@@ -452,6 +523,15 @@ pub mod table {
                 if_match: None,
             }
         }
+        #[doc = "Deletes the specified entity in a table."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
+        #[doc = "* `data_service_version`: Specifies the data service version."]
+        #[doc = "* `table`: The name of the table."]
+        #[doc = "* `partition_key`: The partition key of the entity."]
+        #[doc = "* `row_key`: The row key of the entity."]
+        #[doc = "* `if_match`: Match condition for an entity to be deleted. If specified and a matching entity is not found, an error will be raised. To force an unconditional delete, set to the wildcard character (*)."]
         pub fn delete_entity(
             &self,
             x_ms_version: impl Into<String>,
@@ -474,6 +554,12 @@ pub mod table {
                 format: None,
             }
         }
+        #[doc = "Retrieves details about any stored access policies specified on the table that may be used with Shared Access Signatures."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
+        #[doc = "* `table`: The name of the table."]
+        #[doc = "* `comp`: Required query string to handle stored access policies for the table that may be used with Shared Access Signatures."]
         pub fn get_access_policy(
             &self,
             x_ms_version: impl Into<String>,
@@ -489,6 +575,12 @@ pub mod table {
                 x_ms_client_request_id: None,
             }
         }
+        #[doc = "Insert entity in a table."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
+        #[doc = "* `data_service_version`: Specifies the data service version."]
+        #[doc = "* `table`: The name of the table."]
         pub fn insert_entity(
             &self,
             x_ms_version: impl Into<String>,
@@ -507,6 +599,12 @@ pub mod table {
                 prefer: None,
             }
         }
+        #[doc = "Sets stored access policies for the table that may be used with Shared Access Signatures."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
+        #[doc = "* `table`: The name of the table."]
+        #[doc = "* `comp`: Required query string to handle stored access policies for the table that may be used with Shared Access Signatures."]
         pub fn set_access_policy(
             &self,
             x_ms_version: impl Into<String>,
@@ -540,26 +638,32 @@ pub mod table {
             pub(crate) next_table_name: Option<String>,
         }
         impl Builder {
+            #[doc = "Provides a client-generated, opaque value with a 1 KB character limit that is recorded in the analytics logs when analytics logging is enabled."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
             }
+            #[doc = "Specifies the media type for the response."]
             pub fn format(mut self, format: impl Into<String>) -> Self {
                 self.format = Some(format.into());
                 self
             }
+            #[doc = "Maximum number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Select expression using OData notation. Limits the columns on each record to just those requested, e.g. \"$select=PolicyAssignmentId, ResourceId\"."]
             pub fn select(mut self, select: impl Into<String>) -> Self {
                 self.select = Some(select.into());
                 self
             }
+            #[doc = "OData filter expression."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "A table query continuation token from a previous call."]
             pub fn next_table_name(mut self, next_table_name: impl Into<String>) -> Self {
                 self.next_table_name = Some(next_table_name.into());
                 self
@@ -634,14 +738,17 @@ pub mod table {
             pub(crate) prefer: Option<String>,
         }
         impl Builder {
+            #[doc = "Provides a client-generated, opaque value with a 1 KB character limit that is recorded in the analytics logs when analytics logging is enabled."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
             }
+            #[doc = "Specifies the media type for the response."]
             pub fn format(mut self, format: impl Into<String>) -> Self {
                 self.format = Some(format.into());
                 self
             }
+            #[doc = "Specifies whether the response should include the inserted entity in the payload. Possible values are return-no-content and return-content."]
             pub fn prefer(mut self, prefer: impl Into<String>) -> Self {
                 self.prefer = Some(prefer.into());
                 self
@@ -702,6 +809,7 @@ pub mod table {
             pub(crate) x_ms_client_request_id: Option<String>,
         }
         impl Builder {
+            #[doc = "Provides a client-generated, opaque value with a 1 KB character limit that is recorded in the analytics logs when analytics logging is enabled."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
@@ -757,34 +865,42 @@ pub mod table {
             pub(crate) next_row_key: Option<String>,
         }
         impl Builder {
+            #[doc = "The timeout parameter is expressed in seconds."]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "Provides a client-generated, opaque value with a 1 KB character limit that is recorded in the analytics logs when analytics logging is enabled."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
             }
+            #[doc = "Specifies the media type for the response."]
             pub fn format(mut self, format: impl Into<String>) -> Self {
                 self.format = Some(format.into());
                 self
             }
+            #[doc = "Maximum number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Select expression using OData notation. Limits the columns on each record to just those requested, e.g. \"$select=PolicyAssignmentId, ResourceId\"."]
             pub fn select(mut self, select: impl Into<String>) -> Self {
                 self.select = Some(select.into());
                 self
             }
+            #[doc = "OData filter expression."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "An entity query continuation token from a previous call."]
             pub fn next_partition_key(mut self, next_partition_key: impl Into<String>) -> Self {
                 self.next_partition_key = Some(next_partition_key.into());
                 self
             }
+            #[doc = "An entity query continuation token from a previous call."]
             pub fn next_row_key(mut self, next_row_key: impl Into<String>) -> Self {
                 self.next_row_key = Some(next_row_key.into());
                 self
@@ -865,22 +981,27 @@ pub mod table {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "The timeout parameter is expressed in seconds."]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "Provides a client-generated, opaque value with a 1 KB character limit that is recorded in the analytics logs when analytics logging is enabled."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
             }
+            #[doc = "Specifies the media type for the response."]
             pub fn format(mut self, format: impl Into<String>) -> Self {
                 self.format = Some(format.into());
                 self
             }
+            #[doc = "Select expression using OData notation. Limits the columns on each record to just those requested, e.g. \"$select=PolicyAssignmentId, ResourceId\"."]
             pub fn select(mut self, select: impl Into<String>) -> Self {
                 self.select = Some(select.into());
                 self
             }
+            #[doc = "OData filter expression."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -958,22 +1079,27 @@ pub mod table {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "The timeout parameter is expressed in seconds."]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "Provides a client-generated, opaque value with a 1 KB character limit that is recorded in the analytics logs when analytics logging is enabled."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
             }
+            #[doc = "Specifies the media type for the response."]
             pub fn format(mut self, format: impl Into<String>) -> Self {
                 self.format = Some(format.into());
                 self
             }
+            #[doc = "The properties for the table entity."]
             pub fn table_entity_properties(mut self, table_entity_properties: impl Into<models::TableEntityProperties>) -> Self {
                 self.table_entity_properties = Some(table_entity_properties.into());
                 self
             }
+            #[doc = "Match condition for an entity to be updated. If specified and a matching entity is not found, an error will be raised. To force an unconditional update, set to the wildcard character (*). If not specified, an insert will be performed when no existing entity is found to update and a replace will be performed if an existing entity is found."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -1049,22 +1175,27 @@ pub mod table {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "The timeout parameter is expressed in seconds."]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "Provides a client-generated, opaque value with a 1 KB character limit that is recorded in the analytics logs when analytics logging is enabled."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
             }
+            #[doc = "Specifies the media type for the response."]
             pub fn format(mut self, format: impl Into<String>) -> Self {
                 self.format = Some(format.into());
                 self
             }
+            #[doc = "The properties for the table entity."]
             pub fn table_entity_properties(mut self, table_entity_properties: impl Into<models::TableEntityProperties>) -> Self {
                 self.table_entity_properties = Some(table_entity_properties.into());
                 self
             }
+            #[doc = "Match condition for an entity to be updated. If specified and a matching entity is not found, an error will be raised. To force an unconditional update, set to the wildcard character (*). If not specified, an insert will be performed when no existing entity is found to update and a merge will be performed if an existing entity is found."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -1139,14 +1270,17 @@ pub mod table {
             pub(crate) format: Option<String>,
         }
         impl Builder {
+            #[doc = "The timeout parameter is expressed in seconds."]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "Provides a client-generated, opaque value with a 1 KB character limit that is recorded in the analytics logs when analytics logging is enabled."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
             }
+            #[doc = "Specifies the media type for the response."]
             pub fn format(mut self, format: impl Into<String>) -> Self {
                 self.format = Some(format.into());
                 self
@@ -1210,10 +1344,12 @@ pub mod table {
             pub(crate) x_ms_client_request_id: Option<String>,
         }
         impl Builder {
+            #[doc = "The timeout parameter is expressed in seconds."]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "Provides a client-generated, opaque value with a 1 KB character limit that is recorded in the analytics logs when analytics logging is enabled."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
@@ -1279,22 +1415,27 @@ pub mod table {
             pub(crate) prefer: Option<String>,
         }
         impl Builder {
+            #[doc = "The timeout parameter is expressed in seconds."]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "Provides a client-generated, opaque value with a 1 KB character limit that is recorded in the analytics logs when analytics logging is enabled."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
             }
+            #[doc = "Specifies the media type for the response."]
             pub fn format(mut self, format: impl Into<String>) -> Self {
                 self.format = Some(format.into());
                 self
             }
+            #[doc = "The properties for the table entity."]
             pub fn table_entity_properties(mut self, table_entity_properties: impl Into<models::TableEntityProperties>) -> Self {
                 self.table_entity_properties = Some(table_entity_properties.into());
                 self
             }
+            #[doc = "Specifies whether the response should include the inserted entity in the payload. Possible values are return-no-content and return-content."]
             pub fn prefer(mut self, prefer: impl Into<String>) -> Self {
                 self.prefer = Some(prefer.into());
                 self
@@ -1365,14 +1506,17 @@ pub mod table {
             pub(crate) x_ms_client_request_id: Option<String>,
         }
         impl Builder {
+            #[doc = "The acls for the table."]
             pub fn table_acl(mut self, table_acl: impl Into<models::SignedIdentifiers>) -> Self {
                 self.table_acl = Some(table_acl.into());
                 self
             }
+            #[doc = "The timeout parameter is expressed in seconds."]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "Provides a client-generated, opaque value with a 1 KB character limit that is recorded in the analytics logs when analytics logging is enabled."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self

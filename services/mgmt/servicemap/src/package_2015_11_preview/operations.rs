@@ -100,6 +100,12 @@ pub mod machines {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Returns a collection of machines matching the specified conditions.  The returned collection represents either machines that are active/live during the specified interval  of time (`live=true` and `startTime`/`endTime` are specified) or that are known to have existed at or  some time prior to the specified point in time (`live=false` and `timestamp` is specified)."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure subscription identifier."]
+        #[doc = "* `resource_group_name`: Resource group name within the specified subscriptionId."]
+        #[doc = "* `workspace_name`: OMS workspace containing the resources of interest."]
         pub fn list_by_workspace(
             &self,
             subscription_id: impl Into<String>,
@@ -118,6 +124,13 @@ pub mod machines {
                 top: None,
             }
         }
+        #[doc = "Returns the specified machine."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure subscription identifier."]
+        #[doc = "* `resource_group_name`: Resource group name within the specified subscriptionId."]
+        #[doc = "* `workspace_name`: OMS workspace containing the resources of interest."]
+        #[doc = "* `machine_name`: Machine resource name."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -134,6 +147,13 @@ pub mod machines {
                 timestamp: None,
             }
         }
+        #[doc = "Obtains the liveness status of the machine during the specified time interval."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure subscription identifier."]
+        #[doc = "* `resource_group_name`: Resource group name within the specified subscriptionId."]
+        #[doc = "* `workspace_name`: OMS workspace containing the resources of interest."]
+        #[doc = "* `machine_name`: Machine resource name."]
         pub fn get_liveness(
             &self,
             subscription_id: impl Into<String>,
@@ -151,6 +171,13 @@ pub mod machines {
                 end_time: None,
             }
         }
+        #[doc = "Returns a collection of connections terminating or originating at the specified machine"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure subscription identifier."]
+        #[doc = "* `resource_group_name`: Resource group name within the specified subscriptionId."]
+        #[doc = "* `workspace_name`: OMS workspace containing the resources of interest."]
+        #[doc = "* `machine_name`: Machine resource name."]
         pub fn list_connections(
             &self,
             subscription_id: impl Into<String>,
@@ -168,6 +195,13 @@ pub mod machines {
                 end_time: None,
             }
         }
+        #[doc = "Returns a collection of processes on the specified machine matching the specified conditions. The returned collection represents either processes that are active/live during the specified interval  of time (`live=true` and `startTime`/`endTime` are specified) or that are known to have existed at or  some time prior to the specified point in time (`live=false` and `timestamp` is specified).        "]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure subscription identifier."]
+        #[doc = "* `resource_group_name`: Resource group name within the specified subscriptionId."]
+        #[doc = "* `workspace_name`: OMS workspace containing the resources of interest."]
+        #[doc = "* `machine_name`: Machine resource name."]
         pub fn list_processes(
             &self,
             subscription_id: impl Into<String>,
@@ -187,6 +221,13 @@ pub mod machines {
                 timestamp: None,
             }
         }
+        #[doc = "Returns a collection of live ports on the specified machine during the specified time interval."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure subscription identifier."]
+        #[doc = "* `resource_group_name`: Resource group name within the specified subscriptionId."]
+        #[doc = "* `workspace_name`: OMS workspace containing the resources of interest."]
+        #[doc = "* `machine_name`: Machine resource name."]
         pub fn list_ports(
             &self,
             subscription_id: impl Into<String>,
@@ -204,6 +245,13 @@ pub mod machines {
                 end_time: None,
             }
         }
+        #[doc = "Returns a collection of machine groups this machine belongs to during the specified time interval."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure subscription identifier."]
+        #[doc = "* `resource_group_name`: Resource group name within the specified subscriptionId."]
+        #[doc = "* `workspace_name`: OMS workspace containing the resources of interest."]
+        #[doc = "* `machine_name`: Machine resource name."]
         pub fn list_machine_group_membership(
             &self,
             subscription_id: impl Into<String>,
@@ -238,22 +286,27 @@ pub mod machines {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "Specifies whether to return live resources (true) or inventory resources (false). Defaults to **true**. When retrieving live resources, the start time (`startTime`) and end time (`endTime`) of the desired interval should be included. When retrieving inventory resources, an optional timestamp (`timestamp`) parameter can be specified to return the version of each resource closest (not-after) that timestamp."]
             pub fn live(mut self, live: bool) -> Self {
                 self.live = Some(live);
                 self
             }
+            #[doc = "UTC date and time specifying the start time of an interval. When not specified the service uses DateTime.UtcNow - 10m"]
             pub fn start_time(mut self, start_time: impl Into<String>) -> Self {
                 self.start_time = Some(start_time.into());
                 self
             }
+            #[doc = "UTC date and time specifying the end time of an interval. When not specified the service uses DateTime.UtcNow"]
             pub fn end_time(mut self, end_time: impl Into<String>) -> Self {
                 self.end_time = Some(end_time.into());
                 self
             }
+            #[doc = "UTC date and time specifying a time instance relative to which to evaluate each machine resource. Only applies when `live=false`. When not specified, the service uses DateTime.UtcNow."]
             pub fn timestamp(mut self, timestamp: impl Into<String>) -> Self {
                 self.timestamp = Some(timestamp.into());
                 self
             }
+            #[doc = "Page size to use. When not specified, the default page size is 100 records."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -347,6 +400,7 @@ pub mod machines {
             pub(crate) timestamp: Option<String>,
         }
         impl Builder {
+            #[doc = "UTC date and time specifying a time instance relative to which to evaluate the machine resource. When not specified, the service uses DateTime.UtcNow."]
             pub fn timestamp(mut self, timestamp: impl Into<String>) -> Self {
                 self.timestamp = Some(timestamp.into());
                 self
@@ -403,10 +457,12 @@ pub mod machines {
             pub(crate) end_time: Option<String>,
         }
         impl Builder {
+            #[doc = "UTC date and time specifying the start time of an interval. When not specified the service uses DateTime.UtcNow - 10m"]
             pub fn start_time(mut self, start_time: impl Into<String>) -> Self {
                 self.start_time = Some(start_time.into());
                 self
             }
+            #[doc = "UTC date and time specifying the end time of an interval. When not specified the service uses DateTime.UtcNow"]
             pub fn end_time(mut self, end_time: impl Into<String>) -> Self {
                 self.end_time = Some(end_time.into());
                 self
@@ -466,10 +522,12 @@ pub mod machines {
             pub(crate) end_time: Option<String>,
         }
         impl Builder {
+            #[doc = "UTC date and time specifying the start time of an interval. When not specified the service uses DateTime.UtcNow - 10m"]
             pub fn start_time(mut self, start_time: impl Into<String>) -> Self {
                 self.start_time = Some(start_time.into());
                 self
             }
+            #[doc = "UTC date and time specifying the end time of an interval. When not specified the service uses DateTime.UtcNow"]
             pub fn end_time(mut self, end_time: impl Into<String>) -> Self {
                 self.end_time = Some(end_time.into());
                 self
@@ -557,18 +615,22 @@ pub mod machines {
             pub(crate) timestamp: Option<String>,
         }
         impl Builder {
+            #[doc = "Specifies whether to return live resources (true) or inventory resources (false). Defaults to **true**. When retrieving live resources, the start time (`startTime`) and end time (`endTime`) of the desired interval should be included. When retrieving inventory resources, an optional timestamp (`timestamp`) parameter can be specified to return the version of each resource closest (not-after) that timestamp."]
             pub fn live(mut self, live: bool) -> Self {
                 self.live = Some(live);
                 self
             }
+            #[doc = "UTC date and time specifying the start time of an interval. When not specified the service uses DateTime.UtcNow - 10m"]
             pub fn start_time(mut self, start_time: impl Into<String>) -> Self {
                 self.start_time = Some(start_time.into());
                 self
             }
+            #[doc = "UTC date and time specifying the end time of an interval. When not specified the service uses DateTime.UtcNow"]
             pub fn end_time(mut self, end_time: impl Into<String>) -> Self {
                 self.end_time = Some(end_time.into());
                 self
             }
+            #[doc = "UTC date and time specifying a time instance relative to which to evaluate all process resource. Only applies when `live=false`. When not specified, the service uses DateTime.UtcNow."]
             pub fn timestamp(mut self, timestamp: impl Into<String>) -> Self {
                 self.timestamp = Some(timestamp.into());
                 self
@@ -660,10 +722,12 @@ pub mod machines {
             pub(crate) end_time: Option<String>,
         }
         impl Builder {
+            #[doc = "UTC date and time specifying the start time of an interval. When not specified the service uses DateTime.UtcNow - 10m"]
             pub fn start_time(mut self, start_time: impl Into<String>) -> Self {
                 self.start_time = Some(start_time.into());
                 self
             }
+            #[doc = "UTC date and time specifying the end time of an interval. When not specified the service uses DateTime.UtcNow"]
             pub fn end_time(mut self, end_time: impl Into<String>) -> Self {
                 self.end_time = Some(end_time.into());
                 self
@@ -749,10 +813,12 @@ pub mod machines {
             pub(crate) end_time: Option<String>,
         }
         impl Builder {
+            #[doc = "UTC date and time specifying the start time of an interval. When not specified the service uses DateTime.UtcNow - 10m"]
             pub fn start_time(mut self, start_time: impl Into<String>) -> Self {
                 self.start_time = Some(start_time.into());
                 self
             }
+            #[doc = "UTC date and time specifying the end time of an interval. When not specified the service uses DateTime.UtcNow"]
             pub fn end_time(mut self, end_time: impl Into<String>) -> Self {
                 self.end_time = Some(end_time.into());
                 self
@@ -829,6 +895,14 @@ pub mod processes {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Returns the specified process."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure subscription identifier."]
+        #[doc = "* `resource_group_name`: Resource group name within the specified subscriptionId."]
+        #[doc = "* `workspace_name`: OMS workspace containing the resources of interest."]
+        #[doc = "* `machine_name`: Machine resource name."]
+        #[doc = "* `process_name`: Process resource name."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -847,6 +921,14 @@ pub mod processes {
                 timestamp: None,
             }
         }
+        #[doc = "Obtains the liveness status of the process during the specified time interval."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure subscription identifier."]
+        #[doc = "* `resource_group_name`: Resource group name within the specified subscriptionId."]
+        #[doc = "* `workspace_name`: OMS workspace containing the resources of interest."]
+        #[doc = "* `machine_name`: Machine resource name."]
+        #[doc = "* `process_name`: Process resource name."]
         pub fn get_liveness(
             &self,
             subscription_id: impl Into<String>,
@@ -866,6 +948,14 @@ pub mod processes {
                 end_time: None,
             }
         }
+        #[doc = "Returns a collection of ports on which this process is accepting"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure subscription identifier."]
+        #[doc = "* `resource_group_name`: Resource group name within the specified subscriptionId."]
+        #[doc = "* `workspace_name`: OMS workspace containing the resources of interest."]
+        #[doc = "* `machine_name`: Machine resource name."]
+        #[doc = "* `process_name`: Process resource name."]
         pub fn list_accepting_ports(
             &self,
             subscription_id: impl Into<String>,
@@ -885,6 +975,14 @@ pub mod processes {
                 end_time: None,
             }
         }
+        #[doc = "Returns a collection of connections terminating or originating at the specified process"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure subscription identifier."]
+        #[doc = "* `resource_group_name`: Resource group name within the specified subscriptionId."]
+        #[doc = "* `workspace_name`: OMS workspace containing the resources of interest."]
+        #[doc = "* `machine_name`: Machine resource name."]
+        #[doc = "* `process_name`: Process resource name."]
         pub fn list_connections(
             &self,
             subscription_id: impl Into<String>,
@@ -919,6 +1017,7 @@ pub mod processes {
             pub(crate) timestamp: Option<String>,
         }
         impl Builder {
+            #[doc = "UTC date and time specifying a time instance relative to which to evaluate a resource. When not specified, the service uses DateTime.UtcNow."]
             pub fn timestamp(mut self, timestamp: impl Into<String>) -> Self {
                 self.timestamp = Some(timestamp.into());
                 self
@@ -976,10 +1075,12 @@ pub mod processes {
             pub(crate) end_time: Option<String>,
         }
         impl Builder {
+            #[doc = "UTC date and time specifying the start time of an interval. When not specified the service uses DateTime.UtcNow - 10m"]
             pub fn start_time(mut self, start_time: impl Into<String>) -> Self {
                 self.start_time = Some(start_time.into());
                 self
             }
+            #[doc = "UTC date and time specifying the end time of an interval. When not specified the service uses DateTime.UtcNow"]
             pub fn end_time(mut self, end_time: impl Into<String>) -> Self {
                 self.end_time = Some(end_time.into());
                 self
@@ -1040,10 +1141,12 @@ pub mod processes {
             pub(crate) end_time: Option<String>,
         }
         impl Builder {
+            #[doc = "UTC date and time specifying the start time of an interval. When not specified the service uses DateTime.UtcNow - 10m"]
             pub fn start_time(mut self, start_time: impl Into<String>) -> Self {
                 self.start_time = Some(start_time.into());
                 self
             }
+            #[doc = "UTC date and time specifying the end time of an interval. When not specified the service uses DateTime.UtcNow"]
             pub fn end_time(mut self, end_time: impl Into<String>) -> Self {
                 self.end_time = Some(end_time.into());
                 self
@@ -1130,10 +1233,12 @@ pub mod processes {
             pub(crate) end_time: Option<String>,
         }
         impl Builder {
+            #[doc = "UTC date and time specifying the start time of an interval. When not specified the service uses DateTime.UtcNow - 10m"]
             pub fn start_time(mut self, start_time: impl Into<String>) -> Self {
                 self.start_time = Some(start_time.into());
                 self
             }
+            #[doc = "UTC date and time specifying the end time of an interval. When not specified the service uses DateTime.UtcNow"]
             pub fn end_time(mut self, end_time: impl Into<String>) -> Self {
                 self.end_time = Some(end_time.into());
                 self
@@ -1210,6 +1315,14 @@ pub mod ports {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Returns the specified port. The port must be live during the specified time interval. If the port is not live during the interval, status 404 (Not Found) is returned."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure subscription identifier."]
+        #[doc = "* `resource_group_name`: Resource group name within the specified subscriptionId."]
+        #[doc = "* `workspace_name`: OMS workspace containing the resources of interest."]
+        #[doc = "* `machine_name`: Machine resource name."]
+        #[doc = "* `port_name`: Port resource name."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1229,6 +1342,14 @@ pub mod ports {
                 end_time: None,
             }
         }
+        #[doc = "Obtains the liveness status of the port during the specified time interval."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure subscription identifier."]
+        #[doc = "* `resource_group_name`: Resource group name within the specified subscriptionId."]
+        #[doc = "* `workspace_name`: OMS workspace containing the resources of interest."]
+        #[doc = "* `machine_name`: Machine resource name."]
+        #[doc = "* `port_name`: Port resource name."]
         pub fn get_liveness(
             &self,
             subscription_id: impl Into<String>,
@@ -1248,6 +1369,14 @@ pub mod ports {
                 end_time: None,
             }
         }
+        #[doc = "Returns a collection of processes accepting on the specified port"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure subscription identifier."]
+        #[doc = "* `resource_group_name`: Resource group name within the specified subscriptionId."]
+        #[doc = "* `workspace_name`: OMS workspace containing the resources of interest."]
+        #[doc = "* `machine_name`: Machine resource name."]
+        #[doc = "* `port_name`: Port resource name."]
         pub fn list_accepting_processes(
             &self,
             subscription_id: impl Into<String>,
@@ -1267,6 +1396,14 @@ pub mod ports {
                 end_time: None,
             }
         }
+        #[doc = "Returns a collection of connections established via the specified port."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure subscription identifier."]
+        #[doc = "* `resource_group_name`: Resource group name within the specified subscriptionId."]
+        #[doc = "* `workspace_name`: OMS workspace containing the resources of interest."]
+        #[doc = "* `machine_name`: Machine resource name."]
+        #[doc = "* `port_name`: Port resource name."]
         pub fn list_connections(
             &self,
             subscription_id: impl Into<String>,
@@ -1302,10 +1439,12 @@ pub mod ports {
             pub(crate) end_time: Option<String>,
         }
         impl Builder {
+            #[doc = "UTC date and time specifying the start time of an interval. When not specified the service uses DateTime.UtcNow - 10m"]
             pub fn start_time(mut self, start_time: impl Into<String>) -> Self {
                 self.start_time = Some(start_time.into());
                 self
             }
+            #[doc = "UTC date and time specifying the end time of an interval. When not specified the service uses DateTime.UtcNow"]
             pub fn end_time(mut self, end_time: impl Into<String>) -> Self {
                 self.end_time = Some(end_time.into());
                 self
@@ -1366,10 +1505,12 @@ pub mod ports {
             pub(crate) end_time: Option<String>,
         }
         impl Builder {
+            #[doc = "UTC date and time specifying the start time of an interval. When not specified the service uses DateTime.UtcNow - 10m"]
             pub fn start_time(mut self, start_time: impl Into<String>) -> Self {
                 self.start_time = Some(start_time.into());
                 self
             }
+            #[doc = "UTC date and time specifying the end time of an interval. When not specified the service uses DateTime.UtcNow"]
             pub fn end_time(mut self, end_time: impl Into<String>) -> Self {
                 self.end_time = Some(end_time.into());
                 self
@@ -1430,10 +1571,12 @@ pub mod ports {
             pub(crate) end_time: Option<String>,
         }
         impl Builder {
+            #[doc = "UTC date and time specifying the start time of an interval. When not specified the service uses DateTime.UtcNow - 10m"]
             pub fn start_time(mut self, start_time: impl Into<String>) -> Self {
                 self.start_time = Some(start_time.into());
                 self
             }
+            #[doc = "UTC date and time specifying the end time of an interval. When not specified the service uses DateTime.UtcNow"]
             pub fn end_time(mut self, end_time: impl Into<String>) -> Self {
                 self.end_time = Some(end_time.into());
                 self
@@ -1520,10 +1663,12 @@ pub mod ports {
             pub(crate) end_time: Option<String>,
         }
         impl Builder {
+            #[doc = "UTC date and time specifying the start time of an interval. When not specified the service uses DateTime.UtcNow - 10m"]
             pub fn start_time(mut self, start_time: impl Into<String>) -> Self {
                 self.start_time = Some(start_time.into());
                 self
             }
+            #[doc = "UTC date and time specifying the end time of an interval. When not specified the service uses DateTime.UtcNow"]
             pub fn end_time(mut self, end_time: impl Into<String>) -> Self {
                 self.end_time = Some(end_time.into());
                 self
@@ -1600,6 +1745,13 @@ pub mod client_groups {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieves the specified client group"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure subscription identifier."]
+        #[doc = "* `resource_group_name`: Resource group name within the specified subscriptionId."]
+        #[doc = "* `workspace_name`: OMS workspace containing the resources of interest."]
+        #[doc = "* `client_group_name`: Client Group resource name."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1617,6 +1769,13 @@ pub mod client_groups {
                 end_time: None,
             }
         }
+        #[doc = "Returns the approximate number of members in the client group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure subscription identifier."]
+        #[doc = "* `resource_group_name`: Resource group name within the specified subscriptionId."]
+        #[doc = "* `workspace_name`: OMS workspace containing the resources of interest."]
+        #[doc = "* `client_group_name`: Client Group resource name."]
         pub fn get_members_count(
             &self,
             subscription_id: impl Into<String>,
@@ -1634,6 +1793,13 @@ pub mod client_groups {
                 end_time: None,
             }
         }
+        #[doc = "Returns the members of the client group during the specified time interval."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure subscription identifier."]
+        #[doc = "* `resource_group_name`: Resource group name within the specified subscriptionId."]
+        #[doc = "* `workspace_name`: OMS workspace containing the resources of interest."]
+        #[doc = "* `client_group_name`: Client Group resource name."]
         pub fn list_members(
             &self,
             subscription_id: impl Into<String>,
@@ -1667,10 +1833,12 @@ pub mod client_groups {
             pub(crate) end_time: Option<String>,
         }
         impl Builder {
+            #[doc = "UTC date and time specifying the start time of an interval. When not specified the service uses DateTime.UtcNow - 10m"]
             pub fn start_time(mut self, start_time: impl Into<String>) -> Self {
                 self.start_time = Some(start_time.into());
                 self
             }
+            #[doc = "UTC date and time specifying the end time of an interval. When not specified the service uses DateTime.UtcNow"]
             pub fn end_time(mut self, end_time: impl Into<String>) -> Self {
                 self.end_time = Some(end_time.into());
                 self
@@ -1730,10 +1898,12 @@ pub mod client_groups {
             pub(crate) end_time: Option<String>,
         }
         impl Builder {
+            #[doc = "UTC date and time specifying the start time of an interval. When not specified the service uses DateTime.UtcNow - 10m"]
             pub fn start_time(mut self, start_time: impl Into<String>) -> Self {
                 self.start_time = Some(start_time.into());
                 self
             }
+            #[doc = "UTC date and time specifying the end time of an interval. When not specified the service uses DateTime.UtcNow"]
             pub fn end_time(mut self, end_time: impl Into<String>) -> Self {
                 self.end_time = Some(end_time.into());
                 self
@@ -1794,14 +1964,17 @@ pub mod client_groups {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "UTC date and time specifying the start time of an interval. When not specified the service uses DateTime.UtcNow - 10m"]
             pub fn start_time(mut self, start_time: impl Into<String>) -> Self {
                 self.start_time = Some(start_time.into());
                 self
             }
+            #[doc = "UTC date and time specifying the end time of an interval. When not specified the service uses DateTime.UtcNow"]
             pub fn end_time(mut self, end_time: impl Into<String>) -> Self {
                 self.end_time = Some(end_time.into());
                 self
             }
+            #[doc = "Page size to use. When not specified, the default page size is 100 records."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -1881,6 +2054,13 @@ pub mod maps {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Generates the specified map."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure subscription identifier."]
+        #[doc = "* `resource_group_name`: Resource group name within the specified subscriptionId."]
+        #[doc = "* `workspace_name`: OMS workspace containing the resources of interest."]
+        #[doc = "* `request`: Request options."]
         pub fn generate(
             &self,
             subscription_id: impl Into<String>,
@@ -1950,6 +2130,12 @@ pub mod summaries {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Returns summary information about the machines in the workspace."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure subscription identifier."]
+        #[doc = "* `resource_group_name`: Resource group name within the specified subscriptionId."]
+        #[doc = "* `workspace_name`: OMS workspace containing the resources of interest."]
         pub fn get_machines(
             &self,
             subscription_id: impl Into<String>,
@@ -1979,10 +2165,12 @@ pub mod summaries {
             pub(crate) end_time: Option<String>,
         }
         impl Builder {
+            #[doc = "UTC date and time specifying the start time of an interval. When not specified the service uses DateTime.UtcNow - 10m"]
             pub fn start_time(mut self, start_time: impl Into<String>) -> Self {
                 self.start_time = Some(start_time.into());
                 self
             }
+            #[doc = "UTC date and time specifying the end time of an interval. When not specified the service uses DateTime.UtcNow"]
             pub fn end_time(mut self, end_time: impl Into<String>) -> Self {
                 self.end_time = Some(end_time.into());
                 self
@@ -2033,6 +2221,12 @@ pub mod machine_groups {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Returns all machine groups during the specified time interval."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure subscription identifier."]
+        #[doc = "* `resource_group_name`: Resource group name within the specified subscriptionId."]
+        #[doc = "* `workspace_name`: OMS workspace containing the resources of interest."]
         pub fn list_by_workspace(
             &self,
             subscription_id: impl Into<String>,
@@ -2048,6 +2242,13 @@ pub mod machine_groups {
                 end_time: None,
             }
         }
+        #[doc = "Creates a new machine group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure subscription identifier."]
+        #[doc = "* `resource_group_name`: Resource group name within the specified subscriptionId."]
+        #[doc = "* `workspace_name`: OMS workspace containing the resources of interest."]
+        #[doc = "* `machine_group`: Machine Group resource to create."]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -2063,6 +2264,13 @@ pub mod machine_groups {
                 machine_group: machine_group.into(),
             }
         }
+        #[doc = "Returns the specified machine group as it existed during the specified time interval."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure subscription identifier."]
+        #[doc = "* `resource_group_name`: Resource group name within the specified subscriptionId."]
+        #[doc = "* `workspace_name`: OMS workspace containing the resources of interest."]
+        #[doc = "* `machine_group_name`: Machine Group resource name."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -2080,6 +2288,14 @@ pub mod machine_groups {
                 end_time: None,
             }
         }
+        #[doc = "Updates a machine group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure subscription identifier."]
+        #[doc = "* `resource_group_name`: Resource group name within the specified subscriptionId."]
+        #[doc = "* `workspace_name`: OMS workspace containing the resources of interest."]
+        #[doc = "* `machine_group_name`: Machine Group resource name."]
+        #[doc = "* `machine_group`: Machine Group resource to update."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -2097,6 +2313,13 @@ pub mod machine_groups {
                 machine_group: machine_group.into(),
             }
         }
+        #[doc = "Deletes the specified Machine Group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure subscription identifier."]
+        #[doc = "* `resource_group_name`: Resource group name within the specified subscriptionId."]
+        #[doc = "* `workspace_name`: OMS workspace containing the resources of interest."]
+        #[doc = "* `machine_group_name`: Machine Group resource name."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -2126,10 +2349,12 @@ pub mod machine_groups {
             pub(crate) end_time: Option<String>,
         }
         impl Builder {
+            #[doc = "UTC date and time specifying the start time of an interval. When not specified the service uses DateTime.UtcNow - 10m"]
             pub fn start_time(mut self, start_time: impl Into<String>) -> Self {
                 self.start_time = Some(start_time.into());
                 self
             }
+            #[doc = "UTC date and time specifying the end time of an interval. When not specified the service uses DateTime.UtcNow"]
             pub fn end_time(mut self, end_time: impl Into<String>) -> Self {
                 self.end_time = Some(end_time.into());
                 self
@@ -2263,10 +2488,12 @@ pub mod machine_groups {
             pub(crate) end_time: Option<String>,
         }
         impl Builder {
+            #[doc = "UTC date and time specifying the start time of an interval. When not specified the service uses DateTime.UtcNow - 10m"]
             pub fn start_time(mut self, start_time: impl Into<String>) -> Self {
                 self.start_time = Some(start_time.into());
                 self
             }
+            #[doc = "UTC date and time specifying the end time of an interval. When not specified the service uses DateTime.UtcNow"]
             pub fn end_time(mut self, end_time: impl Into<String>) -> Self {
                 self.end_time = Some(end_time.into());
                 self

@@ -91,6 +91,10 @@ pub mod applications {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get a list of all relevant applications over a subscription level scope"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure subscription ID"]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -177,6 +181,11 @@ pub mod application {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get a specific application for the requested scope by applicationId"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure subscription ID"]
+        #[doc = "* `application_id`: The security Application key - unique key for the standard application"]
         pub fn get(&self, subscription_id: impl Into<String>, application_id: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -184,6 +193,12 @@ pub mod application {
                 application_id: application_id.into(),
             }
         }
+        #[doc = "Creates or update a security application on the given subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure subscription ID"]
+        #[doc = "* `application_id`: The security Application key - unique key for the standard application"]
+        #[doc = "* `application`: Application over a subscription scope"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -197,6 +212,11 @@ pub mod application {
                 application: application.into(),
             }
         }
+        #[doc = "Delete an Application over a given scope"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure subscription ID"]
+        #[doc = "* `application_id`: The security Application key - unique key for the standard application"]
         pub fn delete(&self, subscription_id: impl Into<String>, application_id: impl Into<String>) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),
@@ -372,6 +392,12 @@ pub mod security_connector_applications {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get a list of all relevant applications over a security connector level scope"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure subscription ID"]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription. The name is case insensitive."]
+        #[doc = "* `security_connector_name`: The security connector name."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -463,6 +489,13 @@ pub mod security_connector_application {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get a specific application for the requested scope by applicationId"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure subscription ID"]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription. The name is case insensitive."]
+        #[doc = "* `security_connector_name`: The security connector name."]
+        #[doc = "* `application_id`: The security Application key - unique key for the standard application"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -478,6 +511,14 @@ pub mod security_connector_application {
                 application_id: application_id.into(),
             }
         }
+        #[doc = "Creates or update a security Application on the given security connector."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure subscription ID"]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription. The name is case insensitive."]
+        #[doc = "* `security_connector_name`: The security connector name."]
+        #[doc = "* `application_id`: The security Application key - unique key for the standard application"]
+        #[doc = "* `application`: Application over a subscription scope"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -495,6 +536,13 @@ pub mod security_connector_application {
                 application: application.into(),
             }
         }
+        #[doc = "Delete an Application over a given scope"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure subscription ID"]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription. The name is case insensitive."]
+        #[doc = "* `security_connector_name`: The security connector name."]
+        #[doc = "* `application_id`: The security Application key - unique key for the standard application"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,

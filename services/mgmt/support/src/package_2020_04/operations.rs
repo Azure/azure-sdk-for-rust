@@ -94,6 +94,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "This lists all the available Microsoft Support REST API operations."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -147,9 +148,14 @@ pub mod services {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all the Azure services available for support ticket creation. For **Technical** issues, select the Service Id that maps to the Azure service/product as displayed in the **Services** drop-down list on the Azure portal's [New support request](https://portal.azure.com/#blade/Microsoft_Azure_Support/HelpAndSupportBlade/overview) page. Always use the service and its corresponding problem classification(s) obtained programmatically for support ticket creation. This practice ensures that you always have the most recent set of service and problem classification Ids."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
+        #[doc = "Gets a specific Azure service for support ticket creation."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `service_name`: Name of the Azure service."]
         pub fn get(&self, service_name: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -254,12 +260,21 @@ pub mod problem_classifications {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all the problem classifications (categories) available for a specific Azure service. Always use the service and problem classifications obtained programmatically. This practice ensures that you always have the most recent set of service and problem classification Ids."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `service_name`: Name of the Azure service for which the problem classifications need to be retrieved."]
         pub fn list(&self, service_name: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
                 service_name: service_name.into(),
             }
         }
+        #[doc = "Get problem classification details for a specific Azure service."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `service_name`: Name of the Azure service available for support."]
+        #[doc = "* `problem_classification_name`: Name of problem classification."]
         pub fn get(&self, service_name: impl Into<String>, problem_classification_name: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -372,6 +387,11 @@ pub mod support_tickets {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Check the availability of a resource name. This API should be used to check the uniqueness of the name for support ticket creation for the selected subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `check_name_availability_input`: Input to check."]
+        #[doc = "* `subscription_id`: Azure subscription Id."]
         pub fn check_name_availability(
             &self,
             check_name_availability_input: impl Into<models::CheckNameAvailabilityInput>,
@@ -383,6 +403,10 @@ pub mod support_tickets {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists all the support tickets for an Azure subscription. You can also filter the support tickets by _Status_, _CreatedDate_, _ServiceId_, and _ProblemClassificationId_ using the $filter parameter. Output will be a paged result with _nextLink_, using which you can retrieve the next set of support tickets. <br/><br/>Support ticket data is available for 18 months after ticket creation. If a ticket was created more than 18 months ago, a request for data might cause an error."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure subscription Id."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -391,6 +415,11 @@ pub mod support_tickets {
                 filter: None,
             }
         }
+        #[doc = "Get ticket details for an Azure subscription. Support ticket data is available for 18 months after ticket creation. If a ticket was created more than 18 months ago, a request for data might cause an error."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `support_ticket_name`: Support ticket name."]
+        #[doc = "* `subscription_id`: Azure subscription Id."]
         pub fn get(&self, support_ticket_name: impl Into<String>, subscription_id: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -398,6 +427,12 @@ pub mod support_tickets {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates a new support ticket for Subscription and Service limits (Quota), Technical, Billing, and Subscription Management issues for the specified subscription. Learn the [prerequisites](https://aka.ms/supportAPI) required to create a support ticket.<br/><br/>Always call the Services and ProblemClassifications API to get the most recent set of services and problem categories required for support ticket creation.<br/><br/>Adding attachments is not currently supported via the API. To add a file to an existing support ticket, visit the [Manage support ticket](https://portal.azure.com/#blade/Microsoft_Azure_Support/HelpAndSupportBlade/managesupportrequest) page in the Azure portal, select the support ticket, and use the file upload control to add a new file.<br/><br/>Providing consent to share diagnostic information with Azure support is currently not supported via the API. The Azure support engineer working on your ticket will reach out to you for consent if your issue requires gathering diagnostic information from your Azure resources.<br/><br/>**Creating a support ticket for on-behalf-of**: Include _x-ms-authorization-auxiliary_ header to provide an auxiliary token as per [documentation](https://docs.microsoft.com/azure/azure-resource-manager/management/authenticate-multi-tenant). The primary token will be from the tenant for whom a support ticket is being raised against the subscription, i.e. Cloud solution provider (CSP) customer tenant. The auxiliary token will be from the Cloud solution provider (CSP) partner tenant."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `support_ticket_name`: Support ticket name."]
+        #[doc = "* `create_support_ticket_parameters`: Support ticket request payload."]
+        #[doc = "* `subscription_id`: Azure subscription Id."]
         pub fn create(
             &self,
             support_ticket_name: impl Into<String>,
@@ -411,6 +446,12 @@ pub mod support_tickets {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "This API allows you to update the severity level, ticket status, and your contact information in the support ticket.<br/><br/>Note: The severity levels cannot be changed if a support ticket is actively being worked upon by an Azure support engineer. In such a case, contact your support engineer to request severity update by adding a new communication using the Communications API.<br/><br/>Changing the ticket status to _closed_ is allowed only on an unassigned case. When an engineer is actively working on the ticket, send your ticket closure request by sending a note to your engineer."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `support_ticket_name`: Support ticket name."]
+        #[doc = "* `update_support_ticket`: UpdateSupportTicket object."]
+        #[doc = "* `subscription_id`: Azure subscription Id."]
         pub fn update(
             &self,
             support_ticket_name: impl Into<String>,
@@ -486,10 +527,12 @@ pub mod support_tickets {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "The number of values to return in the collection. Default is 25 and max is 100."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "The filter to apply on the operation. We support 'odata v4.0' filter semantics. [Learn more](https://docs.microsoft.com/odata/concepts/queryoptions-overview). _Status_, _ServiceId_, and _ProblemClassificationId_ filters can only be used with Equals ('eq') operator. For _CreatedDate_ filter, the supported operators are Greater Than ('gt') and Greater Than or Equals ('ge'). When using both filters, combine them using the logical 'AND'."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -730,6 +773,12 @@ pub mod communications {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Check the availability of a resource name. This API should be used to check the uniqueness of the name for adding a new communication to the support ticket."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `support_ticket_name`: Support ticket name."]
+        #[doc = "* `check_name_availability_input`: Input to check."]
+        #[doc = "* `subscription_id`: Azure subscription Id."]
         pub fn check_name_availability(
             &self,
             support_ticket_name: impl Into<String>,
@@ -743,6 +792,11 @@ pub mod communications {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists all communications (attachments not included) for a support ticket. <br/></br> You can also filter support ticket communications by _CreatedDate_ or _CommunicationType_ using the $filter parameter. The only type of communication supported today is _Web_. Output will be a paged result with _nextLink_, using which you can retrieve the next set of Communication results. <br/><br/>Support ticket data is available for 18 months after ticket creation. If a ticket was created more than 18 months ago, a request for data might cause an error."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `support_ticket_name`: Support ticket name."]
+        #[doc = "* `subscription_id`: Azure subscription Id."]
         pub fn list(&self, support_ticket_name: impl Into<String>, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -752,6 +806,12 @@ pub mod communications {
                 filter: None,
             }
         }
+        #[doc = "Returns communication details for a support ticket."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `support_ticket_name`: Support ticket name."]
+        #[doc = "* `communication_name`: Communication name."]
+        #[doc = "* `subscription_id`: Azure subscription Id."]
         pub fn get(
             &self,
             support_ticket_name: impl Into<String>,
@@ -765,6 +825,13 @@ pub mod communications {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Adds a new customer communication to an Azure support ticket."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `support_ticket_name`: Support ticket name."]
+        #[doc = "* `communication_name`: Communication name."]
+        #[doc = "* `create_communication_parameters`: Communication object."]
+        #[doc = "* `subscription_id`: Azure subscription Id."]
         pub fn create(
             &self,
             support_ticket_name: impl Into<String>,
@@ -845,10 +912,12 @@ pub mod communications {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "The number of values to return in the collection. Default is 10 and max is 10."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "The filter to apply on the operation. You can filter by communicationType and createdDate properties. CommunicationType supports Equals ('eq') operator and createdDate supports Greater Than ('gt') and Greater Than or Equals ('ge') operators. You may combine the CommunicationType and CreatedDate filters by Logical And ('and') operator."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self

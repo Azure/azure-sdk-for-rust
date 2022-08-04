@@ -91,18 +91,27 @@ pub mod private_store {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the list of available private stores."]
         pub fn list(&self) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
                 use_cache: None,
             }
         }
+        #[doc = "Get information about the private store"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `private_store_id`: The store ID - must use the tenant ID"]
         pub fn get(&self, private_store_id: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
                 private_store_id: private_store_id.into(),
             }
         }
+        #[doc = "Changes private store properties"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `private_store_id`: The store ID - must use the tenant ID"]
         pub fn create_or_update(&self, private_store_id: impl Into<String>) -> create_or_update::Builder {
             create_or_update::Builder {
                 client: self.0.clone(),
@@ -110,24 +119,40 @@ pub mod private_store {
                 payload: None,
             }
         }
+        #[doc = "Deletes the private store. All that is not saved will be lost."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `private_store_id`: The store ID - must use the tenant ID"]
         pub fn delete(&self, private_store_id: impl Into<String>) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),
                 private_store_id: private_store_id.into(),
             }
         }
+        #[doc = "List of offers, regardless the collections"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `private_store_id`: The store ID - must use the tenant ID"]
         pub fn query_offers(&self, private_store_id: impl Into<String>) -> query_offers::Builder {
             query_offers::Builder {
                 client: self.0.clone(),
                 private_store_id: private_store_id.into(),
             }
         }
+        #[doc = "Tenant billing accounts names"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `private_store_id`: The store ID - must use the tenant ID"]
         pub fn billing_accounts(&self, private_store_id: impl Into<String>) -> billing_accounts::Builder {
             billing_accounts::Builder {
                 client: self.0.clone(),
                 private_store_id: private_store_id.into(),
             }
         }
+        #[doc = "For a given subscriptions list, the API will return a map of collections and the related subscriptions from the supplied list."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `private_store_id`: The store ID - must use the tenant ID"]
         pub fn collections_to_subscriptions_mapping(
             &self,
             private_store_id: impl Into<String>,
@@ -138,6 +163,10 @@ pub mod private_store {
                 payload: None,
             }
         }
+        #[doc = "Get map of plans and related approved subscriptions."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `private_store_id`: The store ID - must use the tenant ID"]
         pub fn query_approved_plans(&self, private_store_id: impl Into<String>) -> query_approved_plans::Builder {
             query_approved_plans::Builder {
                 client: self.0.clone(),
@@ -145,6 +174,10 @@ pub mod private_store {
                 payload: None,
             }
         }
+        #[doc = "Perform an action on bulk collections"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `private_store_id`: The store ID - must use the tenant ID"]
         pub fn bulk_collections_action(&self, private_store_id: impl Into<String>) -> bulk_collections_action::Builder {
             bulk_collections_action::Builder {
                 client: self.0.clone(),
@@ -152,12 +185,21 @@ pub mod private_store {
                 payload: None,
             }
         }
+        #[doc = "Get all open approval requests of current user"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `private_store_id`: The store ID - must use the tenant ID"]
         pub fn get_approval_requests_list(&self, private_store_id: impl Into<String>) -> get_approval_requests_list::Builder {
             get_approval_requests_list::Builder {
                 client: self.0.clone(),
                 private_store_id: private_store_id.into(),
             }
         }
+        #[doc = "Get open request approval details"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `private_store_id`: The store ID - must use the tenant ID"]
+        #[doc = "* `request_approval_id`: The request approval ID to get create or update"]
         pub fn get_request_approval(
             &self,
             private_store_id: impl Into<String>,
@@ -169,6 +211,11 @@ pub mod private_store {
                 request_approval_id: request_approval_id.into(),
             }
         }
+        #[doc = "Create approval request"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `private_store_id`: The store ID - must use the tenant ID"]
+        #[doc = "* `request_approval_id`: The request approval ID to get create or update"]
         pub fn create_approval_request(
             &self,
             private_store_id: impl Into<String>,
@@ -181,6 +228,11 @@ pub mod private_store {
                 payload: None,
             }
         }
+        #[doc = "Get request statuses foreach plan, this api is used as a complex GET action."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `private_store_id`: The store ID - must use the tenant ID"]
+        #[doc = "* `request_approval_id`: The request approval ID to get create or update"]
         pub fn query_request_approval(
             &self,
             private_store_id: impl Into<String>,
@@ -193,12 +245,22 @@ pub mod private_store {
                 payload: None,
             }
         }
+        #[doc = "Get list of admin request approvals"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `private_store_id`: The store ID - must use the tenant ID"]
         pub fn admin_request_approvals_list(&self, private_store_id: impl Into<String>) -> admin_request_approvals_list::Builder {
             admin_request_approvals_list::Builder {
                 client: self.0.clone(),
                 private_store_id: private_store_id.into(),
             }
         }
+        #[doc = "Get open approval requests"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `private_store_id`: The store ID - must use the tenant ID"]
+        #[doc = "* `admin_request_approval_id`: The admin request approval ID to get create or update"]
+        #[doc = "* `publisher_id`: The publisher id of this offer."]
         pub fn get_admin_request_approval(
             &self,
             private_store_id: impl Into<String>,
@@ -212,6 +274,11 @@ pub mod private_store {
                 publisher_id: publisher_id.into(),
             }
         }
+        #[doc = "Update the admin action, weather the request is approved or rejected and the approved plans"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `private_store_id`: The store ID - must use the tenant ID"]
+        #[doc = "* `admin_request_approval_id`: The admin request approval ID to get create or update"]
         pub fn update_admin_request_approval(
             &self,
             private_store_id: impl Into<String>,
@@ -224,12 +291,21 @@ pub mod private_store {
                 payload: None,
             }
         }
+        #[doc = "Get private store notifications state"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `private_store_id`: The store ID - must use the tenant ID"]
         pub fn query_notifications_state(&self, private_store_id: impl Into<String>) -> query_notifications_state::Builder {
             query_notifications_state::Builder {
                 client: self.0.clone(),
                 private_store_id: private_store_id.into(),
             }
         }
+        #[doc = "Acknowledge notification for offer"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `private_store_id`: The store ID - must use the tenant ID"]
+        #[doc = "* `offer_id`: The offer ID to update or delete"]
         pub fn acknowledge_offer_notification(
             &self,
             private_store_id: impl Into<String>,
@@ -242,6 +318,11 @@ pub mod private_store {
                 payload: None,
             }
         }
+        #[doc = "Withdraw a user request approval on specific plan"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `private_store_id`: The store ID - must use the tenant ID"]
+        #[doc = "* `request_approval_id`: The request approval ID to get create or update"]
         pub fn withdraw_plan(&self, private_store_id: impl Into<String>, request_approval_id: impl Into<String>) -> withdraw_plan::Builder {
             withdraw_plan::Builder {
                 client: self.0.clone(),
@@ -250,6 +331,10 @@ pub mod private_store {
                 payload: None,
             }
         }
+        #[doc = "Fetch all subscriptions in tenant, only for marketplace admin"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `private_store_id`: The store ID - must use the tenant ID"]
         pub fn fetch_all_subscriptions_in_tenant(&self, private_store_id: impl Into<String>) -> fetch_all_subscriptions_in_tenant::Builder {
             fetch_all_subscriptions_in_tenant::Builder {
                 client: self.0.clone(),
@@ -257,12 +342,20 @@ pub mod private_store {
                 next_page_token: None,
             }
         }
+        #[doc = "List new plans notifications"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `private_store_id`: The store ID - must use the tenant ID"]
         pub fn list_new_plans_notifications(&self, private_store_id: impl Into<String>) -> list_new_plans_notifications::Builder {
             list_new_plans_notifications::Builder {
                 client: self.0.clone(),
                 private_store_id: private_store_id.into(),
             }
         }
+        #[doc = "List stop sell notifications for both stop sell offers and stop sell plans"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `private_store_id`: The store ID - must use the tenant ID"]
         pub fn list_stop_sell_offers_plans_notifications(
             &self,
             private_store_id: impl Into<String>,
@@ -273,6 +366,10 @@ pub mod private_store {
                 stop_sell_subscriptions: None,
             }
         }
+        #[doc = "List all the subscriptions in the private store context"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `private_store_id`: The store ID - must use the tenant ID"]
         pub fn list_subscriptions_context(&self, private_store_id: impl Into<String>) -> list_subscriptions_context::Builder {
             list_subscriptions_context::Builder {
                 client: self.0.clone(),
@@ -289,6 +386,7 @@ pub mod private_store {
             pub(crate) use_cache: Option<String>,
         }
         impl Builder {
+            #[doc = "Determines if to use cache or DB for serving this request"]
             pub fn use_cache(mut self, use_cache: impl Into<String>) -> Self {
                 self.use_cache = Some(use_cache.into());
                 self
@@ -1331,6 +1429,7 @@ pub mod private_store {
             pub(crate) next_page_token: Option<String>,
         }
         impl Builder {
+            #[doc = "The skip token to get the next page."]
             pub fn next_page_token(mut self, next_page_token: impl Into<String>) -> Self {
                 self.next_page_token = Some(next_page_token.into());
                 self
@@ -1539,12 +1638,21 @@ pub mod private_store_collection {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets private store collections list"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `private_store_id`: The store ID - must use the tenant ID"]
         pub fn list(&self, private_store_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
                 private_store_id: private_store_id.into(),
             }
         }
+        #[doc = "Gets private store collection"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `private_store_id`: The store ID - must use the tenant ID"]
+        #[doc = "* `collection_id`: The collection ID"]
         pub fn get(&self, private_store_id: impl Into<String>, collection_id: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -1552,6 +1660,11 @@ pub mod private_store_collection {
                 collection_id: collection_id.into(),
             }
         }
+        #[doc = "Delete Private store collection. This is a workaround."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `private_store_id`: The store ID - must use the tenant ID"]
+        #[doc = "* `collection_id`: The collection ID"]
         pub fn post(&self, private_store_id: impl Into<String>, collection_id: impl Into<String>) -> post::Builder {
             post::Builder {
                 client: self.0.clone(),
@@ -1560,6 +1673,11 @@ pub mod private_store_collection {
                 payload: None,
             }
         }
+        #[doc = "Create or update private store collection"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `private_store_id`: The store ID - must use the tenant ID"]
+        #[doc = "* `collection_id`: The collection ID"]
         pub fn create_or_update(&self, private_store_id: impl Into<String>, collection_id: impl Into<String>) -> create_or_update::Builder {
             create_or_update::Builder {
                 client: self.0.clone(),
@@ -1568,6 +1686,11 @@ pub mod private_store_collection {
                 payload: None,
             }
         }
+        #[doc = "Delete a collection from the given private store."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `private_store_id`: The store ID - must use the tenant ID"]
+        #[doc = "* `collection_id`: The collection ID"]
         pub fn delete(&self, private_store_id: impl Into<String>, collection_id: impl Into<String>) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),
@@ -1575,6 +1698,11 @@ pub mod private_store_collection {
                 collection_id: collection_id.into(),
             }
         }
+        #[doc = "transferring offers (copy or move) from source collection to target collection(s)"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `private_store_id`: The store ID - must use the tenant ID"]
+        #[doc = "* `collection_id`: The collection ID"]
         pub fn transfer_offers(&self, private_store_id: impl Into<String>, collection_id: impl Into<String>) -> transfer_offers::Builder {
             transfer_offers::Builder {
                 client: self.0.clone(),
@@ -1914,6 +2042,11 @@ pub mod private_store_collection_offer {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get a list of all private offers in the given private store and collection"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `private_store_id`: The store ID - must use the tenant ID"]
+        #[doc = "* `collection_id`: The collection ID"]
         pub fn list(&self, private_store_id: impl Into<String>, collection_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -1921,6 +2054,12 @@ pub mod private_store_collection_offer {
                 collection_id: collection_id.into(),
             }
         }
+        #[doc = "Gets information about a specific offer."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `private_store_id`: The store ID - must use the tenant ID"]
+        #[doc = "* `offer_id`: The offer ID to update or delete"]
+        #[doc = "* `collection_id`: The collection ID"]
         pub fn get(
             &self,
             private_store_id: impl Into<String>,
@@ -1934,6 +2073,12 @@ pub mod private_store_collection_offer {
                 collection_id: collection_id.into(),
             }
         }
+        #[doc = "Delete Private store offer. This is a workaround."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `private_store_id`: The store ID - must use the tenant ID"]
+        #[doc = "* `offer_id`: The offer ID to update or delete"]
+        #[doc = "* `collection_id`: The collection ID"]
         pub fn post(
             &self,
             private_store_id: impl Into<String>,
@@ -1948,6 +2093,12 @@ pub mod private_store_collection_offer {
                 payload: None,
             }
         }
+        #[doc = "Update or add an offer to a specific collection of the private store."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `private_store_id`: The store ID - must use the tenant ID"]
+        #[doc = "* `offer_id`: The offer ID to update or delete"]
+        #[doc = "* `collection_id`: The collection ID"]
         pub fn create_or_update(
             &self,
             private_store_id: impl Into<String>,
@@ -1962,6 +2113,12 @@ pub mod private_store_collection_offer {
                 payload: None,
             }
         }
+        #[doc = "Deletes an offer from the given collection of private store."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `private_store_id`: The store ID - must use the tenant ID"]
+        #[doc = "* `offer_id`: The offer ID to update or delete"]
+        #[doc = "* `collection_id`: The collection ID"]
         pub fn delete(
             &self,
             private_store_id: impl Into<String>,
@@ -2282,6 +2439,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all of the available Microsoft.Marketplace REST API operations."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }

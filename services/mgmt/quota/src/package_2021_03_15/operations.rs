@@ -91,6 +91,11 @@ pub mod quota {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the quota limit and current quota usage of a resource. The response can be used to determine the remaining quota and calculate a new quota limit that can be submitted with a PUT request."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: Resource name for a given resource provider. For example:\r\n- SKU name for Microsoft.Compute\r\n- Sku or TotalLowPriorityCores for Microsoft.MachineLearningServices"]
+        #[doc = "* `scope`: The target Azure resource URI. For example, `/subscriptions/9f6cce51-6baf-4de5-a3c4-6f58b85315b9/resourceGroups/qms-test/providers/Microsoft.Batch/batchAccounts/testAccount/`. This is the target Azure resource URI for the List GET operation. If a `{resourceName}` is added after `/quotaLimits`, then it's the target Azure resource URI in the GET operation for the specific resource."]
         pub fn get(&self, resource_name: impl Into<String>, scope: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -98,6 +103,12 @@ pub mod quota {
                 scope: scope.into(),
             }
         }
+        #[doc = "Create or update the quota limit for the specified resource to the requested value. To update the quota, follow these steps:\n1. Use the GET operation to determine how much quota remains for the specific resource and to calculate the new quota limit. These steps are detailed in [this example](https://techcommunity.microsoft.com/t5/azure-governance-and-management/using-the-new-quota-rest-api/ba-p/2183670).\n2. Use this PUT operation to update the quota limit."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: Resource name for a given resource provider. For example:\r\n- SKU name for Microsoft.Compute\r\n- Sku or TotalLowPriorityCores for Microsoft.MachineLearningServices"]
+        #[doc = "* `scope`: The target Azure resource URI. For example, `/subscriptions/9f6cce51-6baf-4de5-a3c4-6f58b85315b9/resourceGroups/qms-test/providers/Microsoft.Batch/batchAccounts/testAccount/`. This is the target Azure resource URI for the List GET operation. If a `{resourceName}` is added after `/quotaLimits`, then it's the target Azure resource URI in the GET operation for the specific resource."]
+        #[doc = "* `create_quota_request`: Quota requests payload."]
         pub fn create_or_update(
             &self,
             resource_name: impl Into<String>,
@@ -111,6 +122,12 @@ pub mod quota {
                 create_quota_request: create_quota_request.into(),
             }
         }
+        #[doc = "Update the quota limit for a specific resource to the specified value:\n1. Use the GET operation to determine how much quota remains for the specific resource and to calculate the new quota limit. These steps are detailed in [this example](https://techcommunity.microsoft.com/t5/azure-governance-and-management/using-the-new-quota-rest-api/ba-p/2183670).\n2. Use this PUT operation to update the quota limit."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_name`: Resource name for a given resource provider. For example:\r\n- SKU name for Microsoft.Compute\r\n- Sku or TotalLowPriorityCores for Microsoft.MachineLearningServices"]
+        #[doc = "* `scope`: The target Azure resource URI. For example, `/subscriptions/9f6cce51-6baf-4de5-a3c4-6f58b85315b9/resourceGroups/qms-test/providers/Microsoft.Batch/batchAccounts/testAccount/`. This is the target Azure resource URI for the List GET operation. If a `{resourceName}` is added after `/quotaLimits`, then it's the target Azure resource URI in the GET operation for the specific resource."]
+        #[doc = "* `create_quota_request`: Quota requests payload."]
         pub fn update(
             &self,
             resource_name: impl Into<String>,
@@ -124,6 +141,10 @@ pub mod quota {
                 create_quota_request: create_quota_request.into(),
             }
         }
+        #[doc = "Get a list of current quota limits and usages of all resources. The response from this GET operation can be leveraged to submit requests to update a quota."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `scope`: The target Azure resource URI. For example, `/subscriptions/9f6cce51-6baf-4de5-a3c4-6f58b85315b9/resourceGroups/qms-test/providers/Microsoft.Batch/batchAccounts/testAccount/`. This is the target Azure resource URI for the List GET operation. If a `{resourceName}` is added after `/quotaLimits`, then it's the target Azure resource URI in the GET operation for the specific resource."]
         pub fn list(&self, scope: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -384,6 +405,11 @@ pub mod quota_request_status {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the quota request details and status by quota request ID for the resources of the resource provider at a specific location. The quota request ID **id** is returned in the response of the PUT operation."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `id`: Quota request ID."]
+        #[doc = "* `scope`: The target Azure resource URI. For example, `/subscriptions/9f6cce51-6baf-4de5-a3c4-6f58b85315b9/resourceGroups/qms-test/providers/Microsoft.Batch/batchAccounts/testAccount/`. This is the target Azure resource URI for the List GET operation. If a `{resourceName}` is added after `/quotaLimits`, then it's the target Azure resource URI in the GET operation for the specific resource."]
         pub fn get(&self, id: impl Into<String>, scope: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -391,6 +417,10 @@ pub mod quota_request_status {
                 scope: scope.into(),
             }
         }
+        #[doc = "For the specified location and resource provider, gets the current quota requests under the subscription for a one year period ending at the time is made. Use the **oData** filter can be used to select quota requests."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `scope`: The target Azure resource URI. For example, `/subscriptions/9f6cce51-6baf-4de5-a3c4-6f58b85315b9/resourceGroups/qms-test/providers/Microsoft.Batch/batchAccounts/testAccount/`. This is the target Azure resource URI for the List GET operation. If a `{resourceName}` is added after `/quotaLimits`, then it's the target Azure resource URI in the GET operation for the specific resource."]
         pub fn list(&self, scope: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -463,14 +493,17 @@ pub mod quota_request_status {
             pub(crate) skiptoken: Option<String>,
         }
         impl Builder {
+            #[doc = "| Field                    | Supported operators  \n|---------------------|------------------------\n\r\n|requestSubmitTime | ge, le, eq, gt, lt\n |provisioningState eq {QuotaRequestState}\n |resourceName eq {resourceName}\n"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "The **Skiptoken** parameter is used only if a previous operation returned a partial result. If a previous response contains a **nextLink** element, the value of the **nextLink** element includes a **skiptoken** parameter that specifies a starting point to use for subsequent calls."]
             pub fn skiptoken(mut self, skiptoken: impl Into<String>) -> Self {
                 self.skiptoken = Some(skiptoken.into());
                 self
@@ -554,6 +587,7 @@ pub mod quota_resource_providers {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the list of current resource providers supported by the Microsoft.Quota resource provider.\r\nFor each resource provider, the resource templates the resource provider supports are be provided. \r\nFor each resource template, the resource dimensions are listed. The resource dimensions are the name-value pairs in the resource URI.\r\nExample:\u{a0}Microsoft.Compute Resource Provider\r\nThe URI template is '/subscriptions/{subscriptionId}/providers/Microsoft.Compute/locations/{locationId}/quotaBucket'. The actual dimensions vary depending on the resource provider.\r\nThe resource dimensions are {subscriptions},{locations},{quotaBucket}."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -608,6 +642,7 @@ pub mod operation {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "GET operations."]
+        #[doc = "List all GET operations."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }

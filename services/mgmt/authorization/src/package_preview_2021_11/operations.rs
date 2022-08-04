@@ -128,6 +128,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists the operations available from this provider."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -207,6 +208,10 @@ pub mod access_review_history_definitions {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists the accessReviewHistoryDefinitions available from this provider, definition instances are only available for 30 days after creation."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -214,6 +219,11 @@ pub mod access_review_history_definitions {
                 filter: None,
             }
         }
+        #[doc = "Get access review history definition by definition Id"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `history_definition_id`: The id of the access review history definition."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn get_by_id(&self, history_definition_id: impl Into<String>, subscription_id: impl Into<String>) -> get_by_id::Builder {
             get_by_id::Builder {
                 client: self.0.clone(),
@@ -232,6 +242,7 @@ pub mod access_review_history_definitions {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the operation. Only standard filters on definition name and created date are supported"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -359,6 +370,12 @@ pub mod access_review_history_definition {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Create a scheduled or one-time Access Review History Definition"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `history_definition_id`: The id of the access review history definition."]
+        #[doc = "* `properties`: Access review history definition properties."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn create(
             &self,
             history_definition_id: impl Into<String>,
@@ -372,6 +389,11 @@ pub mod access_review_history_definition {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Delete an access review history definition"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `history_definition_id`: The id of the access review history definition."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn delete_by_id(&self, history_definition_id: impl Into<String>, subscription_id: impl Into<String>) -> delete_by_id::Builder {
             delete_by_id::Builder {
                 client: self.0.clone(),
@@ -488,6 +510,12 @@ pub mod access_review_history_definition_instance {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Generates a uri which can be used to retrieve review history data. This URI has a TTL of 1 day and can be retrieved by fetching the accessReviewHistoryDefinition object."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `history_definition_id`: The id of the access review history definition."]
+        #[doc = "* `instance_id`: The id of the access review history definition instance to generate a URI for."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn generate_download_uri(
             &self,
             history_definition_id: impl Into<String>,
@@ -554,6 +582,11 @@ pub mod access_review_history_definition_instances {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get access review history definition instances by definition Id"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `history_definition_id`: The id of the access review history definition."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list(&self, history_definition_id: impl Into<String>, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -643,6 +676,10 @@ pub mod access_review_schedule_definitions {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get access review schedule definitions"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -650,6 +687,11 @@ pub mod access_review_schedule_definitions {
                 filter: None,
             }
         }
+        #[doc = "Get single access review definition"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `schedule_definition_id`: The id of the access review schedule definition."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn get_by_id(&self, schedule_definition_id: impl Into<String>, subscription_id: impl Into<String>) -> get_by_id::Builder {
             get_by_id::Builder {
                 client: self.0.clone(),
@@ -657,6 +699,12 @@ pub mod access_review_schedule_definitions {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Create or Update access review schedule definition."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `schedule_definition_id`: The id of the access review schedule definition."]
+        #[doc = "* `properties`: Access review schedule definition properties."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn create_or_update_by_id(
             &self,
             schedule_definition_id: impl Into<String>,
@@ -670,6 +718,11 @@ pub mod access_review_schedule_definitions {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Delete access review schedule definition"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `schedule_definition_id`: The id of the access review schedule definition."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn delete_by_id(&self, schedule_definition_id: impl Into<String>, subscription_id: impl Into<String>) -> delete_by_id::Builder {
             delete_by_id::Builder {
                 client: self.0.clone(),
@@ -677,6 +730,11 @@ pub mod access_review_schedule_definitions {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Stop access review definition"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `schedule_definition_id`: The id of the access review schedule definition."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn stop(&self, schedule_definition_id: impl Into<String>, subscription_id: impl Into<String>) -> stop::Builder {
             stop::Builder {
                 client: self.0.clone(),
@@ -695,6 +753,7 @@ pub mod access_review_schedule_definitions {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the operation. Other than standard filters, one custom filter option is supported : 'assignedToMeToReview()'. When one specified $filter=assignedToMeToReview(), only items that are assigned to the calling user to review are returned"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -972,6 +1031,11 @@ pub mod access_review_instances {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get access review instances"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `schedule_definition_id`: The id of the access review schedule definition."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list(&self, schedule_definition_id: impl Into<String>, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -980,6 +1044,12 @@ pub mod access_review_instances {
                 filter: None,
             }
         }
+        #[doc = "Get access review instances"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `schedule_definition_id`: The id of the access review schedule definition."]
+        #[doc = "* `id`: The id of the access review instance."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn get_by_id(
             &self,
             schedule_definition_id: impl Into<String>,
@@ -993,6 +1063,13 @@ pub mod access_review_instances {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Update access review instance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `schedule_definition_id`: The id of the access review schedule definition."]
+        #[doc = "* `id`: The id of the access review instance."]
+        #[doc = "* `properties`: Access review instance properties."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn create(
             &self,
             schedule_definition_id: impl Into<String>,
@@ -1020,6 +1097,7 @@ pub mod access_review_instances {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the operation. Other than standard filters, one custom filter option is supported : 'assignedToMeToReview()'. When one specified $filter=assignedToMeToReview(), only items that are assigned to the calling user to review are returned"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -1204,6 +1282,12 @@ pub mod access_review_instance {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "An action to stop an access review instance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `schedule_definition_id`: The id of the access review schedule definition."]
+        #[doc = "* `id`: The id of the access review instance."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn stop(
             &self,
             schedule_definition_id: impl Into<String>,
@@ -1217,6 +1301,12 @@ pub mod access_review_instance {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "An action to reset all decisions for an access review instance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `schedule_definition_id`: The id of the access review schedule definition."]
+        #[doc = "* `id`: The id of the access review instance."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn reset_decisions(
             &self,
             schedule_definition_id: impl Into<String>,
@@ -1230,6 +1320,12 @@ pub mod access_review_instance {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "An action to apply all decisions for an access review instance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `schedule_definition_id`: The id of the access review schedule definition."]
+        #[doc = "* `id`: The id of the access review instance."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn apply_decisions(
             &self,
             schedule_definition_id: impl Into<String>,
@@ -1243,6 +1339,12 @@ pub mod access_review_instance {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "An action to send reminders for an access review instance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `schedule_definition_id`: The id of the access review schedule definition."]
+        #[doc = "* `id`: The id of the access review instance."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn send_reminders(
             &self,
             schedule_definition_id: impl Into<String>,
@@ -1256,6 +1358,11 @@ pub mod access_review_instance {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "An action to accept recommendations for decision in an access review instance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `schedule_definition_id`: The id of the access review schedule definition."]
+        #[doc = "* `id`: The id of the access review instance."]
         pub fn accept_recommendations(
             &self,
             schedule_definition_id: impl Into<String>,
@@ -1498,6 +1605,12 @@ pub mod access_review_instance_decisions {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get access review instance decisions"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `schedule_definition_id`: The id of the access review schedule definition."]
+        #[doc = "* `id`: The id of the access review instance."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list(
             &self,
             schedule_definition_id: impl Into<String>,
@@ -1525,6 +1638,7 @@ pub mod access_review_instance_decisions {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the operation. Other than standard filters, one custom filter option is supported : 'assignedToMeToReview()'. When one specified $filter=assignedToMeToReview(), only items that are assigned to the calling user to review are returned"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -1598,6 +1712,12 @@ pub mod access_review_instance_contacted_reviewers {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get access review instance contacted reviewers"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `schedule_definition_id`: The id of the access review schedule definition."]
+        #[doc = "* `id`: The id of the access review instance."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list(
             &self,
             schedule_definition_id: impl Into<String>,
@@ -1689,12 +1809,21 @@ pub mod access_review_default_settings {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get access review default settings for the subscription"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn get(&self, subscription_id: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get access review default settings for the subscription"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `properties`: Access review schedule settings."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn put(&self, properties: impl Into<models::AccessReviewScheduleSettings>, subscription_id: impl Into<String>) -> put::Builder {
             put::Builder {
                 client: self.0.clone(),
@@ -1806,6 +1935,7 @@ pub mod access_review_schedule_definitions_assigned_for_my_approval {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get access review instances assigned for my approval."]
         pub fn list(&self) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -1822,6 +1952,7 @@ pub mod access_review_schedule_definitions_assigned_for_my_approval {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the operation. Other than standard filters, one custom filter option is supported : 'assignedToMeToReview()'. When one specified $filter=assignedToMeToReview(), only items that are assigned to the calling user to review are returned"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -1898,6 +2029,10 @@ pub mod access_review_instances_assigned_for_my_approval {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get access review instances assigned for my approval."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `schedule_definition_id`: The id of the access review schedule definition."]
         pub fn list(&self, schedule_definition_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -1905,6 +2040,11 @@ pub mod access_review_instances_assigned_for_my_approval {
                 filter: None,
             }
         }
+        #[doc = "Get single access review instance assigned for my approval."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `schedule_definition_id`: The id of the access review schedule definition."]
+        #[doc = "* `id`: The id of the access review instance."]
         pub fn get_by_id(&self, schedule_definition_id: impl Into<String>, id: impl Into<String>) -> get_by_id::Builder {
             get_by_id::Builder {
                 client: self.0.clone(),
@@ -1923,6 +2063,7 @@ pub mod access_review_instances_assigned_for_my_approval {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the operation. Other than standard filters, one custom filter option is supported : 'assignedToMeToReview()'. When one specified $filter=assignedToMeToReview(), only items that are assigned to the calling user to review are returned"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -2050,6 +2191,11 @@ pub mod access_review_instance_my_decisions {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get my access review instance decisions."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `schedule_definition_id`: The id of the access review schedule definition."]
+        #[doc = "* `id`: The id of the access review instance."]
         pub fn list(&self, schedule_definition_id: impl Into<String>, id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -2058,6 +2204,12 @@ pub mod access_review_instance_my_decisions {
                 filter: None,
             }
         }
+        #[doc = "Get my single access review instance decision."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `schedule_definition_id`: The id of the access review schedule definition."]
+        #[doc = "* `id`: The id of the access review instance."]
+        #[doc = "* `decision_id`: The id of the decision record."]
         pub fn get_by_id(
             &self,
             schedule_definition_id: impl Into<String>,
@@ -2071,6 +2223,13 @@ pub mod access_review_instance_my_decisions {
                 decision_id: decision_id.into(),
             }
         }
+        #[doc = "Record a decision."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `schedule_definition_id`: The id of the access review schedule definition."]
+        #[doc = "* `id`: The id of the access review instance."]
+        #[doc = "* `decision_id`: The id of the decision record."]
+        #[doc = "* `properties`: Access review decision properties to patch."]
         pub fn patch(
             &self,
             schedule_definition_id: impl Into<String>,
@@ -2098,6 +2257,7 @@ pub mod access_review_instance_my_decisions {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the operation. Other than standard filters, one custom filter option is supported : 'assignedToMeToReview()'. When one specified $filter=assignedToMeToReview(), only items that are assigned to the calling user to review are returned"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -2282,6 +2442,11 @@ pub mod tenant_level_access_review_instance_contacted_reviewers {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get access review instance contacted reviewers"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `schedule_definition_id`: The id of the access review schedule definition."]
+        #[doc = "* `id`: The id of the access review instance."]
         pub fn list(&self, schedule_definition_id: impl Into<String>, id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),

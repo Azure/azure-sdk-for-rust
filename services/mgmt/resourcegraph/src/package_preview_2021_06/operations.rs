@@ -79,12 +79,20 @@ impl Client {
     }
 }
 impl Client {
+    #[doc = "Queries the resources managed by Azure Resource Manager for scopes specified in the request."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `query`: Request specifying query and its options."]
     pub fn resources(&self, query: impl Into<models::QueryRequest>) -> resources::Builder {
         resources::Builder {
             client: self.clone(),
             query: query.into(),
         }
     }
+    #[doc = "List all snapshots of a resource for a given time interval."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `request`: Request specifying the query and its options."]
     pub fn resources_history(&self, request: impl Into<models::ResourcesHistoryRequest>) -> resources_history::Builder {
         resources_history::Builder {
             client: self.clone(),
@@ -189,6 +197,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all of the available REST API operations."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }

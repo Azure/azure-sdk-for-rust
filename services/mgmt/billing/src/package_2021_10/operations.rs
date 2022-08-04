@@ -91,12 +91,21 @@ pub mod billing_subscriptions {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists the subscriptions for a billing account. The operation is currently supported for billing accounts with agreement type Microsoft Customer Agreement, Microsoft Partner Agreement and Microsoft Online Services Program."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `billing_account_name`: The ID that uniquely identifies a billing account."]
         pub fn list_by_billing_account(&self, billing_account_name: impl Into<String>) -> list_by_billing_account::Builder {
             list_by_billing_account::Builder {
                 client: self.0.clone(),
                 billing_account_name: billing_account_name.into(),
             }
         }
+        #[doc = "Gets a subscription by its ID. The operation is currently supported for billing accounts with agreement type Microsoft Customer Agreement, Microsoft Partner Agreement and Microsoft Online Services Program."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `billing_account_name`: The ID that uniquely identifies a billing account."]
+        #[doc = "* `billing_subscription_name`: The ID that uniquely identifies a subscription."]
         pub fn get(&self, billing_account_name: impl Into<String>, billing_subscription_name: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -104,6 +113,12 @@ pub mod billing_subscriptions {
                 billing_subscription_name: billing_subscription_name.into(),
             }
         }
+        #[doc = "Updates the properties of a billing subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `billing_account_name`: The ID that uniquely identifies a billing account."]
+        #[doc = "* `billing_subscription_name`: The ID that uniquely identifies a subscription."]
+        #[doc = "* `parameters`: Request parameters that are provided to the update billing subscription operation."]
         pub fn update(
             &self,
             billing_account_name: impl Into<String>,
@@ -117,6 +132,11 @@ pub mod billing_subscriptions {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Cancels a billing subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `billing_account_name`: The ID that uniquely identifies a billing account."]
+        #[doc = "* `billing_subscription_name`: The ID that uniquely identifies a subscription."]
         pub fn delete(&self, billing_account_name: impl Into<String>, billing_subscription_name: impl Into<String>) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),
@@ -124,6 +144,12 @@ pub mod billing_subscriptions {
                 billing_subscription_name: billing_subscription_name.into(),
             }
         }
+        #[doc = "Moves a subscription's charges to a new invoice section. This operation is supported for billing accounts with agreement type Microsoft Customer Agreement."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `billing_account_name`: The ID that uniquely identifies a billing account."]
+        #[doc = "* `billing_subscription_name`: The ID that uniquely identifies a subscription."]
+        #[doc = "* `parameters`: Request parameters that are provided to the move subscription operation."]
         pub fn move_(
             &self,
             billing_account_name: impl Into<String>,
@@ -137,6 +163,12 @@ pub mod billing_subscriptions {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Validates if a subscription's charges can be moved to a new invoice section. This operation is supported for billing accounts with agreement type Microsoft Customer Agreement."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `billing_account_name`: The ID that uniquely identifies a billing account."]
+        #[doc = "* `billing_subscription_name`: The ID that uniquely identifies a subscription."]
+        #[doc = "* `parameters`: Request parameters that are provided to the validate move eligibility operation."]
         pub fn validate_move_eligibility(
             &self,
             billing_account_name: impl Into<String>,
@@ -150,6 +182,12 @@ pub mod billing_subscriptions {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Merges the billing subscription provided in the request with a target billing subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `billing_account_name`: The ID that uniquely identifies a billing account."]
+        #[doc = "* `billing_subscription_name`: The ID that uniquely identifies a subscription."]
+        #[doc = "* `parameters`: Request parameters that are provided to merge the two billing subscriptions."]
         pub fn merge(
             &self,
             billing_account_name: impl Into<String>,
@@ -163,6 +201,12 @@ pub mod billing_subscriptions {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Splits a subscription into a new subscription with quantity less than current subscription quantity and not equal to 0."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `billing_account_name`: The ID that uniquely identifies a billing account."]
+        #[doc = "* `billing_subscription_name`: The ID that uniquely identifies a subscription."]
+        #[doc = "* `parameters`: Request parameters that are provided to split the billing subscription."]
         pub fn split(
             &self,
             billing_account_name: impl Into<String>,
@@ -645,12 +689,21 @@ pub mod billing_subscriptions_aliases {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists the subscription aliases for a billing account. The operation is supported for seat based billing subscriptions."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `billing_account_name`: The ID that uniquely identifies a billing account."]
         pub fn list_by_billing_account(&self, billing_account_name: impl Into<String>) -> list_by_billing_account::Builder {
             list_by_billing_account::Builder {
                 client: self.0.clone(),
                 billing_account_name: billing_account_name.into(),
             }
         }
+        #[doc = "Gets a subscription by its alias ID.  The operation is supported for seat based billing subscriptions."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `billing_account_name`: The ID that uniquely identifies a billing account."]
+        #[doc = "* `alias_name`: The ID that uniquely identifies a subscription alias."]
         pub fn get(&self, billing_account_name: impl Into<String>, alias_name: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -658,6 +711,12 @@ pub mod billing_subscriptions_aliases {
                 alias_name: alias_name.into(),
             }
         }
+        #[doc = "Creates or updates a billing subscription by its alias ID.  The operation is supported for seat based billing subscriptions."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `billing_account_name`: The ID that uniquely identifies a billing account."]
+        #[doc = "* `alias_name`: The ID that uniquely identifies a subscription alias."]
+        #[doc = "* `parameters`: New or updated billing subscription alias."]
         pub fn create_or_update(
             &self,
             billing_account_name: impl Into<String>,
@@ -859,27 +918,45 @@ pub mod payment_methods {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists the payment methods owned by the caller."]
         pub fn list_by_user(&self) -> list_by_user::Builder {
             list_by_user::Builder { client: self.0.clone() }
         }
+        #[doc = "Gets a payment method owned by the caller."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `payment_method_name`: The ID that uniquely identifies a payment method."]
         pub fn get_by_user(&self, payment_method_name: impl Into<String>) -> get_by_user::Builder {
             get_by_user::Builder {
                 client: self.0.clone(),
                 payment_method_name: payment_method_name.into(),
             }
         }
+        #[doc = "Deletes a payment method owned by the caller."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `payment_method_name`: The ID that uniquely identifies a payment method."]
         pub fn delete_by_user(&self, payment_method_name: impl Into<String>) -> delete_by_user::Builder {
             delete_by_user::Builder {
                 client: self.0.clone(),
                 payment_method_name: payment_method_name.into(),
             }
         }
+        #[doc = "Lists the payment methods available for a billing account. Along with the payment methods owned by the caller, these payment methods can be attached to a billing profile to make payments. The operation is supported only for billing accounts with agreement type Microsoft Customer Agreement."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `billing_account_name`: The ID that uniquely identifies a billing account."]
         pub fn list_by_billing_account(&self, billing_account_name: impl Into<String>) -> list_by_billing_account::Builder {
             list_by_billing_account::Builder {
                 client: self.0.clone(),
                 billing_account_name: billing_account_name.into(),
             }
         }
+        #[doc = "Gets a payment method available for a billing account. The operation is supported only for billing accounts with agreement type Microsoft Customer Agreement."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `billing_account_name`: The ID that uniquely identifies a billing account."]
+        #[doc = "* `payment_method_name`: The ID that uniquely identifies a payment method."]
         pub fn get_by_billing_account(
             &self,
             billing_account_name: impl Into<String>,
@@ -891,6 +968,11 @@ pub mod payment_methods {
                 payment_method_name: payment_method_name.into(),
             }
         }
+        #[doc = "Lists payment methods attached to a billing profile. The operation is supported only for billing accounts with agreement type Microsoft Customer Agreement."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `billing_account_name`: The ID that uniquely identifies a billing account."]
+        #[doc = "* `billing_profile_name`: The ID that uniquely identifies a billing profile."]
         pub fn list_by_billing_profile(
             &self,
             billing_account_name: impl Into<String>,
@@ -902,6 +984,12 @@ pub mod payment_methods {
                 billing_profile_name: billing_profile_name.into(),
             }
         }
+        #[doc = "Gets a payment method linked with a billing profile. The operation is supported only for billing accounts with agreement type Microsoft Customer Agreement."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `billing_account_name`: The ID that uniquely identifies a billing account."]
+        #[doc = "* `billing_profile_name`: The ID that uniquely identifies a billing profile."]
+        #[doc = "* `payment_method_name`: The ID that uniquely identifies a payment method."]
         pub fn get_by_billing_profile(
             &self,
             billing_account_name: impl Into<String>,
@@ -915,6 +1003,12 @@ pub mod payment_methods {
                 payment_method_name: payment_method_name.into(),
             }
         }
+        #[doc = "Deletes a payment method link and removes the payment method from a billing profile. The operation is supported only for billing accounts with agreement type Microsoft Customer Agreement."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `billing_account_name`: The ID that uniquely identifies a billing account."]
+        #[doc = "* `billing_profile_name`: The ID that uniquely identifies a billing profile."]
+        #[doc = "* `payment_method_name`: The ID that uniquely identifies a payment method."]
         pub fn delete_at_billing_profile(
             &self,
             billing_account_name: impl Into<String>,
@@ -1409,6 +1503,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists the available billing REST API operations."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }

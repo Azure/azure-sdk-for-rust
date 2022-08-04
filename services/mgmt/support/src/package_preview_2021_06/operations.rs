@@ -85,6 +85,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "This lists all the available Microsoft Support REST API operations."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -139,6 +140,9 @@ pub mod look_up_resource_id {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "This operation fetches ARM resource id of support resource type."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `look_up_resource_id_request`: Look up resource id request body"]
         pub fn post(&self, look_up_resource_id_request: impl Into<models::LookUpResourceIdRequest>) -> post::Builder {
             post::Builder {
                 client: self.0.clone(),

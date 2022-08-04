@@ -97,6 +97,12 @@ pub mod dns_resolvers {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets properties of a DNS resolver."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `dns_resolver_name`: The name of the DNS resolver."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -110,6 +116,13 @@ pub mod dns_resolvers {
                 dns_resolver_name: dns_resolver_name.into(),
             }
         }
+        #[doc = "Creates or updates a DNS resolver."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `dns_resolver_name`: The name of the DNS resolver."]
+        #[doc = "* `parameters`: Parameters supplied to the CreateOrUpdate operation."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -127,6 +140,13 @@ pub mod dns_resolvers {
                 if_none_match: None,
             }
         }
+        #[doc = "Updates a DNS resolver."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `dns_resolver_name`: The name of the DNS resolver."]
+        #[doc = "* `parameters`: Parameters supplied to the Update operation."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -143,6 +163,12 @@ pub mod dns_resolvers {
                 if_match: None,
             }
         }
+        #[doc = "Deletes a DNS resolver. WARNING: This operation cannot be undone."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `dns_resolver_name`: The name of the DNS resolver."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -157,6 +183,11 @@ pub mod dns_resolvers {
                 if_match: None,
             }
         }
+        #[doc = "Lists DNS resolvers within a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -169,6 +200,10 @@ pub mod dns_resolvers {
                 top: None,
             }
         }
+        #[doc = "Lists DNS resolvers in all resource groups of a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -176,6 +211,12 @@ pub mod dns_resolvers {
                 top: None,
             }
         }
+        #[doc = "Lists DNS resolver resource IDs linked to a virtual network."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `virtual_network_name`: The name of the virtual network."]
         pub fn list_by_virtual_network(
             &self,
             subscription_id: impl Into<String>,
@@ -262,10 +303,12 @@ pub mod dns_resolvers {
             pub(crate) if_none_match: Option<String>,
         }
         impl Builder {
+            #[doc = "ETag of the resource. Omit this value to always overwrite the current resource. Specify the last-seen ETag value to prevent accidentally overwriting any concurrent changes."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
             }
+            #[doc = "Set to '*' to allow a new resource to be created, but to prevent updating an existing resource. Other values will be ignored."]
             pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
                 self.if_none_match = Some(if_none_match.into());
                 self
@@ -342,6 +385,7 @@ pub mod dns_resolvers {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "ETag of the resource. Omit this value to always overwrite the current resource. Specify the last-seen ETag value to prevent accidentally overwriting any concurrent changes."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -410,6 +454,7 @@ pub mod dns_resolvers {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "ETag of the resource. Omit this value to always overwrite the current resource. Specify the last-seen ETag value to prevent accidentally overwriting any concurrent changes."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -468,6 +513,7 @@ pub mod dns_resolvers {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The maximum number of results to return. If not specified, returns up to 100 results."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -551,6 +597,7 @@ pub mod dns_resolvers {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The maximum number of results to return. If not specified, returns up to 100 results."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -635,6 +682,7 @@ pub mod dns_resolvers {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The maximum number of results to return. If not specified, returns up to 100 results."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -715,6 +763,13 @@ pub mod inbound_endpoints {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets properties of an inbound endpoint for a DNS resolver."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `dns_resolver_name`: The name of the DNS resolver."]
+        #[doc = "* `inbound_endpoint_name`: The name of the inbound endpoint for the DNS resolver."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -730,6 +785,14 @@ pub mod inbound_endpoints {
                 inbound_endpoint_name: inbound_endpoint_name.into(),
             }
         }
+        #[doc = "Creates or updates an inbound endpoint for a DNS resolver."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `dns_resolver_name`: The name of the DNS resolver."]
+        #[doc = "* `inbound_endpoint_name`: The name of the inbound endpoint for the DNS resolver."]
+        #[doc = "* `parameters`: Parameters supplied to the CreateOrUpdate operation."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -749,6 +812,14 @@ pub mod inbound_endpoints {
                 if_none_match: None,
             }
         }
+        #[doc = "Updates an inbound endpoint for a DNS resolver."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `dns_resolver_name`: The name of the DNS resolver."]
+        #[doc = "* `inbound_endpoint_name`: The name of the inbound endpoint for the DNS resolver."]
+        #[doc = "* `parameters`: Parameters supplied to the Update operation."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -767,6 +838,13 @@ pub mod inbound_endpoints {
                 if_match: None,
             }
         }
+        #[doc = "Deletes an inbound endpoint for a DNS resolver. WARNING: This operation cannot be undone."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `dns_resolver_name`: The name of the DNS resolver."]
+        #[doc = "* `inbound_endpoint_name`: The name of the inbound endpoint for the DNS resolver."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -783,6 +861,12 @@ pub mod inbound_endpoints {
                 if_match: None,
             }
         }
+        #[doc = "Lists inbound endpoints for a DNS resolver."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `dns_resolver_name`: The name of the DNS resolver."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -872,10 +956,12 @@ pub mod inbound_endpoints {
             pub(crate) if_none_match: Option<String>,
         }
         impl Builder {
+            #[doc = "ETag of the resource. Omit this value to always overwrite the current resource. Specify the last-seen ETag value to prevent accidentally overwriting any concurrent changes."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
             }
+            #[doc = "Set to '*' to allow a new resource to be created, but to prevent updating an existing resource. Other values will be ignored."]
             pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
                 self.if_none_match = Some(if_none_match.into());
                 self
@@ -954,6 +1040,7 @@ pub mod inbound_endpoints {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "ETag of the resource. Omit this value to always overwrite the current resource. Specify the last-seen ETag value to prevent accidentally overwriting any concurrent changes."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -1024,6 +1111,7 @@ pub mod inbound_endpoints {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "ETag of the resource. Omit this value to always overwrite the current resource. Specify the last-seen ETag value to prevent accidentally overwriting any concurrent changes."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -1084,6 +1172,7 @@ pub mod inbound_endpoints {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The maximum number of results to return. If not specified, returns up to 100 results."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -1163,6 +1252,13 @@ pub mod outbound_endpoints {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets properties of an outbound endpoint for a DNS resolver."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `dns_resolver_name`: The name of the DNS resolver."]
+        #[doc = "* `outbound_endpoint_name`: The name of the outbound endpoint for the DNS resolver."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1178,6 +1274,14 @@ pub mod outbound_endpoints {
                 outbound_endpoint_name: outbound_endpoint_name.into(),
             }
         }
+        #[doc = "Creates or updates an outbound endpoint for a DNS resolver."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `dns_resolver_name`: The name of the DNS resolver."]
+        #[doc = "* `outbound_endpoint_name`: The name of the outbound endpoint for the DNS resolver."]
+        #[doc = "* `parameters`: Parameters supplied to the CreateOrUpdate operation."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -1197,6 +1301,14 @@ pub mod outbound_endpoints {
                 if_none_match: None,
             }
         }
+        #[doc = "Updates an outbound endpoint for a DNS resolver."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `dns_resolver_name`: The name of the DNS resolver."]
+        #[doc = "* `outbound_endpoint_name`: The name of the outbound endpoint for the DNS resolver."]
+        #[doc = "* `parameters`: Parameters supplied to the Update operation."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -1215,6 +1327,13 @@ pub mod outbound_endpoints {
                 if_match: None,
             }
         }
+        #[doc = "Deletes an outbound endpoint for a DNS resolver. WARNING: This operation cannot be undone."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `dns_resolver_name`: The name of the DNS resolver."]
+        #[doc = "* `outbound_endpoint_name`: The name of the outbound endpoint for the DNS resolver."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1231,6 +1350,12 @@ pub mod outbound_endpoints {
                 if_match: None,
             }
         }
+        #[doc = "Lists outbound endpoints for a DNS resolver."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `dns_resolver_name`: The name of the DNS resolver."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -1320,10 +1445,12 @@ pub mod outbound_endpoints {
             pub(crate) if_none_match: Option<String>,
         }
         impl Builder {
+            #[doc = "ETag of the resource. Omit this value to always overwrite the current resource. Specify the last-seen ETag value to prevent accidentally overwriting any concurrent changes."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
             }
+            #[doc = "Set to '*' to allow a new resource to be created, but to prevent updating an existing resource. Other values will be ignored."]
             pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
                 self.if_none_match = Some(if_none_match.into());
                 self
@@ -1402,6 +1529,7 @@ pub mod outbound_endpoints {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "ETag of the resource. Omit this value to always overwrite the current resource. Specify the last-seen ETag value to prevent accidentally overwriting any concurrent changes."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -1472,6 +1600,7 @@ pub mod outbound_endpoints {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "ETag of the resource. Omit this value to always overwrite the current resource. Specify the last-seen ETag value to prevent accidentally overwriting any concurrent changes."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -1532,6 +1661,7 @@ pub mod outbound_endpoints {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The maximum number of results to return. If not specified, returns up to 100 results."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -1611,6 +1741,12 @@ pub mod dns_forwarding_rulesets {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a DNS forwarding ruleset properties."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `dns_forwarding_ruleset_name`: The name of the DNS forwarding ruleset."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1624,6 +1760,13 @@ pub mod dns_forwarding_rulesets {
                 dns_forwarding_ruleset_name: dns_forwarding_ruleset_name.into(),
             }
         }
+        #[doc = "Creates or updates a DNS forwarding ruleset."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `dns_forwarding_ruleset_name`: The name of the DNS forwarding ruleset."]
+        #[doc = "* `parameters`: Parameters supplied to the CreateOrUpdate operation."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -1641,6 +1784,13 @@ pub mod dns_forwarding_rulesets {
                 if_none_match: None,
             }
         }
+        #[doc = "Updates a DNS forwarding ruleset."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `dns_forwarding_ruleset_name`: The name of the DNS forwarding ruleset."]
+        #[doc = "* `parameters`: Parameters supplied to the Update operation."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -1657,6 +1807,12 @@ pub mod dns_forwarding_rulesets {
                 if_match: None,
             }
         }
+        #[doc = "Deletes a DNS forwarding ruleset. WARNING: This operation cannot be undone. All forwarding rules within the ruleset will be deleted."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `dns_forwarding_ruleset_name`: The name of the DNS forwarding ruleset."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1671,6 +1827,11 @@ pub mod dns_forwarding_rulesets {
                 if_match: None,
             }
         }
+        #[doc = "Lists DNS forwarding rulesets within a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -1683,6 +1844,10 @@ pub mod dns_forwarding_rulesets {
                 top: None,
             }
         }
+        #[doc = "Lists DNS forwarding rulesets in all resource groups of a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -1690,6 +1855,12 @@ pub mod dns_forwarding_rulesets {
                 top: None,
             }
         }
+        #[doc = "Lists DNS forwarding ruleset resource IDs attached to a virtual network."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `virtual_network_name`: The name of the virtual network."]
         pub fn list_by_virtual_network(
             &self,
             subscription_id: impl Into<String>,
@@ -1776,10 +1947,12 @@ pub mod dns_forwarding_rulesets {
             pub(crate) if_none_match: Option<String>,
         }
         impl Builder {
+            #[doc = "ETag of the resource. Omit this value to always overwrite the current resource. Specify the last-seen ETag value to prevent accidentally overwriting any concurrent changes."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
             }
+            #[doc = "Set to '*' to allow a new resource to be created, but to prevent updating an existing resource. Other values will be ignored."]
             pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
                 self.if_none_match = Some(if_none_match.into());
                 self
@@ -1856,6 +2029,7 @@ pub mod dns_forwarding_rulesets {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "ETag of the resource. Omit this value to always overwrite the current resource. Specify the last-seen ETag value to prevent accidentally overwriting any concurrent changes."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -1924,6 +2098,7 @@ pub mod dns_forwarding_rulesets {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "ETag of the resource. Omit this value to always overwrite the current resource. Specify the last-seen ETag value to prevent accidentally overwriting any concurrent changes."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -1982,6 +2157,7 @@ pub mod dns_forwarding_rulesets {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The maximum number of results to return. If not specified, returns up to 100 results."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -2065,6 +2241,7 @@ pub mod dns_forwarding_rulesets {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The maximum number of results to return. If not specified, returns up to 100 results."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -2149,6 +2326,7 @@ pub mod dns_forwarding_rulesets {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The maximum number of results to return. If not specified, returns up to 100 results."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -2223,6 +2401,13 @@ pub mod forwarding_rules {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets properties of a forwarding rule in a DNS forwarding ruleset."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `dns_forwarding_ruleset_name`: The name of the DNS forwarding ruleset."]
+        #[doc = "* `forwarding_rule_name`: The name of the forwarding rule."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -2238,6 +2423,14 @@ pub mod forwarding_rules {
                 forwarding_rule_name: forwarding_rule_name.into(),
             }
         }
+        #[doc = "Creates or updates a forwarding rule in a DNS forwarding ruleset."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `dns_forwarding_ruleset_name`: The name of the DNS forwarding ruleset."]
+        #[doc = "* `forwarding_rule_name`: The name of the forwarding rule."]
+        #[doc = "* `parameters`: Parameters supplied to the CreateOrUpdate operation."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -2257,6 +2450,14 @@ pub mod forwarding_rules {
                 if_none_match: None,
             }
         }
+        #[doc = "Updates a forwarding rule in a DNS forwarding ruleset."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `dns_forwarding_ruleset_name`: The name of the DNS forwarding ruleset."]
+        #[doc = "* `forwarding_rule_name`: The name of the forwarding rule."]
+        #[doc = "* `parameters`: Parameters supplied to the Update operation."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -2275,6 +2476,13 @@ pub mod forwarding_rules {
                 if_match: None,
             }
         }
+        #[doc = "Deletes a forwarding rule in a DNS forwarding ruleset. WARNING: This operation cannot be undone."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `dns_forwarding_ruleset_name`: The name of the DNS forwarding ruleset."]
+        #[doc = "* `forwarding_rule_name`: The name of the forwarding rule."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -2291,6 +2499,12 @@ pub mod forwarding_rules {
                 if_match: None,
             }
         }
+        #[doc = "Lists forwarding rules in a DNS forwarding ruleset."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `dns_forwarding_ruleset_name`: The name of the DNS forwarding ruleset."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -2379,10 +2593,12 @@ pub mod forwarding_rules {
             pub(crate) if_none_match: Option<String>,
         }
         impl Builder {
+            #[doc = "ETag of the resource. Omit this value to always overwrite the current resource. Specify the last-seen ETag value to prevent accidentally overwriting any concurrent changes."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
             }
+            #[doc = "Set to '*' to allow a new resource to be created, but to prevent updating an existing resource. Other values will be ignored."]
             pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
                 self.if_none_match = Some(if_none_match.into());
                 self
@@ -2455,6 +2671,7 @@ pub mod forwarding_rules {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "ETag of the resource. Omit this value to always overwrite the current resource. Specify the last-seen ETag value to prevent accidentally overwriting any concurrent changes."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -2522,6 +2739,7 @@ pub mod forwarding_rules {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "ETag of the resource. Omit this value to always overwrite the current resource. Specify the last-seen ETag value to prevent accidentally overwriting any concurrent changes."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -2580,6 +2798,7 @@ pub mod forwarding_rules {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The maximum number of results to return. If not specified, returns up to 100 results."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -2659,6 +2878,13 @@ pub mod virtual_network_links {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets properties of a virtual network link to a DNS forwarding ruleset."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `dns_forwarding_ruleset_name`: The name of the DNS forwarding ruleset."]
+        #[doc = "* `virtual_network_link_name`: The name of the virtual network link."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -2674,6 +2900,14 @@ pub mod virtual_network_links {
                 virtual_network_link_name: virtual_network_link_name.into(),
             }
         }
+        #[doc = "Creates or updates a virtual network link to a DNS forwarding ruleset."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `dns_forwarding_ruleset_name`: The name of the DNS forwarding ruleset."]
+        #[doc = "* `virtual_network_link_name`: The name of the virtual network link."]
+        #[doc = "* `parameters`: Parameters supplied to the CreateOrUpdate operation."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -2693,6 +2927,14 @@ pub mod virtual_network_links {
                 if_none_match: None,
             }
         }
+        #[doc = "Updates a virtual network link to a DNS forwarding ruleset."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `dns_forwarding_ruleset_name`: The name of the DNS forwarding ruleset."]
+        #[doc = "* `virtual_network_link_name`: The name of the virtual network link."]
+        #[doc = "* `parameters`: Parameters supplied to the Update operation."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -2711,6 +2953,13 @@ pub mod virtual_network_links {
                 if_match: None,
             }
         }
+        #[doc = "Deletes a virtual network link to a DNS forwarding ruleset. WARNING: This operation cannot be undone."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `dns_forwarding_ruleset_name`: The name of the DNS forwarding ruleset."]
+        #[doc = "* `virtual_network_link_name`: The name of the virtual network link."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -2727,6 +2976,12 @@ pub mod virtual_network_links {
                 if_match: None,
             }
         }
+        #[doc = "Lists virtual network links to a DNS forwarding ruleset."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `dns_forwarding_ruleset_name`: The name of the DNS forwarding ruleset."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -2809,10 +3064,12 @@ pub mod virtual_network_links {
             pub(crate) if_none_match: Option<String>,
         }
         impl Builder {
+            #[doc = "ETag of the resource. Omit this value to always overwrite the current resource. Specify the last-seen ETag value to prevent accidentally overwriting any concurrent changes."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
             }
+            #[doc = "Set to '*' to allow a new resource to be created, but to prevent updating an existing resource. Other values will be ignored."]
             pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
                 self.if_none_match = Some(if_none_match.into());
                 self
@@ -2884,6 +3141,7 @@ pub mod virtual_network_links {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "ETag of the resource. Omit this value to always overwrite the current resource. Specify the last-seen ETag value to prevent accidentally overwriting any concurrent changes."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -2947,6 +3205,7 @@ pub mod virtual_network_links {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "ETag of the resource. Omit this value to always overwrite the current resource. Specify the last-seen ETag value to prevent accidentally overwriting any concurrent changes."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -3000,6 +3259,7 @@ pub mod virtual_network_links {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The maximum number of results to return. If not specified, returns up to 100 results."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self

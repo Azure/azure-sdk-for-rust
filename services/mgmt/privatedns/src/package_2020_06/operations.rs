@@ -88,6 +88,12 @@ pub mod private_zones {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a Private DNS zone. Retrieves the zone properties, but not the virtual networks links or the record sets within the zone."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `private_zone_name`: The name of the Private DNS zone (without a terminating dot)."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -101,6 +107,13 @@ pub mod private_zones {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates a Private DNS zone. Does not modify Links to virtual networks or DNS records within the zone."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `private_zone_name`: The name of the Private DNS zone (without a terminating dot)."]
+        #[doc = "* `parameters`: Parameters supplied to the CreateOrUpdate operation."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -118,6 +131,13 @@ pub mod private_zones {
                 if_none_match: None,
             }
         }
+        #[doc = "Updates a Private DNS zone. Does not modify virtual network links or DNS records within the zone."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `private_zone_name`: The name of the Private DNS zone (without a terminating dot)."]
+        #[doc = "* `parameters`: Parameters supplied to the Update operation."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -134,6 +154,12 @@ pub mod private_zones {
                 if_match: None,
             }
         }
+        #[doc = "Deletes a Private DNS zone. WARNING: All DNS records in the zone will also be deleted. This operation cannot be undone. Private DNS zone cannot be deleted unless all virtual network links to it are removed."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `private_zone_name`: The name of the Private DNS zone (without a terminating dot)."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -148,6 +174,10 @@ pub mod private_zones {
                 if_match: None,
             }
         }
+        #[doc = "Lists the Private DNS zones in all resource groups in a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -155,6 +185,11 @@ pub mod private_zones {
                 top: None,
             }
         }
+        #[doc = "Lists the Private DNS zones within a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_resource_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -239,10 +274,12 @@ pub mod private_zones {
             pub(crate) if_none_match: Option<String>,
         }
         impl Builder {
+            #[doc = "The ETag of the Private DNS zone. Omit this value to always overwrite the current zone. Specify the last-seen ETag value to prevent accidentally overwriting any concurrent changes."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
             }
+            #[doc = "Set to '*' to allow a new Private DNS zone to be created, but to prevent updating an existing zone. Other values will be ignored."]
             pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
                 self.if_none_match = Some(if_none_match.into());
                 self
@@ -319,6 +356,7 @@ pub mod private_zones {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "The ETag of the Private DNS zone. Omit this value to always overwrite the current zone. Specify the last-seen ETag value to prevent accidentally overwriting any concurrent changes."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -387,6 +425,7 @@ pub mod private_zones {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "The ETag of the Private DNS zone. Omit this value to always delete the current zone. Specify the last-seen ETag value to prevent accidentally deleting any concurrent changes."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -444,6 +483,7 @@ pub mod private_zones {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The maximum number of Private DNS zones to return. If not specified, returns up to 100 zones."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -527,6 +567,7 @@ pub mod private_zones {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The maximum number of record sets to return. If not specified, returns up to 100 record sets."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -605,6 +646,13 @@ pub mod virtual_network_links {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a virtual network link to the specified Private DNS zone."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `private_zone_name`: The name of the Private DNS zone (without a terminating dot)."]
+        #[doc = "* `virtual_network_link_name`: The name of the virtual network link."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -620,6 +668,14 @@ pub mod virtual_network_links {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates a virtual network link to the specified Private DNS zone."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `private_zone_name`: The name of the Private DNS zone (without a terminating dot)."]
+        #[doc = "* `virtual_network_link_name`: The name of the virtual network link."]
+        #[doc = "* `parameters`: Parameters supplied to the CreateOrUpdate operation."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -639,6 +695,14 @@ pub mod virtual_network_links {
                 if_none_match: None,
             }
         }
+        #[doc = "Updates a virtual network link to the specified Private DNS zone."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `private_zone_name`: The name of the Private DNS zone (without a terminating dot)."]
+        #[doc = "* `virtual_network_link_name`: The name of the virtual network link."]
+        #[doc = "* `parameters`: Parameters supplied to the Update operation."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -657,6 +721,13 @@ pub mod virtual_network_links {
                 if_match: None,
             }
         }
+        #[doc = "Deletes a virtual network link to the specified Private DNS zone. WARNING: In case of a registration virtual network, all auto-registered DNS records in the zone for the virtual network will also be deleted. This operation cannot be undone."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `private_zone_name`: The name of the Private DNS zone (without a terminating dot)."]
+        #[doc = "* `virtual_network_link_name`: The name of the virtual network link."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -673,6 +744,12 @@ pub mod virtual_network_links {
                 if_match: None,
             }
         }
+        #[doc = "Lists the virtual network links to the specified Private DNS zone."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `private_zone_name`: The name of the Private DNS zone (without a terminating dot)."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(
             &self,
             resource_group_name: impl Into<String>,
@@ -762,10 +839,12 @@ pub mod virtual_network_links {
             pub(crate) if_none_match: Option<String>,
         }
         impl Builder {
+            #[doc = "The ETag of the virtual network link to the Private DNS zone. Omit this value to always overwrite the current virtual network link. Specify the last-seen ETag value to prevent accidentally overwriting any concurrent changes."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
             }
+            #[doc = "Set to '*' to allow a new virtual network link to the Private DNS zone to be created, but to prevent updating an existing link. Other values will be ignored."]
             pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
                 self.if_none_match = Some(if_none_match.into());
                 self
@@ -844,6 +923,7 @@ pub mod virtual_network_links {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "The ETag of the virtual network link to the Private DNS zone. Omit this value to always overwrite the current virtual network link. Specify the last-seen ETag value to prevent accidentally overwriting any concurrent changes."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -914,6 +994,7 @@ pub mod virtual_network_links {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "The ETag of the virtual network link to the Private DNS zone. Omit this value to always delete the current zone. Specify the last-seen ETag value to prevent accidentally deleting any concurrent changes."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -974,6 +1055,7 @@ pub mod virtual_network_links {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The maximum number of virtual network links to return. If not specified, returns up to 100 virtual network links."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -1053,6 +1135,14 @@ pub mod record_sets {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a record set."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `private_zone_name`: The name of the Private DNS zone (without a terminating dot)."]
+        #[doc = "* `record_type`: The type of DNS record in this record set."]
+        #[doc = "* `relative_record_set_name`: The name of the record set, relative to the name of the zone."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -1070,6 +1160,15 @@ pub mod record_sets {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates a record set within a Private DNS zone."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `private_zone_name`: The name of the Private DNS zone (without a terminating dot)."]
+        #[doc = "* `record_type`: The type of DNS record in this record set. Record sets of type SOA can be updated but not created (they are created when the Private DNS zone is created)."]
+        #[doc = "* `relative_record_set_name`: The name of the record set, relative to the name of the zone."]
+        #[doc = "* `parameters`: Parameters supplied to the CreateOrUpdate operation."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -1091,6 +1190,15 @@ pub mod record_sets {
                 if_none_match: None,
             }
         }
+        #[doc = "Updates a record set within a Private DNS zone."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `private_zone_name`: The name of the Private DNS zone (without a terminating dot)."]
+        #[doc = "* `record_type`: The type of DNS record in this record set."]
+        #[doc = "* `relative_record_set_name`: The name of the record set, relative to the name of the zone."]
+        #[doc = "* `parameters`: Parameters supplied to the Update operation."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -1111,6 +1219,14 @@ pub mod record_sets {
                 if_match: None,
             }
         }
+        #[doc = "Deletes a record set from a Private DNS zone. This operation cannot be undone."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `private_zone_name`: The name of the Private DNS zone (without a terminating dot)."]
+        #[doc = "* `record_type`: The type of DNS record in this record set. Record sets of type SOA cannot be deleted (they are deleted when the Private DNS zone is deleted)."]
+        #[doc = "* `relative_record_set_name`: The name of the record set, relative to the name of the zone."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -1129,6 +1245,13 @@ pub mod record_sets {
                 if_match: None,
             }
         }
+        #[doc = "Lists the record sets of a specified type in a Private DNS zone."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `private_zone_name`: The name of the Private DNS zone (without a terminating dot)."]
+        #[doc = "* `record_type`: The type of record sets to enumerate."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_type(
             &self,
             resource_group_name: impl Into<String>,
@@ -1146,6 +1269,12 @@ pub mod record_sets {
                 recordsetnamesuffix: None,
             }
         }
+        #[doc = "Lists all record sets in a Private DNS zone."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `private_zone_name`: The name of the Private DNS zone (without a terminating dot)."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(
             &self,
             resource_group_name: impl Into<String>,
@@ -1238,10 +1367,12 @@ pub mod record_sets {
             pub(crate) if_none_match: Option<String>,
         }
         impl Builder {
+            #[doc = "The ETag of the record set. Omit this value to always overwrite the current record set. Specify the last-seen ETag value to prevent accidentally overwriting any concurrent changes."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
             }
+            #[doc = "Set to '*' to allow a new record set to be created, but to prevent updating an existing record set. Other values will be ignored."]
             pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
                 self.if_none_match = Some(if_none_match.into());
                 self
@@ -1316,6 +1447,7 @@ pub mod record_sets {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "The ETag of the record set. Omit this value to always overwrite the current record set. Specify the last-seen ETag value to prevent accidentally overwriting concurrent changes."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -1385,6 +1517,7 @@ pub mod record_sets {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "The ETag of the record set. Omit this value to always delete the current record set. Specify the last-seen ETag value to prevent accidentally deleting any concurrent changes."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -1446,10 +1579,12 @@ pub mod record_sets {
             pub(crate) recordsetnamesuffix: Option<String>,
         }
         impl Builder {
+            #[doc = "The maximum number of record sets to return. If not specified, returns up to 100 record sets."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "The suffix label of the record set name to be used to filter the record set enumeration. If this parameter is specified, the returned enumeration will only contain records that end with \".<recordsetnamesuffix>\"."]
             pub fn recordsetnamesuffix(mut self, recordsetnamesuffix: impl Into<String>) -> Self {
                 self.recordsetnamesuffix = Some(recordsetnamesuffix.into());
                 self
@@ -1543,10 +1678,12 @@ pub mod record_sets {
             pub(crate) recordsetnamesuffix: Option<String>,
         }
         impl Builder {
+            #[doc = "The maximum number of record sets to return. If not specified, returns up to 100 record sets."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "The suffix label of the record set name to be used to filter the record set enumeration. If this parameter is specified, the returned enumeration will only contain records that end with \".<recordsetnamesuffix>\"."]
             pub fn recordsetnamesuffix(mut self, recordsetnamesuffix: impl Into<String>) -> Self {
                 self.recordsetnamesuffix = Some(recordsetnamesuffix.into());
                 self

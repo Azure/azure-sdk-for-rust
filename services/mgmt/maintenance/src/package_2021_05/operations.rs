@@ -104,6 +104,9 @@ pub mod public_maintenance_configurations {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get Public Maintenance Configuration records"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -111,6 +114,10 @@ pub mod public_maintenance_configurations {
             }
         }
         #[doc = "Get Public Maintenance Configuration record"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_name`: Maintenance Configuration Name"]
         pub fn get(&self, subscription_id: impl Into<String>, resource_name: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -224,6 +231,17 @@ pub mod apply_updates {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Track Updates to resource with parent"]
+        #[doc = "Track maintenance updates to resource with parent"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Resource group name"]
+        #[doc = "* `resource_parent_type`: Resource parent type"]
+        #[doc = "* `resource_parent_name`: Resource parent identifier"]
+        #[doc = "* `provider_name`: Resource provider name"]
+        #[doc = "* `resource_type`: Resource type"]
+        #[doc = "* `resource_name`: Resource identifier"]
+        #[doc = "* `apply_update_name`: applyUpdate Id"]
         pub fn get_parent(
             &self,
             subscription_id: impl Into<String>,
@@ -248,6 +266,15 @@ pub mod apply_updates {
             }
         }
         #[doc = "Track Updates to resource"]
+        #[doc = "Track maintenance updates to resource"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Resource group name"]
+        #[doc = "* `provider_name`: Resource provider name"]
+        #[doc = "* `resource_type`: Resource type"]
+        #[doc = "* `resource_name`: Resource identifier"]
+        #[doc = "* `apply_update_name`: applyUpdate Id"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -268,6 +295,16 @@ pub mod apply_updates {
             }
         }
         #[doc = "Apply Updates to resource with parent"]
+        #[doc = "Apply maintenance updates to resource with parent"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Resource group name"]
+        #[doc = "* `provider_name`: Resource provider name"]
+        #[doc = "* `resource_parent_type`: Resource parent type"]
+        #[doc = "* `resource_parent_name`: Resource parent identifier"]
+        #[doc = "* `resource_type`: Resource type"]
+        #[doc = "* `resource_name`: Resource identifier"]
         pub fn create_or_update_parent(
             &self,
             subscription_id: impl Into<String>,
@@ -290,6 +327,14 @@ pub mod apply_updates {
             }
         }
         #[doc = "Apply Updates to resource"]
+        #[doc = "Apply maintenance updates to resource"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Resource group name"]
+        #[doc = "* `provider_name`: Resource provider name"]
+        #[doc = "* `resource_type`: Resource type"]
+        #[doc = "* `resource_name`: Resource identifier"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -308,6 +353,9 @@ pub mod apply_updates {
             }
         }
         #[doc = "Get Configuration records within a subscription"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -585,6 +633,18 @@ pub mod configuration_assignments {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Create configuration assignment"]
+        #[doc = "Register configuration for resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Resource group name"]
+        #[doc = "* `provider_name`: Resource provider name"]
+        #[doc = "* `resource_parent_type`: Resource parent type"]
+        #[doc = "* `resource_parent_name`: Resource parent identifier"]
+        #[doc = "* `resource_type`: Resource type"]
+        #[doc = "* `resource_name`: Resource identifier"]
+        #[doc = "* `configuration_assignment_name`: Configuration assignment name"]
+        #[doc = "* `configuration_assignment`: The configurationAssignment"]
         pub fn create_or_update_parent(
             &self,
             subscription_id: impl Into<String>,
@@ -611,6 +671,17 @@ pub mod configuration_assignments {
             }
         }
         #[doc = "Unregister configuration for resource"]
+        #[doc = "Unregister configuration for resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Resource group name"]
+        #[doc = "* `provider_name`: Resource provider name"]
+        #[doc = "* `resource_parent_type`: Resource parent type"]
+        #[doc = "* `resource_parent_name`: Resource parent identifier"]
+        #[doc = "* `resource_type`: Resource type"]
+        #[doc = "* `resource_name`: Resource identifier"]
+        #[doc = "* `configuration_assignment_name`: Unique configuration assignment name"]
         pub fn delete_parent(
             &self,
             subscription_id: impl Into<String>,
@@ -635,6 +706,16 @@ pub mod configuration_assignments {
             }
         }
         #[doc = "Create configuration assignment"]
+        #[doc = "Register configuration for resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Resource group name"]
+        #[doc = "* `provider_name`: Resource provider name"]
+        #[doc = "* `resource_type`: Resource type"]
+        #[doc = "* `resource_name`: Resource identifier"]
+        #[doc = "* `configuration_assignment_name`: Configuration assignment name"]
+        #[doc = "* `configuration_assignment`: The configurationAssignment"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -657,6 +738,15 @@ pub mod configuration_assignments {
             }
         }
         #[doc = "Unregister configuration for resource"]
+        #[doc = "Unregister configuration for resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Resource group name"]
+        #[doc = "* `provider_name`: Resource provider name"]
+        #[doc = "* `resource_type`: Resource type"]
+        #[doc = "* `resource_name`: Resource identifier"]
+        #[doc = "* `configuration_assignment_name`: Unique configuration assignment name"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -677,6 +767,16 @@ pub mod configuration_assignments {
             }
         }
         #[doc = "List configurationAssignments for resource"]
+        #[doc = "List configurationAssignments for resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Resource group name"]
+        #[doc = "* `provider_name`: Resource provider name"]
+        #[doc = "* `resource_parent_type`: Resource parent type"]
+        #[doc = "* `resource_parent_name`: Resource parent identifier"]
+        #[doc = "* `resource_type`: Resource type"]
+        #[doc = "* `resource_name`: Resource identifier"]
         pub fn list_parent(
             &self,
             subscription_id: impl Into<String>,
@@ -699,6 +799,14 @@ pub mod configuration_assignments {
             }
         }
         #[doc = "List configurationAssignments for resource"]
+        #[doc = "List configurationAssignments for resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Resource group name"]
+        #[doc = "* `provider_name`: Resource provider name"]
+        #[doc = "* `resource_type`: Resource type"]
+        #[doc = "* `resource_name`: Resource identifier"]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -1037,6 +1145,11 @@ pub mod maintenance_configurations {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get Configuration record"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Resource Group Name"]
+        #[doc = "* `resource_name`: Maintenance Configuration Name"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1051,6 +1164,12 @@ pub mod maintenance_configurations {
             }
         }
         #[doc = "Create or Update configuration record"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Resource Group Name"]
+        #[doc = "* `resource_name`: Maintenance Configuration Name"]
+        #[doc = "* `configuration`: The configuration"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -1067,6 +1186,12 @@ pub mod maintenance_configurations {
             }
         }
         #[doc = "Patch configuration record"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Resource Group Name"]
+        #[doc = "* `resource_name`: Maintenance Configuration Name"]
+        #[doc = "* `configuration`: The configuration"]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -1083,6 +1208,11 @@ pub mod maintenance_configurations {
             }
         }
         #[doc = "Delete Configuration record"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Resource Group Name"]
+        #[doc = "* `resource_name`: Maintenance Configuration Name"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1097,6 +1227,9 @@ pub mod maintenance_configurations {
             }
         }
         #[doc = "Get Configuration records within a subscription"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -1376,6 +1509,10 @@ pub mod maintenance_configurations_for_resource_group {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get Configuration records within a subscription and resource group"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Resource Group Name"]
         pub fn list(&self, subscription_id: impl Into<String>, resource_group_name: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -1441,6 +1578,10 @@ pub mod apply_update_for_resource_group {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get Configuration records within a subscription and resource group"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Resource Group Name"]
         pub fn list(&self, subscription_id: impl Into<String>, resource_group_name: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -1506,6 +1647,7 @@ pub mod operations {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "List available operations"]
+        #[doc = "List the available operations supported by the Microsoft.Maintenance resource provider"]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -1561,6 +1703,16 @@ pub mod updates {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get Updates to resource"]
+        #[doc = "Get updates to resources."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Resource group name"]
+        #[doc = "* `provider_name`: Resource provider name"]
+        #[doc = "* `resource_parent_type`: Resource parent type"]
+        #[doc = "* `resource_parent_name`: Resource parent identifier"]
+        #[doc = "* `resource_type`: Resource type"]
+        #[doc = "* `resource_name`: Resource identifier"]
         pub fn list_parent(
             &self,
             subscription_id: impl Into<String>,
@@ -1583,6 +1735,14 @@ pub mod updates {
             }
         }
         #[doc = "Get Updates to resource"]
+        #[doc = "Get updates to resources."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Resource group name"]
+        #[doc = "* `provider_name`: Resource provider name"]
+        #[doc = "* `resource_type`: Resource type"]
+        #[doc = "* `resource_name`: Resource identifier"]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,

@@ -85,6 +85,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all the available API operations for Load Test Resource."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -166,12 +167,21 @@ pub mod load_tests {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists loadtests resources in a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists loadtest resources in a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -183,6 +193,12 @@ pub mod load_tests {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Get a LoadTest resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `load_test_name`: Load Test resource name."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -196,6 +212,13 @@ pub mod load_tests {
                 load_test_name: load_test_name.into(),
             }
         }
+        #[doc = "Create or update LoadTest resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `load_test_name`: Load Test resource name."]
+        #[doc = "* `load_test_resource`: LoadTest resource data"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -211,6 +234,13 @@ pub mod load_tests {
                 load_test_resource: load_test_resource.into(),
             }
         }
+        #[doc = "Update a loadtest resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `load_test_name`: Load Test resource name."]
+        #[doc = "* `load_test_resource_patch_request_body`: LoadTest resource update data"]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -226,6 +256,12 @@ pub mod load_tests {
                 load_test_resource_patch_request_body: load_test_resource_patch_request_body.into(),
             }
         }
+        #[doc = "Delete a LoadTest resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `load_test_name`: Load Test resource name."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,

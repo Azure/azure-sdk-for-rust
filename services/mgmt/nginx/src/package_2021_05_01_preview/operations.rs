@@ -92,6 +92,12 @@ pub mod certificates {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get a certificate of given Nginx deployment"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `deployment_name`: The name of targeted Nginx deployment"]
+        #[doc = "* `certificate_name`: The name of certificate"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -108,6 +114,12 @@ pub mod certificates {
             }
         }
         #[doc = "Create or update the Nginx certificates for given Nginx deployment"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `deployment_name`: The name of targeted Nginx deployment"]
+        #[doc = "* `certificate_name`: The name of certificate"]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -125,6 +137,12 @@ pub mod certificates {
             }
         }
         #[doc = "Deletes a certificate from the nginx deployment"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `deployment_name`: The name of targeted Nginx deployment"]
+        #[doc = "* `certificate_name`: The name of certificate"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -141,6 +159,11 @@ pub mod certificates {
             }
         }
         #[doc = "List all certificates of given Nginx deployment"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `deployment_name`: The name of targeted Nginx deployment"]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -223,6 +246,7 @@ pub mod certificates {
             pub(crate) body: Option<models::NginxCertificate>,
         }
         impl Builder {
+            #[doc = "The certificate"]
             pub fn body(mut self, body: impl Into<models::NginxCertificate>) -> Self {
                 self.body = Some(body.into());
                 self
@@ -416,6 +440,11 @@ pub mod configurations {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "List the Nginx configuration of given Nginx deployment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `deployment_name`: The name of targeted Nginx deployment"]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -430,6 +459,12 @@ pub mod configurations {
             }
         }
         #[doc = "Get the Nginx configuration of given Nginx deployment"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `deployment_name`: The name of targeted Nginx deployment"]
+        #[doc = "* `configuration_name`: The name of configuration, only 'default' is supported value due to the singleton of Nginx conf"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -446,6 +481,12 @@ pub mod configurations {
             }
         }
         #[doc = "Create or update the Nginx configuration for given Nginx deployment"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `deployment_name`: The name of targeted Nginx deployment"]
+        #[doc = "* `configuration_name`: The name of configuration, only 'default' is supported value due to the singleton of Nginx conf"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -463,6 +504,12 @@ pub mod configurations {
             }
         }
         #[doc = "Reset the Nginx configuration of given Nginx deployment to default"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `deployment_name`: The name of targeted Nginx deployment"]
+        #[doc = "* `configuration_name`: The name of configuration, only 'default' is supported value due to the singleton of Nginx conf"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -625,6 +672,7 @@ pub mod configurations {
             pub(crate) body: Option<models::NginxConfiguration>,
         }
         impl Builder {
+            #[doc = "The Nginx configuration"]
             pub fn body(mut self, body: impl Into<models::NginxConfiguration>) -> Self {
                 self.body = Some(body.into());
                 self
@@ -740,6 +788,11 @@ pub mod deployments {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get the Nginx deployment"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `deployment_name`: The name of targeted Nginx deployment"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -754,6 +807,11 @@ pub mod deployments {
             }
         }
         #[doc = "Create or update the Nginx deployment"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `deployment_name`: The name of targeted Nginx deployment"]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -769,6 +827,11 @@ pub mod deployments {
             }
         }
         #[doc = "Update the Nginx deployment"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `deployment_name`: The name of targeted Nginx deployment"]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -784,6 +847,11 @@ pub mod deployments {
             }
         }
         #[doc = "Delete the Nginx deployment resource"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `deployment_name`: The name of targeted Nginx deployment"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -798,6 +866,9 @@ pub mod deployments {
             }
         }
         #[doc = "List the Nginx deployments resources"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -805,6 +876,10 @@ pub mod deployments {
             }
         }
         #[doc = "List all Nginx deployments under the specified resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,

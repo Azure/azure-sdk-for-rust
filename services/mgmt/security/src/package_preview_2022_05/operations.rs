@@ -82,12 +82,21 @@ pub mod security_connectors {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all the security connectors in the specified subscription. Use the 'nextLink' property in the response to get the next page of security connectors for the specified subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure subscription ID"]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists all the security connectors in the specified resource group. Use the 'nextLink' property in the response to get the next page of security connectors for the specified resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure subscription ID"]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription. The name is case insensitive."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -99,6 +108,12 @@ pub mod security_connectors {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Retrieves details of a specific security connector"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure subscription ID"]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription. The name is case insensitive."]
+        #[doc = "* `security_connector_name`: The security connector name."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -112,6 +127,13 @@ pub mod security_connectors {
                 security_connector_name: security_connector_name.into(),
             }
         }
+        #[doc = "Creates or updates a security connector. If a security connector is already created and a subsequent request is issued for the same security connector id, then it will be updated."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure subscription ID"]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription. The name is case insensitive."]
+        #[doc = "* `security_connector_name`: The security connector name."]
+        #[doc = "* `security_connector`: The security connector resource"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -127,6 +149,13 @@ pub mod security_connectors {
                 security_connector: security_connector.into(),
             }
         }
+        #[doc = "Updates a security connector"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure subscription ID"]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription. The name is case insensitive."]
+        #[doc = "* `security_connector_name`: The security connector name."]
+        #[doc = "* `security_connector`: The security connector resource"]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -142,6 +171,12 @@ pub mod security_connectors {
                 security_connector: security_connector.into(),
             }
         }
+        #[doc = "Deletes a security connector."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure subscription ID"]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription. The name is case insensitive."]
+        #[doc = "* `security_connector_name`: The security connector name."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,

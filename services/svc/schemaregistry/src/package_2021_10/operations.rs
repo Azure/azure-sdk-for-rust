@@ -86,6 +86,7 @@ pub mod schema_groups {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get list of schema groups."]
+        #[doc = "Gets the list of schema groups user is authorized to access."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -139,6 +140,10 @@ pub mod schema {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get a registered schema by its unique ID reference."]
+        #[doc = "Gets a registered schema by its unique ID.  Azure Schema Registry guarantees that ID is unique within a namespace. Operation response type is based on serialization of schema requested."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `id`: References specific schema in registry namespace."]
         pub fn get_by_id(&self, id: impl Into<String>) -> get_by_id::Builder {
             get_by_id::Builder {
                 client: self.0.clone(),
@@ -146,6 +151,11 @@ pub mod schema {
             }
         }
         #[doc = "Get list schema versions."]
+        #[doc = "Gets the list of all versions of one schema."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `group_name`: Schema group under which schema is registered.  Group's serialization type should match the serialization type specified in the request."]
+        #[doc = "* `schema_name`: Name of schema."]
         pub fn get_versions(&self, group_name: impl Into<String>, schema_name: impl Into<String>) -> get_versions::Builder {
             get_versions::Builder {
                 client: self.0.clone(),
@@ -154,6 +164,12 @@ pub mod schema {
             }
         }
         #[doc = "Get ID for existing schema."]
+        #[doc = "Gets the ID referencing an existing schema within the specified schema group, as matched by schema content comparison."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `group_name`: Schema group under which schema is registered.  Group's serialization type should match the serialization type specified in the request."]
+        #[doc = "* `schema_name`: Name of schema."]
+        #[doc = "* `schema_content`: String representation (UTF-8) of the registered schema."]
         pub fn query_id_by_content(
             &self,
             group_name: impl Into<String>,
@@ -168,6 +184,12 @@ pub mod schema {
             }
         }
         #[doc = "Register new schema"]
+        #[doc = "Register new schema. If schema of specified name does not exist in specified group, schema is created at version 1. If schema of specified name exists already in specified group, schema is created at latest version + 1.\n"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `group_name`: Schema group under which schema should be registered.  Group's serialization type should match the serialization type specified in the request."]
+        #[doc = "* `schema_name`: Name of schema."]
+        #[doc = "* `schema_content`: String representation (UTF-8) of the schema being registered."]
         pub fn register(
             &self,
             group_name: impl Into<String>,

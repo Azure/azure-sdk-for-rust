@@ -76,10 +76,18 @@ impl Client {
     }
 }
 impl Client {
+    #[doc = "This method gets all the operations that are exposed for customer."]
     pub fn list_operations_partner(&self) -> list_operations_partner::Builder {
         list_operations_partner::Builder { client: self.clone() }
     }
     #[doc = "API for updating inventory metadata and inventory configuration"]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `family_identifier`: Unique identifier for the product family"]
+    #[doc = "* `subscription_id`: The ID of the target subscription."]
+    #[doc = "* `location`: The location of the resource"]
+    #[doc = "* `serial_number`: The serial number of the device"]
+    #[doc = "* `manage_inventory_metadata_request`: Updates inventory metadata and inventory configuration"]
     pub fn manage_inventory_metadata(
         &self,
         family_identifier: impl Into<String>,
@@ -98,6 +106,13 @@ impl Client {
         }
     }
     #[doc = "API for linking management resource with inventory"]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `family_identifier`: Unique identifier for the product family"]
+    #[doc = "* `subscription_id`: The ID of the target subscription."]
+    #[doc = "* `location`: The location of the resource"]
+    #[doc = "* `serial_number`: The serial number of the device"]
+    #[doc = "* `manage_link_request`: Links the management resource to the inventory"]
     pub fn manage_link(
         &self,
         family_identifier: impl Into<String>,
@@ -116,6 +131,10 @@ impl Client {
         }
     }
     #[doc = "API for Search inventories"]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `subscription_id`: The ID of the target subscription."]
+    #[doc = "* `search_inventories_request`: Searches inventories with the given filters and returns in the form of a list"]
     pub fn search_inventories(
         &self,
         subscription_id: impl Into<String>,

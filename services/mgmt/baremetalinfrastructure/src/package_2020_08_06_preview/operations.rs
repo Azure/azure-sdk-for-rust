@@ -85,6 +85,12 @@ pub mod azure_bare_metal_instances {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "The operation to start an AzureBareMetal instance"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `azure_bare_metal_instance_name`: Name of the Azure BareMetal on Azure instance."]
         pub fn start(
             &self,
             subscription_id: impl Into<String>,
@@ -98,6 +104,12 @@ pub mod azure_bare_metal_instances {
                 azure_bare_metal_instance_name: azure_bare_metal_instance_name.into(),
             }
         }
+        #[doc = "The operation to restart an AzureBareMetal instance"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `azure_bare_metal_instance_name`: Name of the Azure BareMetal on Azure instance."]
         pub fn restart(
             &self,
             subscription_id: impl Into<String>,
@@ -111,6 +123,12 @@ pub mod azure_bare_metal_instances {
                 azure_bare_metal_instance_name: azure_bare_metal_instance_name.into(),
             }
         }
+        #[doc = "The operation to shutdown an AzureBareMetal instance"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `azure_bare_metal_instance_name`: Name of the Azure BareMetal on Azure instance."]
         pub fn shutdown(
             &self,
             subscription_id: impl Into<String>,
@@ -125,12 +143,21 @@ pub mod azure_bare_metal_instances {
             }
         }
         #[doc = "Gets a list of Azure BareMetal instances in the specified subscription."]
+        #[doc = "Gets a list of AzureBareMetal instances in the specified subscription. The operations returns various properties of each Azure BareMetal instance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets a list of AzureBareMetal instances in the specified subscription and resource group"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
         pub fn list(&self, subscription_id: impl Into<String>, resource_group_name: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -139,6 +166,12 @@ pub mod azure_bare_metal_instances {
             }
         }
         #[doc = "Gets an Azure BareMetal instance."]
+        #[doc = "Gets an Azure BareMetal instance for the specified subscription, resource group, and instance name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `azure_bare_metal_instance_name`: Name of the Azure BareMetal on Azure instance."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -153,6 +186,13 @@ pub mod azure_bare_metal_instances {
             }
         }
         #[doc = "Patches the Tags field of a Azure BareMetal instance."]
+        #[doc = "Patches the Tags field of a Azure BareMetal instance for the specified subscription, resource group, and instance name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `azure_bare_metal_instance_name`: Name of the Azure BareMetal on Azure instance."]
+        #[doc = "* `tags_parameter`: Request body that only contains the new Tags field"]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -169,6 +209,12 @@ pub mod azure_bare_metal_instances {
             }
         }
         #[doc = "Deletes a Azure BareMetal instance."]
+        #[doc = "Deletes a Azure BareMetal instance with the specified subscription, resource group, and instance name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `azure_bare_metal_instance_name`: Name of the Azure BareMetal on Azure instance."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -653,6 +699,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a list of AzureBareMetal management operations."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }

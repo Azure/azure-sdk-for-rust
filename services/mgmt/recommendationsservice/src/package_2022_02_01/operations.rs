@@ -94,6 +94,11 @@ pub mod accounts {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Checks that the RecommendationsService Account name is valid and is not already in use."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `body`: Check name availability request details."]
         pub fn check_name_availability(
             &self,
             subscription_id: impl Into<String>,
@@ -105,12 +110,21 @@ pub mod accounts {
                 body: body.into(),
             }
         }
+        #[doc = "Returns list of RecommendationsService Account resources."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Returns list of RecommendationsService Account resources."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -122,6 +136,12 @@ pub mod accounts {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Returns RecommendationsService Account resource for a given name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of the RecommendationsService Account resource."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -135,6 +155,13 @@ pub mod accounts {
                 account_name: account_name.into(),
             }
         }
+        #[doc = "Creates or updates RecommendationsService Account resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of the RecommendationsService Account resource."]
+        #[doc = "* `body`: Account details."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -150,6 +177,13 @@ pub mod accounts {
                 body: body.into(),
             }
         }
+        #[doc = "Updates RecommendationsService Account details."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of the RecommendationsService Account resource."]
+        #[doc = "* `body`: Account resource patch details."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -165,6 +199,12 @@ pub mod accounts {
                 body: body.into(),
             }
         }
+        #[doc = "Deletes RecommendationsService Account resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of the RecommendationsService Account resource."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -178,6 +218,12 @@ pub mod accounts {
                 account_name: account_name.into(),
             }
         }
+        #[doc = "Returns RecommendationsService Account status."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of the RecommendationsService Account resource."]
         pub fn get_status(
             &self,
             subscription_id: impl Into<String>,
@@ -686,6 +732,12 @@ pub mod modeling {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Returns list of Modeling resources for a given Account name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of the RecommendationsService Account resource."]
         pub fn list_by_account_resource(
             &self,
             subscription_id: impl Into<String>,
@@ -699,6 +751,13 @@ pub mod modeling {
                 account_name: account_name.into(),
             }
         }
+        #[doc = "Returns Modeling resources for a given name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of the RecommendationsService Account resource."]
+        #[doc = "* `modeling_name`: The name of the Modeling resource."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -714,6 +773,14 @@ pub mod modeling {
                 modeling_name: modeling_name.into(),
             }
         }
+        #[doc = "Creates or updates Modeling resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of the RecommendationsService Account resource."]
+        #[doc = "* `modeling_name`: The name of the Modeling resource."]
+        #[doc = "* `body`: Modeling resource details."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -731,6 +798,14 @@ pub mod modeling {
                 body: body.into(),
             }
         }
+        #[doc = "Updates Modeling resource details."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of the RecommendationsService Account resource."]
+        #[doc = "* `modeling_name`: The name of the Modeling resource."]
+        #[doc = "* `body`: Modeling resource patch details."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -748,6 +823,13 @@ pub mod modeling {
                 body: body.into(),
             }
         }
+        #[doc = "Deletes Modeling resources of a given name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of the RecommendationsService Account resource."]
+        #[doc = "* `modeling_name`: The name of the Modeling resource."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1091,6 +1173,12 @@ pub mod service_endpoints {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Returns list of ServiceEndpoint resources for a given Account name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of the RecommendationsService Account resource."]
         pub fn list_by_account_resource(
             &self,
             subscription_id: impl Into<String>,
@@ -1104,6 +1192,13 @@ pub mod service_endpoints {
                 account_name: account_name.into(),
             }
         }
+        #[doc = "Returns ServiceEndpoint resources for a given name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of the RecommendationsService Account resource."]
+        #[doc = "* `service_endpoint_name`: The name of the ServiceEndpoint resource."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1119,6 +1214,14 @@ pub mod service_endpoints {
                 service_endpoint_name: service_endpoint_name.into(),
             }
         }
+        #[doc = "Creates or updates ServiceEndpoint resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of the RecommendationsService Account resource."]
+        #[doc = "* `service_endpoint_name`: The name of the ServiceEndpoint resource."]
+        #[doc = "* `body`: ServiceEndpoint resource details."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -1136,6 +1239,14 @@ pub mod service_endpoints {
                 body: body.into(),
             }
         }
+        #[doc = "Updates ServiceEndpoint resource details."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of the RecommendationsService Account resource."]
+        #[doc = "* `service_endpoint_name`: The name of the ServiceEndpoint resource."]
+        #[doc = "* `body`: ServiceEndpoint resource patch details."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -1153,6 +1264,13 @@ pub mod service_endpoints {
                 body: body.into(),
             }
         }
+        #[doc = "Deletes ServiceEndpoint resources of a given name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of the RecommendationsService Account resource."]
+        #[doc = "* `service_endpoint_name`: The name of the ServiceEndpoint resource."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1468,6 +1586,11 @@ pub mod operation_statuses {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Returns the current status of an async operation."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `location`: The name of Azure region."]
+        #[doc = "* `operation_id`: The ID of an ongoing async operation."]
         pub fn get(&self, location: impl Into<String>, operation_id: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -1531,6 +1654,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Returns list of operations."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }

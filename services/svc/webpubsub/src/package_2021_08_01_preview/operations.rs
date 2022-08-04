@@ -135,6 +135,9 @@ pub mod web_pub_sub {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Generate token for the client to connect Azure Web PubSub service."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `hub`: Target hub name, which should start with alphabetic characters and only contain alpha-numeric characters or underscore."]
         pub fn generate_client_token(&self, hub: impl Into<String>) -> generate_client_token::Builder {
             generate_client_token::Builder {
                 client: self.0.clone(),
@@ -145,6 +148,10 @@ pub mod web_pub_sub {
             }
         }
         #[doc = "Broadcast content inside request body to all the connected client connections."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `hub`: Target hub name, which should start with alphabetic characters and only contain alpha-numeric characters or underscore."]
+        #[doc = "* `message`: The payload body."]
         pub fn send_to_all(&self, hub: impl Into<String>, message: impl Into<String>) -> send_to_all::Builder {
             send_to_all::Builder {
                 client: self.0.clone(),
@@ -154,6 +161,10 @@ pub mod web_pub_sub {
             }
         }
         #[doc = "Close the client connection."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `hub`: Target hub name, which should start with alphabetic characters and only contain alpha-numeric characters or underscore."]
+        #[doc = "* `connection_id`: Target connection Id."]
         pub fn close_connection(&self, hub: impl Into<String>, connection_id: impl Into<String>) -> close_connection::Builder {
             close_connection::Builder {
                 client: self.0.clone(),
@@ -163,6 +174,10 @@ pub mod web_pub_sub {
             }
         }
         #[doc = "Check if the connection with the given connectionId exists."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `hub`: Target hub name, which should start with alphabetic characters and only contain alpha-numeric characters or underscore."]
+        #[doc = "* `connection_id`: The connection Id."]
         pub fn connection_exists(&self, hub: impl Into<String>, connection_id: impl Into<String>) -> connection_exists::Builder {
             connection_exists::Builder {
                 client: self.0.clone(),
@@ -171,6 +186,11 @@ pub mod web_pub_sub {
             }
         }
         #[doc = "Send content inside request body to the specific connection."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `hub`: Target hub name, which should start with alphabetic characters and only contain alpha-numeric characters or underscore."]
+        #[doc = "* `connection_id`: The connection Id."]
+        #[doc = "* `message`: The payload body."]
         pub fn send_to_connection(
             &self,
             hub: impl Into<String>,
@@ -185,6 +205,10 @@ pub mod web_pub_sub {
             }
         }
         #[doc = "Check if there are any client connections inside the given group"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `hub`: Target hub name, which should start with alphabetic characters and only contain alpha-numeric characters or underscore."]
+        #[doc = "* `group`: Target group name, which length should be greater than 0 and less than 1025."]
         pub fn group_exists(&self, hub: impl Into<String>, group: impl Into<String>) -> group_exists::Builder {
             group_exists::Builder {
                 client: self.0.clone(),
@@ -193,6 +217,11 @@ pub mod web_pub_sub {
             }
         }
         #[doc = "Send content inside request body to a group of connections."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `hub`: Target hub name, which should start with alphabetic characters and only contain alpha-numeric characters or underscore."]
+        #[doc = "* `group`: Target group name, which length should be greater than 0 and less than 1025."]
+        #[doc = "* `message`: The payload body."]
         pub fn send_to_group(
             &self,
             hub: impl Into<String>,
@@ -208,6 +237,11 @@ pub mod web_pub_sub {
             }
         }
         #[doc = "Add a connection to the target group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `hub`: Target hub name, which should start with alphabetic characters and only contain alpha-numeric characters or underscore."]
+        #[doc = "* `group`: Target group name, which length should be greater than 0 and less than 1025."]
+        #[doc = "* `connection_id`: Target connection Id"]
         pub fn add_connection_to_group(
             &self,
             hub: impl Into<String>,
@@ -222,6 +256,11 @@ pub mod web_pub_sub {
             }
         }
         #[doc = "Remove a connection from the target group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `hub`: Target hub name, which should start with alphabetic characters and only contain alpha-numeric characters or underscore."]
+        #[doc = "* `group`: Target group name, which length should be greater than 0 and less than 1025."]
+        #[doc = "* `connection_id`: Target connection Id."]
         pub fn remove_connection_from_group(
             &self,
             hub: impl Into<String>,
@@ -236,6 +275,10 @@ pub mod web_pub_sub {
             }
         }
         #[doc = "Check if there are any client connections connected for the given user."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `hub`: Target hub name, which should start with alphabetic characters and only contain alpha-numeric characters or underscore."]
+        #[doc = "* `user_id`: Target user Id."]
         pub fn user_exists(&self, hub: impl Into<String>, user_id: impl Into<String>) -> user_exists::Builder {
             user_exists::Builder {
                 client: self.0.clone(),
@@ -244,6 +287,11 @@ pub mod web_pub_sub {
             }
         }
         #[doc = "Send content inside request body to the specific user."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `hub`: Target hub name, which should start with alphabetic characters and only contain alpha-numeric characters or underscore."]
+        #[doc = "* `user_id`: The user Id."]
+        #[doc = "* `message`: The payload body."]
         pub fn send_to_user(
             &self,
             hub: impl Into<String>,
@@ -258,6 +306,11 @@ pub mod web_pub_sub {
             }
         }
         #[doc = "Add a user to the target group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `hub`: Target hub name, which should start with alphabetic characters and only contain alpha-numeric characters or underscore."]
+        #[doc = "* `group`: Target group name, which length should be greater than 0 and less than 1025."]
+        #[doc = "* `user_id`: Target user Id."]
         pub fn add_user_to_group(
             &self,
             hub: impl Into<String>,
@@ -272,6 +325,11 @@ pub mod web_pub_sub {
             }
         }
         #[doc = "Remove a user from the target group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `hub`: Target hub name, which should start with alphabetic characters and only contain alpha-numeric characters or underscore."]
+        #[doc = "* `group`: Target group name, which length should be greater than 0 and less than 1025."]
+        #[doc = "* `user_id`: Target user Id."]
         pub fn remove_user_from_group(
             &self,
             hub: impl Into<String>,
@@ -286,6 +344,10 @@ pub mod web_pub_sub {
             }
         }
         #[doc = "Remove a user from all groups."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `hub`: Target hub name, which should start with alphabetic characters and only contain alpha-numeric characters or underscore."]
+        #[doc = "* `user_id`: Target user Id."]
         pub fn remove_user_from_all_groups(
             &self,
             hub: impl Into<String>,
@@ -298,6 +360,11 @@ pub mod web_pub_sub {
             }
         }
         #[doc = "Grant permission to the connection."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `hub`: Target hub name, which should start with alphabetic characters and only contain alpha-numeric characters or underscore."]
+        #[doc = "* `permission`: The permission: current supported actions are joinLeaveGroup and sendToGroup."]
+        #[doc = "* `connection_id`: Target connection Id."]
         pub fn grant_permission(
             &self,
             hub: impl Into<String>,
@@ -313,6 +380,11 @@ pub mod web_pub_sub {
             }
         }
         #[doc = "Revoke permission for the connection."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `hub`: Target hub name, which should start with alphabetic characters and only contain alpha-numeric characters or underscore."]
+        #[doc = "* `permission`: The permission: current supported actions are joinLeaveGroup and sendToGroup."]
+        #[doc = "* `connection_id`: Target connection Id."]
         pub fn revoke_permission(
             &self,
             hub: impl Into<String>,
@@ -328,6 +400,11 @@ pub mod web_pub_sub {
             }
         }
         #[doc = "Check if a connection has permission to the specified action."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `hub`: Target hub name, which should start with alphabetic characters and only contain alpha-numeric characters or underscore."]
+        #[doc = "* `permission`: The permission: current supported actions are joinLeaveGroup and sendToGroup."]
+        #[doc = "* `connection_id`: Target connection Id."]
         pub fn check_permission(
             &self,
             hub: impl Into<String>,
@@ -355,14 +432,17 @@ pub mod web_pub_sub {
             pub(crate) minutes_to_expire: Option<i32>,
         }
         impl Builder {
+            #[doc = "User Id."]
             pub fn user_id(mut self, user_id: impl Into<String>) -> Self {
                 self.user_id = Some(user_id.into());
                 self
             }
+            #[doc = "Roles that the connection with the generated token will have."]
             pub fn role(mut self, role: Vec<String>) -> Self {
                 self.role = role;
                 self
             }
+            #[doc = "The expire time of the generated token."]
             pub fn minutes_to_expire(mut self, minutes_to_expire: i32) -> Self {
                 self.minutes_to_expire = Some(minutes_to_expire);
                 self
@@ -426,6 +506,7 @@ pub mod web_pub_sub {
             pub(crate) excluded: Vec<String>,
         }
         impl Builder {
+            #[doc = "Excluded connection Ids."]
             pub fn excluded(mut self, excluded: Vec<String>) -> Self {
                 self.excluded = excluded;
                 self
@@ -477,6 +558,7 @@ pub mod web_pub_sub {
             pub(crate) reason: Option<String>,
         }
         impl Builder {
+            #[doc = "The reason closing the client connection."]
             pub fn reason(mut self, reason: impl Into<String>) -> Self {
                 self.reason = Some(reason.into());
                 self
@@ -668,6 +750,7 @@ pub mod web_pub_sub {
             pub(crate) excluded: Vec<String>,
         }
         impl Builder {
+            #[doc = "Excluded connection Ids"]
             pub fn excluded(mut self, excluded: Vec<String>) -> Self {
                 self.excluded = excluded;
                 self
@@ -1057,6 +1140,7 @@ pub mod web_pub_sub {
             pub(crate) target_name: Option<String>,
         }
         impl Builder {
+            #[doc = "The meaning of the target depends on the specific permission. For joinLeaveGroup and sendToGroup, targetName is a required parameter standing for the group name."]
             pub fn target_name(mut self, target_name: impl Into<String>) -> Self {
                 self.target_name = Some(target_name.into());
                 self
@@ -1113,6 +1197,7 @@ pub mod web_pub_sub {
             pub(crate) target_name: Option<String>,
         }
         impl Builder {
+            #[doc = "The meaning of the target depends on the specific permission. For joinLeaveGroup and sendToGroup, targetName is a required parameter standing for the group name."]
             pub fn target_name(mut self, target_name: impl Into<String>) -> Self {
                 self.target_name = Some(target_name.into());
                 self
@@ -1169,6 +1254,7 @@ pub mod web_pub_sub {
             pub(crate) target_name: Option<String>,
         }
         impl Builder {
+            #[doc = "The meaning of the target depends on the specific permission. For joinLeaveGroup and sendToGroup, targetName is a required parameter standing for the group name."]
             pub fn target_name(mut self, target_name: impl Into<String>) -> Self {
                 self.target_name = Some(target_name.into());
                 self

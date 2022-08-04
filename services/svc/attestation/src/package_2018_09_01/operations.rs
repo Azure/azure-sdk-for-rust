@@ -92,6 +92,10 @@ pub mod policy {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Accepts a new policy document and returns a JWT which expresses  used in preparation to set attestation policy."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `tee`: Specifies the trusted execution environment to be used to validate the evidence"]
+        #[doc = "* `policy_jws`: JSON Web Signature (See RFC7515) expressing the new policy"]
         pub fn prepare_to_set(&self, tee: impl Into<String>, policy_jws: impl Into<String>) -> prepare_to_set::Builder {
             prepare_to_set::Builder {
                 client: self.0.clone(),
@@ -100,6 +104,9 @@ pub mod policy {
             }
         }
         #[doc = "Retrieves the current policy for a given kind of TEE."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `tee`: Specifies the trusted execution environment to be used to validate the evidence"]
         pub fn get(&self, tee: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -107,6 +114,10 @@ pub mod policy {
             }
         }
         #[doc = "Resets the attestation policy for the specified tenant and reverts to the default policy."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `tee`: Specifies the trusted execution environment to be used to validate the evidence"]
+        #[doc = "* `policy_jws`: JSON Web Signature with an empty policy document"]
         pub fn reset(&self, tee: impl Into<String>, policy_jws: impl Into<String>) -> reset::Builder {
             reset::Builder {
                 client: self.0.clone(),
@@ -115,6 +126,10 @@ pub mod policy {
             }
         }
         #[doc = "Sets the policy for a given kind of TEE."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `tee`: Specifies the trusted execution environment to be used to validate the evidence"]
+        #[doc = "* `new_attestation_policy`: JWT Expressing the new policy"]
         pub fn set(&self, tee: impl Into<String>, new_attestation_policy: impl Into<String>) -> set::Builder {
             set::Builder {
                 client: self.0.clone(),
@@ -319,6 +334,9 @@ pub mod policy_certificates {
             get::Builder { client: self.0.clone() }
         }
         #[doc = "Removes the specified policy management certificate. Note that the final policy management certificate cannot be removed."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `policy_certificate_to_remove`: An RFC7519 JSON Web Token containing a claim named \"maa-policyCertificate\" whose value is an RFC7517 JSON Web Key which specifies a new key to update. The RFC7519 JWT must be signed with one of the existing signing certificates"]
         pub fn remove(&self, policy_certificate_to_remove: impl Into<String>) -> remove::Builder {
             remove::Builder {
                 client: self.0.clone(),
@@ -326,6 +344,9 @@ pub mod policy_certificates {
             }
         }
         #[doc = "Adds a new attestation policy certificate to the set of policy management certificates."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `policy_certificate_to_add`: An RFC7519 JSON Web Token containing a claim named \"maa-policyCertificate\" whose value is an RFC7517 JSON Web Key which specifies a new key to add. The RFC7519 JWT must be signed with one of the existing signing certificates"]
         pub fn add(&self, policy_certificate_to_add: impl Into<String>) -> add::Builder {
             add::Builder {
                 client: self.0.clone(),
@@ -472,6 +493,7 @@ pub mod signing_certificates {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Retrieves the attestation signing keys in use by the attestation service"]
+        #[doc = "Retrieves metadata signing certificates in use by the attestation service"]
         pub fn get(&self) -> get::Builder {
             get::Builder { client: self.0.clone() }
         }
@@ -522,6 +544,7 @@ pub mod metadata_configuration {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Retrieves the OpenID Configuration data for the Azure Attestation Service"]
+        #[doc = "Retrieves metadata about the attestation signing keys in use by the attestation service"]
         pub fn get(&self) -> get::Builder {
             get::Builder { client: self.0.clone() }
         }

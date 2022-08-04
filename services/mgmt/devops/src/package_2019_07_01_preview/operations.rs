@@ -88,6 +88,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all the operations supported by Microsoft.DevOps resource provider."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -167,6 +168,7 @@ pub mod pipeline_template_definitions {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all pipeline templates which can be used to configure an Azure Pipeline."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -248,6 +250,12 @@ pub mod pipelines {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets an existing Azure Pipeline."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Unique identifier of the Azure subscription. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
+        #[doc = "* `resource_group_name`: Name of the resource group within the Azure subscription."]
+        #[doc = "* `pipeline_name`: The name of the Azure Pipeline resource in ARM."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -261,6 +269,13 @@ pub mod pipelines {
                 pipeline_name: pipeline_name.into(),
             }
         }
+        #[doc = "Creates or updates an Azure Pipeline."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Unique identifier of the Azure subscription. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
+        #[doc = "* `resource_group_name`: Name of the resource group within the Azure subscription."]
+        #[doc = "* `pipeline_name`: The name of the Azure Pipeline resource in ARM."]
+        #[doc = "* `create_operation_parameters`: The request payload to create the Azure Pipeline."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -276,6 +291,13 @@ pub mod pipelines {
                 create_operation_parameters: create_operation_parameters.into(),
             }
         }
+        #[doc = "Updates the properties of an Azure Pipeline. Currently, only tags can be updated."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Unique identifier of the Azure subscription. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
+        #[doc = "* `resource_group_name`: Name of the resource group within the Azure subscription."]
+        #[doc = "* `pipeline_name`: The name of the Azure Pipeline resource."]
+        #[doc = "* `update_operation_parameters`: The request payload containing the properties to update in the Azure Pipeline."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -291,6 +313,12 @@ pub mod pipelines {
                 update_operation_parameters: update_operation_parameters.into(),
             }
         }
+        #[doc = "Deletes an Azure Pipeline."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Unique identifier of the Azure subscription. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
+        #[doc = "* `resource_group_name`: Name of the resource group within the Azure subscription."]
+        #[doc = "* `pipeline_name`: The name of the Azure Pipeline resource."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -304,6 +332,11 @@ pub mod pipelines {
                 pipeline_name: pipeline_name.into(),
             }
         }
+        #[doc = "Lists all Azure Pipelines under the specified resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Unique identifier of the Azure subscription. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
+        #[doc = "* `resource_group_name`: Name of the resource group within the Azure subscription."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -315,6 +348,10 @@ pub mod pipelines {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Lists all Azure Pipelines under the specified subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Unique identifier of the Azure subscription. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),

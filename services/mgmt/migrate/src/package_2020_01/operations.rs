@@ -122,6 +122,12 @@ pub mod hyper_v_cluster {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Method to get a Hyper-V cluster."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `site_name`: Site name."]
+        #[doc = "* `cluster_name`: Cluster ARM name."]
         pub fn get_cluster(
             &self,
             subscription_id: impl Into<String>,
@@ -138,6 +144,13 @@ pub mod hyper_v_cluster {
             }
         }
         #[doc = "Method to create or update a cluster in site."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `site_name`: Site name."]
+        #[doc = "* `cluster_name`: Cluster ARM name."]
+        #[doc = "* `body`: Put cluster body."]
         pub fn put_cluster(
             &self,
             subscription_id: impl Into<String>,
@@ -156,6 +169,11 @@ pub mod hyper_v_cluster {
             }
         }
         #[doc = "Method to get all clusters in a site."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `site_name`: Site name."]
         pub fn get_all_clusters_in_site(
             &self,
             subscription_id: impl Into<String>,
@@ -369,6 +387,12 @@ pub mod hyper_v_host {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Method to get a Hyper-V host."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `site_name`: Site name."]
+        #[doc = "* `host_name`: Host ARM name."]
         pub fn get_host(
             &self,
             subscription_id: impl Into<String>,
@@ -385,6 +409,13 @@ pub mod hyper_v_host {
             }
         }
         #[doc = "Method to create or update a host in site."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `site_name`: Site name."]
+        #[doc = "* `host_name`: Host ARM name."]
+        #[doc = "* `body`: Put host body."]
         pub fn put_host(
             &self,
             subscription_id: impl Into<String>,
@@ -403,6 +434,11 @@ pub mod hyper_v_host {
             }
         }
         #[doc = "Method to get all hosts in a site."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `site_name`: Site name."]
         pub fn get_all_hosts_in_site(
             &self,
             subscription_id: impl Into<String>,
@@ -616,6 +652,12 @@ pub mod hyper_v_jobs {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Method to get job."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `site_name`: Site name."]
+        #[doc = "* `job_name`: Job ARM name."]
         pub fn get_job(
             &self,
             subscription_id: impl Into<String>,
@@ -632,6 +674,11 @@ pub mod hyper_v_jobs {
             }
         }
         #[doc = "Method to get all jobs in a site."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `site_name`: Site name."]
         pub fn get_all_jobs_in_site(
             &self,
             subscription_id: impl Into<String>,
@@ -784,6 +831,12 @@ pub mod hyper_v_machines {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Method to get machine."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `site_name`: Site name."]
+        #[doc = "* `machine_name`: Machine ARM name."]
         pub fn get_machine(
             &self,
             subscription_id: impl Into<String>,
@@ -800,6 +853,11 @@ pub mod hyper_v_machines {
             }
         }
         #[doc = "Method to get machine."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `site_name`: Site name."]
         pub fn get_all_machines_in_site(
             &self,
             subscription_id: impl Into<String>,
@@ -895,10 +953,12 @@ pub mod hyper_v_machines {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Optional parameter for continuation token."]
             pub fn continuation_token(mut self, continuation_token: impl Into<String>) -> Self {
                 self.continuation_token = Some(continuation_token.into());
                 self
             }
+            #[doc = "Total count of machines in the given site."]
             pub fn total_record_count(mut self, total_record_count: i32) -> Self {
                 self.total_record_count = Some(total_record_count);
                 self
@@ -990,6 +1050,12 @@ pub mod hyper_v_operations_status {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Method to get operation status."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `site_name`: Site name."]
+        #[doc = "* `operation_status_name`: Operation status ARM name."]
         pub fn get_operation_status(
             &self,
             subscription_id: impl Into<String>,
@@ -1066,6 +1132,12 @@ pub mod hyper_v_run_as_accounts {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Method to get run as account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `site_name`: Site name."]
+        #[doc = "* `account_name`: Run as account ARM name."]
         pub fn get_run_as_account(
             &self,
             subscription_id: impl Into<String>,
@@ -1082,6 +1154,11 @@ pub mod hyper_v_run_as_accounts {
             }
         }
         #[doc = "Method to get run as accounts."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `site_name`: Site name."]
         pub fn get_all_run_as_accounts_in_site(
             &self,
             subscription_id: impl Into<String>,
@@ -1234,6 +1311,11 @@ pub mod hyper_v_sites {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Method to get a site."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `site_name`: Site name."]
         pub fn get_site(
             &self,
             subscription_id: impl Into<String>,
@@ -1248,6 +1330,12 @@ pub mod hyper_v_sites {
             }
         }
         #[doc = "Method to create or update a site."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `site_name`: Site name."]
+        #[doc = "* `body`: Body with site details."]
         pub fn put_site(
             &self,
             subscription_id: impl Into<String>,
@@ -1264,6 +1352,12 @@ pub mod hyper_v_sites {
             }
         }
         #[doc = "Method to patch an existing site."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `site_name`: Site name."]
+        #[doc = "* `body`: Body with site details."]
         pub fn patch_site(
             &self,
             subscription_id: impl Into<String>,
@@ -1280,6 +1374,11 @@ pub mod hyper_v_sites {
             }
         }
         #[doc = "Method to delete a site."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `site_name`: Site name."]
         pub fn delete_site(
             &self,
             subscription_id: impl Into<String>,
@@ -1294,6 +1393,11 @@ pub mod hyper_v_sites {
             }
         }
         #[doc = "Method to refresh a site."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `site_name`: Site name."]
         pub fn refresh_site(
             &self,
             subscription_id: impl Into<String>,
@@ -1308,6 +1412,11 @@ pub mod hyper_v_sites {
             }
         }
         #[doc = "Method to get site health summary."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `site_name`: Site name."]
         pub fn get_site_health_summary(
             &self,
             subscription_id: impl Into<String>,
@@ -1322,6 +1431,11 @@ pub mod hyper_v_sites {
             }
         }
         #[doc = "Method to get site usage."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `site_name`: Site name."]
         pub fn get_site_usage(
             &self,
             subscription_id: impl Into<String>,
@@ -1754,6 +1868,12 @@ pub mod jobs {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Method to get job."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `site_name`: Site name."]
+        #[doc = "* `job_name`: Job ARM name."]
         pub fn get_job(
             &self,
             subscription_id: impl Into<String>,
@@ -1770,6 +1890,11 @@ pub mod jobs {
             }
         }
         #[doc = "Method to get all jobs in a site."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `site_name`: Site name."]
         pub fn get_all_jobs_in_site(
             &self,
             subscription_id: impl Into<String>,
@@ -1922,6 +2047,12 @@ pub mod machines {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Method to get machine."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `site_name`: Site name."]
+        #[doc = "* `machine_name`: Machine ARM name."]
         pub fn get_machine(
             &self,
             subscription_id: impl Into<String>,
@@ -1938,6 +2069,11 @@ pub mod machines {
             }
         }
         #[doc = "Method to get machine."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `site_name`: Site name."]
         pub fn get_all_machines_in_site(
             &self,
             subscription_id: impl Into<String>,
@@ -1956,6 +2092,12 @@ pub mod machines {
             }
         }
         #[doc = "Method to stop a machine."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `site_name`: Site name."]
+        #[doc = "* `machine_name`: Machine ARM name."]
         pub fn stop_machine(
             &self,
             subscription_id: impl Into<String>,
@@ -1972,6 +2114,12 @@ pub mod machines {
             }
         }
         #[doc = "Method to start a machine."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `site_name`: Site name."]
+        #[doc = "* `machine_name`: Machine ARM name."]
         pub fn start_machine(
             &self,
             subscription_id: impl Into<String>,
@@ -2065,10 +2213,12 @@ pub mod machines {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Optional parameter for continuation token."]
             pub fn continuation_token(mut self, continuation_token: impl Into<String>) -> Self {
                 self.continuation_token = Some(continuation_token.into());
                 self
             }
+            #[doc = "Total count of machines in the given site."]
             pub fn total_record_count(mut self, total_record_count: i32) -> Self {
                 self.total_record_count = Some(total_record_count);
                 self
@@ -2262,6 +2412,12 @@ pub mod run_as_accounts {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Method to get run as account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `site_name`: Site name."]
+        #[doc = "* `account_name`: Run as account ARM name."]
         pub fn get_run_as_account(
             &self,
             subscription_id: impl Into<String>,
@@ -2278,6 +2434,11 @@ pub mod run_as_accounts {
             }
         }
         #[doc = "Method to get run as accounts."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `site_name`: Site name."]
         pub fn get_all_run_as_accounts_in_site(
             &self,
             subscription_id: impl Into<String>,
@@ -2430,6 +2591,11 @@ pub mod sites {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Method to get a site."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `site_name`: Site name."]
         pub fn get_site(
             &self,
             subscription_id: impl Into<String>,
@@ -2444,6 +2610,12 @@ pub mod sites {
             }
         }
         #[doc = "Method to create or update a site."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `site_name`: Site name."]
+        #[doc = "* `body`: Body with site details."]
         pub fn put_site(
             &self,
             subscription_id: impl Into<String>,
@@ -2460,6 +2632,12 @@ pub mod sites {
             }
         }
         #[doc = "Method to update an existing site."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `site_name`: Site name."]
+        #[doc = "* `body`: Body with site details."]
         pub fn patch_site(
             &self,
             subscription_id: impl Into<String>,
@@ -2476,6 +2654,11 @@ pub mod sites {
             }
         }
         #[doc = "Method to delete a site."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `site_name`: Site name."]
         pub fn delete_site(
             &self,
             subscription_id: impl Into<String>,
@@ -2490,6 +2673,11 @@ pub mod sites {
             }
         }
         #[doc = "Method to refresh a site."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `site_name`: Site name."]
         pub fn refresh_site(
             &self,
             subscription_id: impl Into<String>,
@@ -2504,6 +2692,11 @@ pub mod sites {
             }
         }
         #[doc = "Method to get site health summary."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `site_name`: Site name."]
         pub fn get_site_health_summary(
             &self,
             subscription_id: impl Into<String>,
@@ -2518,6 +2711,11 @@ pub mod sites {
             }
         }
         #[doc = "Method to get site usage/summary."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `site_name`: Site name."]
         pub fn get_site_usage(
             &self,
             subscription_id: impl Into<String>,
@@ -2950,6 +3148,12 @@ pub mod v_center {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Method to get a vCenter."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `site_name`: Site name."]
+        #[doc = "* `vcenter_name`: VCenter ARM name."]
         pub fn get_v_center(
             &self,
             subscription_id: impl Into<String>,
@@ -2966,6 +3170,13 @@ pub mod v_center {
             }
         }
         #[doc = "Method to create or update a vCenter in site."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `site_name`: Site name."]
+        #[doc = "* `vcenter_name`: VCenter ARM name."]
+        #[doc = "* `body`: Put vCenter body."]
         pub fn put_v_center(
             &self,
             subscription_id: impl Into<String>,
@@ -2984,6 +3195,12 @@ pub mod v_center {
             }
         }
         #[doc = "Method to delete vCenter in site."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `site_name`: Site name."]
+        #[doc = "* `vcenter_name`: VCenter ARM name."]
         pub fn delete_v_center(
             &self,
             subscription_id: impl Into<String>,
@@ -3000,6 +3217,11 @@ pub mod v_center {
             }
         }
         #[doc = "Method to get all vCenters in a site."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `site_name`: Site name."]
         pub fn get_all_v_centers_in_site(
             &self,
             subscription_id: impl Into<String>,
@@ -3268,6 +3490,12 @@ pub mod v_mware_operations_status {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Method to get operation status."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `site_name`: Site name."]
+        #[doc = "* `operation_status_name`: Operation status ARM name."]
         pub fn get_operation_status(
             &self,
             subscription_id: impl Into<String>,

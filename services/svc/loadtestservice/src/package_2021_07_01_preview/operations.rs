@@ -95,6 +95,9 @@ pub mod app_component {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get App components for a given appComponentName in query param."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `name`: Unique identifier for app component name, must be a valid URL character ^[a-z0-9_-]*$"]
         pub fn get_app_component_by_name(&self, name: impl Into<String>) -> get_app_component_by_name::Builder {
             get_app_component_by_name::Builder {
                 client: self.0.clone(),
@@ -102,6 +105,10 @@ pub mod app_component {
             }
         }
         #[doc = "Associate app component (a azure resource model) to a test model or test run"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `name`: Unique identifier for app component name, must be a valid URL character ^[a-z0-9_-]*$"]
+        #[doc = "* `body`: App component model"]
         pub fn create_or_update_app_components(
             &self,
             name: impl Into<String>,
@@ -114,6 +121,9 @@ pub mod app_component {
             }
         }
         #[doc = "Delete app component"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `name`: Unique identifier for app component name, must be a valid URL character ^[a-z0-9_-]*$"]
         pub fn delete_app_component(&self, name: impl Into<String>) -> delete_app_component::Builder {
             delete_app_component::Builder {
                 client: self.0.clone(),
@@ -278,10 +288,12 @@ pub mod app_component {
             pub(crate) test_run_id: Option<String>,
         }
         impl Builder {
+            #[doc = "Required testId, if testRunId name is not provided"]
             pub fn test_id(mut self, test_id: impl Into<String>) -> Self {
                 self.test_id = Some(test_id.into());
                 self
             }
+            #[doc = "Required testRunId, if testId is not provided"]
             pub fn test_run_id(mut self, test_run_id: impl Into<String>) -> Self {
                 self.test_run_id = Some(test_run_id.into());
                 self
@@ -333,6 +345,10 @@ pub mod file {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Validate input file. File name must be a valid URL character ^[a-z0-9_-]*$. File size can't be more than 50 MB."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `file_id`: Unique identifier for test file, must be a valid URL character ^[a-z0-9_-]*$"]
+        #[doc = "* `file`: Input test file"]
         pub fn file_validate(&self, file_id: impl Into<String>, file: impl Into<bytes::Bytes>) -> file_validate::Builder {
             file_validate::Builder {
                 client: self.0.clone(),
@@ -394,6 +410,9 @@ pub mod server_metrics {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get server metrics config for a given name in query param."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `name`: Unique identifier for server metric name, must be a valid URL character ^[a-z0-9_-]*$"]
         pub fn get_server_metrics_by_name(&self, name: impl Into<String>) -> get_server_metrics_by_name::Builder {
             get_server_metrics_by_name::Builder {
                 client: self.0.clone(),
@@ -401,6 +420,10 @@ pub mod server_metrics {
             }
         }
         #[doc = "Associate server metrics config to a test model or test run"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `name`: Unique identifier for server metric name, must be a valid URL character ^[a-z0-9_-]*$"]
+        #[doc = "* `body`: Server metrics config model"]
         pub fn create_or_update_server_metrics_config(
             &self,
             name: impl Into<String>,
@@ -413,6 +436,9 @@ pub mod server_metrics {
             }
         }
         #[doc = "Delete server metrics config by given name"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `name`: Unique identifier for server metric name, must be a valid URL character ^[a-z0-9_-]*$"]
         pub fn delete_server_metrics(&self, name: impl Into<String>) -> delete_server_metrics::Builder {
             delete_server_metrics::Builder {
                 client: self.0.clone(),
@@ -585,10 +611,12 @@ pub mod server_metrics {
             pub(crate) test_run_id: Option<String>,
         }
         impl Builder {
+            #[doc = "Required testId, if testRunId name is not provided"]
             pub fn test_id(mut self, test_id: impl Into<String>) -> Self {
                 self.test_id = Some(test_id.into());
                 self
             }
+            #[doc = "Required testRunId, if testId is not provided"]
             pub fn test_run_id(mut self, test_run_id: impl Into<String>) -> Self {
                 self.test_run_id = Some(test_run_id.into());
                 self
@@ -727,6 +755,9 @@ pub mod test {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get load test model of given test name"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `test_id`: Unique identifier for load test name, must be a valid URL character ^[a-z0-9_-]*$"]
         pub fn get_load_test(&self, test_id: impl Into<String>) -> get_load_test::Builder {
             get_load_test::Builder {
                 client: self.0.clone(),
@@ -734,6 +765,10 @@ pub mod test {
             }
         }
         #[doc = "Creates/Updates a new load test. Test name must be a valid URL character ^[a-z0-9_-]*$"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `test_id`: Unique identifier for load test name, must be a valid URL character ^[a-z0-9_-]*$"]
+        #[doc = "* `body`: Load test model"]
         pub fn create_or_update_test(
             &self,
             test_id: impl Into<String>,
@@ -746,6 +781,9 @@ pub mod test {
             }
         }
         #[doc = "Delete a test with given name. Test name must be a valid URL character ^[a-z0-9_-]*$"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `test_id`: Unique identifier for load test name, must be a valid URL character ^[a-z0-9_-]*$"]
         pub fn delete_load_test(&self, test_id: impl Into<String>) -> delete_load_test::Builder {
             delete_load_test::Builder {
                 client: self.0.clone(),
@@ -765,6 +803,10 @@ pub mod test {
             }
         }
         #[doc = "Get test file with given file name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `test_id`: Unique identifier for load test name, must be a valid URL character ^[a-z0-9_-]*$"]
+        #[doc = "* `file_id`: Unique identifier for test file, must be a valid URL character ^[a-z0-9_-]*$"]
         pub fn get_test_file(&self, test_id: impl Into<String>, file_id: impl Into<String>) -> get_test_file::Builder {
             get_test_file::Builder {
                 client: self.0.clone(),
@@ -773,6 +815,11 @@ pub mod test {
             }
         }
         #[doc = "Upload input file for a given test name. File name must be a valid URL character ^[a-z0-9_-]*$. File size can't be more than 50 MB. Existing file with same name for the given test will be overwritten."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `test_id`: Unique identifier for load test name, must be a valid URL character ^[a-z0-9_-]*$"]
+        #[doc = "* `file_id`: Unique identifier for test file, must be a valid URL character ^[a-z0-9_-]*$"]
+        #[doc = "* `file`: Artifact to upload as input for test"]
         pub fn upload_test_file(
             &self,
             test_id: impl Into<String>,
@@ -787,6 +834,10 @@ pub mod test {
             }
         }
         #[doc = "Delete file of given file name for a test. File name must be a valid URL character ^[a-z0-9_-]*$"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `test_id`: Unique identifier for load test name, must be a valid URL character ^[a-z0-9_-]*$"]
+        #[doc = "* `file_id`: Unique identifier for test file, must be a valid URL character ^[a-z0-9_-]*$"]
         pub fn delete_test_file(&self, test_id: impl Into<String>, file_id: impl Into<String>) -> delete_test_file::Builder {
             delete_test_file::Builder {
                 client: self.0.clone(),
@@ -795,6 +846,9 @@ pub mod test {
             }
         }
         #[doc = "Get all test files."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `test_id`: Unique identifier for load test name, must be a valid URL character ^[a-z0-9_-]*$"]
         pub fn get_all_test_files(&self, test_id: impl Into<String>) -> get_all_test_files::Builder {
             get_all_test_files::Builder {
                 client: self.0.clone(),
@@ -955,26 +1009,32 @@ pub mod test {
             pub(crate) max_page_size: Option<i32>,
         }
         impl Builder {
+            #[doc = "Sort on one of the field - lastModifiedDateTime, displayName, createdBy in (field asc/desc) format. eg: displayName asc"]
             pub fn order_by(mut self, order_by: impl Into<String>) -> Self {
                 self.order_by = Some(order_by.into());
                 self
             }
+            #[doc = "Filter search based on searchable fields- testId, createdBy."]
             pub fn search(mut self, search: impl Into<String>) -> Self {
                 self.search = Some(search.into());
                 self
             }
+            #[doc = "Start DateTime(Iso8601Literal format) of the last updated time range to filter tests."]
             pub fn last_updated_start_time(mut self, last_updated_start_time: impl Into<String>) -> Self {
                 self.last_updated_start_time = Some(last_updated_start_time.into());
                 self
             }
+            #[doc = "End DateTime(Iso8601Literal format) of the last updated time range to filter tests."]
             pub fn last_updated_end_time(mut self, last_updated_end_time: impl Into<String>) -> Self {
                 self.last_updated_end_time = Some(last_updated_end_time.into());
                 self
             }
+            #[doc = "NextLink Token to get next page of response"]
             pub fn next_link(mut self, next_link: impl Into<String>) -> Self {
                 self.next_link = Some(next_link.into());
                 self
             }
+            #[doc = "No of results in response"]
             pub fn max_page_size(mut self, max_page_size: i32) -> Self {
                 self.max_page_size = Some(max_page_size);
                 self
@@ -1236,6 +1296,9 @@ pub mod test_run {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get test run of given name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `test_run_id`: Unique identifier for load test run name, must be a valid URL character ^[a-z0-9_-]*$"]
         pub fn get_test_run(&self, test_run_id: impl Into<String>) -> get_test_run::Builder {
             get_test_run::Builder {
                 client: self.0.clone(),
@@ -1243,6 +1306,10 @@ pub mod test_run {
             }
         }
         #[doc = "Create and start new test run of the given name, test run name must be a valid URL character ^[a-z0-9_-]*$"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `test_run_id`: Unique identifier for load test run name, must be a valid URL character ^[a-z0-9_-]*$"]
+        #[doc = "* `body`: Load test run model"]
         pub fn create_and_update_test(
             &self,
             test_run_id: impl Into<String>,
@@ -1256,6 +1323,9 @@ pub mod test_run {
             }
         }
         #[doc = "Delete a test run with given name. Test run name must be a valid URL character ^[a-z0-9_-]*$"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `test_run_id`: Unique identifier for load test run name, must be a valid URL character ^[a-z0-9_-]*$"]
         pub fn delete_test_run(&self, test_run_id: impl Into<String>) -> delete_test_run::Builder {
             delete_test_run::Builder {
                 client: self.0.clone(),
@@ -1263,6 +1333,10 @@ pub mod test_run {
             }
         }
         #[doc = "Get testrun file with given file name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `test_run_id`: Unique identifier for load test run name, must be a valid URL character ^[a-z0-9_-]*$"]
+        #[doc = "* `file_id`: Unique identifier for test run file, must be a valid URL character ^[a-z0-9_-]*$"]
         pub fn get_test_run_file(&self, test_run_id: impl Into<String>, file_id: impl Into<String>) -> get_test_run_file::Builder {
             get_test_run_file::Builder {
                 client: self.0.clone(),
@@ -1285,6 +1359,9 @@ pub mod test_run {
             }
         }
         #[doc = "Stop test run of given name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `test_run_id`: Unique identifier for load test run name, must be a valid URL character ^[a-z0-9_-]*$"]
         pub fn stop_test_run(&self, test_run_id: impl Into<String>) -> stop_test_run::Builder {
             stop_test_run::Builder {
                 client: self.0.clone(),
@@ -1292,6 +1369,9 @@ pub mod test_run {
             }
         }
         #[doc = "Get all client metrics for a given load test run"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `test_run_id`: Unique identifier for load test run name, must be a valid URL character ^[a-z0-9_-]*$"]
         pub fn get_test_run_client_metrics(&self, test_run_id: impl Into<String>) -> get_test_run_client_metrics::Builder {
             get_test_run_client_metrics::Builder {
                 client: self.0.clone(),
@@ -1301,6 +1381,9 @@ pub mod test_run {
             }
         }
         #[doc = "Get all client metrics supported filters list for a given load test run"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `test_run_id`: Unique identifier for load test run name, must be a valid URL character ^[a-z0-9_-]*$"]
         pub fn get_test_run_client_metrics_filters(&self, test_run_id: impl Into<String>) -> get_test_run_client_metrics_filters::Builder {
             get_test_run_client_metrics_filters::Builder {
                 client: self.0.clone(),
@@ -1363,6 +1446,7 @@ pub mod test_run {
             pub(crate) old_test_run_id: Option<String>,
         }
         impl Builder {
+            #[doc = "Existing testRunId to re run new test"]
             pub fn old_test_run_id(mut self, old_test_run_id: impl Into<String>) -> Self {
                 self.old_test_run_id = Some(old_test_run_id.into());
                 self
@@ -1512,34 +1596,42 @@ pub mod test_run {
             pub(crate) max_page_size: Option<i32>,
         }
         impl Builder {
+            #[doc = "Sort on one of the field - status, displayName, executedDateTime in (field asc/desc) format. eg: displayName asc"]
             pub fn order_by(mut self, order_by: impl Into<String>) -> Self {
                 self.order_by = Some(order_by.into());
                 self
             }
+            #[doc = "NextLink Token to get next page of response"]
             pub fn next_link(mut self, next_link: impl Into<String>) -> Self {
                 self.next_link = Some(next_link.into());
                 self
             }
+            #[doc = "Filter search based on searchable fields - description, executedUser."]
             pub fn search(mut self, search: impl Into<String>) -> Self {
                 self.search = Some(search.into());
                 self
             }
+            #[doc = "Unique identifier for load test name, must be a valid URL character ^[a-z0-9_-]*$"]
             pub fn test_id(mut self, test_id: impl Into<String>) -> Self {
                 self.test_id = Some(test_id.into());
                 self
             }
+            #[doc = "The end DateTime(Iso8601Literal format) of test-run execution time filter range."]
             pub fn execution_from(mut self, execution_from: impl Into<String>) -> Self {
                 self.execution_from = Some(execution_from.into());
                 self
             }
+            #[doc = "The start DateTime(Iso8601Literal format) of test-run execution time filter range."]
             pub fn execution_to(mut self, execution_to: impl Into<String>) -> Self {
                 self.execution_to = Some(execution_to.into());
                 self
             }
+            #[doc = "Comma separated list of test run status, value can be -  \"ACCEPTED\", \"NOTSTARTED\",\"PROVISIONING\",\"PROVISIONED\",\"CONFIGURING\",\n\"CONFIGURED\",\"EXECUTING\",\"EXECUTED\",\"DEPROVISIONING\",\"DEPROVISIONED\",\"DONE\",\"CANCELLED\",\"FAILED\""]
             pub fn status(mut self, status: impl Into<String>) -> Self {
                 self.status = Some(status.into());
                 self
             }
+            #[doc = "No of results in response"]
             pub fn max_page_size(mut self, max_page_size: i32) -> Self {
                 self.max_page_size = Some(max_page_size);
                 self
@@ -1661,10 +1753,12 @@ pub mod test_run {
             pub(crate) group_by_interval: Option<String>,
         }
         impl Builder {
+            #[doc = "Filter to be used in metrics queries, filters can be applied on following fields : request, error, percentile( possible values : 90, 99, 95) or time (can be between start and end time). Request and error filter values can be get from /clientMetricsFilter API. Example of filter : (request eq 'HTTP Request1' or request eq 'total-4bec6d5b-c3c3-4f5f-be09-5c4abb28aedd') and (error eq 'Non HTTP response code: org.apache.http.conn.ConnectTimeoutException' or error eq 'total-4bec6d5b-c3c3-4f5f-be09-5c4abb28aedd') and (percentile eq 90) and (time ge 1626346535054 and time le 1626346924744)"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Group by time interval, in which interval metrics needs to be retrieved, values can be 10s,20s,30s,1m,2m,5m,1h"]
             pub fn group_by_interval(mut self, group_by_interval: impl Into<String>) -> Self {
                 self.group_by_interval = Some(group_by_interval.into());
                 self

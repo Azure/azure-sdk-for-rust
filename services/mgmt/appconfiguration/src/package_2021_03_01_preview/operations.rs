@@ -94,6 +94,10 @@ pub mod configuration_stores {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists the configuration stores for a given subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -101,6 +105,11 @@ pub mod configuration_stores {
                 skip_token: None,
             }
         }
+        #[doc = "Lists the configuration stores for a given resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the container registry belongs."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -113,6 +122,12 @@ pub mod configuration_stores {
                 skip_token: None,
             }
         }
+        #[doc = "Gets the properties of the specified configuration store."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the container registry belongs."]
+        #[doc = "* `config_store_name`: The name of the configuration store."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -126,6 +141,13 @@ pub mod configuration_stores {
                 config_store_name: config_store_name.into(),
             }
         }
+        #[doc = "Creates a configuration store with the specified parameters."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the container registry belongs."]
+        #[doc = "* `config_store_name`: The name of the configuration store."]
+        #[doc = "* `config_store_creation_parameters`: The parameters for creating a configuration store."]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -141,6 +163,13 @@ pub mod configuration_stores {
                 config_store_creation_parameters: config_store_creation_parameters.into(),
             }
         }
+        #[doc = "Updates a configuration store with the specified parameters."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the container registry belongs."]
+        #[doc = "* `config_store_name`: The name of the configuration store."]
+        #[doc = "* `config_store_update_parameters`: The parameters for updating a configuration store."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -156,6 +185,12 @@ pub mod configuration_stores {
                 config_store_update_parameters: config_store_update_parameters.into(),
             }
         }
+        #[doc = "Deletes a configuration store."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the container registry belongs."]
+        #[doc = "* `config_store_name`: The name of the configuration store."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -169,6 +204,12 @@ pub mod configuration_stores {
                 config_store_name: config_store_name.into(),
             }
         }
+        #[doc = "Lists the access key for the specified configuration store."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the container registry belongs."]
+        #[doc = "* `config_store_name`: The name of the configuration store."]
         pub fn list_keys(
             &self,
             subscription_id: impl Into<String>,
@@ -183,6 +224,13 @@ pub mod configuration_stores {
                 skip_token: None,
             }
         }
+        #[doc = "Regenerates an access key for the specified configuration store."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the container registry belongs."]
+        #[doc = "* `config_store_name`: The name of the configuration store."]
+        #[doc = "* `regenerate_key_parameters`: The parameters for regenerating an access key."]
         pub fn regenerate_key(
             &self,
             subscription_id: impl Into<String>,
@@ -209,6 +257,7 @@ pub mod configuration_stores {
             pub(crate) skip_token: Option<String>,
         }
         impl Builder {
+            #[doc = "A skip token is used to continue retrieving items after an operation returns a partial result. If a previous response contains a nextLink element, the value of the nextLink element will include a skipToken parameter that specifies a starting point to use for subsequent calls."]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());
                 self
@@ -292,6 +341,7 @@ pub mod configuration_stores {
             pub(crate) skip_token: Option<String>,
         }
         impl Builder {
+            #[doc = "A skip token is used to continue retrieving items after an operation returns a partial result. If a previous response contains a nextLink element, the value of the nextLink element will include a skipToken parameter that specifies a starting point to use for subsequent calls."]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());
                 self
@@ -613,6 +663,7 @@ pub mod configuration_stores {
             pub(crate) skip_token: Option<String>,
         }
         impl Builder {
+            #[doc = "A skip token is used to continue retrieving items after an operation returns a partial result. If a previous response contains a nextLink element, the value of the nextLink element will include a skipToken parameter that specifies a starting point to use for subsequent calls."]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());
                 self
@@ -741,6 +792,11 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Checks whether the configuration store name is available for use."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `check_name_availability_parameters`: The object containing information for the availability request."]
         pub fn check_name_availability(
             &self,
             subscription_id: impl Into<String>,
@@ -752,6 +808,7 @@ pub mod operations {
                 check_name_availability_parameters: check_name_availability_parameters.into(),
             }
         }
+        #[doc = "Lists the operations available from this provider."]
         pub fn list(&self) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -818,6 +875,7 @@ pub mod operations {
             pub(crate) skip_token: Option<String>,
         }
         impl Builder {
+            #[doc = "A skip token is used to continue retrieving items after an operation returns a partial result. If a previous response contains a nextLink element, the value of the nextLink element will include a skipToken parameter that specifies a starting point to use for subsequent calls."]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());
                 self
@@ -894,6 +952,12 @@ pub mod private_endpoint_connections {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all private endpoint connections for a configuration store."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the container registry belongs."]
+        #[doc = "* `config_store_name`: The name of the configuration store."]
         pub fn list_by_configuration_store(
             &self,
             subscription_id: impl Into<String>,
@@ -907,6 +971,13 @@ pub mod private_endpoint_connections {
                 config_store_name: config_store_name.into(),
             }
         }
+        #[doc = "Gets the specified private endpoint connection associated with the configuration store."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the container registry belongs."]
+        #[doc = "* `config_store_name`: The name of the configuration store."]
+        #[doc = "* `private_endpoint_connection_name`: Private endpoint connection name"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -922,6 +993,14 @@ pub mod private_endpoint_connections {
                 private_endpoint_connection_name: private_endpoint_connection_name.into(),
             }
         }
+        #[doc = "Update the state of the specified private endpoint connection associated with the configuration store."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the container registry belongs."]
+        #[doc = "* `config_store_name`: The name of the configuration store."]
+        #[doc = "* `private_endpoint_connection_name`: Private endpoint connection name"]
+        #[doc = "* `private_endpoint_connection`: The private endpoint connection properties."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -939,6 +1018,13 @@ pub mod private_endpoint_connections {
                 private_endpoint_connection: private_endpoint_connection.into(),
             }
         }
+        #[doc = "Deletes a private endpoint connection."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the container registry belongs."]
+        #[doc = "* `config_store_name`: The name of the configuration store."]
+        #[doc = "* `private_endpoint_connection_name`: Private endpoint connection name"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1189,6 +1275,12 @@ pub mod private_link_resources {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the private link resources that need to be created for a configuration store."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the container registry belongs."]
+        #[doc = "* `config_store_name`: The name of the configuration store."]
         pub fn list_by_configuration_store(
             &self,
             subscription_id: impl Into<String>,
@@ -1202,6 +1294,13 @@ pub mod private_link_resources {
                 config_store_name: config_store_name.into(),
             }
         }
+        #[doc = "Gets a private link resource that need to be created for a configuration store."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the container registry belongs."]
+        #[doc = "* `config_store_name`: The name of the configuration store."]
+        #[doc = "* `group_name`: The name of the private link resource group."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1342,6 +1441,12 @@ pub mod key_values {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists the key-values for a given configuration store."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the container registry belongs."]
+        #[doc = "* `config_store_name`: The name of the configuration store."]
         pub fn list_by_configuration_store(
             &self,
             subscription_id: impl Into<String>,
@@ -1356,6 +1461,13 @@ pub mod key_values {
                 skip_token: None,
             }
         }
+        #[doc = "Gets the properties of the specified key-value."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the container registry belongs."]
+        #[doc = "* `config_store_name`: The name of the configuration store."]
+        #[doc = "* `key_value_name`: Identifier of key and label combination. Key and label are joined by $ character. Label is optional."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1371,6 +1483,13 @@ pub mod key_values {
                 key_value_name: key_value_name.into(),
             }
         }
+        #[doc = "Creates a key-value."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the container registry belongs."]
+        #[doc = "* `config_store_name`: The name of the configuration store."]
+        #[doc = "* `key_value_name`: Identifier of key and label combination. Key and label are joined by $ character. Label is optional."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -1387,6 +1506,13 @@ pub mod key_values {
                 key_value_parameters: None,
             }
         }
+        #[doc = "Deletes a key-value."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the container registry belongs."]
+        #[doc = "* `config_store_name`: The name of the configuration store."]
+        #[doc = "* `key_value_name`: Identifier of key and label combination. Key and label are joined by $ character. Label is optional."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1415,6 +1541,7 @@ pub mod key_values {
             pub(crate) skip_token: Option<String>,
         }
         impl Builder {
+            #[doc = "A skip token is used to continue retrieving items after an operation returns a partial result. If a previous response contains a nextLink element, the value of the nextLink element will include a skipToken parameter that specifies a starting point to use for subsequent calls."]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());
                 self
@@ -1549,6 +1676,7 @@ pub mod key_values {
             pub(crate) key_value_parameters: Option<models::KeyValue>,
         }
         impl Builder {
+            #[doc = "The parameters for creating a key-value."]
             pub fn key_value_parameters(mut self, key_value_parameters: impl Into<models::KeyValue>) -> Self {
                 self.key_value_parameters = Some(key_value_parameters.into());
                 self

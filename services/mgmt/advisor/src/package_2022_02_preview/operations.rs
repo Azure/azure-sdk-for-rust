@@ -82,6 +82,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all the available Advisor REST API operations."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -159,6 +160,10 @@ pub mod operations {
 }
 impl Client {
     #[doc = "Predicts a recommendation."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `subscription_id`: The Azure subscription ID."]
+    #[doc = "* `prediction_request`: Parameters for predict recommendation."]
     pub fn predict(
         &self,
         subscription_id: impl Into<String>,

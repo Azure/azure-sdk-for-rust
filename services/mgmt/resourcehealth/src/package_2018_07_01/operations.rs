@@ -94,6 +94,10 @@ pub mod events {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists current service health events in the subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_subscription_id(&self, subscription_id: impl Into<String>) -> list_by_subscription_id::Builder {
             list_by_subscription_id::Builder {
                 client: self.0.clone(),
@@ -103,6 +107,10 @@ pub mod events {
                 view: None,
             }
         }
+        #[doc = "Lists current service health events for given resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_uri`: The fully qualified ID of the resource, including the resource name and resource type. Currently the API support not nested and one nesting level resource types : /subscriptions/{subscriptionId}/resourceGroups/{resource-group-name}/providers/{resource-provider-name}/{resource-type}/{resource-name} and /subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{resource-provider-name}/{parentResourceType}/{parentResourceName}/{resourceType}/{resourceName}"]
         pub fn list_by_single_resource(&self, resource_uri: impl Into<String>) -> list_by_single_resource::Builder {
             list_by_single_resource::Builder {
                 client: self.0.clone(),
@@ -124,14 +132,17 @@ pub mod events {
             pub(crate) view: Option<String>,
         }
         impl Builder {
+            #[doc = "A valid odata query to limit the events returned. The logical operators and, or, equal, not equal, and top are supported. For example, $filter=Properties/EventType eq 'ServiceIssue' or Properties/EventType eq 'PlannedMaintenance' OR %24filter=Properties%2FEventType%20eq%20%27ServiceIssue%27%20or%20Properties%2FEventType%20eq%20%27PlannedMaintenance%27"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Specifies from when to return events, based on the lastUpdateTime property. For example, queryStartTime = 7/24/2020 OR queryStartTime=7%2F24%2F2020"]
             pub fn query_start_time(mut self, query_start_time: impl Into<String>) -> Self {
                 self.query_start_time = Some(query_start_time.into());
                 self
             }
+            #[doc = "setting view=full expands the article parameters"]
             pub fn view(mut self, view: impl Into<String>) -> Self {
                 self.view = Some(view.into());
                 self
@@ -221,10 +232,12 @@ pub mod events {
             pub(crate) view: Option<String>,
         }
         impl Builder {
+            #[doc = "A valid odata query to limit the events returned. The logical operators and, or, equal, not equal, and top are supported. For example, $filter=Properties/EventType eq 'ServiceIssue' or Properties/EventType eq 'PlannedMaintenance' OR %24filter=Properties%2FEventType%20eq%20%27ServiceIssue%27%20or%20Properties%2FEventType%20eq%20%27PlannedMaintenance%27"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "setting view=full expands the article parameters"]
             pub fn view(mut self, view: impl Into<String>) -> Self {
                 self.view = Some(view.into());
                 self
@@ -305,6 +318,10 @@ pub mod availability_statuses {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists the current availability status for all the resources in the subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_subscription_id(&self, subscription_id: impl Into<String>) -> list_by_subscription_id::Builder {
             list_by_subscription_id::Builder {
                 client: self.0.clone(),
@@ -313,6 +330,11 @@ pub mod availability_statuses {
                 expand: None,
             }
         }
+        #[doc = "Lists the current availability status for all the resources in the resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -326,6 +348,10 @@ pub mod availability_statuses {
                 expand: None,
             }
         }
+        #[doc = "Gets current availability status for a single resource"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_uri`: The fully qualified ID of the resource, including the resource name and resource type. Currently the API support not nested and one nesting level resource types : /subscriptions/{subscriptionId}/resourceGroups/{resource-group-name}/providers/{resource-provider-name}/{resource-type}/{resource-name} and /subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{resource-provider-name}/{parentResourceType}/{parentResourceName}/{resourceType}/{resourceName}"]
         pub fn get_by_resource(&self, resource_uri: impl Into<String>) -> get_by_resource::Builder {
             get_by_resource::Builder {
                 client: self.0.clone(),
@@ -334,6 +360,10 @@ pub mod availability_statuses {
                 expand: None,
             }
         }
+        #[doc = "Lists all historical availability transitions and impacting events for a single resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_uri`: The fully qualified ID of the resource, including the resource name and resource type. Currently the API support not nested and one nesting level resource types : /subscriptions/{subscriptionId}/resourceGroups/{resource-group-name}/providers/{resource-provider-name}/{resource-type}/{resource-name} and /subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{resource-provider-name}/{parentResourceType}/{parentResourceName}/{resourceType}/{resourceName}"]
         pub fn list(&self, resource_uri: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -354,10 +384,12 @@ pub mod availability_statuses {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "A valid odata query to limit the events returned. The logical operators and, or, equal, not equal, and top are supported. For example, $filter=Properties/EventType eq 'ServiceIssue' or Properties/EventType eq 'PlannedMaintenance' OR %24filter=Properties%2FEventType%20eq%20%27ServiceIssue%27%20or%20Properties%2FEventType%20eq%20%27PlannedMaintenance%27"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Setting $expand=recommendedactions in url query expands the recommendedactions in the response."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -445,10 +477,12 @@ pub mod availability_statuses {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "A valid odata query to limit the events returned. The logical operators and, or, equal, not equal, and top are supported. For example, $filter=Properties/EventType eq 'ServiceIssue' or Properties/EventType eq 'PlannedMaintenance' OR %24filter=Properties%2FEventType%20eq%20%27ServiceIssue%27%20or%20Properties%2FEventType%20eq%20%27PlannedMaintenance%27"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Setting $expand=recommendedactions in url query expands the recommendedactions in the response."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -536,10 +570,12 @@ pub mod availability_statuses {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "A valid odata query to limit the events returned. The logical operators and, or, equal, not equal, and top are supported. For example, $filter=Properties/EventType eq 'ServiceIssue' or Properties/EventType eq 'PlannedMaintenance' OR %24filter=Properties%2FEventType%20eq%20%27ServiceIssue%27%20or%20Properties%2FEventType%20eq%20%27PlannedMaintenance%27"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Setting $expand=recommendedactions in url query expands the recommendedactions in the response."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -600,10 +636,12 @@ pub mod availability_statuses {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "A valid odata query to limit the events returned. The logical operators and, or, equal, not equal, and top are supported. For example, $filter=Properties/EventType eq 'ServiceIssue' or Properties/EventType eq 'PlannedMaintenance' OR %24filter=Properties%2FEventType%20eq%20%27ServiceIssue%27%20or%20Properties%2FEventType%20eq%20%27PlannedMaintenance%27"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Setting $expand=recommendedactions in url query expands the recommendedactions in the response."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -684,6 +722,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists available operations for the resourcehealth resource provider"]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -737,12 +776,17 @@ pub mod emerging_issues {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets Azure services' emerging issues."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `issue_name`: The name of the emerging issue."]
         pub fn get(&self, issue_name: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
                 issue_name: issue_name.into(),
             }
         }
+        #[doc = "Lists Azure services' emerging issues."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -872,9 +916,14 @@ pub mod metadata {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the list of metadata entities."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
+        #[doc = "Gets the list of metadata entities."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `name`: Name of metadata entity."]
         pub fn get_entity(&self, name: impl Into<String>) -> get_entity::Builder {
             get_entity::Builder {
                 client: self.0.clone(),

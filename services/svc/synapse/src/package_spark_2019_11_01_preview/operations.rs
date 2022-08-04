@@ -85,6 +85,7 @@ pub mod spark_batch {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List all spark batch jobs which are running under a particular spark pool."]
         pub fn get_spark_batch_jobs(&self) -> get_spark_batch_jobs::Builder {
             get_spark_batch_jobs::Builder {
                 client: self.0.clone(),
@@ -93,6 +94,10 @@ pub mod spark_batch {
                 detailed: None,
             }
         }
+        #[doc = "Create new spark batch job."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `spark_batch_job_options`: Livy compatible batch job request payload."]
         pub fn create_spark_batch_job(
             &self,
             spark_batch_job_options: impl Into<models::SparkBatchJobOptions>,
@@ -103,6 +108,10 @@ pub mod spark_batch {
                 detailed: None,
             }
         }
+        #[doc = "Gets a single spark batch job."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `batch_id`: Identifier for the batch job."]
         pub fn get_spark_batch_job(&self, batch_id: i32) -> get_spark_batch_job::Builder {
             get_spark_batch_job::Builder {
                 client: self.0.clone(),
@@ -110,6 +119,10 @@ pub mod spark_batch {
                 detailed: None,
             }
         }
+        #[doc = "Cancels a running spark batch job."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `batch_id`: Identifier for the batch job."]
         pub fn cancel_spark_batch_job(&self, batch_id: i32) -> cancel_spark_batch_job::Builder {
             cancel_spark_batch_job::Builder {
                 client: self.0.clone(),
@@ -128,14 +141,17 @@ pub mod spark_batch {
             pub(crate) detailed: Option<bool>,
         }
         impl Builder {
+            #[doc = "Optional param specifying which index the list should begin from."]
             pub fn from(mut self, from: i32) -> Self {
                 self.from = Some(from);
                 self
             }
+            #[doc = "Optional param specifying the size of the returned list.\r\n            By default it is 20 and that is the maximum."]
             pub fn size(mut self, size: i32) -> Self {
                 self.size = Some(size);
                 self
             }
+            #[doc = "Optional query param specifying whether detailed response is returned beyond plain livy."]
             pub fn detailed(mut self, detailed: bool) -> Self {
                 self.detailed = Some(detailed);
                 self
@@ -191,6 +207,7 @@ pub mod spark_batch {
             pub(crate) detailed: Option<bool>,
         }
         impl Builder {
+            #[doc = "Optional query param specifying whether detailed response is returned beyond plain livy."]
             pub fn detailed(mut self, detailed: bool) -> Self {
                 self.detailed = Some(detailed);
                 self
@@ -241,6 +258,7 @@ pub mod spark_batch {
             pub(crate) detailed: Option<bool>,
         }
         impl Builder {
+            #[doc = "Optional query param specifying whether detailed response is returned beyond plain livy."]
             pub fn detailed(mut self, detailed: bool) -> Self {
                 self.detailed = Some(detailed);
                 self
@@ -322,6 +340,7 @@ pub mod spark_session {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List all spark sessions which are running under a particular spark pool."]
         pub fn get_spark_sessions(&self) -> get_spark_sessions::Builder {
             get_spark_sessions::Builder {
                 client: self.0.clone(),
@@ -330,6 +349,10 @@ pub mod spark_session {
                 detailed: None,
             }
         }
+        #[doc = "Create new spark session."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `spark_session_options`: Livy compatible batch job request payload."]
         pub fn create_spark_session(&self, spark_session_options: impl Into<models::SparkSessionOptions>) -> create_spark_session::Builder {
             create_spark_session::Builder {
                 client: self.0.clone(),
@@ -337,6 +360,10 @@ pub mod spark_session {
                 detailed: None,
             }
         }
+        #[doc = "Gets a single spark session."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `session_id`: Identifier for the session."]
         pub fn get_spark_session(&self, session_id: i32) -> get_spark_session::Builder {
             get_spark_session::Builder {
                 client: self.0.clone(),
@@ -344,24 +371,41 @@ pub mod spark_session {
                 detailed: None,
             }
         }
+        #[doc = "Cancels a running spark session."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `session_id`: Identifier for the session."]
         pub fn cancel_spark_session(&self, session_id: i32) -> cancel_spark_session::Builder {
             cancel_spark_session::Builder {
                 client: self.0.clone(),
                 session_id,
             }
         }
+        #[doc = "Sends a keep alive call to the current session to reset the session timeout."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `session_id`: Identifier for the session."]
         pub fn reset_spark_session_timeout(&self, session_id: i32) -> reset_spark_session_timeout::Builder {
             reset_spark_session_timeout::Builder {
                 client: self.0.clone(),
                 session_id,
             }
         }
+        #[doc = "Gets a list of statements within a spark session."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `session_id`: Identifier for the session."]
         pub fn get_spark_statements(&self, session_id: i32) -> get_spark_statements::Builder {
             get_spark_statements::Builder {
                 client: self.0.clone(),
                 session_id,
             }
         }
+        #[doc = "Create statement within a spark session."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `session_id`: Identifier for the session."]
+        #[doc = "* `spark_statement_options`: Livy compatible batch job request payload."]
         pub fn create_spark_statement(
             &self,
             session_id: i32,
@@ -373,6 +417,11 @@ pub mod spark_session {
                 spark_statement_options: spark_statement_options.into(),
             }
         }
+        #[doc = "Gets a single statement within a spark session."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `session_id`: Identifier for the session."]
+        #[doc = "* `statement_id`: Identifier for the statement."]
         pub fn get_spark_statement(&self, session_id: i32, statement_id: i32) -> get_spark_statement::Builder {
             get_spark_statement::Builder {
                 client: self.0.clone(),
@@ -380,6 +429,11 @@ pub mod spark_session {
                 statement_id,
             }
         }
+        #[doc = "Kill a statement within a session."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `session_id`: Identifier for the session."]
+        #[doc = "* `statement_id`: Identifier for the statement."]
         pub fn cancel_spark_statement(&self, session_id: i32, statement_id: i32) -> cancel_spark_statement::Builder {
             cancel_spark_statement::Builder {
                 client: self.0.clone(),
@@ -399,14 +453,17 @@ pub mod spark_session {
             pub(crate) detailed: Option<bool>,
         }
         impl Builder {
+            #[doc = "Optional param specifying which index the list should begin from."]
             pub fn from(mut self, from: i32) -> Self {
                 self.from = Some(from);
                 self
             }
+            #[doc = "Optional param specifying the size of the returned list.\r\n            By default it is 20 and that is the maximum."]
             pub fn size(mut self, size: i32) -> Self {
                 self.size = Some(size);
                 self
             }
+            #[doc = "Optional query param specifying whether detailed response is returned beyond plain livy."]
             pub fn detailed(mut self, detailed: bool) -> Self {
                 self.detailed = Some(detailed);
                 self
@@ -462,6 +519,7 @@ pub mod spark_session {
             pub(crate) detailed: Option<bool>,
         }
         impl Builder {
+            #[doc = "Optional query param specifying whether detailed response is returned beyond plain livy."]
             pub fn detailed(mut self, detailed: bool) -> Self {
                 self.detailed = Some(detailed);
                 self
@@ -512,6 +570,7 @@ pub mod spark_session {
             pub(crate) detailed: Option<bool>,
         }
         impl Builder {
+            #[doc = "Optional query param specifying whether detailed response is returned beyond plain livy."]
             pub fn detailed(mut self, detailed: bool) -> Self {
                 self.detailed = Some(detailed);
                 self

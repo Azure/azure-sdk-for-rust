@@ -101,6 +101,11 @@ pub mod reservation {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get Available Scopes for `Reservation`."]
+        #[doc = "Get Available Scopes for `Reservation`.\n"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `reservation_order_id`: Order Id of the reservation"]
+        #[doc = "* `reservation_id`: Id of the Reservation Item"]
         pub fn available_scopes(
             &self,
             reservation_order_id: impl Into<String>,
@@ -115,6 +120,11 @@ pub mod reservation {
             }
         }
         #[doc = "Split the `Reservation`."]
+        #[doc = "Split a `Reservation` into two `Reservation`s with specified quantity distribution."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `reservation_order_id`: Order Id of the reservation"]
+        #[doc = "* `body`: Information needed to Split a reservation item"]
         pub fn split(&self, reservation_order_id: impl Into<String>, body: impl Into<models::SplitRequest>) -> split::Builder {
             split::Builder {
                 client: self.0.clone(),
@@ -123,6 +133,11 @@ pub mod reservation {
             }
         }
         #[doc = "Merges two `Reservation`s."]
+        #[doc = "Merge the specified `Reservation`s into a new `Reservation`. The two `Reservation`s being merged must have same properties."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `reservation_order_id`: Order Id of the reservation"]
+        #[doc = "* `body`: Information needed for commercial request for a reservation"]
         pub fn merge(&self, reservation_order_id: impl Into<String>, body: impl Into<models::MergeRequest>) -> merge::Builder {
             merge::Builder {
                 client: self.0.clone(),
@@ -131,6 +146,10 @@ pub mod reservation {
             }
         }
         #[doc = "Get `Reservation`s in a given reservation Order"]
+        #[doc = "List `Reservation`s within a single `ReservationOrder`."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `reservation_order_id`: Order Id of the reservation"]
         pub fn list(&self, reservation_order_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -138,6 +157,11 @@ pub mod reservation {
             }
         }
         #[doc = "Get `Reservation` details."]
+        #[doc = "Get specific `Reservation` details."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `reservation_id`: Id of the Reservation Item"]
+        #[doc = "* `reservation_order_id`: Order Id of the reservation"]
         pub fn get(&self, reservation_id: impl Into<String>, reservation_order_id: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -147,6 +171,12 @@ pub mod reservation {
             }
         }
         #[doc = "Updates a `Reservation`."]
+        #[doc = "Updates the applied scopes of the `Reservation`."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `reservation_order_id`: Order Id of the reservation"]
+        #[doc = "* `reservation_id`: Id of the Reservation Item"]
+        #[doc = "* `parameters`: Information needed to patch a reservation item"]
         pub fn update(
             &self,
             reservation_order_id: impl Into<String>,
@@ -161,6 +191,11 @@ pub mod reservation {
             }
         }
         #[doc = "Get `Reservation` revisions."]
+        #[doc = "List of all the revisions for the `Reservation`."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `reservation_id`: Id of the Reservation Item"]
+        #[doc = "* `reservation_order_id`: Order Id of the reservation"]
         pub fn list_revisions(
             &self,
             reservation_id: impl Into<String>,
@@ -172,6 +207,7 @@ pub mod reservation {
                 reservation_order_id: reservation_order_id.into(),
             }
         }
+        #[doc = "List the reservations and the roll up counts of reservations group by provisioning states that the user has access to in the current tenant."]
         pub fn list_all(&self) -> list_all::Builder {
             list_all::Builder {
                 client: self.0.clone(),
@@ -434,6 +470,7 @@ pub mod reservation {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "Supported value of this query is renewProperties"]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -629,26 +666,32 @@ pub mod reservation {
             pub(crate) take: Option<f64>,
         }
         impl Builder {
+            #[doc = "May be used to filter by reservation properties. The filter supports 'eq', 'or', and 'and'. It does not currently support 'ne', 'gt', 'le', 'ge', or 'not'. Reservation properties include sku/name, properties/{appliedScopeType, archived, displayName, displayProvisioningState, effectiveDateTime, expiryDate, provisioningState, quantity, renew, reservedResourceType, term, userFriendlyAppliedScopeType, userFriendlyRenewState}"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "May be used to sort order by reservation properties."]
             pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
                 self.orderby = Some(orderby.into());
                 self
             }
+            #[doc = "To indicate whether to refresh the roll up counts of the reservations group by provisioning states"]
             pub fn refresh_summary(mut self, refresh_summary: impl Into<String>) -> Self {
                 self.refresh_summary = Some(refresh_summary.into());
                 self
             }
+            #[doc = "The number of reservations to skip from the list before returning results"]
             pub fn skiptoken(mut self, skiptoken: f64) -> Self {
                 self.skiptoken = Some(skiptoken);
                 self
             }
+            #[doc = "The selected provisioning state"]
             pub fn selected_state(mut self, selected_state: impl Into<String>) -> Self {
                 self.selected_state = Some(selected_state.into());
                 self
             }
+            #[doc = "To number of reservations to return"]
             pub fn take(mut self, take: f64) -> Self {
                 self.take = Some(take);
                 self
@@ -736,6 +779,9 @@ pub mod reservation {
 }
 impl Client {
     #[doc = "Get the regions and skus that are available for RI purchase for the specified Azure subscription."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `subscription_id`: Id of the subscription"]
     pub fn get_catalog(&self, subscription_id: impl Into<String>) -> get_catalog::Builder {
         get_catalog::Builder {
             client: self.clone(),
@@ -748,6 +794,10 @@ impl Client {
         }
     }
     #[doc = "Get list of applicable `Reservation`s."]
+    #[doc = "Get applicable `Reservation`s that are applied to this subscription or a resource group under this subscription."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `subscription_id`: Id of the subscription"]
     pub fn get_applied_reservation_list(&self, subscription_id: impl Into<String>) -> get_applied_reservation_list::Builder {
         get_applied_reservation_list::Builder {
             client: self.clone(),
@@ -769,22 +819,27 @@ pub mod get_catalog {
         pub(crate) plan_id: Option<String>,
     }
     impl Builder {
+        #[doc = "The type of the resource for which the skus should be provided."]
         pub fn reserved_resource_type(mut self, reserved_resource_type: impl Into<String>) -> Self {
             self.reserved_resource_type = Some(reserved_resource_type.into());
             self
         }
+        #[doc = "Filters the skus based on the location specified in this parameter. This can be an azure region or global"]
         pub fn location(mut self, location: impl Into<String>) -> Self {
             self.location = Some(location.into());
             self
         }
+        #[doc = "Publisher id used to get the third party products"]
         pub fn publisher_id(mut self, publisher_id: impl Into<String>) -> Self {
             self.publisher_id = Some(publisher_id.into());
             self
         }
+        #[doc = "Offer id used to get the third party products"]
         pub fn offer_id(mut self, offer_id: impl Into<String>) -> Self {
             self.offer_id = Some(offer_id.into());
             self
         }
+        #[doc = "Plan id used to get the third party products"]
         pub fn plan_id(mut self, plan_id: impl Into<String>) -> Self {
             self.plan_id = Some(plan_id.into());
             self
@@ -898,6 +953,10 @@ pub mod reservation_order {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Calculate price for a `ReservationOrder`."]
+        #[doc = "Calculate price for placing a `ReservationOrder`."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `body`: Information needed for calculate or purchase reservation"]
         pub fn calculate(&self, body: impl Into<models::PurchaseRequest>) -> calculate::Builder {
             calculate::Builder {
                 client: self.0.clone(),
@@ -905,10 +964,15 @@ pub mod reservation_order {
             }
         }
         #[doc = "Get all `ReservationOrder`s."]
+        #[doc = "List of all the `ReservationOrder`s that the user has access to in the current tenant."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
         #[doc = "Get a specific `ReservationOrder`."]
+        #[doc = "Get the details of the `ReservationOrder`."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `reservation_order_id`: Order Id of the reservation"]
         pub fn get(&self, reservation_order_id: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -917,6 +981,11 @@ pub mod reservation_order {
             }
         }
         #[doc = "Purchase `ReservationOrder`"]
+        #[doc = "Purchase `ReservationOrder` and create resource under the specified URI."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `reservation_order_id`: Order Id of the reservation"]
+        #[doc = "* `body`: Information needed for calculate or purchase reservation"]
         pub fn purchase(&self, reservation_order_id: impl Into<String>, body: impl Into<models::PurchaseRequest>) -> purchase::Builder {
             purchase::Builder {
                 client: self.0.clone(),
@@ -925,6 +994,11 @@ pub mod reservation_order {
             }
         }
         #[doc = "Change directory of `ReservationOrder`."]
+        #[doc = "Change directory (tenant) of `ReservationOrder` and all `Reservation` under it to specified tenant id"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `reservation_order_id`: Order Id of the reservation"]
+        #[doc = "* `body`: Information needed to change directory of reservation order"]
         pub fn change_directory(
             &self,
             reservation_order_id: impl Into<String>,
@@ -1065,6 +1139,7 @@ pub mod reservation_order {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "May be used to expand the planInformation."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -1227,6 +1302,7 @@ pub mod operation {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get operations."]
+        #[doc = "List all the operations."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -1307,6 +1383,10 @@ pub mod calculate_exchange {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Calculates the refund amounts and price of the new purchases."]
+        #[doc = "Calculates price for exchanging `Reservations` if there are no policy errors.\n"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `body`: Request containing purchases and refunds that need to be executed."]
         pub fn post(&self, body: impl Into<models::CalculateExchangeRequest>) -> post::Builder {
             post::Builder {
                 client: self.0.clone(),
@@ -1374,6 +1454,10 @@ pub mod exchange {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Exchange Reservation(s)"]
+        #[doc = "Returns one or more `Reservations` in exchange for one or more `Reservation` purchases.\n"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `body`: Request containing the refunds and purchases that need to be executed."]
         pub fn post(&self, body: impl Into<models::ExchangeRequest>) -> post::Builder {
             post::Builder {
                 client: self.0.clone(),
@@ -1437,6 +1521,13 @@ pub mod quota {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get the current quota (service limit) and usage of a resource. You can use the response from the GET operation to submit quota update request."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure subscription ID."]
+        #[doc = "* `provider_id`: Azure resource provider ID."]
+        #[doc = "* `location`: Azure region."]
+        #[doc = "* `resource_name`: The resource name for a resource provider, such as SKU name for Microsoft.Compute, Sku or TotalLowPriorityCores for Microsoft.MachineLearningServices"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1452,6 +1543,14 @@ pub mod quota {
                 resource_name: resource_name.into(),
             }
         }
+        #[doc = "Create or update the quota (service limits) of a resource to the requested value.\n Steps:\r\n  1. Make the Get request to get the quota information for specific resource.\r\n  2. To increase the quota, update the limit field in the response from Get request to new value.\r\n  3. Submit the JSON to the quota request API to update the quota.\r\n  The Create quota request may be constructed as follows. The PUT operation can be used to update the quota."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure subscription ID."]
+        #[doc = "* `provider_id`: Azure resource provider ID."]
+        #[doc = "* `location`: Azure region."]
+        #[doc = "* `resource_name`: The resource name for a resource provider, such as SKU name for Microsoft.Compute, Sku or TotalLowPriorityCores for Microsoft.MachineLearningServices"]
+        #[doc = "* `create_quota_request`: Quota requests payload."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -1469,6 +1568,14 @@ pub mod quota {
                 create_quota_request: create_quota_request.into(),
             }
         }
+        #[doc = "Update the quota (service limits) of this resource to the requested value.\r\n  • To get the quota information for specific resource, send a GET request.\r\n  • To increase the quota, update the limit field from the GET response to a new value.\r\n  • To update the quota value, submit the JSON response to the quota request API to update the quota.\r\n  • To update the quota. use the PATCH operation."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure subscription ID."]
+        #[doc = "* `provider_id`: Azure resource provider ID."]
+        #[doc = "* `location`: Azure region."]
+        #[doc = "* `resource_name`: The resource name for a resource provider, such as SKU name for Microsoft.Compute, Sku or TotalLowPriorityCores for Microsoft.MachineLearningServices"]
+        #[doc = "* `create_quota_request`: Payload for the quota request."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -1486,6 +1593,12 @@ pub mod quota {
                 create_quota_request: create_quota_request.into(),
             }
         }
+        #[doc = "Gets a list of current quotas (service limits) and usage for all resources. The response from the list quota operation can be leveraged to request quota updates."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure subscription ID."]
+        #[doc = "* `provider_id`: Azure resource provider ID."]
+        #[doc = "* `location`: Azure region."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -1769,6 +1882,13 @@ pub mod quota_request_status {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "For the specified Azure region (location), get the details and status of the quota request by the quota request ID for the resources of the resource provider. The PUT request for the quota (service limit) returns a response with the requestId parameter."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure subscription ID."]
+        #[doc = "* `provider_id`: Azure resource provider ID."]
+        #[doc = "* `location`: Azure region."]
+        #[doc = "* `id`: Quota Request ID."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1784,6 +1904,12 @@ pub mod quota_request_status {
                 id: id.into(),
             }
         }
+        #[doc = "For the specified Azure region (location), subscription, and resource provider, get the history of the quota requests for the past year. To select specific quota requests, use the oData filter."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure subscription ID."]
+        #[doc = "* `provider_id`: Azure resource provider ID."]
+        #[doc = "* `location`: Azure region."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -1869,14 +1995,17 @@ pub mod quota_request_status {
             pub(crate) skiptoken: Option<String>,
         }
         impl Builder {
+            #[doc = "| Field | Supported operators |\r\n|---------------------|------------------------|\r\n|requestSubmitTime | ge, le, eq, gt, lt |"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Skiptoken is only used if a previous operation returned a partial result. If a previous response contains a nextLink element, the value of the nextLink element includes a skiptoken parameter that specifies a starting point to use for subsequent calls."]
             pub fn skiptoken(mut self, skiptoken: impl Into<String>) -> Self {
                 self.skiptoken = Some(skiptoken.into());
                 self

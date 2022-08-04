@@ -97,6 +97,11 @@ pub mod blueprints {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get a blueprint definition."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `management_group_name`: ManagementGroup where blueprint stores."]
+        #[doc = "* `blueprint_name`: name of the blueprint."]
         pub fn get(&self, management_group_name: impl Into<String>, blueprint_name: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -104,6 +109,12 @@ pub mod blueprints {
                 blueprint_name: blueprint_name.into(),
             }
         }
+        #[doc = "Create or update Blueprint definition."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `management_group_name`: ManagementGroup where blueprint stores."]
+        #[doc = "* `blueprint_name`: name of the blueprint."]
+        #[doc = "* `blueprint`: Blueprint definition."]
         pub fn create_or_update(
             &self,
             management_group_name: impl Into<String>,
@@ -117,6 +128,11 @@ pub mod blueprints {
                 blueprint: blueprint.into(),
             }
         }
+        #[doc = "Delete a blueprint definition."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `management_group_name`: ManagementGroup where blueprint stores."]
+        #[doc = "* `blueprint_name`: name of the blueprint."]
         pub fn delete(&self, management_group_name: impl Into<String>, blueprint_name: impl Into<String>) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),
@@ -124,6 +140,10 @@ pub mod blueprints {
                 blueprint_name: blueprint_name.into(),
             }
         }
+        #[doc = "List Blueprint definitions within a Management Group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `management_group_name`: ManagementGroup where blueprint stores."]
         pub fn list(&self, management_group_name: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -367,6 +387,12 @@ pub mod artifacts {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get a Blueprint artifact."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `management_group_name`: ManagementGroup where blueprint stores."]
+        #[doc = "* `blueprint_name`: name of the blueprint."]
+        #[doc = "* `artifact_name`: name of the artifact."]
         pub fn get(
             &self,
             management_group_name: impl Into<String>,
@@ -380,6 +406,13 @@ pub mod artifacts {
                 artifact_name: artifact_name.into(),
             }
         }
+        #[doc = "Create or update Blueprint artifact."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `management_group_name`: ManagementGroup where blueprint stores."]
+        #[doc = "* `blueprint_name`: name of the blueprint."]
+        #[doc = "* `artifact_name`: name of the artifact."]
+        #[doc = "* `artifact`: Blueprint artifact to save."]
         pub fn create_or_update(
             &self,
             management_group_name: impl Into<String>,
@@ -395,6 +428,12 @@ pub mod artifacts {
                 artifact: artifact.into(),
             }
         }
+        #[doc = "Delete a Blueprint artifact."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `management_group_name`: ManagementGroup where blueprint stores."]
+        #[doc = "* `blueprint_name`: name of the blueprint."]
+        #[doc = "* `artifact_name`: name of the artifact."]
         pub fn delete(
             &self,
             management_group_name: impl Into<String>,
@@ -408,6 +447,11 @@ pub mod artifacts {
                 artifact_name: artifact_name.into(),
             }
         }
+        #[doc = "List artifacts for a given Blueprint."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `management_group_name`: ManagementGroup where blueprint stores."]
+        #[doc = "* `blueprint_name`: name of the blueprint."]
         pub fn list(&self, management_group_name: impl Into<String>, blueprint_name: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -642,6 +686,12 @@ pub mod published_blueprints {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get a published Blueprint."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `management_group_name`: ManagementGroup where blueprint stores."]
+        #[doc = "* `blueprint_name`: name of the blueprint."]
+        #[doc = "* `version_id`: version of the published blueprint."]
         pub fn get(
             &self,
             management_group_name: impl Into<String>,
@@ -655,6 +705,12 @@ pub mod published_blueprints {
                 version_id: version_id.into(),
             }
         }
+        #[doc = "Publish a new version of the Blueprint with the latest artifacts. Published Blueprints are immutable."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `management_group_name`: ManagementGroup where blueprint stores."]
+        #[doc = "* `blueprint_name`: name of the blueprint."]
+        #[doc = "* `version_id`: version of the published blueprint."]
         pub fn create(
             &self,
             management_group_name: impl Into<String>,
@@ -668,6 +724,12 @@ pub mod published_blueprints {
                 version_id: version_id.into(),
             }
         }
+        #[doc = "Delete a published Blueprint."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `management_group_name`: ManagementGroup where blueprint stores."]
+        #[doc = "* `blueprint_name`: name of the blueprint."]
+        #[doc = "* `version_id`: version of the published blueprint."]
         pub fn delete(
             &self,
             management_group_name: impl Into<String>,
@@ -681,6 +743,11 @@ pub mod published_blueprints {
                 version_id: version_id.into(),
             }
         }
+        #[doc = "List published versions of given Blueprint."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `management_group_name`: ManagementGroup where blueprint stores."]
+        #[doc = "* `blueprint_name`: name of the blueprint."]
         pub fn list(&self, management_group_name: impl Into<String>, blueprint_name: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -931,6 +998,13 @@ pub mod published_artifacts {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get an artifact for a published Blueprint."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `management_group_name`: ManagementGroup where blueprint stores."]
+        #[doc = "* `blueprint_name`: name of the blueprint."]
+        #[doc = "* `version_id`: version of the published blueprint."]
+        #[doc = "* `artifact_name`: name of the artifact."]
         pub fn get(
             &self,
             management_group_name: impl Into<String>,
@@ -946,6 +1020,12 @@ pub mod published_artifacts {
                 artifact_name: artifact_name.into(),
             }
         }
+        #[doc = "List artifacts for a published Blueprint."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `management_group_name`: ManagementGroup where blueprint stores."]
+        #[doc = "* `blueprint_name`: name of the blueprint."]
+        #[doc = "* `version_id`: version of the published blueprint."]
         pub fn list(
             &self,
             management_group_name: impl Into<String>,
@@ -1084,6 +1164,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List all of the available operations the Blueprint resource provider supports."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -1136,6 +1217,11 @@ pub mod assignments {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get a Blueprint assignment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: azure subscriptionId, which we assign the blueprint to."]
+        #[doc = "* `assignment_name`: name of the assignment."]
         pub fn get(&self, subscription_id: impl Into<String>, assignment_name: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -1143,6 +1229,12 @@ pub mod assignments {
                 assignment_name: assignment_name.into(),
             }
         }
+        #[doc = "Create or update a Blueprint assignment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: azure subscriptionId, which we assign the blueprint to."]
+        #[doc = "* `assignment_name`: name of the assignment."]
+        #[doc = "* `assignment`: assignment object to save."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -1156,6 +1248,11 @@ pub mod assignments {
                 assignment: assignment.into(),
             }
         }
+        #[doc = "Delete a Blueprint assignment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: azure subscriptionId, which we assign the blueprint to."]
+        #[doc = "* `assignment_name`: name of the assignment."]
         pub fn delete(&self, subscription_id: impl Into<String>, assignment_name: impl Into<String>) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),
@@ -1163,6 +1260,10 @@ pub mod assignments {
                 assignment_name: assignment_name.into(),
             }
         }
+        #[doc = "List Blueprint assignments within a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: azure subscriptionId, which we assign the blueprint to."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),

@@ -91,6 +91,10 @@ pub mod service {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the properties of a storage account's File service, including properties for Storage Analytics metrics and CORS (Cross-Origin Resource Sharing) rules."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn get_properties(&self, x_ms_version: impl Into<String>) -> get_properties::Builder {
             get_properties::Builder {
                 client: self.0.clone(),
@@ -98,6 +102,11 @@ pub mod service {
                 timeout: None,
             }
         }
+        #[doc = "Sets properties for a storage account's File service endpoint, including properties for Storage Analytics metrics and CORS (Cross-Origin Resource Sharing) rules."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `storage_service_properties`: The StorageService properties."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn set_properties(
             &self,
             storage_service_properties: impl Into<models::StorageServiceProperties>,
@@ -110,6 +119,10 @@ pub mod service {
                 timeout: None,
             }
         }
+        #[doc = "The List Shares Segment operation returns a list of the shares and share snapshots under the specified account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn list_shares_segment(&self, x_ms_version: impl Into<String>) -> list_shares_segment::Builder {
             list_shares_segment::Builder {
                 client: self.0.clone(),
@@ -132,6 +145,7 @@ pub mod service {
             pub(crate) timeout: Option<i64>,
         }
         impl Builder {
+            #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/Setting-Timeouts-for-File-Service-Operations?redirectedfrom=MSDN\">Setting Timeouts for File Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
@@ -183,6 +197,7 @@ pub mod service {
             pub(crate) timeout: Option<i64>,
         }
         impl Builder {
+            #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/Setting-Timeouts-for-File-Service-Operations?redirectedfrom=MSDN\">Setting Timeouts for File Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
@@ -234,22 +249,27 @@ pub mod service {
             pub(crate) timeout: Option<i64>,
         }
         impl Builder {
+            #[doc = "Filters the results to return only entries whose name begins with the specified prefix."]
             pub fn prefix(mut self, prefix: impl Into<String>) -> Self {
                 self.prefix = Some(prefix.into());
                 self
             }
+            #[doc = "A string value that identifies the portion of the list to be returned with the next list operation. The operation returns a marker value within the response body if the list returned was not complete. The marker value may then be used in a subsequent call to request the next set of list items. The marker value is opaque to the client."]
             pub fn marker(mut self, marker: impl Into<String>) -> Self {
                 self.marker = Some(marker.into());
                 self
             }
+            #[doc = "Specifies the maximum number of entries to return. If the request does not specify maxresults, or specifies a value greater than 5,000, the server will return up to 5,000 items."]
             pub fn maxresults(mut self, maxresults: i64) -> Self {
                 self.maxresults = Some(maxresults);
                 self
             }
+            #[doc = "Include this parameter to specify one or more datasets to include in the response."]
             pub fn include(mut self, include: Vec<String>) -> Self {
                 self.include = include;
                 self
             }
+            #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/Setting-Timeouts-for-File-Service-Operations?redirectedfrom=MSDN\">Setting Timeouts for File Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
@@ -323,6 +343,11 @@ pub mod share {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Returns all user-defined metadata and system properties for the specified share or share snapshot. The data returned does not include the share's list of files."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `share_name`: The name of the target share."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn get_properties(&self, share_name: impl Into<String>, x_ms_version: impl Into<String>) -> get_properties::Builder {
             get_properties::Builder {
                 client: self.0.clone(),
@@ -333,6 +358,11 @@ pub mod share {
                 x_ms_lease_id: None,
             }
         }
+        #[doc = "Creates a new share under the specified account. If the share with the same name already exists, the operation fails."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `share_name`: The name of the target share."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn create(&self, share_name: impl Into<String>, x_ms_version: impl Into<String>) -> create::Builder {
             create::Builder {
                 client: self.0.clone(),
@@ -346,6 +376,11 @@ pub mod share {
                 x_ms_root_squash: None,
             }
         }
+        #[doc = "Operation marks the specified share or share snapshot for deletion. The share or share snapshot and any files contained within it are later deleted during garbage collection."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `share_name`: The name of the target share."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn delete(&self, share_name: impl Into<String>, x_ms_version: impl Into<String>) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),
@@ -357,6 +392,12 @@ pub mod share {
                 x_ms_lease_id: None,
             }
         }
+        #[doc = "The Lease Share operation establishes and manages a lock on a share, or the specified snapshot for set and delete share operations."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `share_name`: The name of the target share."]
+        #[doc = "* `x_ms_lease_action`: Describes what lease action to take."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn acquire_lease(
             &self,
             share_name: impl Into<String>,
@@ -375,6 +416,13 @@ pub mod share {
                 x_ms_client_request_id: None,
             }
         }
+        #[doc = "The Lease Share operation establishes and manages a lock on a share, or the specified snapshot for set and delete share operations."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `share_name`: The name of the target share."]
+        #[doc = "* `x_ms_lease_action`: Describes what lease action to take."]
+        #[doc = "* `x_ms_lease_id`: Specifies the current lease ID on the resource."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn release_lease(
             &self,
             share_name: impl Into<String>,
@@ -393,6 +441,13 @@ pub mod share {
                 x_ms_client_request_id: None,
             }
         }
+        #[doc = "The Lease Share operation establishes and manages a lock on a share, or the specified snapshot for set and delete share operations."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `share_name`: The name of the target share."]
+        #[doc = "* `x_ms_lease_action`: Describes what lease action to take."]
+        #[doc = "* `x_ms_lease_id`: Specifies the current lease ID on the resource."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn change_lease(
             &self,
             share_name: impl Into<String>,
@@ -412,6 +467,13 @@ pub mod share {
                 x_ms_client_request_id: None,
             }
         }
+        #[doc = "The Lease Share operation establishes and manages a lock on a share, or the specified snapshot for set and delete share operations."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `share_name`: The name of the target share."]
+        #[doc = "* `x_ms_lease_action`: Describes what lease action to take."]
+        #[doc = "* `x_ms_lease_id`: Specifies the current lease ID on the resource."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn renew_lease(
             &self,
             share_name: impl Into<String>,
@@ -430,6 +492,12 @@ pub mod share {
                 x_ms_client_request_id: None,
             }
         }
+        #[doc = "The Lease Share operation establishes and manages a lock on a share, or the specified snapshot for set and delete share operations."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `share_name`: The name of the target share."]
+        #[doc = "* `x_ms_lease_action`: Describes what lease action to take."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn break_lease(
             &self,
             share_name: impl Into<String>,
@@ -448,6 +516,11 @@ pub mod share {
                 sharesnapshot: None,
             }
         }
+        #[doc = "Creates a read-only snapshot of a share."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `share_name`: The name of the target share."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn create_snapshot(&self, share_name: impl Into<String>, x_ms_version: impl Into<String>) -> create_snapshot::Builder {
             create_snapshot::Builder {
                 client: self.0.clone(),
@@ -457,6 +530,12 @@ pub mod share {
                 x_ms_meta: None,
             }
         }
+        #[doc = "Returns the permission (security descriptor) for a given key"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `share_name`: The name of the target share."]
+        #[doc = "* `x_ms_file_permission_key`: Key of the permission to be set for the directory/file."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn get_permission(
             &self,
             share_name: impl Into<String>,
@@ -471,6 +550,12 @@ pub mod share {
                 timeout: None,
             }
         }
+        #[doc = "Create a permission (a security descriptor)."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `share_name`: The name of the target share."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
+        #[doc = "* `share_permission`: A permission (a security descriptor) at the share level."]
         pub fn create_permission(
             &self,
             share_name: impl Into<String>,
@@ -485,6 +570,11 @@ pub mod share {
                 timeout: None,
             }
         }
+        #[doc = "Sets properties for the specified share."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `share_name`: The name of the target share."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn set_properties(&self, share_name: impl Into<String>, x_ms_version: impl Into<String>) -> set_properties::Builder {
             set_properties::Builder {
                 client: self.0.clone(),
@@ -497,6 +587,11 @@ pub mod share {
                 x_ms_root_squash: None,
             }
         }
+        #[doc = "Sets one or more user-defined name-value pairs for the specified share."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `share_name`: The name of the target share."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn set_metadata(&self, share_name: impl Into<String>, x_ms_version: impl Into<String>) -> set_metadata::Builder {
             set_metadata::Builder {
                 client: self.0.clone(),
@@ -507,6 +602,11 @@ pub mod share {
                 x_ms_lease_id: None,
             }
         }
+        #[doc = "Returns information about stored access policies specified on the share."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `share_name`: The name of the target share."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn get_access_policy(&self, share_name: impl Into<String>, x_ms_version: impl Into<String>) -> get_access_policy::Builder {
             get_access_policy::Builder {
                 client: self.0.clone(),
@@ -516,6 +616,11 @@ pub mod share {
                 x_ms_lease_id: None,
             }
         }
+        #[doc = "Sets a stored access policy for use with shared access signatures."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `share_name`: The name of the target share."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn set_access_policy(&self, share_name: impl Into<String>, x_ms_version: impl Into<String>) -> set_access_policy::Builder {
             set_access_policy::Builder {
                 client: self.0.clone(),
@@ -526,6 +631,11 @@ pub mod share {
                 x_ms_lease_id: None,
             }
         }
+        #[doc = "Retrieves statistics related to the share."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `share_name`: The name of the target share."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn get_statistics(&self, share_name: impl Into<String>, x_ms_version: impl Into<String>) -> get_statistics::Builder {
             get_statistics::Builder {
                 client: self.0.clone(),
@@ -535,6 +645,11 @@ pub mod share {
                 x_ms_lease_id: None,
             }
         }
+        #[doc = "Restores a previously deleted Share."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `share_name`: The name of the target share."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn restore(&self, share_name: impl Into<String>, x_ms_version: impl Into<String>) -> restore::Builder {
             restore::Builder {
                 client: self.0.clone(),
@@ -560,14 +675,17 @@ pub mod share {
             pub(crate) x_ms_lease_id: Option<String>,
         }
         impl Builder {
+            #[doc = "The snapshot parameter is an opaque DateTime value that, when present, specifies the share snapshot to query."]
             pub fn sharesnapshot(mut self, sharesnapshot: impl Into<String>) -> Self {
                 self.sharesnapshot = Some(sharesnapshot.into());
                 self
             }
+            #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/Setting-Timeouts-for-File-Service-Operations?redirectedfrom=MSDN\">Setting Timeouts for File Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "If specified, the operation only succeeds if the resource's lease is active and matches this ID."]
             pub fn x_ms_lease_id(mut self, x_ms_lease_id: impl Into<String>) -> Self {
                 self.x_ms_lease_id = Some(x_ms_lease_id.into());
                 self
@@ -626,26 +744,32 @@ pub mod share {
             pub(crate) x_ms_root_squash: Option<String>,
         }
         impl Builder {
+            #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/Setting-Timeouts-for-File-Service-Operations?redirectedfrom=MSDN\">Setting Timeouts for File Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "A name-value pair to associate with a file storage object."]
             pub fn x_ms_meta(mut self, x_ms_meta: impl Into<String>) -> Self {
                 self.x_ms_meta = Some(x_ms_meta.into());
                 self
             }
+            #[doc = "Specifies the maximum size of the share, in gigabytes."]
             pub fn x_ms_share_quota(mut self, x_ms_share_quota: i64) -> Self {
                 self.x_ms_share_quota = Some(x_ms_share_quota);
                 self
             }
+            #[doc = "Specifies the access tier of the share."]
             pub fn x_ms_access_tier(mut self, x_ms_access_tier: impl Into<String>) -> Self {
                 self.x_ms_access_tier = Some(x_ms_access_tier.into());
                 self
             }
+            #[doc = "Protocols to enable on the share."]
             pub fn x_ms_enabled_protocols(mut self, x_ms_enabled_protocols: impl Into<String>) -> Self {
                 self.x_ms_enabled_protocols = Some(x_ms_enabled_protocols.into());
                 self
             }
+            #[doc = "Root squash to set on the share.  Only valid for NFS shares."]
             pub fn x_ms_root_squash(mut self, x_ms_root_squash: impl Into<String>) -> Self {
                 self.x_ms_root_squash = Some(x_ms_root_squash.into());
                 self
@@ -711,18 +835,22 @@ pub mod share {
             pub(crate) x_ms_lease_id: Option<String>,
         }
         impl Builder {
+            #[doc = "The snapshot parameter is an opaque DateTime value that, when present, specifies the share snapshot to query."]
             pub fn sharesnapshot(mut self, sharesnapshot: impl Into<String>) -> Self {
                 self.sharesnapshot = Some(sharesnapshot.into());
                 self
             }
+            #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/Setting-Timeouts-for-File-Service-Operations?redirectedfrom=MSDN\">Setting Timeouts for File Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "Specifies the option include to delete the base share and all of its snapshots."]
             pub fn x_ms_delete_snapshots(mut self, x_ms_delete_snapshots: impl Into<String>) -> Self {
                 self.x_ms_delete_snapshots = Some(x_ms_delete_snapshots.into());
                 self
             }
+            #[doc = "If specified, the operation only succeeds if the resource's lease is active and matches this ID."]
             pub fn x_ms_lease_id(mut self, x_ms_lease_id: impl Into<String>) -> Self {
                 self.x_ms_lease_id = Some(x_ms_lease_id.into());
                 self
@@ -784,22 +912,27 @@ pub mod share {
             pub(crate) x_ms_client_request_id: Option<String>,
         }
         impl Builder {
+            #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/Setting-Timeouts-for-File-Service-Operations?redirectedfrom=MSDN\">Setting Timeouts for File Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "Specifies the duration of the lease, in seconds, or negative one (-1) for a lease that never expires. A non-infinite lease can be between 15 and 60 seconds. A lease duration cannot be changed using renew or change."]
             pub fn x_ms_lease_duration(mut self, x_ms_lease_duration: i64) -> Self {
                 self.x_ms_lease_duration = Some(x_ms_lease_duration);
                 self
             }
+            #[doc = "Proposed lease ID, in a GUID string format. The File service returns 400 (Invalid request) if the proposed lease ID is not in the correct format. See Guid Constructor (String) for a list of valid GUID string formats."]
             pub fn x_ms_proposed_lease_id(mut self, x_ms_proposed_lease_id: impl Into<String>) -> Self {
                 self.x_ms_proposed_lease_id = Some(x_ms_proposed_lease_id.into());
                 self
             }
+            #[doc = "The snapshot parameter is an opaque DateTime value that, when present, specifies the share snapshot to query."]
             pub fn sharesnapshot(mut self, sharesnapshot: impl Into<String>) -> Self {
                 self.sharesnapshot = Some(sharesnapshot.into());
                 self
             }
+            #[doc = "Provides a client-generated, opaque value with a 1 KB character limit that is recorded in the analytics logs when storage analytics logging is enabled."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
@@ -868,14 +1001,17 @@ pub mod share {
             pub(crate) x_ms_client_request_id: Option<String>,
         }
         impl Builder {
+            #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/Setting-Timeouts-for-File-Service-Operations?redirectedfrom=MSDN\">Setting Timeouts for File Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "The snapshot parameter is an opaque DateTime value that, when present, specifies the share snapshot to query."]
             pub fn sharesnapshot(mut self, sharesnapshot: impl Into<String>) -> Self {
                 self.sharesnapshot = Some(sharesnapshot.into());
                 self
             }
+            #[doc = "Provides a client-generated, opaque value with a 1 KB character limit that is recorded in the analytics logs when storage analytics logging is enabled."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
@@ -940,18 +1076,22 @@ pub mod share {
             pub(crate) x_ms_client_request_id: Option<String>,
         }
         impl Builder {
+            #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/Setting-Timeouts-for-File-Service-Operations?redirectedfrom=MSDN\">Setting Timeouts for File Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "Proposed lease ID, in a GUID string format. The File service returns 400 (Invalid request) if the proposed lease ID is not in the correct format. See Guid Constructor (String) for a list of valid GUID string formats."]
             pub fn x_ms_proposed_lease_id(mut self, x_ms_proposed_lease_id: impl Into<String>) -> Self {
                 self.x_ms_proposed_lease_id = Some(x_ms_proposed_lease_id.into());
                 self
             }
+            #[doc = "The snapshot parameter is an opaque DateTime value that, when present, specifies the share snapshot to query."]
             pub fn sharesnapshot(mut self, sharesnapshot: impl Into<String>) -> Self {
                 self.sharesnapshot = Some(sharesnapshot.into());
                 self
             }
+            #[doc = "Provides a client-generated, opaque value with a 1 KB character limit that is recorded in the analytics logs when storage analytics logging is enabled."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
@@ -1018,14 +1158,17 @@ pub mod share {
             pub(crate) x_ms_client_request_id: Option<String>,
         }
         impl Builder {
+            #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/Setting-Timeouts-for-File-Service-Operations?redirectedfrom=MSDN\">Setting Timeouts for File Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "The snapshot parameter is an opaque DateTime value that, when present, specifies the share snapshot to query."]
             pub fn sharesnapshot(mut self, sharesnapshot: impl Into<String>) -> Self {
                 self.sharesnapshot = Some(sharesnapshot.into());
                 self
             }
+            #[doc = "Provides a client-generated, opaque value with a 1 KB character limit that is recorded in the analytics logs when storage analytics logging is enabled."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
@@ -1090,22 +1233,27 @@ pub mod share {
             pub(crate) sharesnapshot: Option<String>,
         }
         impl Builder {
+            #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/Setting-Timeouts-for-File-Service-Operations?redirectedfrom=MSDN\">Setting Timeouts for File Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "For a break operation, proposed duration the lease should continue before it is broken, in seconds, between 0 and 60. This break period is only used if it is shorter than the time remaining on the lease. If longer, the time remaining on the lease is used. A new lease will not be available before the break period has expired, but the lease may be held for longer than the break period. If this header does not appear with a break operation, a fixed-duration lease breaks after the remaining lease period elapses, and an infinite lease breaks immediately."]
             pub fn x_ms_lease_break_period(mut self, x_ms_lease_break_period: i64) -> Self {
                 self.x_ms_lease_break_period = Some(x_ms_lease_break_period);
                 self
             }
+            #[doc = "If specified, the operation only succeeds if the resource's lease is active and matches this ID."]
             pub fn x_ms_lease_id(mut self, x_ms_lease_id: impl Into<String>) -> Self {
                 self.x_ms_lease_id = Some(x_ms_lease_id.into());
                 self
             }
+            #[doc = "Provides a client-generated, opaque value with a 1 KB character limit that is recorded in the analytics logs when storage analytics logging is enabled."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
             }
+            #[doc = "The snapshot parameter is an opaque DateTime value that, when present, specifies the share snapshot to query."]
             pub fn sharesnapshot(mut self, sharesnapshot: impl Into<String>) -> Self {
                 self.sharesnapshot = Some(sharesnapshot.into());
                 self
@@ -1171,10 +1319,12 @@ pub mod share {
             pub(crate) x_ms_meta: Option<String>,
         }
         impl Builder {
+            #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/Setting-Timeouts-for-File-Service-Operations?redirectedfrom=MSDN\">Setting Timeouts for File Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "A name-value pair to associate with a file storage object."]
             pub fn x_ms_meta(mut self, x_ms_meta: impl Into<String>) -> Self {
                 self.x_ms_meta = Some(x_ms_meta.into());
                 self
@@ -1230,6 +1380,7 @@ pub mod share {
             pub(crate) timeout: Option<i64>,
         }
         impl Builder {
+            #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/Setting-Timeouts-for-File-Service-Operations?redirectedfrom=MSDN\">Setting Timeouts for File Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
@@ -1287,6 +1438,7 @@ pub mod share {
             pub(crate) timeout: Option<i64>,
         }
         impl Builder {
+            #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/Setting-Timeouts-for-File-Service-Operations?redirectedfrom=MSDN\">Setting Timeouts for File Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
@@ -1343,22 +1495,27 @@ pub mod share {
             pub(crate) x_ms_root_squash: Option<String>,
         }
         impl Builder {
+            #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/Setting-Timeouts-for-File-Service-Operations?redirectedfrom=MSDN\">Setting Timeouts for File Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "Specifies the maximum size of the share, in gigabytes."]
             pub fn x_ms_share_quota(mut self, x_ms_share_quota: i64) -> Self {
                 self.x_ms_share_quota = Some(x_ms_share_quota);
                 self
             }
+            #[doc = "Specifies the access tier of the share."]
             pub fn x_ms_access_tier(mut self, x_ms_access_tier: impl Into<String>) -> Self {
                 self.x_ms_access_tier = Some(x_ms_access_tier.into());
                 self
             }
+            #[doc = "If specified, the operation only succeeds if the resource's lease is active and matches this ID."]
             pub fn x_ms_lease_id(mut self, x_ms_lease_id: impl Into<String>) -> Self {
                 self.x_ms_lease_id = Some(x_ms_lease_id.into());
                 self
             }
+            #[doc = "Root squash to set on the share.  Only valid for NFS shares."]
             pub fn x_ms_root_squash(mut self, x_ms_root_squash: impl Into<String>) -> Self {
                 self.x_ms_root_squash = Some(x_ms_root_squash.into());
                 self
@@ -1424,14 +1581,17 @@ pub mod share {
             pub(crate) x_ms_lease_id: Option<String>,
         }
         impl Builder {
+            #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/Setting-Timeouts-for-File-Service-Operations?redirectedfrom=MSDN\">Setting Timeouts for File Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "A name-value pair to associate with a file storage object."]
             pub fn x_ms_meta(mut self, x_ms_meta: impl Into<String>) -> Self {
                 self.x_ms_meta = Some(x_ms_meta.into());
                 self
             }
+            #[doc = "If specified, the operation only succeeds if the resource's lease is active and matches this ID."]
             pub fn x_ms_lease_id(mut self, x_ms_lease_id: impl Into<String>) -> Self {
                 self.x_ms_lease_id = Some(x_ms_lease_id.into());
                 self
@@ -1490,10 +1650,12 @@ pub mod share {
             pub(crate) x_ms_lease_id: Option<String>,
         }
         impl Builder {
+            #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/Setting-Timeouts-for-File-Service-Operations?redirectedfrom=MSDN\">Setting Timeouts for File Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "If specified, the operation only succeeds if the resource's lease is active and matches this ID."]
             pub fn x_ms_lease_id(mut self, x_ms_lease_id: impl Into<String>) -> Self {
                 self.x_ms_lease_id = Some(x_ms_lease_id.into());
                 self
@@ -1551,14 +1713,17 @@ pub mod share {
             pub(crate) x_ms_lease_id: Option<String>,
         }
         impl Builder {
+            #[doc = "The ACL for the share."]
             pub fn share_acl(mut self, share_acl: impl Into<models::SignedIdentifiers>) -> Self {
                 self.share_acl = Some(share_acl.into());
                 self
             }
+            #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/Setting-Timeouts-for-File-Service-Operations?redirectedfrom=MSDN\">Setting Timeouts for File Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "If specified, the operation only succeeds if the resource's lease is active and matches this ID."]
             pub fn x_ms_lease_id(mut self, x_ms_lease_id: impl Into<String>) -> Self {
                 self.x_ms_lease_id = Some(x_ms_lease_id.into());
                 self
@@ -1616,10 +1781,12 @@ pub mod share {
             pub(crate) x_ms_lease_id: Option<String>,
         }
         impl Builder {
+            #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/Setting-Timeouts-for-File-Service-Operations?redirectedfrom=MSDN\">Setting Timeouts for File Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "If specified, the operation only succeeds if the resource's lease is active and matches this ID."]
             pub fn x_ms_lease_id(mut self, x_ms_lease_id: impl Into<String>) -> Self {
                 self.x_ms_lease_id = Some(x_ms_lease_id.into());
                 self
@@ -1678,18 +1845,22 @@ pub mod share {
             pub(crate) x_ms_deleted_share_version: Option<String>,
         }
         impl Builder {
+            #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/Setting-Timeouts-for-File-Service-Operations?redirectedfrom=MSDN\">Setting Timeouts for File Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "Provides a client-generated, opaque value with a 1 KB character limit that is recorded in the analytics logs when storage analytics logging is enabled."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
             }
+            #[doc = "Specifies the name of the previously-deleted share."]
             pub fn x_ms_deleted_share_name(mut self, x_ms_deleted_share_name: impl Into<String>) -> Self {
                 self.x_ms_deleted_share_name = Some(x_ms_deleted_share_name.into());
                 self
             }
+            #[doc = "Specifies the version of the previously-deleted share."]
             pub fn x_ms_deleted_share_version(mut self, x_ms_deleted_share_version: impl Into<String>) -> Self {
                 self.x_ms_deleted_share_version = Some(x_ms_deleted_share_version.into());
                 self
@@ -1744,6 +1915,12 @@ pub mod directory {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Returns all system properties for the specified directory, and can also be used to check the existence of a directory. The data returned does not include the files in the directory or any subdirectories."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `share_name`: The name of the target share."]
+        #[doc = "* `directory`: The path of the target directory."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn get_properties(
             &self,
             share_name: impl Into<String>,
@@ -1759,6 +1936,15 @@ pub mod directory {
                 timeout: None,
             }
         }
+        #[doc = "Creates a new directory under the specified share or parent directory."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `share_name`: The name of the target share."]
+        #[doc = "* `directory`: The path of the target directory."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
+        #[doc = "* `x_ms_file_attributes`: If specified, the provided file attributes shall be set. Default value: ‘Archive’ for file and ‘Directory’ for directory. ‘None’ can also be specified as default."]
+        #[doc = "* `x_ms_file_creation_time`: Creation time for the file/directory. Default value: Now."]
+        #[doc = "* `x_ms_file_last_write_time`: Last write time for the file/directory. Default value: Now."]
         pub fn create(
             &self,
             share_name: impl Into<String>,
@@ -1782,6 +1968,12 @@ pub mod directory {
                 x_ms_file_permission_key: None,
             }
         }
+        #[doc = "Removes the specified empty directory. Note that the directory must be empty before it can be deleted."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `share_name`: The name of the target share."]
+        #[doc = "* `directory`: The path of the target directory."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn delete(
             &self,
             share_name: impl Into<String>,
@@ -1796,6 +1988,15 @@ pub mod directory {
                 timeout: None,
             }
         }
+        #[doc = "Sets properties on the directory."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `share_name`: The name of the target share."]
+        #[doc = "* `directory`: The path of the target directory."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
+        #[doc = "* `x_ms_file_attributes`: If specified, the provided file attributes shall be set. Default value: ‘Archive’ for file and ‘Directory’ for directory. ‘None’ can also be specified as default."]
+        #[doc = "* `x_ms_file_creation_time`: Creation time for the file/directory. Default value: Now."]
+        #[doc = "* `x_ms_file_last_write_time`: Last write time for the file/directory. Default value: Now."]
         pub fn set_properties(
             &self,
             share_name: impl Into<String>,
@@ -1818,6 +2019,12 @@ pub mod directory {
                 x_ms_file_permission_key: None,
             }
         }
+        #[doc = "Updates user defined metadata for the specified directory."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `share_name`: The name of the target share."]
+        #[doc = "* `directory`: The path of the target directory."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn set_metadata(
             &self,
             share_name: impl Into<String>,
@@ -1833,6 +2040,12 @@ pub mod directory {
                 x_ms_meta: None,
             }
         }
+        #[doc = "Returns a list of files or directories under the specified share or directory. It lists the contents only for a single level of the directory hierarchy."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `share_name`: The name of the target share."]
+        #[doc = "* `directory`: The path of the target directory."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn list_files_and_directories_segment(
             &self,
             share_name: impl Into<String>,
@@ -1853,6 +2066,12 @@ pub mod directory {
                 x_ms_file_extended_info: None,
             }
         }
+        #[doc = "Lists handles for directory."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `share_name`: The name of the target share."]
+        #[doc = "* `directory`: The path of the target directory."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn list_handles(
             &self,
             share_name: impl Into<String>,
@@ -1871,6 +2090,13 @@ pub mod directory {
                 x_ms_recursive: None,
             }
         }
+        #[doc = "Closes all handles open for given directory."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `share_name`: The name of the target share."]
+        #[doc = "* `directory`: The path of the target directory."]
+        #[doc = "* `x_ms_handle_id`: Specifies handle ID opened on the file or directory to be closed. Asterisk (‘*’) is a wildcard that specifies all handles."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn force_close_handles(
             &self,
             share_name: impl Into<String>,
@@ -1904,10 +2130,12 @@ pub mod directory {
             pub(crate) timeout: Option<i64>,
         }
         impl Builder {
+            #[doc = "The snapshot parameter is an opaque DateTime value that, when present, specifies the share snapshot to query."]
             pub fn sharesnapshot(mut self, sharesnapshot: impl Into<String>) -> Self {
                 self.sharesnapshot = Some(sharesnapshot.into());
                 self
             }
+            #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/Setting-Timeouts-for-File-Service-Operations?redirectedfrom=MSDN\">Setting Timeouts for File Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
@@ -1970,18 +2198,22 @@ pub mod directory {
             pub(crate) x_ms_file_permission_key: Option<String>,
         }
         impl Builder {
+            #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/Setting-Timeouts-for-File-Service-Operations?redirectedfrom=MSDN\">Setting Timeouts for File Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "A name-value pair to associate with a file storage object."]
             pub fn x_ms_meta(mut self, x_ms_meta: impl Into<String>) -> Self {
                 self.x_ms_meta = Some(x_ms_meta.into());
                 self
             }
+            #[doc = "If specified the permission (security descriptor) shall be set for the directory/file. This header can be used if Permission size is <= 8KB, else x-ms-file-permission-key header shall be used. Default value: Inherit. If SDDL is specified as input, it must have owner, group and dacl. Note: Only one of the x-ms-file-permission or x-ms-file-permission-key should be specified."]
             pub fn x_ms_file_permission(mut self, x_ms_file_permission: impl Into<String>) -> Self {
                 self.x_ms_file_permission = Some(x_ms_file_permission.into());
                 self
             }
+            #[doc = "Key of the permission to be set for the directory/file. Note: Only one of the x-ms-file-permission or x-ms-file-permission-key should be specified."]
             pub fn x_ms_file_permission_key(mut self, x_ms_file_permission_key: impl Into<String>) -> Self {
                 self.x_ms_file_permission_key = Some(x_ms_file_permission_key.into());
                 self
@@ -2047,6 +2279,7 @@ pub mod directory {
             pub(crate) timeout: Option<i64>,
         }
         impl Builder {
+            #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/Setting-Timeouts-for-File-Service-Operations?redirectedfrom=MSDN\">Setting Timeouts for File Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
@@ -2105,14 +2338,17 @@ pub mod directory {
             pub(crate) x_ms_file_permission_key: Option<String>,
         }
         impl Builder {
+            #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/Setting-Timeouts-for-File-Service-Operations?redirectedfrom=MSDN\">Setting Timeouts for File Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "If specified the permission (security descriptor) shall be set for the directory/file. This header can be used if Permission size is <= 8KB, else x-ms-file-permission-key header shall be used. Default value: Inherit. If SDDL is specified as input, it must have owner, group and dacl. Note: Only one of the x-ms-file-permission or x-ms-file-permission-key should be specified."]
             pub fn x_ms_file_permission(mut self, x_ms_file_permission: impl Into<String>) -> Self {
                 self.x_ms_file_permission = Some(x_ms_file_permission.into());
                 self
             }
+            #[doc = "Key of the permission to be set for the directory/file. Note: Only one of the x-ms-file-permission or x-ms-file-permission-key should be specified."]
             pub fn x_ms_file_permission_key(mut self, x_ms_file_permission_key: impl Into<String>) -> Self {
                 self.x_ms_file_permission_key = Some(x_ms_file_permission_key.into());
                 self
@@ -2176,10 +2412,12 @@ pub mod directory {
             pub(crate) x_ms_meta: Option<String>,
         }
         impl Builder {
+            #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/Setting-Timeouts-for-File-Service-Operations?redirectedfrom=MSDN\">Setting Timeouts for File Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "A name-value pair to associate with a file storage object."]
             pub fn x_ms_meta(mut self, x_ms_meta: impl Into<String>) -> Self {
                 self.x_ms_meta = Some(x_ms_meta.into());
                 self
@@ -2242,30 +2480,37 @@ pub mod directory {
             pub(crate) x_ms_file_extended_info: Option<bool>,
         }
         impl Builder {
+            #[doc = "Filters the results to return only entries whose name begins with the specified prefix."]
             pub fn prefix(mut self, prefix: impl Into<String>) -> Self {
                 self.prefix = Some(prefix.into());
                 self
             }
+            #[doc = "The snapshot parameter is an opaque DateTime value that, when present, specifies the share snapshot to query."]
             pub fn sharesnapshot(mut self, sharesnapshot: impl Into<String>) -> Self {
                 self.sharesnapshot = Some(sharesnapshot.into());
                 self
             }
+            #[doc = "A string value that identifies the portion of the list to be returned with the next list operation. The operation returns a marker value within the response body if the list returned was not complete. The marker value may then be used in a subsequent call to request the next set of list items. The marker value is opaque to the client."]
             pub fn marker(mut self, marker: impl Into<String>) -> Self {
                 self.marker = Some(marker.into());
                 self
             }
+            #[doc = "Specifies the maximum number of entries to return. If the request does not specify maxresults, or specifies a value greater than 5,000, the server will return up to 5,000 items."]
             pub fn maxresults(mut self, maxresults: i64) -> Self {
                 self.maxresults = Some(maxresults);
                 self
             }
+            #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/Setting-Timeouts-for-File-Service-Operations?redirectedfrom=MSDN\">Setting Timeouts for File Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "Include this parameter to specify one or more datasets to include in the response."]
             pub fn include(mut self, include: Vec<String>) -> Self {
                 self.include = include;
                 self
             }
+            #[doc = "Include extended information."]
             pub fn x_ms_file_extended_info(mut self, x_ms_file_extended_info: bool) -> Self {
                 self.x_ms_file_extended_info = Some(x_ms_file_extended_info);
                 self
@@ -2361,22 +2606,27 @@ pub mod directory {
             pub(crate) x_ms_recursive: Option<bool>,
         }
         impl Builder {
+            #[doc = "A string value that identifies the portion of the list to be returned with the next list operation. The operation returns a marker value within the response body if the list returned was not complete. The marker value may then be used in a subsequent call to request the next set of list items. The marker value is opaque to the client."]
             pub fn marker(mut self, marker: impl Into<String>) -> Self {
                 self.marker = Some(marker.into());
                 self
             }
+            #[doc = "Specifies the maximum number of entries to return. If the request does not specify maxresults, or specifies a value greater than 5,000, the server will return up to 5,000 items."]
             pub fn maxresults(mut self, maxresults: i64) -> Self {
                 self.maxresults = Some(maxresults);
                 self
             }
+            #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/Setting-Timeouts-for-File-Service-Operations?redirectedfrom=MSDN\">Setting Timeouts for File Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "The snapshot parameter is an opaque DateTime value that, when present, specifies the share snapshot to query."]
             pub fn sharesnapshot(mut self, sharesnapshot: impl Into<String>) -> Self {
                 self.sharesnapshot = Some(sharesnapshot.into());
                 self
             }
+            #[doc = "Specifies operation should apply to the directory specified in the URI, its files, its subdirectories and their files."]
             pub fn x_ms_recursive(mut self, x_ms_recursive: bool) -> Self {
                 self.x_ms_recursive = Some(x_ms_recursive);
                 self
@@ -2450,18 +2700,22 @@ pub mod directory {
             pub(crate) x_ms_recursive: Option<bool>,
         }
         impl Builder {
+            #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/Setting-Timeouts-for-File-Service-Operations?redirectedfrom=MSDN\">Setting Timeouts for File Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "A string value that identifies the portion of the list to be returned with the next list operation. The operation returns a marker value within the response body if the list returned was not complete. The marker value may then be used in a subsequent call to request the next set of list items. The marker value is opaque to the client."]
             pub fn marker(mut self, marker: impl Into<String>) -> Self {
                 self.marker = Some(marker.into());
                 self
             }
+            #[doc = "The snapshot parameter is an opaque DateTime value that, when present, specifies the share snapshot to query."]
             pub fn sharesnapshot(mut self, sharesnapshot: impl Into<String>) -> Self {
                 self.sharesnapshot = Some(sharesnapshot.into());
                 self
             }
+            #[doc = "Specifies operation should apply to the directory specified in the URI, its files, its subdirectories and their files."]
             pub fn x_ms_recursive(mut self, x_ms_recursive: bool) -> Self {
                 self.x_ms_recursive = Some(x_ms_recursive);
                 self
@@ -2518,6 +2772,13 @@ pub mod file {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Reads or downloads a file from the system, including its metadata and properties."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `share_name`: The name of the target share."]
+        #[doc = "* `directory`: The path of the target directory."]
+        #[doc = "* `file_name`: The path of the target file."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn download(
             &self,
             share_name: impl Into<String>,
@@ -2537,6 +2798,18 @@ pub mod file {
                 x_ms_lease_id: None,
             }
         }
+        #[doc = "Creates a new file or replaces a file. Note it only initializes the file with no content."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `share_name`: The name of the target share."]
+        #[doc = "* `directory`: The path of the target directory."]
+        #[doc = "* `file_name`: The path of the target file."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
+        #[doc = "* `x_ms_content_length`: Specifies the maximum size for the file, up to 4 TB."]
+        #[doc = "* `x_ms_type`: Dummy constant parameter, file type can only be file."]
+        #[doc = "* `x_ms_file_attributes`: If specified, the provided file attributes shall be set. Default value: ‘Archive’ for file and ‘Directory’ for directory. ‘None’ can also be specified as default."]
+        #[doc = "* `x_ms_file_creation_time`: Creation time for the file/directory. Default value: Now."]
+        #[doc = "* `x_ms_file_last_write_time`: Last write time for the file/directory. Default value: Now."]
         pub fn create(
             &self,
             share_name: impl Into<String>,
@@ -2573,6 +2846,13 @@ pub mod file {
                 x_ms_lease_id: None,
             }
         }
+        #[doc = "removes the file from the storage account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `share_name`: The name of the target share."]
+        #[doc = "* `directory`: The path of the target directory."]
+        #[doc = "* `file_name`: The path of the target file."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn delete(
             &self,
             share_name: impl Into<String>,
@@ -2590,6 +2870,13 @@ pub mod file {
                 x_ms_lease_id: None,
             }
         }
+        #[doc = "Returns all user-defined metadata, standard HTTP properties, and system properties for the file. It does not return the content of the file."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `share_name`: The name of the target share."]
+        #[doc = "* `directory`: The path of the target directory."]
+        #[doc = "* `file_name`: The path of the target file."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn get_properties(
             &self,
             share_name: impl Into<String>,
@@ -2608,6 +2895,16 @@ pub mod file {
                 x_ms_lease_id: None,
             }
         }
+        #[doc = "Sets HTTP headers on the file."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `share_name`: The name of the target share."]
+        #[doc = "* `directory`: The path of the target directory."]
+        #[doc = "* `file_name`: The path of the target file."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
+        #[doc = "* `x_ms_file_attributes`: If specified, the provided file attributes shall be set. Default value: ‘Archive’ for file and ‘Directory’ for directory. ‘None’ can also be specified as default."]
+        #[doc = "* `x_ms_file_creation_time`: Creation time for the file/directory. Default value: Now."]
+        #[doc = "* `x_ms_file_last_write_time`: Last write time for the file/directory. Default value: Now."]
         pub fn set_http_headers(
             &self,
             share_name: impl Into<String>,
@@ -2640,6 +2937,13 @@ pub mod file {
                 x_ms_lease_id: None,
             }
         }
+        #[doc = "Updates user-defined metadata for the specified file."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `share_name`: The name of the target share."]
+        #[doc = "* `directory`: The path of the target directory."]
+        #[doc = "* `file_name`: The path of the target file."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn set_metadata(
             &self,
             share_name: impl Into<String>,
@@ -2658,6 +2962,14 @@ pub mod file {
                 x_ms_lease_id: None,
             }
         }
+        #[doc = "[Update] The Lease File operation establishes and manages a lock on a file for write and delete operations"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `share_name`: The name of the target share."]
+        #[doc = "* `directory`: The path of the target directory."]
+        #[doc = "* `file_name`: The path of the target file."]
+        #[doc = "* `x_ms_lease_action`: Describes what lease action to take."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn acquire_lease(
             &self,
             share_name: impl Into<String>,
@@ -2679,6 +2991,15 @@ pub mod file {
                 x_ms_client_request_id: None,
             }
         }
+        #[doc = "[Update] The Lease File operation establishes and manages a lock on a file for write and delete operations"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `share_name`: The name of the target share."]
+        #[doc = "* `directory`: The path of the target directory."]
+        #[doc = "* `file_name`: The path of the target file."]
+        #[doc = "* `x_ms_lease_action`: Describes what lease action to take."]
+        #[doc = "* `x_ms_lease_id`: Specifies the current lease ID on the resource."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn release_lease(
             &self,
             share_name: impl Into<String>,
@@ -2700,6 +3021,15 @@ pub mod file {
                 x_ms_client_request_id: None,
             }
         }
+        #[doc = "[Update] The Lease File operation establishes and manages a lock on a file for write and delete operations"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `share_name`: The name of the target share."]
+        #[doc = "* `directory`: The path of the target directory."]
+        #[doc = "* `file_name`: The path of the target file."]
+        #[doc = "* `x_ms_lease_action`: Describes what lease action to take."]
+        #[doc = "* `x_ms_lease_id`: Specifies the current lease ID on the resource."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn change_lease(
             &self,
             share_name: impl Into<String>,
@@ -2722,6 +3052,14 @@ pub mod file {
                 x_ms_client_request_id: None,
             }
         }
+        #[doc = "[Update] The Lease File operation establishes and manages a lock on a file for write and delete operations"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `share_name`: The name of the target share."]
+        #[doc = "* `directory`: The path of the target directory."]
+        #[doc = "* `file_name`: The path of the target file."]
+        #[doc = "* `x_ms_lease_action`: Describes what lease action to take."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn break_lease(
             &self,
             share_name: impl Into<String>,
@@ -2742,6 +3080,16 @@ pub mod file {
                 x_ms_client_request_id: None,
             }
         }
+        #[doc = "Upload a range of bytes to a file."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `share_name`: The name of the target share."]
+        #[doc = "* `directory`: The path of the target directory."]
+        #[doc = "* `file_name`: The path of the target file."]
+        #[doc = "* `x_ms_range`: Specifies the range of bytes to be written. Both the start and end of the range must be specified. For an update operation, the range can be up to 4 MB in size. For a clear operation, the range can be up to the value of the file's full size. The File service accepts only a single byte range for the Range and 'x-ms-range' headers, and the byte range must be specified in the following format: bytes=startByte-endByte."]
+        #[doc = "* `x_ms_write`: Specify one of the following options: - Update: Writes the bytes specified by the request body into the specified range. The Range and Content-Length headers must match to perform the update. - Clear: Clears the specified range and releases the space used in storage for that range. To clear a range, set the Content-Length header to zero, and set the Range header to a value that indicates the range to clear, up to maximum file size."]
+        #[doc = "* `content_length`: Specifies the number of bytes being transmitted in the request body. When the x-ms-write header is set to clear, the value of this header must be set to zero."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn upload_range(
             &self,
             share_name: impl Into<String>,
@@ -2767,6 +3115,17 @@ pub mod file {
                 x_ms_lease_id: None,
             }
         }
+        #[doc = "Upload a range of bytes to a file where the contents are read from a URL."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `share_name`: The name of the target share."]
+        #[doc = "* `directory`: The path of the target directory."]
+        #[doc = "* `file_name`: The path of the target file."]
+        #[doc = "* `x_ms_range`: Writes data to the specified byte range in the file."]
+        #[doc = "* `x_ms_copy_source`: Specifies the URL of the source file or blob, up to 2 KB in length. To copy a file to another file within the same storage account, you may use Shared Key to authenticate the source file. If you are copying a file from another storage account, or if you are copying a blob from the same storage account or another storage account, then you must authenticate the source file or blob using a shared access signature. If the source is a public blob, no authentication is required to perform the copy operation. A file in a share snapshot can also be specified as a copy source."]
+        #[doc = "* `x_ms_write`: Only update is supported: - Update: Writes the bytes downloaded from the source url into the specified range."]
+        #[doc = "* `content_length`: Specifies the number of bytes being transmitted in the request body. When the x-ms-write header is set to clear, the value of this header must be set to zero."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn upload_range_from_url(
             &self,
             share_name: impl Into<String>,
@@ -2797,6 +3156,13 @@ pub mod file {
                 x_ms_copy_source_authorization: None,
             }
         }
+        #[doc = "Returns the list of valid ranges for a file."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `share_name`: The name of the target share."]
+        #[doc = "* `directory`: The path of the target directory."]
+        #[doc = "* `file_name`: The path of the target file."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn get_range_list(
             &self,
             share_name: impl Into<String>,
@@ -2817,6 +3183,14 @@ pub mod file {
                 x_ms_lease_id: None,
             }
         }
+        #[doc = "Copies a blob or file to a destination file within the storage account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `share_name`: The name of the target share."]
+        #[doc = "* `directory`: The path of the target directory."]
+        #[doc = "* `file_name`: The path of the target file."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
+        #[doc = "* `x_ms_copy_source`: Specifies the URL of the source file or blob, up to 2 KB in length. To copy a file to another file within the same storage account, you may use Shared Key to authenticate the source file. If you are copying a file from another storage account, or if you are copying a blob from the same storage account or another storage account, then you must authenticate the source file or blob using a shared access signature. If the source is a public blob, no authentication is required to perform the copy operation. A file in a share snapshot can also be specified as a copy source."]
         pub fn start_copy(
             &self,
             share_name: impl Into<String>,
@@ -2845,6 +3219,14 @@ pub mod file {
                 x_ms_lease_id: None,
             }
         }
+        #[doc = "Aborts a pending Copy File operation, and leaves a destination file with zero length and full metadata."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `share_name`: The name of the target share."]
+        #[doc = "* `directory`: The path of the target directory."]
+        #[doc = "* `file_name`: The path of the target file."]
+        #[doc = "* `x_ms_copy_action`: Abort."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn abort_copy(
             &self,
             share_name: impl Into<String>,
@@ -2864,6 +3246,13 @@ pub mod file {
                 x_ms_lease_id: None,
             }
         }
+        #[doc = "Lists handles for file"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `share_name`: The name of the target share."]
+        #[doc = "* `directory`: The path of the target directory."]
+        #[doc = "* `file_name`: The path of the target file."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn list_handles(
             &self,
             share_name: impl Into<String>,
@@ -2883,6 +3272,14 @@ pub mod file {
                 sharesnapshot: None,
             }
         }
+        #[doc = "Closes all handles open for given file"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `share_name`: The name of the target share."]
+        #[doc = "* `directory`: The path of the target directory."]
+        #[doc = "* `file_name`: The path of the target file."]
+        #[doc = "* `x_ms_handle_id`: Specifies handle ID opened on the file or directory to be closed. Asterisk (‘*’) is a wildcard that specifies all handles."]
+        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn force_close_handles(
             &self,
             share_name: impl Into<String>,
@@ -2924,18 +3321,22 @@ pub mod file {
             pub(crate) x_ms_lease_id: Option<String>,
         }
         impl Builder {
+            #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/Setting-Timeouts-for-File-Service-Operations?redirectedfrom=MSDN\">Setting Timeouts for File Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "Return file data only from the specified byte range."]
             pub fn x_ms_range(mut self, x_ms_range: impl Into<String>) -> Self {
                 self.x_ms_range = Some(x_ms_range.into());
                 self
             }
+            #[doc = "When this header is set to true and specified together with the Range header, the service returns the MD5 hash for the range, as long as the range is less than or equal to 4 MB in size."]
             pub fn x_ms_range_get_content_md5(mut self, x_ms_range_get_content_md5: bool) -> Self {
                 self.x_ms_range_get_content_md5 = Some(x_ms_range_get_content_md5);
                 self
             }
+            #[doc = "If specified, the operation only succeeds if the resource's lease is active and matches this ID."]
             pub fn x_ms_lease_id(mut self, x_ms_lease_id: impl Into<String>) -> Self {
                 self.x_ms_lease_id = Some(x_ms_lease_id.into());
                 self
@@ -3024,46 +3425,57 @@ pub mod file {
             pub(crate) x_ms_lease_id: Option<String>,
         }
         impl Builder {
+            #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/Setting-Timeouts-for-File-Service-Operations?redirectedfrom=MSDN\">Setting Timeouts for File Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "Sets the MIME content type of the file. The default type is 'application/octet-stream'."]
             pub fn x_ms_content_type(mut self, x_ms_content_type: impl Into<String>) -> Self {
                 self.x_ms_content_type = Some(x_ms_content_type.into());
                 self
             }
+            #[doc = "Specifies which content encodings have been applied to the file."]
             pub fn x_ms_content_encoding(mut self, x_ms_content_encoding: impl Into<String>) -> Self {
                 self.x_ms_content_encoding = Some(x_ms_content_encoding.into());
                 self
             }
+            #[doc = "Specifies the natural languages used by this resource."]
             pub fn x_ms_content_language(mut self, x_ms_content_language: impl Into<String>) -> Self {
                 self.x_ms_content_language = Some(x_ms_content_language.into());
                 self
             }
+            #[doc = "Sets the file's cache control. The File service stores this value but does not use or modify it."]
             pub fn x_ms_cache_control(mut self, x_ms_cache_control: impl Into<String>) -> Self {
                 self.x_ms_cache_control = Some(x_ms_cache_control.into());
                 self
             }
+            #[doc = "Sets the file's MD5 hash."]
             pub fn x_ms_content_md5(mut self, x_ms_content_md5: impl Into<String>) -> Self {
                 self.x_ms_content_md5 = Some(x_ms_content_md5.into());
                 self
             }
+            #[doc = "Sets the file's Content-Disposition header."]
             pub fn x_ms_content_disposition(mut self, x_ms_content_disposition: impl Into<String>) -> Self {
                 self.x_ms_content_disposition = Some(x_ms_content_disposition.into());
                 self
             }
+            #[doc = "A name-value pair to associate with a file storage object."]
             pub fn x_ms_meta(mut self, x_ms_meta: impl Into<String>) -> Self {
                 self.x_ms_meta = Some(x_ms_meta.into());
                 self
             }
+            #[doc = "If specified the permission (security descriptor) shall be set for the directory/file. This header can be used if Permission size is <= 8KB, else x-ms-file-permission-key header shall be used. Default value: Inherit. If SDDL is specified as input, it must have owner, group and dacl. Note: Only one of the x-ms-file-permission or x-ms-file-permission-key should be specified."]
             pub fn x_ms_file_permission(mut self, x_ms_file_permission: impl Into<String>) -> Self {
                 self.x_ms_file_permission = Some(x_ms_file_permission.into());
                 self
             }
+            #[doc = "Key of the permission to be set for the directory/file. Note: Only one of the x-ms-file-permission or x-ms-file-permission-key should be specified."]
             pub fn x_ms_file_permission_key(mut self, x_ms_file_permission_key: impl Into<String>) -> Self {
                 self.x_ms_file_permission_key = Some(x_ms_file_permission_key.into());
                 self
             }
+            #[doc = "If specified, the operation only succeeds if the resource's lease is active and matches this ID."]
             pub fn x_ms_lease_id(mut self, x_ms_lease_id: impl Into<String>) -> Self {
                 self.x_ms_lease_id = Some(x_ms_lease_id.into());
                 self
@@ -3155,10 +3567,12 @@ pub mod file {
             pub(crate) x_ms_lease_id: Option<String>,
         }
         impl Builder {
+            #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/Setting-Timeouts-for-File-Service-Operations?redirectedfrom=MSDN\">Setting Timeouts for File Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "If specified, the operation only succeeds if the resource's lease is active and matches this ID."]
             pub fn x_ms_lease_id(mut self, x_ms_lease_id: impl Into<String>) -> Self {
                 self.x_ms_lease_id = Some(x_ms_lease_id.into());
                 self
@@ -3219,14 +3633,17 @@ pub mod file {
             pub(crate) x_ms_lease_id: Option<String>,
         }
         impl Builder {
+            #[doc = "The snapshot parameter is an opaque DateTime value that, when present, specifies the share snapshot to query."]
             pub fn sharesnapshot(mut self, sharesnapshot: impl Into<String>) -> Self {
                 self.sharesnapshot = Some(sharesnapshot.into());
                 self
             }
+            #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/Setting-Timeouts-for-File-Service-Operations?redirectedfrom=MSDN\">Setting Timeouts for File Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "If specified, the operation only succeeds if the resource's lease is active and matches this ID."]
             pub fn x_ms_lease_id(mut self, x_ms_lease_id: impl Into<String>) -> Self {
                 self.x_ms_lease_id = Some(x_ms_lease_id.into());
                 self
@@ -3301,46 +3718,57 @@ pub mod file {
             pub(crate) x_ms_lease_id: Option<String>,
         }
         impl Builder {
+            #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/Setting-Timeouts-for-File-Service-Operations?redirectedfrom=MSDN\">Setting Timeouts for File Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "Resizes a file to the specified size. If the specified byte value is less than the current size of the file, then all ranges above the specified byte value are cleared."]
             pub fn x_ms_content_length(mut self, x_ms_content_length: i64) -> Self {
                 self.x_ms_content_length = Some(x_ms_content_length);
                 self
             }
+            #[doc = "Sets the MIME content type of the file. The default type is 'application/octet-stream'."]
             pub fn x_ms_content_type(mut self, x_ms_content_type: impl Into<String>) -> Self {
                 self.x_ms_content_type = Some(x_ms_content_type.into());
                 self
             }
+            #[doc = "Specifies which content encodings have been applied to the file."]
             pub fn x_ms_content_encoding(mut self, x_ms_content_encoding: impl Into<String>) -> Self {
                 self.x_ms_content_encoding = Some(x_ms_content_encoding.into());
                 self
             }
+            #[doc = "Specifies the natural languages used by this resource."]
             pub fn x_ms_content_language(mut self, x_ms_content_language: impl Into<String>) -> Self {
                 self.x_ms_content_language = Some(x_ms_content_language.into());
                 self
             }
+            #[doc = "Sets the file's cache control. The File service stores this value but does not use or modify it."]
             pub fn x_ms_cache_control(mut self, x_ms_cache_control: impl Into<String>) -> Self {
                 self.x_ms_cache_control = Some(x_ms_cache_control.into());
                 self
             }
+            #[doc = "Sets the file's MD5 hash."]
             pub fn x_ms_content_md5(mut self, x_ms_content_md5: impl Into<String>) -> Self {
                 self.x_ms_content_md5 = Some(x_ms_content_md5.into());
                 self
             }
+            #[doc = "Sets the file's Content-Disposition header."]
             pub fn x_ms_content_disposition(mut self, x_ms_content_disposition: impl Into<String>) -> Self {
                 self.x_ms_content_disposition = Some(x_ms_content_disposition.into());
                 self
             }
+            #[doc = "If specified the permission (security descriptor) shall be set for the directory/file. This header can be used if Permission size is <= 8KB, else x-ms-file-permission-key header shall be used. Default value: Inherit. If SDDL is specified as input, it must have owner, group and dacl. Note: Only one of the x-ms-file-permission or x-ms-file-permission-key should be specified."]
             pub fn x_ms_file_permission(mut self, x_ms_file_permission: impl Into<String>) -> Self {
                 self.x_ms_file_permission = Some(x_ms_file_permission.into());
                 self
             }
+            #[doc = "Key of the permission to be set for the directory/file. Note: Only one of the x-ms-file-permission or x-ms-file-permission-key should be specified."]
             pub fn x_ms_file_permission_key(mut self, x_ms_file_permission_key: impl Into<String>) -> Self {
                 self.x_ms_file_permission_key = Some(x_ms_file_permission_key.into());
                 self
             }
+            #[doc = "If specified, the operation only succeeds if the resource's lease is active and matches this ID."]
             pub fn x_ms_lease_id(mut self, x_ms_lease_id: impl Into<String>) -> Self {
                 self.x_ms_lease_id = Some(x_ms_lease_id.into());
                 self
@@ -3431,14 +3859,17 @@ pub mod file {
             pub(crate) x_ms_lease_id: Option<String>,
         }
         impl Builder {
+            #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/Setting-Timeouts-for-File-Service-Operations?redirectedfrom=MSDN\">Setting Timeouts for File Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "A name-value pair to associate with a file storage object."]
             pub fn x_ms_meta(mut self, x_ms_meta: impl Into<String>) -> Self {
                 self.x_ms_meta = Some(x_ms_meta.into());
                 self
             }
+            #[doc = "If specified, the operation only succeeds if the resource's lease is active and matches this ID."]
             pub fn x_ms_lease_id(mut self, x_ms_lease_id: impl Into<String>) -> Self {
                 self.x_ms_lease_id = Some(x_ms_lease_id.into());
                 self
@@ -3504,18 +3935,22 @@ pub mod file {
             pub(crate) x_ms_client_request_id: Option<String>,
         }
         impl Builder {
+            #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/Setting-Timeouts-for-File-Service-Operations?redirectedfrom=MSDN\">Setting Timeouts for File Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "Specifies the duration of the lease, in seconds, or negative one (-1) for a lease that never expires. A non-infinite lease can be between 15 and 60 seconds. A lease duration cannot be changed using renew or change."]
             pub fn x_ms_lease_duration(mut self, x_ms_lease_duration: i64) -> Self {
                 self.x_ms_lease_duration = Some(x_ms_lease_duration);
                 self
             }
+            #[doc = "Proposed lease ID, in a GUID string format. The File service returns 400 (Invalid request) if the proposed lease ID is not in the correct format. See Guid Constructor (String) for a list of valid GUID string formats."]
             pub fn x_ms_proposed_lease_id(mut self, x_ms_proposed_lease_id: impl Into<String>) -> Self {
                 self.x_ms_proposed_lease_id = Some(x_ms_proposed_lease_id.into());
                 self
             }
+            #[doc = "Provides a client-generated, opaque value with a 1 KB character limit that is recorded in the analytics logs when storage analytics logging is enabled."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
@@ -3584,10 +4019,12 @@ pub mod file {
             pub(crate) x_ms_client_request_id: Option<String>,
         }
         impl Builder {
+            #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/Setting-Timeouts-for-File-Service-Operations?redirectedfrom=MSDN\">Setting Timeouts for File Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "Provides a client-generated, opaque value with a 1 KB character limit that is recorded in the analytics logs when storage analytics logging is enabled."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
@@ -3652,14 +4089,17 @@ pub mod file {
             pub(crate) x_ms_client_request_id: Option<String>,
         }
         impl Builder {
+            #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/Setting-Timeouts-for-File-Service-Operations?redirectedfrom=MSDN\">Setting Timeouts for File Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "Proposed lease ID, in a GUID string format. The File service returns 400 (Invalid request) if the proposed lease ID is not in the correct format. See Guid Constructor (String) for a list of valid GUID string formats."]
             pub fn x_ms_proposed_lease_id(mut self, x_ms_proposed_lease_id: impl Into<String>) -> Self {
                 self.x_ms_proposed_lease_id = Some(x_ms_proposed_lease_id.into());
                 self
             }
+            #[doc = "Provides a client-generated, opaque value with a 1 KB character limit that is recorded in the analytics logs when storage analytics logging is enabled."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
@@ -3726,14 +4166,17 @@ pub mod file {
             pub(crate) x_ms_client_request_id: Option<String>,
         }
         impl Builder {
+            #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/Setting-Timeouts-for-File-Service-Operations?redirectedfrom=MSDN\">Setting Timeouts for File Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "If specified, the operation only succeeds if the resource's lease is active and matches this ID."]
             pub fn x_ms_lease_id(mut self, x_ms_lease_id: impl Into<String>) -> Self {
                 self.x_ms_lease_id = Some(x_ms_lease_id.into());
                 self
             }
+            #[doc = "Provides a client-generated, opaque value with a 1 KB character limit that is recorded in the analytics logs when storage analytics logging is enabled."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
@@ -3802,18 +4245,22 @@ pub mod file {
             pub(crate) x_ms_lease_id: Option<String>,
         }
         impl Builder {
+            #[doc = "Initial data."]
             pub fn optionalbody(mut self, optionalbody: impl Into<serde_json::Value>) -> Self {
                 self.optionalbody = Some(optionalbody.into());
                 self
             }
+            #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/Setting-Timeouts-for-File-Service-Operations?redirectedfrom=MSDN\">Setting Timeouts for File Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "An MD5 hash of the content. This hash is used to verify the integrity of the data during transport. When the Content-MD5 header is specified, the File service compares the hash of the content that has arrived with the header value that was sent. If the two hashes do not match, the operation will fail with error code 400 (Bad Request)."]
             pub fn content_md5(mut self, content_md5: impl Into<String>) -> Self {
                 self.content_md5 = Some(content_md5.into());
                 self
             }
+            #[doc = "If specified, the operation only succeeds if the resource's lease is active and matches this ID."]
             pub fn x_ms_lease_id(mut self, x_ms_lease_id: impl Into<String>) -> Self {
                 self.x_ms_lease_id = Some(x_ms_lease_id.into());
                 self
@@ -3893,30 +4340,37 @@ pub mod file {
             pub(crate) x_ms_copy_source_authorization: Option<String>,
         }
         impl Builder {
+            #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/Setting-Timeouts-for-File-Service-Operations?redirectedfrom=MSDN\">Setting Timeouts for File Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "Bytes of source data in the specified range."]
             pub fn x_ms_source_range(mut self, x_ms_source_range: impl Into<String>) -> Self {
                 self.x_ms_source_range = Some(x_ms_source_range.into());
                 self
             }
+            #[doc = "Specify the crc64 calculated for the range of bytes that must be read from the copy source."]
             pub fn x_ms_source_content_crc64(mut self, x_ms_source_content_crc64: impl Into<String>) -> Self {
                 self.x_ms_source_content_crc64 = Some(x_ms_source_content_crc64.into());
                 self
             }
+            #[doc = "Specify the crc64 value to operate only on range with a matching crc64 checksum."]
             pub fn x_ms_source_if_match_crc64(mut self, x_ms_source_if_match_crc64: impl Into<String>) -> Self {
                 self.x_ms_source_if_match_crc64 = Some(x_ms_source_if_match_crc64.into());
                 self
             }
+            #[doc = "Specify the crc64 value to operate only on range without a matching crc64 checksum."]
             pub fn x_ms_source_if_none_match_crc64(mut self, x_ms_source_if_none_match_crc64: impl Into<String>) -> Self {
                 self.x_ms_source_if_none_match_crc64 = Some(x_ms_source_if_none_match_crc64.into());
                 self
             }
+            #[doc = "If specified, the operation only succeeds if the resource's lease is active and matches this ID."]
             pub fn x_ms_lease_id(mut self, x_ms_lease_id: impl Into<String>) -> Self {
                 self.x_ms_lease_id = Some(x_ms_lease_id.into());
                 self
             }
+            #[doc = "Only Bearer type is supported. Credentials should be a valid OAuth access token to copy source."]
             pub fn x_ms_copy_source_authorization(mut self, x_ms_copy_source_authorization: impl Into<String>) -> Self {
                 self.x_ms_copy_source_authorization = Some(x_ms_copy_source_authorization.into());
                 self
@@ -3998,22 +4452,27 @@ pub mod file {
             pub(crate) x_ms_lease_id: Option<String>,
         }
         impl Builder {
+            #[doc = "The snapshot parameter is an opaque DateTime value that, when present, specifies the share snapshot to query."]
             pub fn sharesnapshot(mut self, sharesnapshot: impl Into<String>) -> Self {
                 self.sharesnapshot = Some(sharesnapshot.into());
                 self
             }
+            #[doc = "The previous snapshot parameter is an opaque DateTime value that, when present, specifies the previous snapshot."]
             pub fn prevsharesnapshot(mut self, prevsharesnapshot: impl Into<String>) -> Self {
                 self.prevsharesnapshot = Some(prevsharesnapshot.into());
                 self
             }
+            #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/Setting-Timeouts-for-File-Service-Operations?redirectedfrom=MSDN\">Setting Timeouts for File Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "Specifies the range of bytes over which to list ranges, inclusively."]
             pub fn x_ms_range(mut self, x_ms_range: impl Into<String>) -> Self {
                 self.x_ms_range = Some(x_ms_range.into());
                 self
             }
+            #[doc = "If specified, the operation only succeeds if the resource's lease is active and matches this ID."]
             pub fn x_ms_lease_id(mut self, x_ms_lease_id: impl Into<String>) -> Self {
                 self.x_ms_lease_id = Some(x_ms_lease_id.into());
                 self
@@ -4096,46 +4555,57 @@ pub mod file {
             pub(crate) x_ms_lease_id: Option<String>,
         }
         impl Builder {
+            #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/Setting-Timeouts-for-File-Service-Operations?redirectedfrom=MSDN\">Setting Timeouts for File Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "A name-value pair to associate with a file storage object."]
             pub fn x_ms_meta(mut self, x_ms_meta: impl Into<String>) -> Self {
                 self.x_ms_meta = Some(x_ms_meta.into());
                 self
             }
+            #[doc = "If specified the permission (security descriptor) shall be set for the directory/file. This header can be used if Permission size is <= 8KB, else x-ms-file-permission-key header shall be used. Default value: Inherit. If SDDL is specified as input, it must have owner, group and dacl. Note: Only one of the x-ms-file-permission or x-ms-file-permission-key should be specified."]
             pub fn x_ms_file_permission(mut self, x_ms_file_permission: impl Into<String>) -> Self {
                 self.x_ms_file_permission = Some(x_ms_file_permission.into());
                 self
             }
+            #[doc = "Key of the permission to be set for the directory/file. Note: Only one of the x-ms-file-permission or x-ms-file-permission-key should be specified."]
             pub fn x_ms_file_permission_key(mut self, x_ms_file_permission_key: impl Into<String>) -> Self {
                 self.x_ms_file_permission_key = Some(x_ms_file_permission_key.into());
                 self
             }
+            #[doc = "Specifies the option to copy file security descriptor from source file or to set it using the value which is defined by the header value of x-ms-file-permission or x-ms-file-permission-key."]
             pub fn x_ms_file_permission_copy_mode(mut self, x_ms_file_permission_copy_mode: impl Into<String>) -> Self {
                 self.x_ms_file_permission_copy_mode = Some(x_ms_file_permission_copy_mode.into());
                 self
             }
+            #[doc = "Specifies the option to overwrite the target file if it already exists and has read-only attribute set."]
             pub fn x_ms_file_copy_ignore_readonly(mut self, x_ms_file_copy_ignore_readonly: bool) -> Self {
                 self.x_ms_file_copy_ignore_readonly = Some(x_ms_file_copy_ignore_readonly);
                 self
             }
+            #[doc = "Specifies either the option to copy file attributes from a source file(source) to a target file or a list of attributes to set on a target file."]
             pub fn x_ms_file_attributes(mut self, x_ms_file_attributes: impl Into<String>) -> Self {
                 self.x_ms_file_attributes = Some(x_ms_file_attributes.into());
                 self
             }
+            #[doc = "Specifies either the option to copy file creation time from a source file(source) to a target file or a time value in ISO 8601 format to set as creation time on a target file."]
             pub fn x_ms_file_creation_time(mut self, x_ms_file_creation_time: impl Into<String>) -> Self {
                 self.x_ms_file_creation_time = Some(x_ms_file_creation_time.into());
                 self
             }
+            #[doc = "Specifies either the option to copy file last write time from a source file(source) to a target file or a time value in ISO 8601 format to set as last write time on a target file."]
             pub fn x_ms_file_last_write_time(mut self, x_ms_file_last_write_time: impl Into<String>) -> Self {
                 self.x_ms_file_last_write_time = Some(x_ms_file_last_write_time.into());
                 self
             }
+            #[doc = "Specifies the option to set archive attribute on a target file. True means archive attribute will be set on a target file despite attribute overrides or a source file state."]
             pub fn x_ms_file_copy_set_archive(mut self, x_ms_file_copy_set_archive: bool) -> Self {
                 self.x_ms_file_copy_set_archive = Some(x_ms_file_copy_set_archive);
                 self
             }
+            #[doc = "If specified, the operation only succeeds if the resource's lease is active and matches this ID."]
             pub fn x_ms_lease_id(mut self, x_ms_lease_id: impl Into<String>) -> Self {
                 self.x_ms_lease_id = Some(x_ms_lease_id.into());
                 self
@@ -4224,10 +4694,12 @@ pub mod file {
             pub(crate) x_ms_lease_id: Option<String>,
         }
         impl Builder {
+            #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/Setting-Timeouts-for-File-Service-Operations?redirectedfrom=MSDN\">Setting Timeouts for File Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "If specified, the operation only succeeds if the resource's lease is active and matches this ID."]
             pub fn x_ms_lease_id(mut self, x_ms_lease_id: impl Into<String>) -> Self {
                 self.x_ms_lease_id = Some(x_ms_lease_id.into());
                 self
@@ -4290,18 +4762,22 @@ pub mod file {
             pub(crate) sharesnapshot: Option<String>,
         }
         impl Builder {
+            #[doc = "A string value that identifies the portion of the list to be returned with the next list operation. The operation returns a marker value within the response body if the list returned was not complete. The marker value may then be used in a subsequent call to request the next set of list items. The marker value is opaque to the client."]
             pub fn marker(mut self, marker: impl Into<String>) -> Self {
                 self.marker = Some(marker.into());
                 self
             }
+            #[doc = "Specifies the maximum number of entries to return. If the request does not specify maxresults, or specifies a value greater than 5,000, the server will return up to 5,000 items."]
             pub fn maxresults(mut self, maxresults: i64) -> Self {
                 self.maxresults = Some(maxresults);
                 self
             }
+            #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/Setting-Timeouts-for-File-Service-Operations?redirectedfrom=MSDN\">Setting Timeouts for File Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "The snapshot parameter is an opaque DateTime value that, when present, specifies the share snapshot to query."]
             pub fn sharesnapshot(mut self, sharesnapshot: impl Into<String>) -> Self {
                 self.sharesnapshot = Some(sharesnapshot.into());
                 self
@@ -4373,14 +4849,17 @@ pub mod file {
             pub(crate) sharesnapshot: Option<String>,
         }
         impl Builder {
+            #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/Setting-Timeouts-for-File-Service-Operations?redirectedfrom=MSDN\">Setting Timeouts for File Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "A string value that identifies the portion of the list to be returned with the next list operation. The operation returns a marker value within the response body if the list returned was not complete. The marker value may then be used in a subsequent call to request the next set of list items. The marker value is opaque to the client."]
             pub fn marker(mut self, marker: impl Into<String>) -> Self {
                 self.marker = Some(marker.into());
                 self
             }
+            #[doc = "The snapshot parameter is an opaque DateTime value that, when present, specifies the share snapshot to query."]
             pub fn sharesnapshot(mut self, sharesnapshot: impl Into<String>) -> Self {
                 self.sharesnapshot = Some(sharesnapshot.into());
                 self

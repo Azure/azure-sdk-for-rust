@@ -76,15 +76,25 @@ impl Client {
     }
 }
 impl Client {
+    #[doc = "Tells whether this Docker Registry instance supports Docker Registry HTTP API v2"]
     pub fn get_docker_registry_v2_support(&self) -> get_docker_registry_v2_support::Builder {
         get_docker_registry_v2_support::Builder { client: self.clone() }
     }
+    #[doc = "Fetch the tags under the repository identified by name"]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `name`: Name of the image (including the namespace)"]
     pub fn get_tag_list(&self, name: impl Into<String>) -> get_tag_list::Builder {
         get_tag_list::Builder {
             client: self.clone(),
             name: name.into(),
         }
     }
+    #[doc = "Pulls the image manifest file associated with the specified name and reference. Reference may be a tag or a digest"]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `name`: Name of the image (including the namespace)"]
+    #[doc = "* `reference`: A tag or a digest, pointing to a specific image"]
     pub fn get_manifest(&self, name: impl Into<String>, reference: impl Into<String>) -> get_manifest::Builder {
         get_manifest::Builder {
             client: self.clone(),
@@ -93,6 +103,12 @@ impl Client {
             accept: None,
         }
     }
+    #[doc = "Put the manifest identified by `name` and `reference` where `reference` can be a tag or digest."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `name`: Name of the image (including the namespace)"]
+    #[doc = "* `reference`: A tag or a digest, pointing to a specific image"]
+    #[doc = "* `payload`: Manifest body, can take v1 or v2 values depending on accept header"]
     pub fn create_manifest(
         &self,
         name: impl Into<String>,
@@ -106,6 +122,11 @@ impl Client {
             payload: payload.into(),
         }
     }
+    #[doc = "Delete the manifest identified by `name` and `reference`. Note that a manifest can _only_ be deleted by `digest`."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `name`: Name of the image (including the namespace)"]
+    #[doc = "* `reference`: A tag or a digest, pointing to a specific image"]
     pub fn delete_manifest(&self, name: impl Into<String>, reference: impl Into<String>) -> delete_manifest::Builder {
         delete_manifest::Builder {
             client: self.clone(),
@@ -113,6 +134,7 @@ impl Client {
             reference: reference.into(),
         }
     }
+    #[doc = "List repositories"]
     pub fn get_repositories(&self) -> get_repositories::Builder {
         get_repositories::Builder {
             client: self.clone(),
@@ -120,6 +142,7 @@ impl Client {
             n: None,
         }
     }
+    #[doc = "List repositories"]
     pub fn get_acr_repositories(&self) -> get_acr_repositories::Builder {
         get_acr_repositories::Builder {
             client: self.clone(),
@@ -127,12 +150,20 @@ impl Client {
             n: None,
         }
     }
+    #[doc = "Get repository attributes"]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `name`: Name of the image (including the namespace)"]
     pub fn get_acr_repository_attributes(&self, name: impl Into<String>) -> get_acr_repository_attributes::Builder {
         get_acr_repository_attributes::Builder {
             client: self.clone(),
             name: name.into(),
         }
     }
+    #[doc = "Update the attribute identified by `name` where `reference` is the name of the repository."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `name`: Name of the image (including the namespace)"]
     pub fn update_acr_repository_attributes(&self, name: impl Into<String>) -> update_acr_repository_attributes::Builder {
         update_acr_repository_attributes::Builder {
             client: self.clone(),
@@ -140,12 +171,20 @@ impl Client {
             value: None,
         }
     }
+    #[doc = "Delete the repository identified by `name`"]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `name`: Name of the image (including the namespace)"]
     pub fn delete_acr_repository(&self, name: impl Into<String>) -> delete_acr_repository::Builder {
         delete_acr_repository::Builder {
             client: self.clone(),
             name: name.into(),
         }
     }
+    #[doc = "List tags of a repository"]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `name`: Name of the image (including the namespace)"]
     pub fn get_acr_tags(&self, name: impl Into<String>) -> get_acr_tags::Builder {
         get_acr_tags::Builder {
             client: self.clone(),
@@ -156,6 +195,11 @@ impl Client {
             digest: None,
         }
     }
+    #[doc = "Get tag attributes by tag"]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `name`: Name of the image (including the namespace)"]
+    #[doc = "* `reference`: Tag or digest of the target manifest"]
     pub fn get_acr_tag_attributes(&self, name: impl Into<String>, reference: impl Into<String>) -> get_acr_tag_attributes::Builder {
         get_acr_tag_attributes::Builder {
             client: self.clone(),
@@ -163,6 +207,11 @@ impl Client {
             reference: reference.into(),
         }
     }
+    #[doc = "Update tag attributes"]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `name`: Name of the image (including the namespace)"]
+    #[doc = "* `reference`: Tag or digest of the target manifest"]
     pub fn update_acr_tag_attributes(&self, name: impl Into<String>, reference: impl Into<String>) -> update_acr_tag_attributes::Builder {
         update_acr_tag_attributes::Builder {
             client: self.clone(),
@@ -171,6 +220,11 @@ impl Client {
             value: None,
         }
     }
+    #[doc = "Delete tag"]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `name`: Name of the image (including the namespace)"]
+    #[doc = "* `reference`: Tag or digest of the target manifest"]
     pub fn delete_acr_tag(&self, name: impl Into<String>, reference: impl Into<String>) -> delete_acr_tag::Builder {
         delete_acr_tag::Builder {
             client: self.clone(),
@@ -178,6 +232,10 @@ impl Client {
             reference: reference.into(),
         }
     }
+    #[doc = "List manifests of a repository"]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `name`: Name of the image (including the namespace)"]
     pub fn get_acr_manifests(&self, name: impl Into<String>) -> get_acr_manifests::Builder {
         get_acr_manifests::Builder {
             client: self.clone(),
@@ -187,6 +245,11 @@ impl Client {
             orderby: None,
         }
     }
+    #[doc = "Get manifest attributes"]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `name`: Name of the image (including the namespace)"]
+    #[doc = "* `reference`: A tag or a digest, pointing to a specific image"]
     pub fn get_acr_manifest_attributes(
         &self,
         name: impl Into<String>,
@@ -198,6 +261,11 @@ impl Client {
             reference: reference.into(),
         }
     }
+    #[doc = "Update attributes of a manifest"]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `name`: Name of the image (including the namespace)"]
+    #[doc = "* `reference`: A tag or a digest, pointing to a specific image"]
     pub fn update_acr_manifest_attributes(
         &self,
         name: impl Into<String>,
@@ -210,6 +278,11 @@ impl Client {
             value: None,
         }
     }
+    #[doc = "Exchange AAD tokens for an ACR refresh Token"]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `grant_type`: Can take a value of access_token_refresh_token, or access_token, or refresh_token"]
+    #[doc = "* `service`: Indicates the name of your Azure container registry."]
     pub fn get_acr_refresh_token_from_exchange(
         &self,
         grant_type: impl Into<String>,
@@ -224,6 +297,11 @@ impl Client {
             access_token: None,
         }
     }
+    #[doc = "Exchange Username, Password and Scope an ACR Access Token"]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `service`: Indicates the name of your Azure container registry."]
+    #[doc = "* `scope`: Expected to be a valid scope, and can be specified more than once for multiple scope requests. You can obtain this from the Www-Authenticate response header from the challenge."]
     pub fn get_acr_access_token_from_login(
         &self,
         service: impl Into<String>,
@@ -235,6 +313,13 @@ impl Client {
             scope: scope.into(),
         }
     }
+    #[doc = "Exchange ACR Refresh token for an ACR Access Token"]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `grant_type`: Grant type is expected to be refresh_token"]
+    #[doc = "* `service`: Indicates the name of your Azure container registry."]
+    #[doc = "* `scope`: Which is expected to be a valid scope, and can be specified more than once for multiple scope requests. You obtained this from the Www-Authenticate response header from the challenge."]
+    #[doc = "* `refresh_token`: Must be a valid ACR refresh token"]
     pub fn get_acr_access_token(
         &self,
         grant_type: impl Into<String>,
@@ -339,6 +424,7 @@ pub mod get_manifest {
         pub(crate) accept: Option<String>,
     }
     impl Builder {
+        #[doc = "Accept header string delimited by comma. For example, application/vnd.docker.distribution.manifest.v2+json"]
         pub fn accept(mut self, accept: impl Into<String>) -> Self {
             self.accept = Some(accept.into());
             self
@@ -485,10 +571,12 @@ pub mod get_repositories {
         pub(crate) n: Option<i64>,
     }
     impl Builder {
+        #[doc = "Query parameter for the last item in previous query. Result set will include values lexically after last."]
         pub fn last(mut self, last: impl Into<String>) -> Self {
             self.last = Some(last.into());
             self
         }
+        #[doc = "query parameter for max number of items"]
         pub fn n(mut self, n: i64) -> Self {
             self.n = Some(n);
             self
@@ -541,10 +629,12 @@ pub mod get_acr_repositories {
         pub(crate) n: Option<i64>,
     }
     impl Builder {
+        #[doc = "Query parameter for the last item in previous query. Result set will include values lexically after last."]
         pub fn last(mut self, last: impl Into<String>) -> Self {
             self.last = Some(last.into());
             self
         }
+        #[doc = "query parameter for max number of items"]
         pub fn n(mut self, n: i64) -> Self {
             self.n = Some(n);
             self
@@ -638,6 +728,7 @@ pub mod update_acr_repository_attributes {
         pub(crate) value: Option<models::ChangeableAttributes>,
     }
     impl Builder {
+        #[doc = "Repository attribute value"]
         pub fn value(mut self, value: impl Into<models::ChangeableAttributes>) -> Self {
             self.value = Some(value.into());
             self
@@ -729,18 +820,22 @@ pub mod get_acr_tags {
         pub(crate) digest: Option<String>,
     }
     impl Builder {
+        #[doc = "Query parameter for the last item in previous query. Result set will include values lexically after last."]
         pub fn last(mut self, last: impl Into<String>) -> Self {
             self.last = Some(last.into());
             self
         }
+        #[doc = "query parameter for max number of items"]
         pub fn n(mut self, n: i64) -> Self {
             self.n = Some(n);
             self
         }
+        #[doc = "orderby query parameter"]
         pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
             self.orderby = Some(orderby.into());
             self
         }
+        #[doc = "filter by digest"]
         pub fn digest(mut self, digest: impl Into<String>) -> Self {
             self.digest = Some(digest.into());
             self
@@ -847,6 +942,7 @@ pub mod update_acr_tag_attributes {
         pub(crate) value: Option<models::ChangeableAttributes>,
     }
     impl Builder {
+        #[doc = "Repository attribute value"]
         pub fn value(mut self, value: impl Into<models::ChangeableAttributes>) -> Self {
             self.value = Some(value.into());
             self
@@ -944,14 +1040,17 @@ pub mod get_acr_manifests {
         pub(crate) orderby: Option<String>,
     }
     impl Builder {
+        #[doc = "Query parameter for the last item in previous query. Result set will include values lexically after last."]
         pub fn last(mut self, last: impl Into<String>) -> Self {
             self.last = Some(last.into());
             self
         }
+        #[doc = "query parameter for max number of items"]
         pub fn n(mut self, n: i64) -> Self {
             self.n = Some(n);
             self
         }
+        #[doc = "orderby query parameter"]
         pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
             self.orderby = Some(orderby.into());
             self
@@ -1055,6 +1154,7 @@ pub mod update_acr_manifest_attributes {
         pub(crate) value: Option<models::ChangeableAttributes>,
     }
     impl Builder {
+        #[doc = "Repository attribute value"]
         pub fn value(mut self, value: impl Into<models::ChangeableAttributes>) -> Self {
             self.value = Some(value.into());
             self
@@ -1110,14 +1210,17 @@ pub mod get_acr_refresh_token_from_exchange {
         pub(crate) access_token: Option<String>,
     }
     impl Builder {
+        #[doc = "AAD tenant associated to the AAD credentials."]
         pub fn tenant(mut self, tenant: impl Into<String>) -> Self {
             self.tenant = Some(tenant.into());
             self
         }
+        #[doc = "AAD refresh token, mandatory when grant_type is access_token_refresh_token or refresh_token"]
         pub fn refresh_token(mut self, refresh_token: impl Into<String>) -> Self {
             self.refresh_token = Some(refresh_token.into());
             self
         }
+        #[doc = "AAD access token, mandatory when grant_type is access_token_refresh_token or access_token."]
         pub fn access_token(mut self, access_token: impl Into<String>) -> Self {
             self.access_token = Some(access_token.into());
             self

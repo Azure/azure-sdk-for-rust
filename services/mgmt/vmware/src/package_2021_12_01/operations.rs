@@ -127,6 +127,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all of the available operations"]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -205,6 +206,11 @@ pub mod locations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Return trial status for subscription by region"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `location`: Azure region"]
         pub fn check_trial_availability(
             &self,
             subscription_id: impl Into<String>,
@@ -216,6 +222,11 @@ pub mod locations {
                 location: location.into(),
             }
         }
+        #[doc = "Return quota for subscription by region"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `location`: Azure region"]
         pub fn check_quota_availability(
             &self,
             subscription_id: impl Into<String>,
@@ -336,6 +347,10 @@ pub mod private_clouds {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "List private clouds in a resource group"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
         pub fn list(&self, subscription_id: impl Into<String>, resource_group_name: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -344,6 +359,9 @@ pub mod private_clouds {
             }
         }
         #[doc = "List private clouds in a subscription"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_in_subscription(&self, subscription_id: impl Into<String>) -> list_in_subscription::Builder {
             list_in_subscription::Builder {
                 client: self.0.clone(),
@@ -351,6 +369,11 @@ pub mod private_clouds {
             }
         }
         #[doc = "Get a private cloud"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `private_cloud_name`: Name of the private cloud"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -365,6 +388,12 @@ pub mod private_clouds {
             }
         }
         #[doc = "Create or update a private cloud"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `private_cloud_name`: Name of the private cloud"]
+        #[doc = "* `private_cloud`: The private cloud"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -381,6 +410,12 @@ pub mod private_clouds {
             }
         }
         #[doc = "Update a private cloud"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `private_cloud_name`: Name of the private cloud"]
+        #[doc = "* `private_cloud_update`: The private cloud properties to be updated"]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -397,6 +432,11 @@ pub mod private_clouds {
             }
         }
         #[doc = "Delete a private cloud"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `private_cloud_name`: Name of the private cloud"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -411,6 +451,11 @@ pub mod private_clouds {
             }
         }
         #[doc = "Rotate the vCenter password"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `private_cloud_name`: Name of the private cloud"]
         pub fn rotate_vcenter_password(
             &self,
             subscription_id: impl Into<String>,
@@ -425,6 +470,11 @@ pub mod private_clouds {
             }
         }
         #[doc = "Rotate the NSX-T Manager password"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `private_cloud_name`: Name of the private cloud"]
         pub fn rotate_nsxt_password(
             &self,
             subscription_id: impl Into<String>,
@@ -439,6 +489,11 @@ pub mod private_clouds {
             }
         }
         #[doc = "List the admin credentials for the private cloud"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `private_cloud_name`: Name of the private cloud"]
         pub fn list_admin_credentials(
             &self,
             subscription_id: impl Into<String>,
@@ -1008,6 +1063,11 @@ pub mod clusters {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "List clusters in a private cloud"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `private_cloud_name`: Name of the private cloud"]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -1022,6 +1082,12 @@ pub mod clusters {
             }
         }
         #[doc = "Get a cluster by name in a private cloud"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `private_cloud_name`: Name of the private cloud"]
+        #[doc = "* `cluster_name`: Name of the cluster in the private cloud"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1038,6 +1104,13 @@ pub mod clusters {
             }
         }
         #[doc = "Create or update a cluster in a private cloud"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `private_cloud_name`: The name of the private cloud."]
+        #[doc = "* `cluster_name`: Name of the cluster in the private cloud"]
+        #[doc = "* `cluster`: A cluster in the private cloud"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -1056,6 +1129,13 @@ pub mod clusters {
             }
         }
         #[doc = "Update a cluster in a private cloud"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `private_cloud_name`: Name of the private cloud"]
+        #[doc = "* `cluster_name`: Name of the cluster in the private cloud"]
+        #[doc = "* `cluster_update`: The cluster properties to be updated"]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -1074,6 +1154,12 @@ pub mod clusters {
             }
         }
         #[doc = "Delete a cluster in a private cloud"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `private_cloud_name`: Name of the private cloud"]
+        #[doc = "* `cluster_name`: Name of the cluster in the private cloud"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1418,6 +1504,12 @@ pub mod datastores {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "List datastores in a private cloud cluster"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `private_cloud_name`: Name of the private cloud"]
+        #[doc = "* `cluster_name`: Name of the cluster in the private cloud"]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -1434,6 +1526,13 @@ pub mod datastores {
             }
         }
         #[doc = "Get a datastore in a private cloud cluster"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `private_cloud_name`: Name of the private cloud"]
+        #[doc = "* `cluster_name`: Name of the cluster in the private cloud"]
+        #[doc = "* `datastore_name`: Name of the datastore in the private cloud cluster"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1452,6 +1551,14 @@ pub mod datastores {
             }
         }
         #[doc = "Create or update a datastore in a private cloud cluster"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `private_cloud_name`: Name of the private cloud"]
+        #[doc = "* `cluster_name`: Name of the cluster in the private cloud"]
+        #[doc = "* `datastore_name`: Name of the datastore in the private cloud cluster"]
+        #[doc = "* `datastore`: A datastore in a private cloud cluster"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -1472,6 +1579,13 @@ pub mod datastores {
             }
         }
         #[doc = "Delete a datastore in a private cloud cluster"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `private_cloud_name`: Name of the private cloud"]
+        #[doc = "* `cluster_name`: Name of the cluster in the private cloud"]
+        #[doc = "* `datastore_name`: Name of the datastore in the private cloud cluster"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1760,6 +1874,11 @@ pub mod hcx_enterprise_sites {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "List HCX Enterprise Sites in a private cloud"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `private_cloud_name`: Name of the private cloud"]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -1774,6 +1893,12 @@ pub mod hcx_enterprise_sites {
             }
         }
         #[doc = "Get an HCX Enterprise Site by name in a private cloud"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `private_cloud_name`: Name of the private cloud"]
+        #[doc = "* `hcx_enterprise_site_name`: Name of the HCX Enterprise Site in the private cloud"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1790,6 +1915,13 @@ pub mod hcx_enterprise_sites {
             }
         }
         #[doc = "Create or update an HCX Enterprise Site in a private cloud"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `private_cloud_name`: The name of the private cloud."]
+        #[doc = "* `hcx_enterprise_site_name`: Name of the HCX Enterprise Site in the private cloud"]
+        #[doc = "* `hcx_enterprise_site`: The HCX Enterprise Site"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -1808,6 +1940,12 @@ pub mod hcx_enterprise_sites {
             }
         }
         #[doc = "Delete an HCX Enterprise Site in a private cloud"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `private_cloud_name`: Name of the private cloud"]
+        #[doc = "* `hcx_enterprise_site_name`: Name of the HCX Enterprise Site in the private cloud"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -2082,6 +2220,11 @@ pub mod authorizations {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "List ExpressRoute Circuit Authorizations in a private cloud"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `private_cloud_name`: Name of the private cloud"]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -2096,6 +2239,12 @@ pub mod authorizations {
             }
         }
         #[doc = "Get an ExpressRoute Circuit Authorization by name in a private cloud"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `private_cloud_name`: Name of the private cloud"]
+        #[doc = "* `authorization_name`: Name of the ExpressRoute Circuit Authorization in the private cloud"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -2112,6 +2261,13 @@ pub mod authorizations {
             }
         }
         #[doc = "Create or update an ExpressRoute Circuit Authorization in a private cloud"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `private_cloud_name`: The name of the private cloud."]
+        #[doc = "* `authorization_name`: Name of the ExpressRoute Circuit Authorization in the private cloud"]
+        #[doc = "* `authorization`: An ExpressRoute Circuit Authorization"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -2130,6 +2286,12 @@ pub mod authorizations {
             }
         }
         #[doc = "Delete an ExpressRoute Circuit Authorization in a private cloud"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `private_cloud_name`: Name of the private cloud"]
+        #[doc = "* `authorization_name`: Name of the ExpressRoute Circuit Authorization in the private cloud"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -2408,6 +2570,11 @@ pub mod global_reach_connections {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "List global reach connections in a private cloud"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `private_cloud_name`: Name of the private cloud"]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -2422,6 +2589,12 @@ pub mod global_reach_connections {
             }
         }
         #[doc = "Get a global reach connection by name in a private cloud"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `private_cloud_name`: Name of the private cloud"]
+        #[doc = "* `global_reach_connection_name`: Name of the global reach connection in the private cloud"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -2438,6 +2611,13 @@ pub mod global_reach_connections {
             }
         }
         #[doc = "Create or update a global reach connection in a private cloud"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `private_cloud_name`: The name of the private cloud."]
+        #[doc = "* `global_reach_connection_name`: Name of the global reach connection in the private cloud"]
+        #[doc = "* `global_reach_connection`: A global reach connection in the private cloud"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -2456,6 +2636,12 @@ pub mod global_reach_connections {
             }
         }
         #[doc = "Delete a global reach connection in a private cloud"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `private_cloud_name`: Name of the private cloud"]
+        #[doc = "* `global_reach_connection_name`: Name of the global reach connection in the private cloud"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -2734,6 +2920,11 @@ pub mod workload_networks {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "List of segments in a private cloud workload network."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `private_cloud_name`: Name of the private cloud"]
         pub fn list_segments(
             &self,
             subscription_id: impl Into<String>,
@@ -2748,6 +2939,12 @@ pub mod workload_networks {
             }
         }
         #[doc = "Get a segment by id in a private cloud workload network."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `private_cloud_name`: Name of the private cloud"]
+        #[doc = "* `segment_id`: NSX Segment identifier. Generally the same as the Segment's display name"]
         pub fn get_segment(
             &self,
             subscription_id: impl Into<String>,
@@ -2764,6 +2961,13 @@ pub mod workload_networks {
             }
         }
         #[doc = "Create a segment by id in a private cloud workload network."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `private_cloud_name`: Name of the private cloud"]
+        #[doc = "* `segment_id`: NSX Segment identifier. Generally the same as the Segment's display name"]
+        #[doc = "* `workload_network_segment`: NSX Segment"]
         pub fn create_segments(
             &self,
             subscription_id: impl Into<String>,
@@ -2782,6 +2986,13 @@ pub mod workload_networks {
             }
         }
         #[doc = "Create or update a segment by id in a private cloud workload network."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `private_cloud_name`: Name of the private cloud"]
+        #[doc = "* `segment_id`: NSX Segment identifier. Generally the same as the Segment's display name"]
+        #[doc = "* `workload_network_segment`: NSX Segment"]
         pub fn update_segments(
             &self,
             subscription_id: impl Into<String>,
@@ -2800,6 +3011,12 @@ pub mod workload_networks {
             }
         }
         #[doc = "Delete a segment by id in a private cloud workload network."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `private_cloud_name`: Name of the private cloud"]
+        #[doc = "* `segment_id`: NSX Segment identifier. Generally the same as the Segment's display name"]
         pub fn delete_segment(
             &self,
             subscription_id: impl Into<String>,
@@ -2816,6 +3033,11 @@ pub mod workload_networks {
             }
         }
         #[doc = "List dhcp in a private cloud workload network."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `private_cloud_name`: Name of the private cloud"]
         pub fn list_dhcp(
             &self,
             subscription_id: impl Into<String>,
@@ -2830,6 +3052,12 @@ pub mod workload_networks {
             }
         }
         #[doc = "Get dhcp by id in a private cloud workload network."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `dhcp_id`: NSX DHCP identifier. Generally the same as the DHCP display name"]
+        #[doc = "* `private_cloud_name`: Name of the private cloud"]
         pub fn get_dhcp(
             &self,
             subscription_id: impl Into<String>,
@@ -2846,6 +3074,13 @@ pub mod workload_networks {
             }
         }
         #[doc = "Create dhcp by id in a private cloud workload network."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `private_cloud_name`: Name of the private cloud"]
+        #[doc = "* `dhcp_id`: NSX DHCP identifier. Generally the same as the DHCP display name"]
+        #[doc = "* `workload_network_dhcp`: NSX DHCP"]
         pub fn create_dhcp(
             &self,
             subscription_id: impl Into<String>,
@@ -2864,6 +3099,13 @@ pub mod workload_networks {
             }
         }
         #[doc = "Create or update dhcp by id in a private cloud workload network."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `private_cloud_name`: Name of the private cloud"]
+        #[doc = "* `dhcp_id`: NSX DHCP identifier. Generally the same as the DHCP display name"]
+        #[doc = "* `workload_network_dhcp`: NSX DHCP"]
         pub fn update_dhcp(
             &self,
             subscription_id: impl Into<String>,
@@ -2882,6 +3124,12 @@ pub mod workload_networks {
             }
         }
         #[doc = "Delete dhcp by id in a private cloud workload network."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `private_cloud_name`: Name of the private cloud"]
+        #[doc = "* `dhcp_id`: NSX DHCP identifier. Generally the same as the DHCP display name"]
         pub fn delete_dhcp(
             &self,
             subscription_id: impl Into<String>,
@@ -2898,6 +3146,11 @@ pub mod workload_networks {
             }
         }
         #[doc = "List of gateways in a private cloud workload network."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `private_cloud_name`: Name of the private cloud"]
         pub fn list_gateways(
             &self,
             subscription_id: impl Into<String>,
@@ -2912,6 +3165,12 @@ pub mod workload_networks {
             }
         }
         #[doc = "Get a gateway by id in a private cloud workload network."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `private_cloud_name`: Name of the private cloud"]
+        #[doc = "* `gateway_id`: NSX Gateway identifier. Generally the same as the Gateway's display name"]
         pub fn get_gateway(
             &self,
             subscription_id: impl Into<String>,
@@ -2928,6 +3187,11 @@ pub mod workload_networks {
             }
         }
         #[doc = "List of port mirroring profiles in a private cloud workload network."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `private_cloud_name`: Name of the private cloud"]
         pub fn list_port_mirroring(
             &self,
             subscription_id: impl Into<String>,
@@ -2942,6 +3206,12 @@ pub mod workload_networks {
             }
         }
         #[doc = "Get a port mirroring profile by id in a private cloud workload network."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `private_cloud_name`: Name of the private cloud"]
+        #[doc = "* `port_mirroring_id`: NSX Port Mirroring identifier. Generally the same as the Port Mirroring display name"]
         pub fn get_port_mirroring(
             &self,
             subscription_id: impl Into<String>,
@@ -2958,6 +3228,13 @@ pub mod workload_networks {
             }
         }
         #[doc = "Create a port mirroring profile by id in a private cloud workload network."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `private_cloud_name`: Name of the private cloud"]
+        #[doc = "* `port_mirroring_id`: NSX Port Mirroring identifier. Generally the same as the Port Mirroring display name"]
+        #[doc = "* `workload_network_port_mirroring`: NSX port mirroring"]
         pub fn create_port_mirroring(
             &self,
             subscription_id: impl Into<String>,
@@ -2976,6 +3253,13 @@ pub mod workload_networks {
             }
         }
         #[doc = "Create or update a port mirroring profile by id in a private cloud workload network."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `private_cloud_name`: Name of the private cloud"]
+        #[doc = "* `port_mirroring_id`: NSX Port Mirroring identifier. Generally the same as the Port Mirroring display name"]
+        #[doc = "* `workload_network_port_mirroring`: NSX port mirroring"]
         pub fn update_port_mirroring(
             &self,
             subscription_id: impl Into<String>,
@@ -2994,6 +3278,12 @@ pub mod workload_networks {
             }
         }
         #[doc = "Delete a port mirroring profile by id in a private cloud workload network."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `port_mirroring_id`: NSX Port Mirroring identifier. Generally the same as the Port Mirroring display name"]
+        #[doc = "* `private_cloud_name`: Name of the private cloud"]
         pub fn delete_port_mirroring(
             &self,
             subscription_id: impl Into<String>,
@@ -3010,6 +3300,11 @@ pub mod workload_networks {
             }
         }
         #[doc = "List of vm groups in a private cloud workload network."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `private_cloud_name`: Name of the private cloud"]
         pub fn list_vm_groups(
             &self,
             subscription_id: impl Into<String>,
@@ -3024,6 +3319,12 @@ pub mod workload_networks {
             }
         }
         #[doc = "Get a vm group by id in a private cloud workload network."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `private_cloud_name`: Name of the private cloud"]
+        #[doc = "* `vm_group_id`: NSX VM Group identifier. Generally the same as the VM Group's display name"]
         pub fn get_vm_group(
             &self,
             subscription_id: impl Into<String>,
@@ -3040,6 +3341,13 @@ pub mod workload_networks {
             }
         }
         #[doc = "Create a vm group by id in a private cloud workload network."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `private_cloud_name`: Name of the private cloud"]
+        #[doc = "* `vm_group_id`: NSX VM Group identifier. Generally the same as the VM Group's display name"]
+        #[doc = "* `workload_network_vm_group`: NSX VM Group"]
         pub fn create_vm_group(
             &self,
             subscription_id: impl Into<String>,
@@ -3058,6 +3366,13 @@ pub mod workload_networks {
             }
         }
         #[doc = "Create or update a vm group by id in a private cloud workload network."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `private_cloud_name`: Name of the private cloud"]
+        #[doc = "* `vm_group_id`: NSX VM Group identifier. Generally the same as the VM Group's display name"]
+        #[doc = "* `workload_network_vm_group`: NSX VM Group"]
         pub fn update_vm_group(
             &self,
             subscription_id: impl Into<String>,
@@ -3076,6 +3391,12 @@ pub mod workload_networks {
             }
         }
         #[doc = "Delete a vm group by id in a private cloud workload network."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `vm_group_id`: NSX VM Group identifier. Generally the same as the VM Group's display name"]
+        #[doc = "* `private_cloud_name`: Name of the private cloud"]
         pub fn delete_vm_group(
             &self,
             subscription_id: impl Into<String>,
@@ -3092,6 +3413,11 @@ pub mod workload_networks {
             }
         }
         #[doc = "List of virtual machines in a private cloud workload network."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `private_cloud_name`: Name of the private cloud"]
         pub fn list_virtual_machines(
             &self,
             subscription_id: impl Into<String>,
@@ -3106,6 +3432,12 @@ pub mod workload_networks {
             }
         }
         #[doc = "Get a virtual machine by id in a private cloud workload network."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `private_cloud_name`: Name of the private cloud"]
+        #[doc = "* `virtual_machine_id`: Virtual Machine identifier"]
         pub fn get_virtual_machine(
             &self,
             subscription_id: impl Into<String>,
@@ -3122,6 +3454,11 @@ pub mod workload_networks {
             }
         }
         #[doc = "List of DNS services in a private cloud workload network."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `private_cloud_name`: Name of the private cloud"]
         pub fn list_dns_services(
             &self,
             subscription_id: impl Into<String>,
@@ -3136,6 +3473,12 @@ pub mod workload_networks {
             }
         }
         #[doc = "Get a DNS service by id in a private cloud workload network."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `private_cloud_name`: Name of the private cloud"]
+        #[doc = "* `dns_service_id`: NSX DNS Service identifier. Generally the same as the DNS Service's display name"]
         pub fn get_dns_service(
             &self,
             subscription_id: impl Into<String>,
@@ -3152,6 +3495,13 @@ pub mod workload_networks {
             }
         }
         #[doc = "Create a DNS service by id in a private cloud workload network."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `private_cloud_name`: Name of the private cloud"]
+        #[doc = "* `dns_service_id`: NSX DNS Service identifier. Generally the same as the DNS Service's display name"]
+        #[doc = "* `workload_network_dns_service`: NSX DNS Service"]
         pub fn create_dns_service(
             &self,
             subscription_id: impl Into<String>,
@@ -3170,6 +3520,13 @@ pub mod workload_networks {
             }
         }
         #[doc = "Create or update a DNS service by id in a private cloud workload network."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `private_cloud_name`: Name of the private cloud"]
+        #[doc = "* `dns_service_id`: NSX DNS Service identifier. Generally the same as the DNS Service's display name"]
+        #[doc = "* `workload_network_dns_service`: NSX DNS Service"]
         pub fn update_dns_service(
             &self,
             subscription_id: impl Into<String>,
@@ -3188,6 +3545,12 @@ pub mod workload_networks {
             }
         }
         #[doc = "Delete a DNS service by id in a private cloud workload network."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `dns_service_id`: NSX DNS Service identifier. Generally the same as the DNS Service's display name"]
+        #[doc = "* `private_cloud_name`: Name of the private cloud"]
         pub fn delete_dns_service(
             &self,
             subscription_id: impl Into<String>,
@@ -3204,6 +3567,11 @@ pub mod workload_networks {
             }
         }
         #[doc = "List of DNS zones in a private cloud workload network."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `private_cloud_name`: Name of the private cloud"]
         pub fn list_dns_zones(
             &self,
             subscription_id: impl Into<String>,
@@ -3218,6 +3586,12 @@ pub mod workload_networks {
             }
         }
         #[doc = "Get a DNS zone by id in a private cloud workload network."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `private_cloud_name`: Name of the private cloud"]
+        #[doc = "* `dns_zone_id`: NSX DNS Zone identifier. Generally the same as the DNS Zone's display name"]
         pub fn get_dns_zone(
             &self,
             subscription_id: impl Into<String>,
@@ -3234,6 +3608,13 @@ pub mod workload_networks {
             }
         }
         #[doc = "Create a DNS zone by id in a private cloud workload network."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `private_cloud_name`: Name of the private cloud"]
+        #[doc = "* `dns_zone_id`: NSX DNS Zone identifier. Generally the same as the DNS Zone's display name"]
+        #[doc = "* `workload_network_dns_zone`: NSX DNS Zone"]
         pub fn create_dns_zone(
             &self,
             subscription_id: impl Into<String>,
@@ -3252,6 +3633,13 @@ pub mod workload_networks {
             }
         }
         #[doc = "Create or update a DNS zone by id in a private cloud workload network."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `private_cloud_name`: Name of the private cloud"]
+        #[doc = "* `dns_zone_id`: NSX DNS Zone identifier. Generally the same as the DNS Zone's display name"]
+        #[doc = "* `workload_network_dns_zone`: NSX DNS Zone"]
         pub fn update_dns_zone(
             &self,
             subscription_id: impl Into<String>,
@@ -3270,6 +3658,12 @@ pub mod workload_networks {
             }
         }
         #[doc = "Delete a DNS zone by id in a private cloud workload network."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `dns_zone_id`: NSX DNS Zone identifier. Generally the same as the DNS Zone's display name"]
+        #[doc = "* `private_cloud_name`: Name of the private cloud"]
         pub fn delete_dns_zone(
             &self,
             subscription_id: impl Into<String>,
@@ -3286,6 +3680,11 @@ pub mod workload_networks {
             }
         }
         #[doc = "List of Public IP Blocks in a private cloud workload network."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `private_cloud_name`: Name of the private cloud"]
         pub fn list_public_i_ps(
             &self,
             subscription_id: impl Into<String>,
@@ -3300,6 +3699,12 @@ pub mod workload_networks {
             }
         }
         #[doc = "Get a Public IP Block by id in a private cloud workload network."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `private_cloud_name`: Name of the private cloud"]
+        #[doc = "* `public_ip_id`: NSX Public IP Block identifier. Generally the same as the Public IP Block's display name"]
         pub fn get_public_ip(
             &self,
             subscription_id: impl Into<String>,
@@ -3316,6 +3721,13 @@ pub mod workload_networks {
             }
         }
         #[doc = "Create a Public IP Block by id in a private cloud workload network."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `private_cloud_name`: Name of the private cloud"]
+        #[doc = "* `public_ip_id`: NSX Public IP Block identifier. Generally the same as the Public IP Block's display name"]
+        #[doc = "* `workload_network_public_ip`: NSX Public IP Block"]
         pub fn create_public_ip(
             &self,
             subscription_id: impl Into<String>,
@@ -3334,6 +3746,12 @@ pub mod workload_networks {
             }
         }
         #[doc = "Delete a Public IP Block by id in a private cloud workload network."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `public_ip_id`: NSX Public IP Block identifier. Generally the same as the Public IP Block's display name"]
+        #[doc = "* `private_cloud_name`: Name of the private cloud"]
         pub fn delete_public_ip(
             &self,
             subscription_id: impl Into<String>,
@@ -5527,6 +5945,11 @@ pub mod cloud_links {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "List cloud link in a private cloud"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `private_cloud_name`: Name of the private cloud"]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -5541,6 +5964,12 @@ pub mod cloud_links {
             }
         }
         #[doc = "Get an cloud link by name in a private cloud"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `private_cloud_name`: Name of the private cloud"]
+        #[doc = "* `cloud_link_name`: Name of the cloud link resource"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -5557,6 +5986,13 @@ pub mod cloud_links {
             }
         }
         #[doc = "Create or update a cloud link in a private cloud"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `private_cloud_name`: The name of the private cloud."]
+        #[doc = "* `cloud_link_name`: Name of the cloud link resource"]
+        #[doc = "* `cloud_link`: A cloud link in the private cloud"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -5575,6 +6011,12 @@ pub mod cloud_links {
             }
         }
         #[doc = "Delete a cloud link in a private cloud"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `private_cloud_name`: Name of the private cloud"]
+        #[doc = "* `cloud_link_name`: Name of the cloud link resource"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -5853,6 +6295,11 @@ pub mod addons {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "List addons in a private cloud"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `private_cloud_name`: Name of the private cloud"]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -5867,6 +6314,12 @@ pub mod addons {
             }
         }
         #[doc = "Get an addon by name in a private cloud"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `private_cloud_name`: Name of the private cloud"]
+        #[doc = "* `addon_name`: Name of the addon for the private cloud"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -5883,6 +6336,13 @@ pub mod addons {
             }
         }
         #[doc = "Create or update a addon in a private cloud"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `private_cloud_name`: The name of the private cloud."]
+        #[doc = "* `addon_name`: Name of the addon for the private cloud"]
+        #[doc = "* `addon`: A addon in the private cloud"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -5901,6 +6361,12 @@ pub mod addons {
             }
         }
         #[doc = "Delete a addon in a private cloud"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `private_cloud_name`: Name of the private cloud"]
+        #[doc = "* `addon_name`: Name of the addon for the private cloud"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -6179,6 +6645,12 @@ pub mod virtual_machines {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "List of virtual machines in a private cloud cluster"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `private_cloud_name`: Name of the private cloud"]
+        #[doc = "* `cluster_name`: Name of the cluster in the private cloud"]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -6195,6 +6667,13 @@ pub mod virtual_machines {
             }
         }
         #[doc = "Get a virtual machine by id in a private cloud cluster"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `private_cloud_name`: Name of the private cloud"]
+        #[doc = "* `cluster_name`: Name of the cluster in the private cloud"]
+        #[doc = "* `virtual_machine_id`: Virtual Machine identifier"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -6213,6 +6692,14 @@ pub mod virtual_machines {
             }
         }
         #[doc = "Enable or disable DRS-driven VM movement restriction"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `private_cloud_name`: Name of the private cloud"]
+        #[doc = "* `cluster_name`: Name of the cluster in the private cloud"]
+        #[doc = "* `virtual_machine_id`: Virtual Machine identifier"]
+        #[doc = "* `restrict_movement`: Whether VM DRS-driven movement is restricted (Enabled) or not (Disabled)"]
         pub fn restrict_movement(
             &self,
             subscription_id: impl Into<String>,
@@ -6422,6 +6909,12 @@ pub mod placement_policies {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "List placement policies in a private cloud cluster"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `private_cloud_name`: Name of the private cloud"]
+        #[doc = "* `cluster_name`: Name of the cluster in the private cloud"]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -6438,6 +6931,13 @@ pub mod placement_policies {
             }
         }
         #[doc = "Get a placement policy by name in a private cloud cluster"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `private_cloud_name`: Name of the private cloud"]
+        #[doc = "* `cluster_name`: Name of the cluster in the private cloud"]
+        #[doc = "* `placement_policy_name`: Name of the VMware vSphere Distributed Resource Scheduler (DRS) placement policy"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -6456,6 +6956,14 @@ pub mod placement_policies {
             }
         }
         #[doc = "Create or update a placement policy in a private cloud cluster"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `private_cloud_name`: Name of the private cloud"]
+        #[doc = "* `cluster_name`: Name of the cluster in the private cloud"]
+        #[doc = "* `placement_policy_name`: Name of the VMware vSphere Distributed Resource Scheduler (DRS) placement policy"]
+        #[doc = "* `placement_policy`: A placement policy in the private cloud cluster"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -6476,6 +6984,14 @@ pub mod placement_policies {
             }
         }
         #[doc = "Update a placement policy in a private cloud cluster"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `private_cloud_name`: Name of the private cloud"]
+        #[doc = "* `cluster_name`: Name of the cluster in the private cloud"]
+        #[doc = "* `placement_policy_name`: Name of the VMware vSphere Distributed Resource Scheduler (DRS) placement policy"]
+        #[doc = "* `placement_policy_update`: The placement policy properties that may be updated"]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -6496,6 +7012,13 @@ pub mod placement_policies {
             }
         }
         #[doc = "Delete a placement policy in a private cloud cluster"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `private_cloud_name`: Name of the private cloud"]
+        #[doc = "* `cluster_name`: Name of the cluster in the private cloud"]
+        #[doc = "* `placement_policy_name`: Name of the VMware vSphere Distributed Resource Scheduler (DRS) placement policy"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -6819,6 +7342,12 @@ pub mod script_packages {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List script packages available to run on the private cloud"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `private_cloud_name`: Name of the private cloud"]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -6832,6 +7361,13 @@ pub mod script_packages {
                 private_cloud_name: private_cloud_name.into(),
             }
         }
+        #[doc = "Get a script package available to run on a private cloud"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `private_cloud_name`: Name of the private cloud"]
+        #[doc = "* `script_package_name`: Name of the script package in the private cloud"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -6985,6 +7521,13 @@ pub mod script_cmdlets {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List script cmdlet resources available for a private cloud to create a script execution resource on a private cloud"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `private_cloud_name`: Name of the private cloud"]
+        #[doc = "* `script_package_name`: Name of the script package in the private cloud"]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -7000,6 +7543,14 @@ pub mod script_cmdlets {
                 script_package_name: script_package_name.into(),
             }
         }
+        #[doc = "Return information about a script cmdlet resource in a specific package on a private cloud"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `private_cloud_name`: Name of the private cloud"]
+        #[doc = "* `script_package_name`: Name of the script package in the private cloud"]
+        #[doc = "* `script_cmdlet_name`: Name of the script cmdlet resource in the script package in the private cloud"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -7145,6 +7696,11 @@ pub mod script_executions {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "List script executions in a private cloud"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `private_cloud_name`: Name of the private cloud"]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -7159,6 +7715,12 @@ pub mod script_executions {
             }
         }
         #[doc = "Get an script execution by name in a private cloud"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `private_cloud_name`: Name of the private cloud"]
+        #[doc = "* `script_execution_name`: Name of the user-invoked script execution resource"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -7175,6 +7737,13 @@ pub mod script_executions {
             }
         }
         #[doc = "Create or update a script execution in a private cloud"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `private_cloud_name`: The name of the private cloud."]
+        #[doc = "* `script_execution_name`: Name of the user-invoked script execution resource"]
+        #[doc = "* `script_execution`: A script running in the private cloud"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -7193,6 +7762,12 @@ pub mod script_executions {
             }
         }
         #[doc = "Cancel a ScriptExecution in a private cloud"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `private_cloud_name`: Name of the private cloud"]
+        #[doc = "* `script_execution_name`: Name of the user-invoked script execution resource"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -7208,6 +7783,13 @@ pub mod script_executions {
                 script_execution_name: script_execution_name.into(),
             }
         }
+        #[doc = "Return the logs for a script execution resource"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `private_cloud_name`: Name of the private cloud"]
+        #[doc = "* `script_execution_name`: Name of the user-invoked script execution resource"]
         pub fn get_execution_logs(
             &self,
             subscription_id: impl Into<String>,
@@ -7494,6 +8076,7 @@ pub mod script_executions {
             pub(crate) script_output_stream_type: Vec<String>,
         }
         impl Builder {
+            #[doc = "Name of the desired output stream to return. If not provided, will return all. An empty array will return nothing"]
             pub fn script_output_stream_type(mut self, script_output_stream_type: Vec<String>) -> Self {
                 self.script_output_stream_type = script_output_stream_type;
                 self

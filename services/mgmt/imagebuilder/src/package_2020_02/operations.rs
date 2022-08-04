@@ -85,12 +85,21 @@ pub mod virtual_machine_image_templates {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets information about the VM image templates associated with the subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription Id forms part of the URI for every service call."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets information about the VM image templates associated with the specified resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription Id forms part of the URI for every service call."]
         pub fn list_by_resource_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -102,6 +111,12 @@ pub mod virtual_machine_image_templates {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get information about a virtual machine image template"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription Id forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `image_template_name`: The name of the image Template"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -115,6 +130,13 @@ pub mod virtual_machine_image_templates {
                 image_template_name: image_template_name.into(),
             }
         }
+        #[doc = "Create or update a virtual machine image template"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `parameters`: Parameters supplied to the CreateImageTemplate operation"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription Id forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `image_template_name`: The name of the image Template"]
         pub fn create_or_update(
             &self,
             parameters: impl Into<models::ImageTemplate>,
@@ -130,6 +152,13 @@ pub mod virtual_machine_image_templates {
                 image_template_name: image_template_name.into(),
             }
         }
+        #[doc = "Update the tags for this Virtual Machine Image Template"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `parameters`: Additional parameters for Image Template update."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription Id forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `image_template_name`: The name of the image Template"]
         pub fn update(
             &self,
             parameters: impl Into<models::ImageTemplateUpdateParameters>,
@@ -145,6 +174,12 @@ pub mod virtual_machine_image_templates {
                 image_template_name: image_template_name.into(),
             }
         }
+        #[doc = "Delete a virtual machine image template"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription Id forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `image_template_name`: The name of the image Template"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -158,6 +193,12 @@ pub mod virtual_machine_image_templates {
                 image_template_name: image_template_name.into(),
             }
         }
+        #[doc = "Create artifacts from a existing image template"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription Id forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `image_template_name`: The name of the image Template"]
         pub fn run(
             &self,
             subscription_id: impl Into<String>,
@@ -171,6 +212,12 @@ pub mod virtual_machine_image_templates {
                 image_template_name: image_template_name.into(),
             }
         }
+        #[doc = "Cancel the long running image build based on the image template"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription Id forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `image_template_name`: The name of the image Template"]
         pub fn cancel(
             &self,
             subscription_id: impl Into<String>,
@@ -184,6 +231,12 @@ pub mod virtual_machine_image_templates {
                 image_template_name: image_template_name.into(),
             }
         }
+        #[doc = "List all run outputs for the specified Image Template resource"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription Id forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `image_template_name`: The name of the image Template"]
         pub fn list_run_outputs(
             &self,
             subscription_id: impl Into<String>,
@@ -197,6 +250,13 @@ pub mod virtual_machine_image_templates {
                 image_template_name: image_template_name.into(),
             }
         }
+        #[doc = "Get the specified run output for the specified image template resource"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription Id forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `image_template_name`: The name of the image Template"]
+        #[doc = "* `run_output_name`: The name of the run output"]
         pub fn get_run_output(
             &self,
             subscription_id: impl Into<String>,
@@ -839,6 +899,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists available operations for the Microsoft.VirtualMachineImages provider"]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }

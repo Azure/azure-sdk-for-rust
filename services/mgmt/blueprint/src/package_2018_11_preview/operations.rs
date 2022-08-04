@@ -97,6 +97,11 @@ pub mod blueprints {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get a blueprint definition."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_scope`: The scope of the resource. Valid scopes are: management group (format: '/providers/Microsoft.Management/managementGroups/{managementGroup}'), subscription (format: '/subscriptions/{subscriptionId}')."]
+        #[doc = "* `blueprint_name`: Name of the blueprint definition."]
         pub fn get(&self, resource_scope: impl Into<String>, blueprint_name: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -104,6 +109,12 @@ pub mod blueprints {
                 blueprint_name: blueprint_name.into(),
             }
         }
+        #[doc = "Create or update a blueprint definition."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_scope`: The scope of the resource. Valid scopes are: management group (format: '/providers/Microsoft.Management/managementGroups/{managementGroup}'), subscription (format: '/subscriptions/{subscriptionId}')."]
+        #[doc = "* `blueprint_name`: Name of the blueprint definition."]
+        #[doc = "* `blueprint`: Blueprint definition."]
         pub fn create_or_update(
             &self,
             resource_scope: impl Into<String>,
@@ -117,6 +128,11 @@ pub mod blueprints {
                 blueprint: blueprint.into(),
             }
         }
+        #[doc = "Delete a blueprint definition."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_scope`: The scope of the resource. Valid scopes are: management group (format: '/providers/Microsoft.Management/managementGroups/{managementGroup}'), subscription (format: '/subscriptions/{subscriptionId}')."]
+        #[doc = "* `blueprint_name`: Name of the blueprint definition."]
         pub fn delete(&self, resource_scope: impl Into<String>, blueprint_name: impl Into<String>) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),
@@ -124,6 +140,10 @@ pub mod blueprints {
                 blueprint_name: blueprint_name.into(),
             }
         }
+        #[doc = "List blueprint definitions."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_scope`: The scope of the resource. Valid scopes are: management group (format: '/providers/Microsoft.Management/managementGroups/{managementGroup}'), subscription (format: '/subscriptions/{subscriptionId}')."]
         pub fn list(&self, resource_scope: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -367,6 +387,12 @@ pub mod artifacts {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get a blueprint artifact."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_scope`: The scope of the resource. Valid scopes are: management group (format: '/providers/Microsoft.Management/managementGroups/{managementGroup}'), subscription (format: '/subscriptions/{subscriptionId}')."]
+        #[doc = "* `blueprint_name`: Name of the blueprint definition."]
+        #[doc = "* `artifact_name`: Name of the blueprint artifact."]
         pub fn get(
             &self,
             resource_scope: impl Into<String>,
@@ -380,6 +406,13 @@ pub mod artifacts {
                 artifact_name: artifact_name.into(),
             }
         }
+        #[doc = "Create or update blueprint artifact."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_scope`: The scope of the resource. Valid scopes are: management group (format: '/providers/Microsoft.Management/managementGroups/{managementGroup}'), subscription (format: '/subscriptions/{subscriptionId}')."]
+        #[doc = "* `blueprint_name`: Name of the blueprint definition."]
+        #[doc = "* `artifact_name`: Name of the blueprint artifact."]
+        #[doc = "* `artifact`: Blueprint artifact to create or update."]
         pub fn create_or_update(
             &self,
             resource_scope: impl Into<String>,
@@ -395,6 +428,12 @@ pub mod artifacts {
                 artifact: artifact.into(),
             }
         }
+        #[doc = "Delete a blueprint artifact."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_scope`: The scope of the resource. Valid scopes are: management group (format: '/providers/Microsoft.Management/managementGroups/{managementGroup}'), subscription (format: '/subscriptions/{subscriptionId}')."]
+        #[doc = "* `blueprint_name`: Name of the blueprint definition."]
+        #[doc = "* `artifact_name`: Name of the blueprint artifact."]
         pub fn delete(
             &self,
             resource_scope: impl Into<String>,
@@ -408,6 +447,11 @@ pub mod artifacts {
                 artifact_name: artifact_name.into(),
             }
         }
+        #[doc = "List artifacts for a given blueprint definition."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_scope`: The scope of the resource. Valid scopes are: management group (format: '/providers/Microsoft.Management/managementGroups/{managementGroup}'), subscription (format: '/subscriptions/{subscriptionId}')."]
+        #[doc = "* `blueprint_name`: Name of the blueprint definition."]
         pub fn list(&self, resource_scope: impl Into<String>, blueprint_name: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -660,6 +704,12 @@ pub mod published_blueprints {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get a published version of a blueprint definition."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_scope`: The scope of the resource. Valid scopes are: management group (format: '/providers/Microsoft.Management/managementGroups/{managementGroup}'), subscription (format: '/subscriptions/{subscriptionId}')."]
+        #[doc = "* `blueprint_name`: Name of the blueprint definition."]
+        #[doc = "* `version_id`: Version of the published blueprint definition."]
         pub fn get(
             &self,
             resource_scope: impl Into<String>,
@@ -673,6 +723,12 @@ pub mod published_blueprints {
                 version_id: version_id.into(),
             }
         }
+        #[doc = "Publish a new version of the blueprint definition with the latest artifacts. Published blueprint definitions are immutable."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_scope`: The scope of the resource. Valid scopes are: management group (format: '/providers/Microsoft.Management/managementGroups/{managementGroup}'), subscription (format: '/subscriptions/{subscriptionId}')."]
+        #[doc = "* `blueprint_name`: Name of the blueprint definition."]
+        #[doc = "* `version_id`: Version of the published blueprint definition."]
         pub fn create(
             &self,
             resource_scope: impl Into<String>,
@@ -687,6 +743,12 @@ pub mod published_blueprints {
                 published_blueprint: None,
             }
         }
+        #[doc = "Delete a published version of a blueprint definition."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_scope`: The scope of the resource. Valid scopes are: management group (format: '/providers/Microsoft.Management/managementGroups/{managementGroup}'), subscription (format: '/subscriptions/{subscriptionId}')."]
+        #[doc = "* `blueprint_name`: Name of the blueprint definition."]
+        #[doc = "* `version_id`: Version of the published blueprint definition."]
         pub fn delete(
             &self,
             resource_scope: impl Into<String>,
@@ -700,6 +762,11 @@ pub mod published_blueprints {
                 version_id: version_id.into(),
             }
         }
+        #[doc = "List published versions of given blueprint definition."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_scope`: The scope of the resource. Valid scopes are: management group (format: '/providers/Microsoft.Management/managementGroups/{managementGroup}'), subscription (format: '/subscriptions/{subscriptionId}')."]
+        #[doc = "* `blueprint_name`: Name of the blueprint definition."]
         pub fn list(&self, resource_scope: impl Into<String>, blueprint_name: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -772,6 +839,7 @@ pub mod published_blueprints {
             pub(crate) published_blueprint: Option<models::PublishedBlueprint>,
         }
         impl Builder {
+            #[doc = "Published Blueprint to create or update."]
             pub fn published_blueprint(mut self, published_blueprint: impl Into<models::PublishedBlueprint>) -> Self {
                 self.published_blueprint = Some(published_blueprint.into());
                 self
@@ -960,6 +1028,13 @@ pub mod published_artifacts {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get an artifact for a published blueprint definition."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_scope`: The scope of the resource. Valid scopes are: management group (format: '/providers/Microsoft.Management/managementGroups/{managementGroup}'), subscription (format: '/subscriptions/{subscriptionId}')."]
+        #[doc = "* `blueprint_name`: Name of the blueprint definition."]
+        #[doc = "* `version_id`: Version of the published blueprint definition."]
+        #[doc = "* `artifact_name`: Name of the blueprint artifact."]
         pub fn get(
             &self,
             resource_scope: impl Into<String>,
@@ -975,6 +1050,12 @@ pub mod published_artifacts {
                 artifact_name: artifact_name.into(),
             }
         }
+        #[doc = "List artifacts for a version of a published blueprint definition."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_scope`: The scope of the resource. Valid scopes are: management group (format: '/providers/Microsoft.Management/managementGroups/{managementGroup}'), subscription (format: '/subscriptions/{subscriptionId}')."]
+        #[doc = "* `blueprint_name`: Name of the blueprint definition."]
+        #[doc = "* `version_id`: Version of the published blueprint definition."]
         pub fn list(
             &self,
             resource_scope: impl Into<String>,
@@ -1126,6 +1207,11 @@ pub mod assignments {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get a blueprint assignment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_scope`: The scope of the resource. Valid scopes are: management group (format: '/providers/Microsoft.Management/managementGroups/{managementGroup}'), subscription (format: '/subscriptions/{subscriptionId}')."]
+        #[doc = "* `assignment_name`: Name of the blueprint assignment."]
         pub fn get(&self, resource_scope: impl Into<String>, assignment_name: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -1133,6 +1219,12 @@ pub mod assignments {
                 assignment_name: assignment_name.into(),
             }
         }
+        #[doc = "Create or update a blueprint assignment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_scope`: The scope of the resource. Valid scopes are: management group (format: '/providers/Microsoft.Management/managementGroups/{managementGroup}'), subscription (format: '/subscriptions/{subscriptionId}')."]
+        #[doc = "* `assignment_name`: Name of the blueprint assignment."]
+        #[doc = "* `assignment`: Blueprint assignment object to save."]
         pub fn create_or_update(
             &self,
             resource_scope: impl Into<String>,
@@ -1146,6 +1238,11 @@ pub mod assignments {
                 assignment: assignment.into(),
             }
         }
+        #[doc = "Delete a blueprint assignment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_scope`: The scope of the resource. Valid scopes are: management group (format: '/providers/Microsoft.Management/managementGroups/{managementGroup}'), subscription (format: '/subscriptions/{subscriptionId}')."]
+        #[doc = "* `assignment_name`: Name of the blueprint assignment."]
         pub fn delete(&self, resource_scope: impl Into<String>, assignment_name: impl Into<String>) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),
@@ -1154,6 +1251,11 @@ pub mod assignments {
                 delete_behavior: None,
             }
         }
+        #[doc = "Get Blueprints service SPN objectId"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_scope`: The scope of the resource. Valid scopes are: management group (format: '/providers/Microsoft.Management/managementGroups/{managementGroup}'), subscription (format: '/subscriptions/{subscriptionId}')."]
+        #[doc = "* `assignment_name`: Name of the blueprint assignment."]
         pub fn who_is_blueprint(&self, resource_scope: impl Into<String>, assignment_name: impl Into<String>) -> who_is_blueprint::Builder {
             who_is_blueprint::Builder {
                 client: self.0.clone(),
@@ -1161,6 +1263,10 @@ pub mod assignments {
                 assignment_name: assignment_name.into(),
             }
         }
+        #[doc = "List blueprint assignments within a subscription or a management group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_scope`: The scope of the resource. Valid scopes are: management group (format: '/providers/Microsoft.Management/managementGroups/{managementGroup}'), subscription (format: '/subscriptions/{subscriptionId}')."]
         pub fn list(&self, resource_scope: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -1285,6 +1391,7 @@ pub mod assignments {
             pub(crate) delete_behavior: Option<String>,
         }
         impl Builder {
+            #[doc = "When deleteBehavior=all, the resources that were created by the blueprint assignment will be deleted."]
             pub fn delete_behavior(mut self, delete_behavior: impl Into<String>) -> Self {
                 self.delete_behavior = Some(delete_behavior.into());
                 self
@@ -1463,6 +1570,11 @@ pub mod assignment_operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List operations for given blueprint assignment within a subscription or a management group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_scope`: The scope of the resource. Valid scopes are: management group (format: '/providers/Microsoft.Management/managementGroups/{managementGroup}'), subscription (format: '/subscriptions/{subscriptionId}')."]
+        #[doc = "* `assignment_name`: Name of the blueprint assignment."]
         pub fn list(&self, resource_scope: impl Into<String>, assignment_name: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -1470,6 +1582,12 @@ pub mod assignment_operations {
                 assignment_name: assignment_name.into(),
             }
         }
+        #[doc = "Get a blueprint assignment operation."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_scope`: The scope of the resource. Valid scopes are: management group (format: '/providers/Microsoft.Management/managementGroups/{managementGroup}'), subscription (format: '/subscriptions/{subscriptionId}')."]
+        #[doc = "* `assignment_name`: Name of the blueprint assignment."]
+        #[doc = "* `assignment_operation_name`: Name of the blueprint assignment operation."]
         pub fn get(
             &self,
             resource_scope: impl Into<String>,

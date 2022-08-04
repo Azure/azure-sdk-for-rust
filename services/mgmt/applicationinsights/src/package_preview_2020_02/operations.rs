@@ -83,6 +83,7 @@ pub mod operations {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "List available operations."]
+        #[doc = "List the available operations supported by the Microsoft.EventGrid resource provider."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -159,6 +160,15 @@ pub mod operations {
     }
 }
 impl Client {
+    #[doc = "Returns a file test result for the matching test"]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+    #[doc = "* `subscription_id`: The ID of the target subscription."]
+    #[doc = "* `web_test_name`: The name of the Application Insights webtest resource."]
+    #[doc = "* `geo_location_id`: The location ID where the webtest was physically run."]
+    #[doc = "* `time_stamp`: The posix (epoch) time stamp for the webtest result."]
+    #[doc = "* `download_as`: The format to use when returning the webtest result."]
     pub fn get_test_result_file(
         &self,
         resource_group_name: impl Into<String>,
@@ -197,10 +207,12 @@ pub mod get_test_result_file {
         pub(crate) continuation_token: Option<String>,
     }
     impl Builder {
+        #[doc = "The success state criteria for the webtest result."]
         pub fn test_successful_criteria(mut self, test_successful_criteria: bool) -> Self {
             self.test_successful_criteria = Some(test_successful_criteria);
             self
         }
+        #[doc = "The continuation token."]
         pub fn continuation_token(mut self, continuation_token: impl Into<String>) -> Self {
             self.continuation_token = Some(continuation_token.into());
             self

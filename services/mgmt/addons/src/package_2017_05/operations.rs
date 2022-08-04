@@ -88,6 +88,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all of the available Addons RP operations."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -140,6 +141,12 @@ pub mod support_plan_types {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Returns whether or not the canonical support plan of type {type} is enabled for the subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `provider_name`: The support plan type. For now the only valid type is \"canonical\"."]
+        #[doc = "* `plan_type_name`: The Canonical support plan type."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -153,6 +160,12 @@ pub mod support_plan_types {
                 plan_type_name: plan_type_name.into(),
             }
         }
+        #[doc = "Creates or updates the Canonical support plan of type {type} for the subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `provider_name`: The support plan type. For now the only valid type is \"canonical\"."]
+        #[doc = "* `plan_type_name`: The Canonical support plan type."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -166,6 +179,12 @@ pub mod support_plan_types {
                 plan_type_name: plan_type_name.into(),
             }
         }
+        #[doc = "Cancels the Canonical support plan of type {type} for the subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `provider_name`: The support plan type. For now the only valid type is \"canonical\"."]
+        #[doc = "* `plan_type_name`: The Canonical support plan type."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -358,6 +377,11 @@ pub mod canonical_support_plan_types {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Returns the Canonical Support Plans."]
+        #[doc = "Returns the Canonical Support Plans as well as whether they are enabled or not for the subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `provider_name`: The support plan type. For now the only valid type is \"canonical\"."]
         pub fn get(&self, subscription_id: impl Into<String>, provider_name: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),

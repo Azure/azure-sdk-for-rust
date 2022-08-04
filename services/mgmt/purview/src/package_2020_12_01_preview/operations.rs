@@ -95,6 +95,11 @@ pub mod accounts {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets the accounts resources by resource group."]
+        #[doc = "List accounts in ResourceGroup"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier"]
+        #[doc = "* `resource_group_name`: The resource group name."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -108,6 +113,10 @@ pub mod accounts {
             }
         }
         #[doc = "Gets the accounts resources by subscription."]
+        #[doc = "List accounts in Subscription"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier"]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
@@ -116,6 +125,12 @@ pub mod accounts {
             }
         }
         #[doc = "Gets the account resource."]
+        #[doc = "Get an account"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier"]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `account_name`: The name of the account."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -130,6 +145,13 @@ pub mod accounts {
             }
         }
         #[doc = "Create or update an account resource"]
+        #[doc = "Creates or updates an account"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier"]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `account_name`: The name of the account."]
+        #[doc = "* `account`: The account."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -146,6 +168,13 @@ pub mod accounts {
             }
         }
         #[doc = "Patches the account resource."]
+        #[doc = "Updates an account"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier"]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `account_name`: The name of the account."]
+        #[doc = "* `account_update_parameters`: The account update parameters."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -162,6 +191,12 @@ pub mod accounts {
             }
         }
         #[doc = "Deletes the account resource."]
+        #[doc = "Deletes an account resource"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier"]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `account_name`: The name of the account."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -176,6 +211,12 @@ pub mod accounts {
             }
         }
         #[doc = "Lists the keys asynchronous."]
+        #[doc = "List the authorization keys associated with this account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier"]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `account_name`: The name of the account."]
         pub fn list_keys(
             &self,
             subscription_id: impl Into<String>,
@@ -190,6 +231,11 @@ pub mod accounts {
             }
         }
         #[doc = "Checks the account name availability."]
+        #[doc = "Checks if account name is available."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier"]
+        #[doc = "* `check_name_availability_request`: The check name availability request."]
         pub fn check_name_availability(
             &self,
             subscription_id: impl Into<String>,
@@ -213,6 +259,7 @@ pub mod accounts {
             pub(crate) skip_token: Option<String>,
         }
         impl Builder {
+            #[doc = "The skip token."]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());
                 self
@@ -296,6 +343,7 @@ pub mod accounts {
             pub(crate) skip_token: Option<String>,
         }
         impl Builder {
+            #[doc = "The skip token."]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());
                 self
@@ -713,6 +761,11 @@ pub mod default_accounts {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets the default account information set for the scope."]
+        #[doc = "Get the default account for the scope."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `scope_tenant_id`: The tenant ID."]
+        #[doc = "* `scope_type`: The scope for the default account."]
         pub fn get(&self, scope_tenant_id: impl Into<String>, scope_type: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -722,6 +775,10 @@ pub mod default_accounts {
             }
         }
         #[doc = "Sets the default account for the scope."]
+        #[doc = "Sets the default account for the scope."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `default_account_payload`: The payload containing the default account information and the scope."]
         pub fn set(&self, default_account_payload: impl Into<models::DefaultAccountPayload>) -> set::Builder {
             set::Builder {
                 client: self.0.clone(),
@@ -729,6 +786,11 @@ pub mod default_accounts {
             }
         }
         #[doc = "Removes the default account from the scope."]
+        #[doc = "Removes the default account from the scope."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `scope_tenant_id`: The tenant ID."]
+        #[doc = "* `scope_type`: The scope for the default account."]
         pub fn remove(&self, scope_tenant_id: impl Into<String>, scope_type: impl Into<String>) -> remove::Builder {
             remove::Builder {
                 client: self.0.clone(),
@@ -749,6 +811,7 @@ pub mod default_accounts {
             pub(crate) scope: Option<String>,
         }
         impl Builder {
+            #[doc = "The Id of the scope object, for example if the scope is \"Subscription\" then it is the ID of that subscription."]
             pub fn scope(mut self, scope: impl Into<String>) -> Self {
                 self.scope = Some(scope.into());
                 self
@@ -857,6 +920,7 @@ pub mod default_accounts {
             pub(crate) scope: Option<String>,
         }
         impl Builder {
+            #[doc = "The Id of the scope object, for example if the scope is \"Subscription\" then it is the ID of that subscription."]
             pub fn scope(mut self, scope: impl Into<String>) -> Self {
                 self.scope = Some(scope.into());
                 self
@@ -910,6 +974,7 @@ pub mod operations {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Lists the available operations"]
+        #[doc = "List of available operations"]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -990,6 +1055,12 @@ pub mod private_endpoint_connections {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets private endpoint connections."]
+        #[doc = "Get private endpoint connections for account"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier"]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `account_name`: The name of the account."]
         pub fn list_by_account(
             &self,
             subscription_id: impl Into<String>,
@@ -1005,6 +1076,13 @@ pub mod private_endpoint_connections {
             }
         }
         #[doc = "Gets private endpoint connection information."]
+        #[doc = "Get a private endpoint connection"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier"]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `account_name`: The name of the account."]
+        #[doc = "* `private_endpoint_connection_name`: Name of the private endpoint connection."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1021,6 +1099,14 @@ pub mod private_endpoint_connections {
             }
         }
         #[doc = "Approves/Rejects private endpoint connection request."]
+        #[doc = "Create or update a private endpoint connection"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier"]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `account_name`: The name of the account."]
+        #[doc = "* `private_endpoint_connection_name`: Name of the private endpoint connection."]
+        #[doc = "* `request`: The request."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -1039,6 +1125,13 @@ pub mod private_endpoint_connections {
             }
         }
         #[doc = "Deletes private endpoint connection."]
+        #[doc = "Delete a private endpoint connection"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier"]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `account_name`: The name of the account."]
+        #[doc = "* `private_endpoint_connection_name`: Name of the private endpoint connection."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1067,6 +1160,7 @@ pub mod private_endpoint_connections {
             pub(crate) skip_token: Option<String>,
         }
         impl Builder {
+            #[doc = "The skip token."]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());
                 self
@@ -1325,6 +1419,12 @@ pub mod private_link_resources {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets a list of privately linkable resources for an account."]
+        #[doc = "Gets a list of privately linkable resources for an account"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier"]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `account_name`: The name of the account."]
         pub fn list_by_account(
             &self,
             subscription_id: impl Into<String>,
@@ -1339,6 +1439,13 @@ pub mod private_link_resources {
             }
         }
         #[doc = "Gets a privately linkable resources for an account with given group identifier."]
+        #[doc = "Gets a privately linkable resources for an account with given group identifier"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier"]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `account_name`: The name of the account."]
+        #[doc = "* `group_id`: The group identifier."]
         pub fn get_by_group_id(
             &self,
             subscription_id: impl Into<String>,

@@ -91,6 +91,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all the available REST API operations."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -172,6 +173,10 @@ pub mod get {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get Customer Lockbox request"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `tenant_id`: The Azure tenant ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)"]
         pub fn tenant_opted_in(&self, tenant_id: impl Into<String>) -> tenant_opted_in::Builder {
             tenant_opted_in::Builder {
                 client: self.0.clone(),
@@ -232,9 +237,11 @@ pub mod post {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Enable Tenant for Lockbox "]
         pub fn enable_lockbox(&self) -> enable_lockbox::Builder {
             enable_lockbox::Builder { client: self.0.clone() }
         }
+        #[doc = "Disable Tenant for Lockbox "]
         pub fn disable_lockbox(&self) -> disable_lockbox::Builder {
             disable_lockbox::Builder { client: self.0.clone() }
         }
@@ -330,6 +337,11 @@ pub mod requests {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get Customer Lockbox request"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `request_id`: The Lockbox request ID."]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)"]
         pub fn get(&self, request_id: impl Into<String>, subscription_id: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -337,6 +349,12 @@ pub mod requests {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Update Customer Lockbox request approval status API"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `approval`: The approval object to update request status."]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)"]
+        #[doc = "* `request_id`: The Lockbox request ID."]
         pub fn update_status(
             &self,
             approval: impl Into<models::Approval>,
@@ -350,6 +368,10 @@ pub mod requests {
                 request_id: request_id.into(),
             }
         }
+        #[doc = "Lists all of the Lockbox requests in the given subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)"]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -470,6 +492,7 @@ pub mod requests {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "The $filter OData query parameter. Only filter by request status is supported, e.g $filter=properties/status eq 'Pending'"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self

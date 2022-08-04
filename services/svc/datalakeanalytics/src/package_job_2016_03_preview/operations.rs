@@ -82,36 +82,61 @@ pub mod job {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets statistics of the specified job."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `job_identity`: Job Information ID."]
         pub fn get_statistics(&self, job_identity: impl Into<String>) -> get_statistics::Builder {
             get_statistics::Builder {
                 client: self.0.clone(),
                 job_identity: job_identity.into(),
             }
         }
+        #[doc = "Gets the job debug data information specified by the job ID."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `job_identity`: JobInfo ID."]
         pub fn get_debug_data_path(&self, job_identity: impl Into<String>) -> get_debug_data_path::Builder {
             get_debug_data_path::Builder {
                 client: self.0.clone(),
                 job_identity: job_identity.into(),
             }
         }
+        #[doc = "Builds (compiles) the specified job in the specified Data Lake Analytics account for job correctness and validation."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `parameters`: The parameters to build a job."]
         pub fn build(&self, parameters: impl Into<models::JobInformation>) -> build::Builder {
             build::Builder {
                 client: self.0.clone(),
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Cancels the running job specified by the job ID."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `job_identity`: JobInfo ID to cancel."]
         pub fn cancel(&self, job_identity: impl Into<String>) -> cancel::Builder {
             cancel::Builder {
                 client: self.0.clone(),
                 job_identity: job_identity.into(),
             }
         }
+        #[doc = "Gets the job information for the specified job ID."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `job_identity`: JobInfo ID."]
         pub fn get(&self, job_identity: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
                 job_identity: job_identity.into(),
             }
         }
+        #[doc = "Submits a job to the specified Data Lake Analytics account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `job_identity`: The job ID (a GUID) for the job being submitted."]
+        #[doc = "* `parameters`: The parameters to submit a job."]
         pub fn create(&self, job_identity: impl Into<String>, parameters: impl Into<models::JobInformation>) -> create::Builder {
             create::Builder {
                 client: self.0.clone(),
@@ -119,6 +144,7 @@ pub mod job {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Lists the jobs, if any, associated with the specified Data Lake Analytics account. The response includes a link to the next page of results, if any."]
         pub fn list(&self) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -417,38 +443,47 @@ pub mod job {
             pub(crate) format: Option<String>,
         }
         impl Builder {
+            #[doc = "OData filter. Optional."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "The number of items to return. Optional."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "The number of items to skip over before returning elements. Optional."]
             pub fn skip(mut self, skip: i32) -> Self {
                 self.skip = Some(skip);
                 self
             }
+            #[doc = "OData expansion. Expand related resources in line with the retrieved resources, e.g. Categories?$expand=Products would expand Product data in line with each Category entry. Optional."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
             }
+            #[doc = "OData Select statement. Limits the properties on each entry to just those requested, e.g. Categories?$select=CategoryName,Description. Optional."]
             pub fn select(mut self, select: impl Into<String>) -> Self {
                 self.select = Some(select.into());
                 self
             }
+            #[doc = "OrderBy clause. One or more comma-separated expressions with an optional \"asc\" (the default) or \"desc\" depending on the order you'd like the values sorted, e.g. Categories?$orderby=CategoryName desc. Optional."]
             pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
                 self.orderby = Some(orderby.into());
                 self
             }
+            #[doc = "The Boolean value of true or false to request a count of the matching resources included with the resources in the response, e.g. Categories?$count=true. Optional."]
             pub fn count(mut self, count: bool) -> Self {
                 self.count = Some(count);
                 self
             }
+            #[doc = "A free form search. A free-text search expression to match for whether a particular entry should be included in the feed, e.g. Categories?$search=blue OR green. Optional."]
             pub fn search(mut self, search: impl Into<String>) -> Self {
                 self.search = Some(search.into());
                 self
             }
+            #[doc = "The return format. Return the response in particular format without access to request headers for standard content-type negotiation (e.g Orders?$format=json). Optional."]
             pub fn format(mut self, format: impl Into<String>) -> Self {
                 self.format = Some(format.into());
                 self

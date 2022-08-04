@@ -143,6 +143,13 @@ pub mod channels {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get a channel."]
+        #[doc = "Get properties of a channel."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the partners subscription."]
+        #[doc = "* `partner_namespace_name`: Name of the partner namespace."]
+        #[doc = "* `channel_name`: Name of the channel."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -159,6 +166,14 @@ pub mod channels {
             }
         }
         #[doc = "Create or update a channel."]
+        #[doc = "Synchronously creates or updates a new channel with the specified parameters."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the partners subscription."]
+        #[doc = "* `partner_namespace_name`: Name of the partner namespace."]
+        #[doc = "* `channel_name`: Name of the channel."]
+        #[doc = "* `channel_info`: Channel information."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -177,6 +192,14 @@ pub mod channels {
             }
         }
         #[doc = "Update a Channel."]
+        #[doc = "Synchronously updates a channel with the specified parameters."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the partners subscription."]
+        #[doc = "* `partner_namespace_name`: Name of the partner namespace."]
+        #[doc = "* `channel_name`: Name of the channel."]
+        #[doc = "* `channel_update_parameters`: Channel update information."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -195,6 +218,13 @@ pub mod channels {
             }
         }
         #[doc = "Delete a channel."]
+        #[doc = "Delete an existing channel."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the partners subscription."]
+        #[doc = "* `partner_namespace_name`: Name of the partner namespace."]
+        #[doc = "* `channel_name`: Name of the channel."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -211,6 +241,12 @@ pub mod channels {
             }
         }
         #[doc = "List channels."]
+        #[doc = "List all the channels in a partner namespace."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the partners subscription."]
+        #[doc = "* `partner_namespace_name`: Name of the partner namespace."]
         pub fn list_by_partner_namespace(
             &self,
             subscription_id: impl Into<String>,
@@ -227,6 +263,13 @@ pub mod channels {
             }
         }
         #[doc = "Get full URL of partner destination channel."]
+        #[doc = "Get the full endpoint URL of a partner destination channel."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the partners subscription."]
+        #[doc = "* `partner_namespace_name`: Name of the partner namespace."]
+        #[doc = "* `channel_name`: Name of the Channel."]
         pub fn get_full_url(
             &self,
             subscription_id: impl Into<String>,
@@ -485,10 +528,12 @@ pub mod channels {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The query used to filter the search results using OData syntax. Filtering is permitted on the 'name' property only and with limited number of OData operations. These operations are: the 'contains' function as well as the following logical operations: not, and, or, eq (for equal), and ne (for not equal). No arithmetic operations are supported. The following is a valid filter example: $filter=contains(namE, 'PATTERN') and name ne 'PATTERN-1'. The following is not a valid filter example: $filter=location eq 'westus'."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "The number of results to return per page for the list operation. Valid range for top parameter is 1 to 100. If not specified, the default number of results to be returned is 20 items per page."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -620,6 +665,12 @@ pub mod domains {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get a domain."]
+        #[doc = "Get properties of a domain."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription."]
+        #[doc = "* `domain_name`: Name of the domain."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -634,6 +685,13 @@ pub mod domains {
             }
         }
         #[doc = "Create or update a domain."]
+        #[doc = "Asynchronously creates or updates a new domain with the specified parameters."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription."]
+        #[doc = "* `domain_name`: Name of the domain."]
+        #[doc = "* `domain_info`: Domain information."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -650,6 +708,13 @@ pub mod domains {
             }
         }
         #[doc = "Update a domain."]
+        #[doc = "Asynchronously updates a domain with the specified parameters."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription."]
+        #[doc = "* `domain_name`: Name of the domain."]
+        #[doc = "* `domain_update_parameters`: Domain update information."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -666,6 +731,12 @@ pub mod domains {
             }
         }
         #[doc = "Delete a domain."]
+        #[doc = "Delete existing domain."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription."]
+        #[doc = "* `domain_name`: Name of the domain."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -680,6 +751,10 @@ pub mod domains {
             }
         }
         #[doc = "List domains under an Azure subscription."]
+        #[doc = "List all the domains under an Azure subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
@@ -689,6 +764,11 @@ pub mod domains {
             }
         }
         #[doc = "List domains under a resource group."]
+        #[doc = "List all the domains under a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -703,6 +783,12 @@ pub mod domains {
             }
         }
         #[doc = "List keys for a domain."]
+        #[doc = "List the two keys used to publish to a domain."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription."]
+        #[doc = "* `domain_name`: Name of the domain."]
         pub fn list_shared_access_keys(
             &self,
             subscription_id: impl Into<String>,
@@ -717,6 +803,13 @@ pub mod domains {
             }
         }
         #[doc = "Regenerate key for a domain."]
+        #[doc = "Regenerate a shared access key for a domain."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription."]
+        #[doc = "* `domain_name`: Name of the domain."]
+        #[doc = "* `regenerate_key_request`: Request body to regenerate key."]
         pub fn regenerate_key(
             &self,
             subscription_id: impl Into<String>,
@@ -967,10 +1060,12 @@ pub mod domains {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The query used to filter the search results using OData syntax. Filtering is permitted on the 'name' property only and with limited number of OData operations. These operations are: the 'contains' function as well as the following logical operations: not, and, or, eq (for equal), and ne (for not equal). No arithmetic operations are supported. The following is a valid filter example: $filter=contains(namE, 'PATTERN') and name ne 'PATTERN-1'. The following is not a valid filter example: $filter=location eq 'westus'."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "The number of results to return per page for the list operation. Valid range for top parameter is 1 to 100. If not specified, the default number of results to be returned is 20 items per page."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -1058,10 +1153,12 @@ pub mod domains {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The query used to filter the search results using OData syntax. Filtering is permitted on the 'name' property only and with limited number of OData operations. These operations are: the 'contains' function as well as the following logical operations: not, and, or, eq (for equal), and ne (for not equal). No arithmetic operations are supported. The following is a valid filter example: $filter=contains(namE, 'PATTERN') and name ne 'PATTERN-1'. The following is not a valid filter example: $filter=location eq 'westus'."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "The number of results to return per page for the list operation. Valid range for top parameter is 1 to 100. If not specified, the default number of results to be returned is 20 items per page."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -1251,6 +1348,13 @@ pub mod domain_topics {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get a domain topic."]
+        #[doc = "Get properties of a domain topic."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription."]
+        #[doc = "* `domain_name`: Name of the domain."]
+        #[doc = "* `domain_topic_name`: Name of the topic."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1267,6 +1371,13 @@ pub mod domain_topics {
             }
         }
         #[doc = "Create or update a domain topic."]
+        #[doc = "Asynchronously creates or updates a new domain topic with the specified parameters."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription."]
+        #[doc = "* `domain_name`: Name of the domain."]
+        #[doc = "* `domain_topic_name`: Name of the domain topic."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -1283,6 +1394,13 @@ pub mod domain_topics {
             }
         }
         #[doc = "Delete a domain topic."]
+        #[doc = "Delete existing domain topic."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription."]
+        #[doc = "* `domain_name`: Name of the domain."]
+        #[doc = "* `domain_topic_name`: Name of the domain topic."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1299,6 +1417,12 @@ pub mod domain_topics {
             }
         }
         #[doc = "List domain topics."]
+        #[doc = "List all the topics in a domain."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription."]
+        #[doc = "* `domain_name`: Domain name."]
         pub fn list_by_domain(
             &self,
             subscription_id: impl Into<String>,
@@ -1495,10 +1619,12 @@ pub mod domain_topics {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The query used to filter the search results using OData syntax. Filtering is permitted on the 'name' property only and with limited number of OData operations. These operations are: the 'contains' function as well as the following logical operations: not, and, or, eq (for equal), and ne (for not equal). No arithmetic operations are supported. The following is a valid filter example: $filter=contains(namE, 'PATTERN') and name ne 'PATTERN-1'. The following is not a valid filter example: $filter=location eq 'westus'."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "The number of results to return per page for the list operation. Valid range for top parameter is 1 to 100. If not specified, the default number of results to be returned is 20 items per page."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -1582,6 +1708,13 @@ pub mod topic_event_subscriptions {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get delivery attributes for an event subscription for topic."]
+        #[doc = "Get all delivery attributes for an event subscription for topic."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription."]
+        #[doc = "* `topic_name`: Name of the domain topic."]
+        #[doc = "* `event_subscription_name`: Name of the event subscription."]
         pub fn get_delivery_attributes(
             &self,
             subscription_id: impl Into<String>,
@@ -1598,6 +1731,13 @@ pub mod topic_event_subscriptions {
             }
         }
         #[doc = "Get an event subscription of a topic."]
+        #[doc = "Get properties of an event subscription of a topic."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription."]
+        #[doc = "* `topic_name`: Name of the partner topic."]
+        #[doc = "* `event_subscription_name`: Name of the event subscription to be found. Event subscription names must be between 3 and 100 characters in length and use alphanumeric letters only."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1614,6 +1754,14 @@ pub mod topic_event_subscriptions {
             }
         }
         #[doc = "Create or update an event subscription to a topic."]
+        #[doc = "Asynchronously creates a new event subscription or updates an existing event subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription."]
+        #[doc = "* `topic_name`: Name of the domain topic."]
+        #[doc = "* `event_subscription_name`: Name of the event subscription to be created. Event subscription names must be between 3 and 100 characters in length and use alphanumeric letters only."]
+        #[doc = "* `event_subscription_info`: Event subscription properties containing the destination and filter information."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -1632,6 +1780,14 @@ pub mod topic_event_subscriptions {
             }
         }
         #[doc = "Update an event subscription for a topic."]
+        #[doc = "Update an existing event subscription for a topic."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription."]
+        #[doc = "* `topic_name`: Name of the domain."]
+        #[doc = "* `event_subscription_name`: Name of the event subscription to be updated."]
+        #[doc = "* `event_subscription_update_parameters`: Updated event subscription information."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -1650,6 +1806,13 @@ pub mod topic_event_subscriptions {
             }
         }
         #[doc = "Delete an event subscription for a topic."]
+        #[doc = "Delete an existing event subscription for a topic."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription."]
+        #[doc = "* `topic_name`: Name of the topic."]
+        #[doc = "* `event_subscription_name`: Name of the event subscription to be deleted. Event subscription names must be between 3 and 100 characters in length and use alphanumeric letters only."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1666,6 +1829,13 @@ pub mod topic_event_subscriptions {
             }
         }
         #[doc = "Get full URL of an event subscription for topic."]
+        #[doc = "Get the full endpoint URL for an event subscription for topic."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription."]
+        #[doc = "* `topic_name`: Name of the domain topic."]
+        #[doc = "* `event_subscription_name`: Name of the event subscription."]
         pub fn get_full_url(
             &self,
             subscription_id: impl Into<String>,
@@ -1682,6 +1852,12 @@ pub mod topic_event_subscriptions {
             }
         }
         #[doc = "List all event subscriptions for a specific topic."]
+        #[doc = "List all event subscriptions that have been created for a specific topic."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription."]
+        #[doc = "* `topic_name`: Name of the topic."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -2042,10 +2218,12 @@ pub mod topic_event_subscriptions {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The query used to filter the search results using OData syntax. Filtering is permitted on the 'name' property only and with limited number of OData operations. These operations are: the 'contains' function as well as the following logical operations: not, and, or, eq (for equal), and ne (for not equal). No arithmetic operations are supported. The following is a valid filter example: $filter=contains(namE, 'PATTERN') and name ne 'PATTERN-1'. The following is not a valid filter example: $filter=location eq 'westus'."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "The number of results to return per page for the list operation. Valid range for top parameter is 1 to 100. If not specified, the default number of results to be returned is 20 items per page."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -2129,6 +2307,13 @@ pub mod domain_event_subscriptions {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get delivery attributes for an event subscription for domain."]
+        #[doc = "Get all delivery attributes for an event subscription for domain."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription."]
+        #[doc = "* `domain_name`: Name of the domain topic."]
+        #[doc = "* `event_subscription_name`: Name of the event subscription."]
         pub fn get_delivery_attributes(
             &self,
             subscription_id: impl Into<String>,
@@ -2145,6 +2330,13 @@ pub mod domain_event_subscriptions {
             }
         }
         #[doc = "Get an event subscription of a domain."]
+        #[doc = "Get properties of an event subscription of a domain."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription."]
+        #[doc = "* `domain_name`: Name of the partner topic."]
+        #[doc = "* `event_subscription_name`: Name of the event subscription to be found. Event subscription names must be between 3 and 100 characters in length and use alphanumeric letters only."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -2161,6 +2353,14 @@ pub mod domain_event_subscriptions {
             }
         }
         #[doc = "Create or update an event subscription to a domain."]
+        #[doc = "Asynchronously creates a new event subscription or updates an existing event subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription."]
+        #[doc = "* `domain_name`: Name of the domain topic."]
+        #[doc = "* `event_subscription_name`: Name of the event subscription to be created. Event subscription names must be between 3 and 100 characters in length and use alphanumeric letters only."]
+        #[doc = "* `event_subscription_info`: Event subscription properties containing the destination and filter information."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -2179,6 +2379,14 @@ pub mod domain_event_subscriptions {
             }
         }
         #[doc = "Update an event subscription for a domain."]
+        #[doc = "Update an existing event subscription for a topic."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription."]
+        #[doc = "* `domain_name`: Name of the domain."]
+        #[doc = "* `event_subscription_name`: Name of the event subscription to be updated."]
+        #[doc = "* `event_subscription_update_parameters`: Updated event subscription information."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -2197,6 +2405,13 @@ pub mod domain_event_subscriptions {
             }
         }
         #[doc = "Delete an event subscription for a domain."]
+        #[doc = "Delete an existing event subscription for a domain."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription."]
+        #[doc = "* `domain_name`: Name of the domain."]
+        #[doc = "* `event_subscription_name`: Name of the event subscription to be deleted. Event subscription names must be between 3 and 100 characters in length and use alphanumeric letters only."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -2213,6 +2428,13 @@ pub mod domain_event_subscriptions {
             }
         }
         #[doc = "Get full URL of an event subscription for domain."]
+        #[doc = "Get the full endpoint URL for an event subscription for domain."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription."]
+        #[doc = "* `domain_name`: Name of the domain topic."]
+        #[doc = "* `event_subscription_name`: Name of the event subscription."]
         pub fn get_full_url(
             &self,
             subscription_id: impl Into<String>,
@@ -2229,6 +2451,12 @@ pub mod domain_event_subscriptions {
             }
         }
         #[doc = "List all event subscriptions for a specific domain."]
+        #[doc = "List all event subscriptions that have been created for a specific topic."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription."]
+        #[doc = "* `domain_name`: Name of the domain."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -2589,10 +2817,12 @@ pub mod domain_event_subscriptions {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The query used to filter the search results using OData syntax. Filtering is permitted on the 'name' property only and with limited number of OData operations. These operations are: the 'contains' function as well as the following logical operations: not, and, or, eq (for equal), and ne (for not equal). No arithmetic operations are supported. The following is a valid filter example: $filter=contains(namE, 'PATTERN') and name ne 'PATTERN-1'. The following is not a valid filter example: $filter=location eq 'westus'."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "The number of results to return per page for the list operation. Valid range for top parameter is 1 to 100. If not specified, the default number of results to be returned is 20 items per page."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -2676,6 +2906,11 @@ pub mod event_subscriptions {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get an event subscription."]
+        #[doc = "Get properties of an event subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `scope`: The scope of the event subscription. The scope can be a subscription, or a resource group, or a top level resource belonging to a resource provider namespace, or an EventGrid topic. For example, use '/subscriptions/{subscriptionId}/' for a subscription, '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}' for a resource group, and '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{resourceProviderNamespace}/{resourceType}/{resourceName}' for a resource, and '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.EventGrid/topics/{topicName}' for an EventGrid topic."]
+        #[doc = "* `event_subscription_name`: Name of the event subscription."]
         pub fn get(&self, scope: impl Into<String>, event_subscription_name: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -2684,6 +2919,12 @@ pub mod event_subscriptions {
             }
         }
         #[doc = "Create or update an event subscription."]
+        #[doc = "Asynchronously creates a new event subscription or updates an existing event subscription based on the specified scope."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `scope`: The identifier of the resource to which the event subscription needs to be created or updated. The scope can be a subscription, or a resource group, or a top level resource belonging to a resource provider namespace, or an EventGrid topic. For example, use '/subscriptions/{subscriptionId}/' for a subscription, '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}' for a resource group, and '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{resourceProviderNamespace}/{resourceType}/{resourceName}' for a resource, and '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.EventGrid/topics/{topicName}' for an EventGrid topic."]
+        #[doc = "* `event_subscription_name`: Name of the event subscription. Event subscription names must be between 3 and 64 characters in length and should use alphanumeric letters only."]
+        #[doc = "* `event_subscription_info`: Event subscription properties containing the destination and filter information."]
         pub fn create_or_update(
             &self,
             scope: impl Into<String>,
@@ -2698,6 +2939,12 @@ pub mod event_subscriptions {
             }
         }
         #[doc = "Update an event subscription."]
+        #[doc = "Asynchronously updates an existing event subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `scope`: The scope of existing event subscription. The scope can be a subscription, or a resource group, or a top level resource belonging to a resource provider namespace, or an EventGrid topic. For example, use '/subscriptions/{subscriptionId}/' for a subscription, '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}' for a resource group, and '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{resourceProviderNamespace}/{resourceType}/{resourceName}' for a resource, and '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.EventGrid/topics/{topicName}' for an EventGrid topic."]
+        #[doc = "* `event_subscription_name`: Name of the event subscription to be updated."]
+        #[doc = "* `event_subscription_update_parameters`: Updated event subscription information."]
         pub fn update(
             &self,
             scope: impl Into<String>,
@@ -2712,6 +2959,11 @@ pub mod event_subscriptions {
             }
         }
         #[doc = "Delete an event subscription."]
+        #[doc = "Delete an existing event subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `scope`: The scope of the event subscription. The scope can be a subscription, or a resource group, or a top level resource belonging to a resource provider namespace, or an EventGrid topic. For example, use '/subscriptions/{subscriptionId}/' for a subscription, '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}' for a resource group, and '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{resourceProviderNamespace}/{resourceType}/{resourceName}' for a resource, and '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.EventGrid/topics/{topicName}' for an EventGrid topic."]
+        #[doc = "* `event_subscription_name`: Name of the event subscription."]
         pub fn delete(&self, scope: impl Into<String>, event_subscription_name: impl Into<String>) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),
@@ -2720,6 +2972,11 @@ pub mod event_subscriptions {
             }
         }
         #[doc = "Get full URL of an event subscription."]
+        #[doc = "Get the full endpoint URL for an event subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `scope`: The scope of the event subscription. The scope can be a subscription, or a resource group, or a top level resource belonging to a resource provider namespace, or an EventGrid topic. For example, use '/subscriptions/{subscriptionId}/' for a subscription, '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}' for a resource group, and '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{resourceProviderNamespace}/{resourceType}/{resourceName}' for a resource, and '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.EventGrid/topics/{topicName}' for an EventGrid topic."]
+        #[doc = "* `event_subscription_name`: Name of the event subscription."]
         pub fn get_full_url(&self, scope: impl Into<String>, event_subscription_name: impl Into<String>) -> get_full_url::Builder {
             get_full_url::Builder {
                 client: self.0.clone(),
@@ -2728,6 +2985,10 @@ pub mod event_subscriptions {
             }
         }
         #[doc = "Get an aggregated list of all global event subscriptions under an Azure subscription."]
+        #[doc = "List all aggregated global event subscriptions under a specific Azure subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_global_by_subscription(&self, subscription_id: impl Into<String>) -> list_global_by_subscription::Builder {
             list_global_by_subscription::Builder {
                 client: self.0.clone(),
@@ -2737,6 +2998,11 @@ pub mod event_subscriptions {
             }
         }
         #[doc = "List all global event subscriptions for a topic type."]
+        #[doc = "List all global event subscriptions under an Azure subscription for a topic type."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `topic_type_name`: Name of the topic type."]
         pub fn list_global_by_subscription_for_topic_type(
             &self,
             subscription_id: impl Into<String>,
@@ -2751,6 +3017,11 @@ pub mod event_subscriptions {
             }
         }
         #[doc = "List all global event subscriptions under an Azure subscription and resource group."]
+        #[doc = "List all global event subscriptions under a specific Azure subscription and resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription."]
         pub fn list_global_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -2765,6 +3036,12 @@ pub mod event_subscriptions {
             }
         }
         #[doc = "List all global event subscriptions under a resource group for a topic type."]
+        #[doc = "List all global event subscriptions under a resource group for a specific topic type."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription."]
+        #[doc = "* `topic_type_name`: Name of the topic type."]
         pub fn list_global_by_resource_group_for_topic_type(
             &self,
             subscription_id: impl Into<String>,
@@ -2781,6 +3058,11 @@ pub mod event_subscriptions {
             }
         }
         #[doc = "List all regional event subscriptions under an Azure subscription."]
+        #[doc = "List all event subscriptions from the given location under a specific Azure subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `location`: Name of the location."]
         pub fn list_regional_by_subscription(
             &self,
             subscription_id: impl Into<String>,
@@ -2795,6 +3077,12 @@ pub mod event_subscriptions {
             }
         }
         #[doc = "List all regional event subscriptions under an Azure subscription and resource group."]
+        #[doc = "List all event subscriptions from the given location under a specific Azure subscription and resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription."]
+        #[doc = "* `location`: Name of the location."]
         pub fn list_regional_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -2811,6 +3099,12 @@ pub mod event_subscriptions {
             }
         }
         #[doc = "List all regional event subscriptions under an Azure subscription for a topic type."]
+        #[doc = "List all event subscriptions from the given location under a specific Azure subscription and topic type."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `location`: Name of the location."]
+        #[doc = "* `topic_type_name`: Name of the topic type."]
         pub fn list_regional_by_subscription_for_topic_type(
             &self,
             subscription_id: impl Into<String>,
@@ -2827,6 +3121,13 @@ pub mod event_subscriptions {
             }
         }
         #[doc = "List all regional event subscriptions under an Azure subscription and resource group for a topic type."]
+        #[doc = "List all event subscriptions from the given location under a specific Azure subscription and resource group and topic type."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription."]
+        #[doc = "* `location`: Name of the location."]
+        #[doc = "* `topic_type_name`: Name of the topic type."]
         pub fn list_regional_by_resource_group_for_topic_type(
             &self,
             subscription_id: impl Into<String>,
@@ -2845,6 +3146,14 @@ pub mod event_subscriptions {
             }
         }
         #[doc = "List all event subscriptions."]
+        #[doc = "List all event subscriptions that have been created for a specific resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription."]
+        #[doc = "* `provider_namespace`: Namespace of the provider of the topic."]
+        #[doc = "* `resource_type_name`: Name of the resource type."]
+        #[doc = "* `resource_name`: Name of the resource."]
         pub fn list_by_resource(
             &self,
             subscription_id: impl Into<String>,
@@ -2865,6 +3174,13 @@ pub mod event_subscriptions {
             }
         }
         #[doc = "List all event subscriptions for a specific domain topic."]
+        #[doc = "List all event subscriptions that have been created for a specific domain topic."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription."]
+        #[doc = "* `domain_name`: Name of the top level domain."]
+        #[doc = "* `topic_name`: Name of the domain topic."]
         pub fn list_by_domain_topic(
             &self,
             subscription_id: impl Into<String>,
@@ -2883,6 +3199,11 @@ pub mod event_subscriptions {
             }
         }
         #[doc = "Get delivery attributes for an event subscription."]
+        #[doc = "Get all delivery attributes for an event subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `scope`: The scope of the event subscription. The scope can be a subscription, or a resource group, or a top level resource belonging to a resource provider namespace, or an EventGrid topic. For example, use '/subscriptions/{subscriptionId}/' for a subscription, '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}' for a resource group, and '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{resourceProviderNamespace}/{resourceType}/{resourceName}' for a resource, and '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.EventGrid/topics/{topicName}' for an EventGrid topic."]
+        #[doc = "* `event_subscription_name`: Name of the event subscription."]
         pub fn get_delivery_attributes(
             &self,
             scope: impl Into<String>,
@@ -3167,10 +3488,12 @@ pub mod event_subscriptions {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The query used to filter the search results using OData syntax. Filtering is permitted on the 'name' property only and with limited number of OData operations. These operations are: the 'contains' function as well as the following logical operations: not, and, or, eq (for equal), and ne (for not equal). No arithmetic operations are supported. The following is a valid filter example: $filter=contains(namE, 'PATTERN') and name ne 'PATTERN-1'. The following is not a valid filter example: $filter=location eq 'westus'."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "The number of results to return per page for the list operation. Valid range for top parameter is 1 to 100. If not specified, the default number of results to be returned is 20 items per page."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -3258,10 +3581,12 @@ pub mod event_subscriptions {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The query used to filter the search results using OData syntax. Filtering is permitted on the 'name' property only and with limited number of OData operations. These operations are: the 'contains' function as well as the following logical operations: not, and, or, eq (for equal), and ne (for not equal). No arithmetic operations are supported. The following is a valid filter example: $filter=contains(namE, 'PATTERN') and name ne 'PATTERN-1'. The following is not a valid filter example: $filter=location eq 'westus'."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "The number of results to return per page for the list operation. Valid range for top parameter is 1 to 100. If not specified, the default number of results to be returned is 20 items per page."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -3350,10 +3675,12 @@ pub mod event_subscriptions {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The query used to filter the search results using OData syntax. Filtering is permitted on the 'name' property only and with limited number of OData operations. These operations are: the 'contains' function as well as the following logical operations: not, and, or, eq (for equal), and ne (for not equal). No arithmetic operations are supported. The following is a valid filter example: $filter=contains(namE, 'PATTERN') and name ne 'PATTERN-1'. The following is not a valid filter example: $filter=location eq 'westus'."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "The number of results to return per page for the list operation. Valid range for top parameter is 1 to 100. If not specified, the default number of results to be returned is 20 items per page."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -3443,10 +3770,12 @@ pub mod event_subscriptions {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The query used to filter the search results using OData syntax. Filtering is permitted on the 'name' property only and with limited number of OData operations. These operations are: the 'contains' function as well as the following logical operations: not, and, or, eq (for equal), and ne (for not equal). No arithmetic operations are supported. The following is a valid filter example: $filter=contains(namE, 'PATTERN') and name ne 'PATTERN-1'. The following is not a valid filter example: $filter=location eq 'westus'."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "The number of results to return per page for the list operation. Valid range for top parameter is 1 to 100. If not specified, the default number of results to be returned is 20 items per page."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -3536,10 +3865,12 @@ pub mod event_subscriptions {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The query used to filter the search results using OData syntax. Filtering is permitted on the 'name' property only and with limited number of OData operations. These operations are: the 'contains' function as well as the following logical operations: not, and, or, eq (for equal), and ne (for not equal). No arithmetic operations are supported. The following is a valid filter example: $filter=contains(namE, 'PATTERN') and name ne 'PATTERN-1'. The following is not a valid filter example: $filter=location eq 'westus'."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "The number of results to return per page for the list operation. Valid range for top parameter is 1 to 100. If not specified, the default number of results to be returned is 20 items per page."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -3629,10 +3960,12 @@ pub mod event_subscriptions {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The query used to filter the search results using OData syntax. Filtering is permitted on the 'name' property only and with limited number of OData operations. These operations are: the 'contains' function as well as the following logical operations: not, and, or, eq (for equal), and ne (for not equal). No arithmetic operations are supported. The following is a valid filter example: $filter=contains(namE, 'PATTERN') and name ne 'PATTERN-1'. The following is not a valid filter example: $filter=location eq 'westus'."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "The number of results to return per page for the list operation. Valid range for top parameter is 1 to 100. If not specified, the default number of results to be returned is 20 items per page."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -3723,10 +4056,12 @@ pub mod event_subscriptions {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The query used to filter the search results using OData syntax. Filtering is permitted on the 'name' property only and with limited number of OData operations. These operations are: the 'contains' function as well as the following logical operations: not, and, or, eq (for equal), and ne (for not equal). No arithmetic operations are supported. The following is a valid filter example: $filter=contains(namE, 'PATTERN') and name ne 'PATTERN-1'. The following is not a valid filter example: $filter=location eq 'westus'."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "The number of results to return per page for the list operation. Valid range for top parameter is 1 to 100. If not specified, the default number of results to be returned is 20 items per page."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -3818,10 +4153,12 @@ pub mod event_subscriptions {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The query used to filter the search results using OData syntax. Filtering is permitted on the 'name' property only and with limited number of OData operations. These operations are: the 'contains' function as well as the following logical operations: not, and, or, eq (for equal), and ne (for not equal). No arithmetic operations are supported. The following is a valid filter example: $filter=contains(namE, 'PATTERN') and name ne 'PATTERN-1'. The following is not a valid filter example: $filter=location eq 'westus'."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "The number of results to return per page for the list operation. Valid range for top parameter is 1 to 100. If not specified, the default number of results to be returned is 20 items per page."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -3908,10 +4245,12 @@ pub mod event_subscriptions {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The query used to filter the search results using OData syntax. Filtering is permitted on the 'name' property only and with limited number of OData operations. These operations are: the 'contains' function as well as the following logical operations: not, and, or, eq (for equal), and ne (for not equal). No arithmetic operations are supported. The following is a valid filter example: $filter=contains(namE, 'PATTERN') and name ne 'PATTERN-1'. The following is not a valid filter example: $filter=location eq 'westus'."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "The number of results to return per page for the list operation. Valid range for top parameter is 1 to 100. If not specified, the default number of results to be returned is 20 items per page."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -4005,10 +4344,12 @@ pub mod event_subscriptions {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The query used to filter the search results using OData syntax. Filtering is permitted on the 'name' property only and with limited number of OData operations. These operations are: the 'contains' function as well as the following logical operations: not, and, or, eq (for equal), and ne (for not equal). No arithmetic operations are supported. The following is a valid filter example: $filter=contains(namE, 'PATTERN') and name ne 'PATTERN-1'. The following is not a valid filter example: $filter=location eq 'westus'."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "The number of results to return per page for the list operation. Valid range for top parameter is 1 to 100. If not specified, the default number of results to be returned is 20 items per page."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -4137,6 +4478,14 @@ pub mod domain_topic_event_subscriptions {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get a nested event subscription for domain topic."]
+        #[doc = "Get properties of a nested event subscription for a domain topic."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription."]
+        #[doc = "* `domain_name`: Name of the top level domain."]
+        #[doc = "* `topic_name`: Name of the domain topic."]
+        #[doc = "* `event_subscription_name`: Name of the event subscription."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -4155,6 +4504,15 @@ pub mod domain_topic_event_subscriptions {
             }
         }
         #[doc = "Create or update a nested event subscription to a domain topic."]
+        #[doc = "Asynchronously creates a new event subscription or updates an existing event subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription."]
+        #[doc = "* `domain_name`: Name of the top level domain."]
+        #[doc = "* `topic_name`: Name of the domain topic."]
+        #[doc = "* `event_subscription_name`: Name of the event subscription to be created. Event subscription names must be between 3 and 100 characters in length and use alphanumeric letters only."]
+        #[doc = "* `event_subscription_info`: Event subscription properties containing the destination and filter information."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -4175,6 +4533,15 @@ pub mod domain_topic_event_subscriptions {
             }
         }
         #[doc = "Update a nested event subscription for a domain topic."]
+        #[doc = "Update an existing event subscription for a domain topic."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription."]
+        #[doc = "* `domain_name`: Name of the domain."]
+        #[doc = "* `topic_name`: Name of the topic."]
+        #[doc = "* `event_subscription_name`: Name of the event subscription to be updated."]
+        #[doc = "* `event_subscription_update_parameters`: Updated event subscription information."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -4195,6 +4562,14 @@ pub mod domain_topic_event_subscriptions {
             }
         }
         #[doc = "Delete a nested event subscription for a domain topic."]
+        #[doc = "Delete a nested existing event subscription for a domain topic."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription."]
+        #[doc = "* `domain_name`: Name of the top level domain."]
+        #[doc = "* `topic_name`: Name of the domain topic."]
+        #[doc = "* `event_subscription_name`: Name of the event subscription to be deleted. Event subscription names must be between 3 and 100 characters in length and use alphanumeric letters only."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -4213,6 +4588,14 @@ pub mod domain_topic_event_subscriptions {
             }
         }
         #[doc = "Get full URL of a nested event subscription for domain topic."]
+        #[doc = "Get the full endpoint URL for a nested event subscription for domain topic."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription."]
+        #[doc = "* `domain_name`: Name of the top level domain."]
+        #[doc = "* `topic_name`: Name of the domain topic."]
+        #[doc = "* `event_subscription_name`: Name of the event subscription."]
         pub fn get_full_url(
             &self,
             subscription_id: impl Into<String>,
@@ -4231,6 +4614,13 @@ pub mod domain_topic_event_subscriptions {
             }
         }
         #[doc = "List all nested event subscriptions for a specific domain topic."]
+        #[doc = "List all event subscriptions that have been created for a specific domain topic."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription."]
+        #[doc = "* `domain_name`: Name of the top level domain."]
+        #[doc = "* `topic_name`: Name of the domain topic."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -4249,6 +4639,14 @@ pub mod domain_topic_event_subscriptions {
             }
         }
         #[doc = "Get delivery attributes for an event subscription for domain topic."]
+        #[doc = "Get all delivery attributes for an event subscription for domain topic."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription."]
+        #[doc = "* `domain_name`: Name of the top level domain."]
+        #[doc = "* `topic_name`: Name of the domain topic."]
+        #[doc = "* `event_subscription_name`: Name of the event subscription."]
         pub fn get_delivery_attributes(
             &self,
             subscription_id: impl Into<String>,
@@ -4541,10 +4939,12 @@ pub mod domain_topic_event_subscriptions {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The query used to filter the search results using OData syntax. Filtering is permitted on the 'name' property only and with limited number of OData operations. These operations are: the 'contains' function as well as the following logical operations: not, and, or, eq (for equal), and ne (for not equal). No arithmetic operations are supported. The following is a valid filter example: $filter=contains(namE, 'PATTERN') and name ne 'PATTERN-1'. The following is not a valid filter example: $filter=location eq 'westus'."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "The number of results to return per page for the list operation. Valid range for top parameter is 1 to 100. If not specified, the default number of results to be returned is 20 items per page."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -4678,6 +5078,13 @@ pub mod system_topic_event_subscriptions {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get an event subscription of a system topic."]
+        #[doc = "Get an event subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription."]
+        #[doc = "* `system_topic_name`: Name of the system topic."]
+        #[doc = "* `event_subscription_name`: Name of the event subscription to be created. Event subscription names must be between 3 and 100 characters in length and use alphanumeric letters only."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -4694,6 +5101,14 @@ pub mod system_topic_event_subscriptions {
             }
         }
         #[doc = "Create or update an event subscription for a system topic."]
+        #[doc = "Asynchronously creates or updates an event subscription with the specified parameters. Existing event subscriptions will be updated with this API."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription."]
+        #[doc = "* `system_topic_name`: Name of the system topic."]
+        #[doc = "* `event_subscription_name`: Name of the event subscription to be created. Event subscription names must be between 3 and 100 characters in length and use alphanumeric letters only."]
+        #[doc = "* `event_subscription_info`: Event subscription properties containing the destination and filter information."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -4712,6 +5127,14 @@ pub mod system_topic_event_subscriptions {
             }
         }
         #[doc = "Update event subscription of a system topic."]
+        #[doc = "Update an existing event subscription of a system topic."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription."]
+        #[doc = "* `system_topic_name`: Name of the system topic."]
+        #[doc = "* `event_subscription_name`: Name of the event subscription to be created. Event subscription names must be between 3 and 100 characters in length and use alphanumeric letters only."]
+        #[doc = "* `event_subscription_update_parameters`: Updated event subscription information."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -4730,6 +5153,13 @@ pub mod system_topic_event_subscriptions {
             }
         }
         #[doc = "Delete an event subscription of a system topic."]
+        #[doc = "Delete an existing event subscription of a system topic."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription."]
+        #[doc = "* `system_topic_name`: Name of the system topic."]
+        #[doc = "* `event_subscription_name`: Name of the event subscription to be created. Event subscription names must be between 3 and 100 characters in length and use alphanumeric letters only."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -4746,6 +5176,13 @@ pub mod system_topic_event_subscriptions {
             }
         }
         #[doc = "Get full URL of an event subscription of a system topic"]
+        #[doc = "Get the full endpoint URL for an event subscription of a system topic."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription."]
+        #[doc = "* `system_topic_name`: Name of the system topic."]
+        #[doc = "* `event_subscription_name`: Name of the event subscription to be created. Event subscription names must be between 3 and 100 characters in length and use alphanumeric letters only."]
         pub fn get_full_url(
             &self,
             subscription_id: impl Into<String>,
@@ -4762,6 +5199,12 @@ pub mod system_topic_event_subscriptions {
             }
         }
         #[doc = "List event subscriptions of a system topic."]
+        #[doc = "List event subscriptions that belong to a specific system topic."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription."]
+        #[doc = "* `system_topic_name`: Name of the system topic."]
         pub fn list_by_system_topic(
             &self,
             subscription_id: impl Into<String>,
@@ -4778,6 +5221,13 @@ pub mod system_topic_event_subscriptions {
             }
         }
         #[doc = "Get delivery attributes for an event subscription."]
+        #[doc = "Get all delivery attributes for an event subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription."]
+        #[doc = "* `system_topic_name`: Name of the system topic."]
+        #[doc = "* `event_subscription_name`: Name of the event subscription to be created. Event subscription names must be between 3 and 100 characters in length and use alphanumeric letters only."]
         pub fn get_delivery_attributes(
             &self,
             subscription_id: impl Into<String>,
@@ -5081,10 +5531,12 @@ pub mod system_topic_event_subscriptions {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The query used to filter the search results using OData syntax. Filtering is permitted on the 'name' property only and with limited number of OData operations. These operations are: the 'contains' function as well as the following logical operations: not, and, or, eq (for equal), and ne (for not equal). No arithmetic operations are supported. The following is a valid filter example: $filter=contains(namE, 'PATTERN') and name ne 'PATTERN-1'. The following is not a valid filter example: $filter=location eq 'westus'."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "The number of results to return per page for the list operation. Valid range for top parameter is 1 to 100. If not specified, the default number of results to be returned is 20 items per page."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -5216,6 +5668,13 @@ pub mod partner_topic_event_subscriptions {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get an event subscription of a partner topic."]
+        #[doc = "Get properties of an event subscription of a partner topic."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription."]
+        #[doc = "* `partner_topic_name`: Name of the partner topic."]
+        #[doc = "* `event_subscription_name`: Name of the event subscription to be found. Event subscription names must be between 3 and 100 characters in length and use alphanumeric letters only."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -5232,6 +5691,14 @@ pub mod partner_topic_event_subscriptions {
             }
         }
         #[doc = "Create or update an event subscription of a partner topic."]
+        #[doc = "Asynchronously creates or updates an event subscription of a partner topic with the specified parameters. Existing event subscriptions will be updated with this API."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription."]
+        #[doc = "* `partner_topic_name`: Name of the partner topic."]
+        #[doc = "* `event_subscription_name`: Name of the event subscription to be created. Event subscription names must be between 3 and 100 characters in length and use alphanumeric letters only."]
+        #[doc = "* `event_subscription_info`: Event subscription properties containing the destination and filter information."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -5250,6 +5717,14 @@ pub mod partner_topic_event_subscriptions {
             }
         }
         #[doc = "Update event subscription of a partner topic."]
+        #[doc = "Update an existing event subscription of a partner topic."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription."]
+        #[doc = "* `partner_topic_name`: Name of the partner topic."]
+        #[doc = "* `event_subscription_name`: Name of the event subscription to be created. Event subscription names must be between 3 and 100 characters in length and use alphanumeric letters only."]
+        #[doc = "* `event_subscription_update_parameters`: Updated event subscription information."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -5268,6 +5743,13 @@ pub mod partner_topic_event_subscriptions {
             }
         }
         #[doc = "Delete an event subscription of a partner topic."]
+        #[doc = "Delete an existing event subscription of a partner topic."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription."]
+        #[doc = "* `partner_topic_name`: Name of the partner topic."]
+        #[doc = "* `event_subscription_name`: Name of the event subscription to be created. Event subscription names must be between 3 and 100 characters in length and use alphanumeric letters only."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -5284,6 +5766,13 @@ pub mod partner_topic_event_subscriptions {
             }
         }
         #[doc = "Get full URL of an event subscription of a partner topic."]
+        #[doc = "Get the full endpoint URL for an event subscription of a partner topic."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription."]
+        #[doc = "* `partner_topic_name`: Name of the partner topic."]
+        #[doc = "* `event_subscription_name`: Name of the event subscription to be created. Event subscription names must be between 3 and 100 characters in length and use alphanumeric letters only."]
         pub fn get_full_url(
             &self,
             subscription_id: impl Into<String>,
@@ -5300,6 +5789,12 @@ pub mod partner_topic_event_subscriptions {
             }
         }
         #[doc = "List event subscriptions of a partner topic."]
+        #[doc = "List event subscriptions that belong to a specific partner topic."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription."]
+        #[doc = "* `partner_topic_name`: Name of the partner topic."]
         pub fn list_by_partner_topic(
             &self,
             subscription_id: impl Into<String>,
@@ -5316,6 +5811,13 @@ pub mod partner_topic_event_subscriptions {
             }
         }
         #[doc = "Get delivery attributes for an event subscription of a partner topic."]
+        #[doc = "Get all delivery attributes for an event subscription of a partner topic."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription."]
+        #[doc = "* `partner_topic_name`: Name of the partner topic."]
+        #[doc = "* `event_subscription_name`: Name of the event subscription to be created. Event subscription names must be between 3 and 100 characters in length and use alphanumeric letters only."]
         pub fn get_delivery_attributes(
             &self,
             subscription_id: impl Into<String>,
@@ -5628,10 +6130,12 @@ pub mod partner_topic_event_subscriptions {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The query used to filter the search results using OData syntax. Filtering is permitted on the 'name' property only and with limited number of OData operations. These operations are: the 'contains' function as well as the following logical operations: not, and, or, eq (for equal), and ne (for not equal). No arithmetic operations are supported. The following is a valid filter example: $filter=contains(namE, 'PATTERN') and name ne 'PATTERN-1'. The following is not a valid filter example: $filter=location eq 'westus'."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "The number of results to return per page for the list operation. Valid range for top parameter is 1 to 100. If not specified, the default number of results to be returned is 20 items per page."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -5763,6 +6267,7 @@ pub mod operations {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "List available operations."]
+        #[doc = "List the available operations supported by the Microsoft.EventGrid resource provider."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -5817,6 +6322,12 @@ pub mod topics {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get a topic."]
+        #[doc = "Get properties of a topic."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription."]
+        #[doc = "* `topic_name`: Name of the topic."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -5831,6 +6342,13 @@ pub mod topics {
             }
         }
         #[doc = "Create a topic."]
+        #[doc = "Asynchronously creates a new topic with the specified parameters."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription."]
+        #[doc = "* `topic_name`: Name of the topic."]
+        #[doc = "* `topic_info`: Topic information."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -5847,6 +6365,13 @@ pub mod topics {
             }
         }
         #[doc = "Update a topic."]
+        #[doc = "Asynchronously updates a topic with the specified parameters."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription."]
+        #[doc = "* `topic_name`: Name of the topic."]
+        #[doc = "* `topic_update_parameters`: Topic update information."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -5863,6 +6388,12 @@ pub mod topics {
             }
         }
         #[doc = "Delete a topic."]
+        #[doc = "Delete existing topic."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription."]
+        #[doc = "* `topic_name`: Name of the topic."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -5877,6 +6408,10 @@ pub mod topics {
             }
         }
         #[doc = "List topics under an Azure subscription."]
+        #[doc = "List all the topics under an Azure subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
@@ -5886,6 +6421,11 @@ pub mod topics {
             }
         }
         #[doc = "List topics under a resource group."]
+        #[doc = "List all the topics under a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -5900,6 +6440,12 @@ pub mod topics {
             }
         }
         #[doc = "List keys for a topic."]
+        #[doc = "List the two keys used to publish to a topic."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription."]
+        #[doc = "* `topic_name`: Name of the topic."]
         pub fn list_shared_access_keys(
             &self,
             subscription_id: impl Into<String>,
@@ -5914,6 +6460,13 @@ pub mod topics {
             }
         }
         #[doc = "Regenerate key for a topic."]
+        #[doc = "Regenerate a shared access key for a topic."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription."]
+        #[doc = "* `topic_name`: Name of the topic."]
+        #[doc = "* `regenerate_key_request`: Request body to regenerate key."]
         pub fn regenerate_key(
             &self,
             subscription_id: impl Into<String>,
@@ -5930,6 +6483,14 @@ pub mod topics {
             }
         }
         #[doc = "List topic event types."]
+        #[doc = "List event types for a topic."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription."]
+        #[doc = "* `provider_namespace`: Namespace of the provider of the topic."]
+        #[doc = "* `resource_type_name`: Name of the topic type."]
+        #[doc = "* `resource_name`: Name of the topic."]
         pub fn list_event_types(
             &self,
             subscription_id: impl Into<String>,
@@ -6180,10 +6741,12 @@ pub mod topics {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The query used to filter the search results using OData syntax. Filtering is permitted on the 'name' property only and with limited number of OData operations. These operations are: the 'contains' function as well as the following logical operations: not, and, or, eq (for equal), and ne (for not equal). No arithmetic operations are supported. The following is a valid filter example: $filter=contains(namE, 'PATTERN') and name ne 'PATTERN-1'. The following is not a valid filter example: $filter=location eq 'westus'."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "The number of results to return per page for the list operation. Valid range for top parameter is 1 to 100. If not specified, the default number of results to be returned is 20 items per page."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -6271,10 +6834,12 @@ pub mod topics {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The query used to filter the search results using OData syntax. Filtering is permitted on the 'name' property only and with limited number of OData operations. These operations are: the 'contains' function as well as the following logical operations: not, and, or, eq (for equal), and ne (for not equal). No arithmetic operations are supported. The following is a valid filter example: $filter=contains(namE, 'PATTERN') and name ne 'PATTERN-1'. The following is not a valid filter example: $filter=location eq 'westus'."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "The number of results to return per page for the list operation. Valid range for top parameter is 1 to 100. If not specified, the default number of results to be returned is 20 items per page."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -6527,6 +7092,11 @@ pub mod partner_configurations {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get a partner configuration."]
+        #[doc = "Get properties of a partner configuration."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription."]
         pub fn get(&self, subscription_id: impl Into<String>, resource_group_name: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -6535,6 +7105,12 @@ pub mod partner_configurations {
             }
         }
         #[doc = "Create or update a partner configuration."]
+        #[doc = "Synchronously creates or updates a partner configuration with the specified parameters."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription."]
+        #[doc = "* `partner_configuration_info`: Partner configuration information."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -6549,6 +7125,12 @@ pub mod partner_configurations {
             }
         }
         #[doc = "Update a partner configuration."]
+        #[doc = "Synchronously updates a partner configuration with the specified parameters."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription."]
+        #[doc = "* `partner_configuration_update_parameters`: Partner configuration update information."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -6563,6 +7145,11 @@ pub mod partner_configurations {
             }
         }
         #[doc = "Delete a partner configuration."]
+        #[doc = "Delete existing partner configuration."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription."]
         pub fn delete(&self, subscription_id: impl Into<String>, resource_group_name: impl Into<String>) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),
@@ -6571,6 +7158,11 @@ pub mod partner_configurations {
             }
         }
         #[doc = "List partner configurations under a resource group."]
+        #[doc = "List all the partner configurations under a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -6583,6 +7175,10 @@ pub mod partner_configurations {
             }
         }
         #[doc = "List partner configurations under an Azure subscription."]
+        #[doc = "List all the partner configurations under an Azure subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
@@ -6592,6 +7188,12 @@ pub mod partner_configurations {
             }
         }
         #[doc = "Authorize a partner."]
+        #[doc = "Authorize a single partner either by partner registration immutable Id or by partner name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription."]
+        #[doc = "* `partner_info`: The information of the partner to be authorized."]
         pub fn authorize_partner(
             &self,
             subscription_id: impl Into<String>,
@@ -6606,6 +7208,12 @@ pub mod partner_configurations {
             }
         }
         #[doc = "Unauthorize a partner."]
+        #[doc = "Unauthorize a single partner either by partner registration immutable Id or by partner name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription."]
+        #[doc = "* `partner_info`: The information of the partner to be unauthorized."]
         pub fn unauthorize_partner(
             &self,
             subscription_id: impl Into<String>,
@@ -6910,10 +7518,12 @@ pub mod partner_configurations {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The query used to filter the search results using OData syntax. Filtering is permitted on the 'name' property only and with limited number of OData operations. These operations are: the 'contains' function as well as the following logical operations: not, and, or, eq (for equal), and ne (for not equal). No arithmetic operations are supported. The following is a valid filter example: $filter=contains(namE, 'PATTERN') and name ne 'PATTERN-1'. The following is not a valid filter example: $filter=location eq 'westus'."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "The number of results to return per page for the list operation. Valid range for top parameter is 1 to 100. If not specified, the default number of results to be returned is 20 items per page."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -7089,6 +7699,12 @@ pub mod partner_namespaces {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get a partner namespace."]
+        #[doc = "Get properties of a partner namespace."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription."]
+        #[doc = "* `partner_namespace_name`: Name of the partner namespace."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -7103,6 +7719,13 @@ pub mod partner_namespaces {
             }
         }
         #[doc = "Create a partner namespace."]
+        #[doc = "Asynchronously creates a new partner namespace with the specified parameters."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription."]
+        #[doc = "* `partner_namespace_name`: Name of the partner namespace."]
+        #[doc = "* `partner_namespace_info`: PartnerNamespace information."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -7119,6 +7742,13 @@ pub mod partner_namespaces {
             }
         }
         #[doc = "Update a partner namespace."]
+        #[doc = "Asynchronously updates a partner namespace with the specified parameters."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription."]
+        #[doc = "* `partner_namespace_name`: Name of the partner namespace."]
+        #[doc = "* `partner_namespace_update_parameters`: Partner namespace update information."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -7135,6 +7765,12 @@ pub mod partner_namespaces {
             }
         }
         #[doc = "Delete a partner namespace."]
+        #[doc = "Delete existing partner namespace."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription."]
+        #[doc = "* `partner_namespace_name`: Name of the partner namespace."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -7149,6 +7785,10 @@ pub mod partner_namespaces {
             }
         }
         #[doc = "List partner namespaces under an Azure subscription."]
+        #[doc = "List all the partner namespaces under an Azure subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
@@ -7158,6 +7798,11 @@ pub mod partner_namespaces {
             }
         }
         #[doc = "List partner namespaces under a resource group."]
+        #[doc = "List all the partner namespaces under a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -7172,6 +7817,12 @@ pub mod partner_namespaces {
             }
         }
         #[doc = "List keys for a partner namespace."]
+        #[doc = "List the two keys used to publish to a partner namespace."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription."]
+        #[doc = "* `partner_namespace_name`: Name of the partner namespace."]
         pub fn list_shared_access_keys(
             &self,
             subscription_id: impl Into<String>,
@@ -7186,6 +7837,13 @@ pub mod partner_namespaces {
             }
         }
         #[doc = "Regenerate key for a partner namespace."]
+        #[doc = "Regenerate a shared access key for a partner namespace."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription."]
+        #[doc = "* `partner_namespace_name`: Name of the partner namespace."]
+        #[doc = "* `regenerate_key_request`: Request body to regenerate key."]
         pub fn regenerate_key(
             &self,
             subscription_id: impl Into<String>,
@@ -7436,10 +8094,12 @@ pub mod partner_namespaces {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The query used to filter the search results using OData syntax. Filtering is permitted on the 'name' property only and with limited number of OData operations. These operations are: the 'contains' function as well as the following logical operations: not, and, or, eq (for equal), and ne (for not equal). No arithmetic operations are supported. The following is a valid filter example: $filter=contains(namE, 'PATTERN') and name ne 'PATTERN-1'. The following is not a valid filter example: $filter=location eq 'westus'."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "The number of results to return per page for the list operation. Valid range for top parameter is 1 to 100. If not specified, the default number of results to be returned is 20 items per page."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -7527,10 +8187,12 @@ pub mod partner_namespaces {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The query used to filter the search results using OData syntax. Filtering is permitted on the 'name' property only and with limited number of OData operations. These operations are: the 'contains' function as well as the following logical operations: not, and, or, eq (for equal), and ne (for not equal). No arithmetic operations are supported. The following is a valid filter example: $filter=contains(namE, 'PATTERN') and name ne 'PATTERN-1'. The following is not a valid filter example: $filter=location eq 'westus'."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "The number of results to return per page for the list operation. Valid range for top parameter is 1 to 100. If not specified, the default number of results to be returned is 20 items per page."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -7720,6 +8382,12 @@ pub mod partner_registrations {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get a partner registration."]
+        #[doc = "Gets a partner registration with the specified parameters."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription."]
+        #[doc = "* `partner_registration_name`: Name of the partner registration."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -7734,6 +8402,13 @@ pub mod partner_registrations {
             }
         }
         #[doc = "Create a partner registration."]
+        #[doc = "Creates a new partner registration with the specified parameters."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription."]
+        #[doc = "* `partner_registration_name`: Name of the partner registration."]
+        #[doc = "* `partner_registration_info`: PartnerRegistration information."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -7750,6 +8425,13 @@ pub mod partner_registrations {
             }
         }
         #[doc = "Update a partner registration."]
+        #[doc = "Updates a partner registration with the specified parameters."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription."]
+        #[doc = "* `partner_registration_name`: Name of the partner registration."]
+        #[doc = "* `partner_registration_update_parameters`: Partner registration update information."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -7766,6 +8448,12 @@ pub mod partner_registrations {
             }
         }
         #[doc = "Delete a partner registration."]
+        #[doc = "Deletes a partner registration with the specified parameters."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription."]
+        #[doc = "* `partner_registration_name`: Name of the partner registration."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -7780,6 +8468,10 @@ pub mod partner_registrations {
             }
         }
         #[doc = "List partner registrations under an Azure subscription."]
+        #[doc = "List all the partner registrations under an Azure subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
@@ -7789,6 +8481,11 @@ pub mod partner_registrations {
             }
         }
         #[doc = "List partner registrations under a resource group."]
+        #[doc = "List all the partner registrations under a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -8046,10 +8743,12 @@ pub mod partner_registrations {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The query used to filter the search results using OData syntax. Filtering is permitted on the 'name' property only and with limited number of OData operations. These operations are: the 'contains' function as well as the following logical operations: not, and, or, eq (for equal), and ne (for not equal). No arithmetic operations are supported. The following is a valid filter example: $filter=contains(namE, 'PATTERN') and name ne 'PATTERN-1'. The following is not a valid filter example: $filter=location eq 'westus'."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "The number of results to return per page for the list operation. Valid range for top parameter is 1 to 100. If not specified, the default number of results to be returned is 20 items per page."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -8137,10 +8836,12 @@ pub mod partner_registrations {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The query used to filter the search results using OData syntax. Filtering is permitted on the 'name' property only and with limited number of OData operations. These operations are: the 'contains' function as well as the following logical operations: not, and, or, eq (for equal), and ne (for not equal). No arithmetic operations are supported. The following is a valid filter example: $filter=contains(namE, 'PATTERN') and name ne 'PATTERN-1'. The following is not a valid filter example: $filter=location eq 'westus'."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "The number of results to return per page for the list operation. Valid range for top parameter is 1 to 100. If not specified, the default number of results to be returned is 20 items per page."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -8223,6 +8924,12 @@ pub mod partner_topics {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get a partner topic."]
+        #[doc = "Get properties of a partner topic."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription."]
+        #[doc = "* `partner_topic_name`: Name of the partner topic."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -8237,6 +8944,13 @@ pub mod partner_topics {
             }
         }
         #[doc = "Create a partner topic."]
+        #[doc = "Asynchronously creates a new partner topic with the specified parameters."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription."]
+        #[doc = "* `partner_topic_name`: Name of the partner topic."]
+        #[doc = "* `partner_topic_info`: Partner Topic information."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -8253,6 +8967,13 @@ pub mod partner_topics {
             }
         }
         #[doc = "Update a partner topic."]
+        #[doc = "Asynchronously updates a partner topic with the specified parameters."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription."]
+        #[doc = "* `partner_topic_name`: Name of the partner topic."]
+        #[doc = "* `partner_topic_update_parameters`: PartnerTopic update information."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -8269,6 +8990,12 @@ pub mod partner_topics {
             }
         }
         #[doc = "Delete a partner topic."]
+        #[doc = "Delete existing partner topic."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription."]
+        #[doc = "* `partner_topic_name`: Name of the partner topic."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -8283,6 +9010,10 @@ pub mod partner_topics {
             }
         }
         #[doc = "List partner topics under an Azure subscription."]
+        #[doc = "List all the partner topics under an Azure subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
@@ -8292,6 +9023,11 @@ pub mod partner_topics {
             }
         }
         #[doc = "List partner topics under a resource group."]
+        #[doc = "List all the partner topics under a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -8306,6 +9042,12 @@ pub mod partner_topics {
             }
         }
         #[doc = "Activate a partner topic."]
+        #[doc = "Activate a newly created partner topic."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription."]
+        #[doc = "* `partner_topic_name`: Name of the partner topic."]
         pub fn activate(
             &self,
             subscription_id: impl Into<String>,
@@ -8320,6 +9062,12 @@ pub mod partner_topics {
             }
         }
         #[doc = "Deactivate a partner topic."]
+        #[doc = "Deactivate specific partner topic."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription."]
+        #[doc = "* `partner_topic_name`: Name of the partner topic."]
         pub fn deactivate(
             &self,
             subscription_id: impl Into<String>,
@@ -8575,10 +9323,12 @@ pub mod partner_topics {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The query used to filter the search results using OData syntax. Filtering is permitted on the 'name' property only and with limited number of OData operations. These operations are: the 'contains' function as well as the following logical operations: not, and, or, eq (for equal), and ne (for not equal). No arithmetic operations are supported. The following is a valid filter example: $filter=contains(namE, 'PATTERN') and name ne 'PATTERN-1'. The following is not a valid filter example: $filter=location eq 'westus'."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "The number of results to return per page for the list operation. Valid range for top parameter is 1 to 100. If not specified, the default number of results to be returned is 20 items per page."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -8666,10 +9416,12 @@ pub mod partner_topics {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The query used to filter the search results using OData syntax. Filtering is permitted on the 'name' property only and with limited number of OData operations. These operations are: the 'contains' function as well as the following logical operations: not, and, or, eq (for equal), and ne (for not equal). No arithmetic operations are supported. The following is a valid filter example: $filter=contains(namE, 'PATTERN') and name ne 'PATTERN-1'. The following is not a valid filter example: $filter=location eq 'westus'."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "The number of results to return per page for the list operation. Valid range for top parameter is 1 to 100. If not specified, the default number of results to be returned is 20 items per page."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -8858,6 +9610,14 @@ pub mod private_endpoint_connections {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get a specific private endpoint connection."]
+        #[doc = "Get a specific private endpoint connection under a topic, domain, or partner namespace."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription."]
+        #[doc = "* `parent_type`: The type of the parent resource. This can be either \\'topics\\', \\'domains\\', or \\'partnerNamespaces\\'."]
+        #[doc = "* `parent_name`: The name of the parent resource (namely, either, the topic name, domain name, or partner namespace name)."]
+        #[doc = "* `private_endpoint_connection_name`: The name of the private endpoint connection connection."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -8876,6 +9636,15 @@ pub mod private_endpoint_connections {
             }
         }
         #[doc = "Update a specific private endpoint connection."]
+        #[doc = "Update a specific private endpoint connection under a topic, domain or partner namespace."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription."]
+        #[doc = "* `parent_type`: The type of the parent resource. This can be either \\'topics\\', \\'domains\\', or \\'partnerNamespaces\\'."]
+        #[doc = "* `parent_name`: The name of the parent resource (namely, either, the topic name, domain name, or partner namespace name)."]
+        #[doc = "* `private_endpoint_connection_name`: The name of the private endpoint connection connection."]
+        #[doc = "* `private_endpoint_connection`: The private endpoint connection object to update."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -8896,6 +9665,14 @@ pub mod private_endpoint_connections {
             }
         }
         #[doc = "Delete a specific private endpoint connection."]
+        #[doc = "Delete a specific private endpoint connection under a topic, domain, or partner namespace."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription."]
+        #[doc = "* `parent_type`: The type of the parent resource. This can be either \\'topics\\', \\'domains\\', or \\'partnerNamespaces\\'."]
+        #[doc = "* `parent_name`: The name of the parent resource (namely, either, the topic name, domain name, or partner namespace name)."]
+        #[doc = "* `private_endpoint_connection_name`: The name of the private endpoint connection connection."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -8914,6 +9691,13 @@ pub mod private_endpoint_connections {
             }
         }
         #[doc = "Lists all private endpoint connections under a resource."]
+        #[doc = "Get all private endpoint connections under a topic, domain, or partner namespace."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription."]
+        #[doc = "* `parent_type`: The type of the parent resource. This can be either \\'topics\\', \\'domains\\', or \\'partnerNamespaces\\'."]
+        #[doc = "* `parent_name`: The name of the parent resource (namely, either, the topic name, domain name, or partner namespace name)."]
         pub fn list_by_resource(
             &self,
             subscription_id: impl Into<String>,
@@ -9128,10 +9912,12 @@ pub mod private_endpoint_connections {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The query used to filter the search results using OData syntax. Filtering is permitted on the 'name' property only and with limited number of OData operations. These operations are: the 'contains' function as well as the following logical operations: not, and, or, eq (for equal), and ne (for not equal). No arithmetic operations are supported. The following is a valid filter example: $filter=contains(namE, 'PATTERN') and name ne 'PATTERN-1'. The following is not a valid filter example: $filter=location eq 'westus'."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "The number of results to return per page for the list operation. Valid range for top parameter is 1 to 100. If not specified, the default number of results to be returned is 20 items per page."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -9216,6 +10002,14 @@ pub mod private_link_resources {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get a private link resource."]
+        #[doc = "Get properties of a private link resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription."]
+        #[doc = "* `parent_type`: The type of the parent resource. This can be either \\'topics\\', \\'domains\\', or \\'partnerNamespaces\\'."]
+        #[doc = "* `parent_name`: The name of the parent resource (namely, either, the topic name, domain name, or partner namespace name)."]
+        #[doc = "* `private_link_resource_name`: The name of private link resource."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -9234,6 +10028,13 @@ pub mod private_link_resources {
             }
         }
         #[doc = "List private link resources under specific topic, domain, or partner namespace."]
+        #[doc = "List all the private link resources under a topic, domain, or partner namespace."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription."]
+        #[doc = "* `parent_type`: The type of the parent resource. This can be either \\'topics\\', \\'domains\\', or \\'partnerNamespaces\\'."]
+        #[doc = "* `parent_name`: The name of the parent resource (namely, either, the topic name, domain name, or partner namespace name)."]
         pub fn list_by_resource(
             &self,
             subscription_id: impl Into<String>,
@@ -9322,10 +10123,12 @@ pub mod private_link_resources {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The query used to filter the search results using OData syntax. Filtering is permitted on the 'name' property only and with limited number of OData operations. These operations are: the 'contains' function as well as the following logical operations: not, and, or, eq (for equal), and ne (for not equal). No arithmetic operations are supported. The following is a valid filter example: $filter=contains(namE, 'PATTERN') and name ne 'PATTERN-1'. The following is not a valid filter example: $filter=location eq 'westus'."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "The number of results to return per page for the list operation. Valid range for top parameter is 1 to 100. If not specified, the default number of results to be returned is 20 items per page."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -9410,6 +10213,12 @@ pub mod system_topics {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get a system topic."]
+        #[doc = "Get properties of a system topic."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription."]
+        #[doc = "* `system_topic_name`: Name of the system topic."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -9424,6 +10233,13 @@ pub mod system_topics {
             }
         }
         #[doc = "Create a system topic."]
+        #[doc = "Asynchronously creates a new system topic with the specified parameters."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription."]
+        #[doc = "* `system_topic_name`: Name of the system topic."]
+        #[doc = "* `system_topic_info`: System Topic information."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -9440,6 +10256,13 @@ pub mod system_topics {
             }
         }
         #[doc = "Update a system topic."]
+        #[doc = "Asynchronously updates a system topic with the specified parameters."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription."]
+        #[doc = "* `system_topic_name`: Name of the system topic."]
+        #[doc = "* `system_topic_update_parameters`: SystemTopic update information."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -9456,6 +10279,12 @@ pub mod system_topics {
             }
         }
         #[doc = "Delete a system topic."]
+        #[doc = "Delete existing system topic."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription."]
+        #[doc = "* `system_topic_name`: Name of the system topic."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -9470,6 +10299,10 @@ pub mod system_topics {
             }
         }
         #[doc = "List system topics under an Azure subscription."]
+        #[doc = "List all the system topics under an Azure subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
@@ -9479,6 +10312,11 @@ pub mod system_topics {
             }
         }
         #[doc = "List system topics under a resource group."]
+        #[doc = "List all the system topics under a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -9740,10 +10578,12 @@ pub mod system_topics {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The query used to filter the search results using OData syntax. Filtering is permitted on the 'name' property only and with limited number of OData operations. These operations are: the 'contains' function as well as the following logical operations: not, and, or, eq (for equal), and ne (for not equal). No arithmetic operations are supported. The following is a valid filter example: $filter=contains(namE, 'PATTERN') and name ne 'PATTERN-1'. The following is not a valid filter example: $filter=location eq 'westus'."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "The number of results to return per page for the list operation. Valid range for top parameter is 1 to 100. If not specified, the default number of results to be returned is 20 items per page."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -9831,10 +10671,12 @@ pub mod system_topics {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The query used to filter the search results using OData syntax. Filtering is permitted on the 'name' property only and with limited number of OData operations. These operations are: the 'contains' function as well as the following logical operations: not, and, or, eq (for equal), and ne (for not equal). No arithmetic operations are supported. The following is a valid filter example: $filter=contains(namE, 'PATTERN') and name ne 'PATTERN-1'. The following is not a valid filter example: $filter=location eq 'westus'."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "The number of results to return per page for the list operation. Valid range for top parameter is 1 to 100. If not specified, the default number of results to be returned is 20 items per page."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -9917,6 +10759,10 @@ pub mod extension_topics {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get properties of an extension topic."]
+        #[doc = "Get the properties of an extension topic."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `scope`: The identifier of the resource to which extension topic is queried. The scope can be a subscription, or a resource group, or a top level resource belonging to a resource provider namespace. For example, use '/subscriptions/{subscriptionId}/' for a subscription, '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}' for a resource group, and '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{resourceProviderNamespace}/{resourceType}/{resourceName}' for Azure resource."]
         pub fn get(&self, scope: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -9978,10 +10824,15 @@ pub mod topic_types {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "List topic types."]
+        #[doc = "List all registered topic types."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
         #[doc = "Get a topic type."]
+        #[doc = "Get information about a topic type."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `topic_type_name`: Name of the topic type."]
         pub fn get(&self, topic_type_name: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -9989,6 +10840,10 @@ pub mod topic_types {
             }
         }
         #[doc = "List event types."]
+        #[doc = "List event types for a topic type."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `topic_type_name`: Name of the topic type."]
         pub fn list_event_types(&self, topic_type_name: impl Into<String>) -> list_event_types::Builder {
             list_event_types::Builder {
                 client: self.0.clone(),
@@ -10143,6 +10998,10 @@ pub mod verified_partners {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get a verified partner."]
+        #[doc = "Get properties of a verified partner."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `verified_partner_name`: Name of the verified partner."]
         pub fn get(&self, verified_partner_name: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -10150,6 +11009,7 @@ pub mod verified_partners {
             }
         }
         #[doc = "List all verified partners."]
+        #[doc = "Get a list of all verified partners."]
         pub fn list(&self) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -10216,10 +11076,12 @@ pub mod verified_partners {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The query used to filter the search results using OData syntax. Filtering is permitted on the 'name' property only and with limited number of OData operations. These operations are: the 'contains' function as well as the following logical operations: not, and, or, eq (for equal), and ne (for not equal). No arithmetic operations are supported. The following is a valid filter example: $filter=contains(namE, 'PATTERN') and name ne 'PATTERN-1'. The following is not a valid filter example: $filter=location eq 'westus'."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "The number of results to return per page for the list operation. Valid range for top parameter is 1 to 100. If not specified, the default number of results to be returned is 20 items per page."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self

@@ -85,6 +85,12 @@ pub mod bots {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get a HealthBot."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the Bot resource group in the user subscription."]
+        #[doc = "* `bot_name`: The name of the Bot resource."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -98,6 +104,13 @@ pub mod bots {
                 bot_name: bot_name.into(),
             }
         }
+        #[doc = "Create a new Azure Health Bot."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the Bot resource group in the user subscription."]
+        #[doc = "* `bot_name`: The name of the Bot resource."]
+        #[doc = "* `parameters`: The parameters to provide for the created Azure Health Bot."]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -113,6 +126,13 @@ pub mod bots {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Patch a HealthBot."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the Bot resource group in the user subscription."]
+        #[doc = "* `bot_name`: The name of the Bot resource."]
+        #[doc = "* `parameters`: The parameters to provide for the required Azure Health Bot."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -128,6 +148,12 @@ pub mod bots {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Delete a HealthBot."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the Bot resource group in the user subscription."]
+        #[doc = "* `bot_name`: The name of the Bot resource."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -141,6 +167,11 @@ pub mod bots {
                 bot_name: bot_name.into(),
             }
         }
+        #[doc = "Returns all the resources of a particular type belonging to a resource group"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the Bot resource group in the user subscription."]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
         pub fn list_by_resource_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -152,6 +183,10 @@ pub mod bots {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Returns all the resources of a particular type belonging to a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -549,6 +584,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all the available Azure Health Bot operations."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }

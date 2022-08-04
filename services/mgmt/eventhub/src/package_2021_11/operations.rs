@@ -109,18 +109,31 @@ pub mod clusters {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List the quantity of available pre-provisioned Event Hubs Clusters, indexed by Azure region."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_available_cluster_region(&self, subscription_id: impl Into<String>) -> list_available_cluster_region::Builder {
             list_available_cluster_region::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists the available Event Hubs Clusters within an ARM resource group"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists the available Event Hubs Clusters within an ARM resource group"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Name of the resource group within the azure subscription."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -132,6 +145,12 @@ pub mod clusters {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Gets the resource description of the specified Event Hubs Cluster."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Name of the resource group within the azure subscription."]
+        #[doc = "* `cluster_name`: The name of the Event Hubs Cluster."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -145,6 +164,13 @@ pub mod clusters {
                 cluster_name: cluster_name.into(),
             }
         }
+        #[doc = "Creates or updates an instance of an Event Hubs Cluster."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Name of the resource group within the azure subscription."]
+        #[doc = "* `cluster_name`: The name of the Event Hubs Cluster."]
+        #[doc = "* `parameters`: Parameters for creating a eventhub cluster resource."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -160,6 +186,13 @@ pub mod clusters {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Modifies mutable properties on the Event Hubs Cluster. This operation is idempotent."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Name of the resource group within the azure subscription."]
+        #[doc = "* `cluster_name`: The name of the Event Hubs Cluster."]
+        #[doc = "* `parameters`: The properties of the Event Hubs Cluster which should be updated."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -175,6 +208,12 @@ pub mod clusters {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Deletes an existing Event Hubs Cluster. This operation is idempotent."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Name of the resource group within the azure subscription."]
+        #[doc = "* `cluster_name`: The name of the Event Hubs Cluster."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -188,6 +227,12 @@ pub mod clusters {
                 cluster_name: cluster_name.into(),
             }
         }
+        #[doc = "List all Event Hubs Namespace IDs in an Event Hubs Dedicated Cluster."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Name of the resource group within the azure subscription."]
+        #[doc = "* `cluster_name`: The name of the Event Hubs Cluster."]
         pub fn list_namespaces(
             &self,
             subscription_id: impl Into<String>,
@@ -697,6 +742,12 @@ pub mod configuration {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get all Event Hubs Cluster settings - a collection of key/value pairs which represent the quotas and settings imposed on the cluster."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Name of the resource group within the azure subscription."]
+        #[doc = "* `cluster_name`: The name of the Event Hubs Cluster."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -710,6 +761,13 @@ pub mod configuration {
                 cluster_name: cluster_name.into(),
             }
         }
+        #[doc = "Replace all specified Event Hubs Cluster settings with those contained in the request body. Leaves the settings not specified in the request body unmodified."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Name of the resource group within the azure subscription."]
+        #[doc = "* `cluster_name`: The name of the Event Hubs Cluster."]
+        #[doc = "* `parameters`: Parameters for creating an Event Hubs Cluster resource."]
         pub fn patch(
             &self,
             subscription_id: impl Into<String>,
@@ -848,12 +906,21 @@ pub mod namespaces {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all the available Namespaces within a subscription, irrespective of the resource groups."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists the available Namespaces within a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group within the azure subscription."]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_resource_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -865,6 +932,12 @@ pub mod namespaces {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the description of the specified namespace."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group within the azure subscription."]
+        #[doc = "* `namespace_name`: The Namespace name"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -878,6 +951,13 @@ pub mod namespaces {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates a namespace. Once created, this namespace's resource manifest is immutable. This operation is idempotent."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group within the azure subscription."]
+        #[doc = "* `namespace_name`: The Namespace name"]
+        #[doc = "* `parameters`: Parameters for creating a namespace resource."]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -893,6 +973,13 @@ pub mod namespaces {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates a namespace. Once created, this namespace's resource manifest is immutable. This operation is idempotent."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group within the azure subscription."]
+        #[doc = "* `namespace_name`: The Namespace name"]
+        #[doc = "* `parameters`: Parameters for updating a namespace resource."]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -908,6 +995,12 @@ pub mod namespaces {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes an existing namespace. This operation also removes all associated resources under the namespace."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group within the azure subscription."]
+        #[doc = "* `namespace_name`: The Namespace name"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -921,6 +1014,12 @@ pub mod namespaces {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets NetworkRuleSet for a Namespace."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group within the azure subscription."]
+        #[doc = "* `namespace_name`: The Namespace name"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get_network_rule_set(
             &self,
             resource_group_name: impl Into<String>,
@@ -934,6 +1033,13 @@ pub mod namespaces {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Create or update NetworkRuleSet for a Namespace."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group within the azure subscription."]
+        #[doc = "* `namespace_name`: The Namespace name"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `parameters`: The Namespace IpFilterRule."]
         pub fn create_or_update_network_rule_set(
             &self,
             resource_group_name: impl Into<String>,
@@ -949,6 +1055,12 @@ pub mod namespaces {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Gets NetworkRuleSet for a Namespace."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group within the azure subscription."]
+        #[doc = "* `namespace_name`: The Namespace name"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_network_rule_set(
             &self,
             resource_group_name: impl Into<String>,
@@ -962,6 +1074,12 @@ pub mod namespaces {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets a list of authorization rules for a Namespace."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group within the azure subscription."]
+        #[doc = "* `namespace_name`: The Namespace name"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_authorization_rules(
             &self,
             resource_group_name: impl Into<String>,
@@ -975,6 +1093,13 @@ pub mod namespaces {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets an AuthorizationRule for a Namespace by rule name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group within the azure subscription."]
+        #[doc = "* `namespace_name`: The Namespace name"]
+        #[doc = "* `authorization_rule_name`: The authorization rule name."]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get_authorization_rule(
             &self,
             resource_group_name: impl Into<String>,
@@ -990,6 +1115,14 @@ pub mod namespaces {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates an AuthorizationRule for a Namespace."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group within the azure subscription."]
+        #[doc = "* `namespace_name`: The Namespace name"]
+        #[doc = "* `authorization_rule_name`: The authorization rule name."]
+        #[doc = "* `parameters`: The shared access AuthorizationRule."]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update_authorization_rule(
             &self,
             resource_group_name: impl Into<String>,
@@ -1007,6 +1140,13 @@ pub mod namespaces {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes an AuthorizationRule for a Namespace."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group within the azure subscription."]
+        #[doc = "* `namespace_name`: The Namespace name"]
+        #[doc = "* `authorization_rule_name`: The authorization rule name."]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete_authorization_rule(
             &self,
             resource_group_name: impl Into<String>,
@@ -1022,6 +1162,13 @@ pub mod namespaces {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the primary and secondary connection strings for the Namespace."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group within the azure subscription."]
+        #[doc = "* `namespace_name`: The Namespace name"]
+        #[doc = "* `authorization_rule_name`: The authorization rule name."]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_keys(
             &self,
             resource_group_name: impl Into<String>,
@@ -1037,6 +1184,14 @@ pub mod namespaces {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Regenerates the primary or secondary connection strings for the specified Namespace."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group within the azure subscription."]
+        #[doc = "* `namespace_name`: The Namespace name"]
+        #[doc = "* `authorization_rule_name`: The authorization rule name."]
+        #[doc = "* `parameters`: Parameters required to regenerate the connection string."]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn regenerate_keys(
             &self,
             resource_group_name: impl Into<String>,
@@ -1054,6 +1209,11 @@ pub mod namespaces {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Check the give Namespace name availability."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `parameters`: Parameters to check availability of the given Namespace name"]
         pub fn check_name_availability(
             &self,
             subscription_id: impl Into<String>,
@@ -2008,6 +2168,12 @@ pub mod private_endpoint_connections {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the available PrivateEndpointConnections within a namespace."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group within the azure subscription."]
+        #[doc = "* `namespace_name`: The Namespace name"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(
             &self,
             resource_group_name: impl Into<String>,
@@ -2021,6 +2187,13 @@ pub mod private_endpoint_connections {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets a description for the specified Private Endpoint Connection name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group within the azure subscription."]
+        #[doc = "* `namespace_name`: The Namespace name"]
+        #[doc = "* `private_endpoint_connection_name`: The PrivateEndpointConnection name"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -2036,6 +2209,14 @@ pub mod private_endpoint_connections {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates PrivateEndpointConnections of service namespace."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Name of the resource group within the azure subscription."]
+        #[doc = "* `namespace_name`: The Namespace name"]
+        #[doc = "* `private_endpoint_connection_name`: The PrivateEndpointConnection name"]
+        #[doc = "* `parameters`: Parameters supplied to update Status of PrivateEndPoint Connection to namespace resource."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -2053,6 +2234,13 @@ pub mod private_endpoint_connections {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Deletes an existing namespace. This operation also removes all associated resources under the namespace."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group within the azure subscription."]
+        #[doc = "* `namespace_name`: The Namespace name"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `private_endpoint_connection_name`: The PrivateEndpointConnection name"]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -2308,6 +2496,12 @@ pub mod private_link_resources {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets lists of resources that supports Privatelinks."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group within the azure subscription."]
+        #[doc = "* `namespace_name`: The Namespace name"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -2379,6 +2573,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all of the available Event Hub REST API operations."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -2458,6 +2653,12 @@ pub mod event_hubs {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets all the Event Hubs in a Namespace."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group within the azure subscription."]
+        #[doc = "* `namespace_name`: The Namespace name"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_namespace(
             &self,
             resource_group_name: impl Into<String>,
@@ -2473,6 +2674,13 @@ pub mod event_hubs {
                 top: None,
             }
         }
+        #[doc = "Gets an Event Hubs description for the specified Event Hub."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group within the azure subscription."]
+        #[doc = "* `namespace_name`: The Namespace name"]
+        #[doc = "* `event_hub_name`: The Event Hub name"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -2488,6 +2696,14 @@ pub mod event_hubs {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates a new Event Hub as a nested resource within a Namespace."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group within the azure subscription."]
+        #[doc = "* `namespace_name`: The Namespace name"]
+        #[doc = "* `event_hub_name`: The Event Hub name"]
+        #[doc = "* `parameters`: Parameters supplied to create an Event Hub resource."]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -2505,6 +2721,13 @@ pub mod event_hubs {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes an Event Hub from the specified Namespace and resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group within the azure subscription."]
+        #[doc = "* `namespace_name`: The Namespace name"]
+        #[doc = "* `event_hub_name`: The Event Hub name"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -2520,6 +2743,13 @@ pub mod event_hubs {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the authorization rules for an Event Hub."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group within the azure subscription."]
+        #[doc = "* `namespace_name`: The Namespace name"]
+        #[doc = "* `event_hub_name`: The Event Hub name"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_authorization_rules(
             &self,
             resource_group_name: impl Into<String>,
@@ -2535,6 +2765,14 @@ pub mod event_hubs {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets an AuthorizationRule for an Event Hub by rule name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group within the azure subscription."]
+        #[doc = "* `namespace_name`: The Namespace name"]
+        #[doc = "* `event_hub_name`: The Event Hub name"]
+        #[doc = "* `authorization_rule_name`: The authorization rule name."]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get_authorization_rule(
             &self,
             resource_group_name: impl Into<String>,
@@ -2552,6 +2790,15 @@ pub mod event_hubs {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates an AuthorizationRule for the specified Event Hub. Creation/update of the AuthorizationRule will take a few seconds to take effect."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group within the azure subscription."]
+        #[doc = "* `namespace_name`: The Namespace name"]
+        #[doc = "* `event_hub_name`: The Event Hub name"]
+        #[doc = "* `authorization_rule_name`: The authorization rule name."]
+        #[doc = "* `parameters`: The shared access AuthorizationRule."]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update_authorization_rule(
             &self,
             resource_group_name: impl Into<String>,
@@ -2571,6 +2818,14 @@ pub mod event_hubs {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes an Event Hub AuthorizationRule."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group within the azure subscription."]
+        #[doc = "* `namespace_name`: The Namespace name"]
+        #[doc = "* `event_hub_name`: The Event Hub name"]
+        #[doc = "* `authorization_rule_name`: The authorization rule name."]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete_authorization_rule(
             &self,
             resource_group_name: impl Into<String>,
@@ -2588,6 +2843,14 @@ pub mod event_hubs {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the ACS and SAS connection strings for the Event Hub."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group within the azure subscription."]
+        #[doc = "* `namespace_name`: The Namespace name"]
+        #[doc = "* `event_hub_name`: The Event Hub name"]
+        #[doc = "* `authorization_rule_name`: The authorization rule name."]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_keys(
             &self,
             resource_group_name: impl Into<String>,
@@ -2605,6 +2868,15 @@ pub mod event_hubs {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Regenerates the ACS and SAS connection strings for the Event Hub."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group within the azure subscription."]
+        #[doc = "* `namespace_name`: The Namespace name"]
+        #[doc = "* `event_hub_name`: The Event Hub name"]
+        #[doc = "* `authorization_rule_name`: The authorization rule name."]
+        #[doc = "* `parameters`: Parameters supplied to regenerate the AuthorizationRule Keys (PrimaryKey/SecondaryKey)."]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn regenerate_keys(
             &self,
             resource_group_name: impl Into<String>,
@@ -2638,10 +2910,12 @@ pub mod event_hubs {
             pub(crate) top: Option<i64>,
         }
         impl Builder {
+            #[doc = "Skip is only used if a previous operation returned a partial result. If a previous response contains a nextLink element, the value of the nextLink element will include a skip parameter that specifies a starting point to use for subsequent calls."]
             pub fn skip(mut self, skip: i64) -> Self {
                 self.skip = Some(skip);
                 self
             }
+            #[doc = "May be used to limit the number of results to the most recent N usageDetails."]
             pub fn top(mut self, top: i64) -> Self {
                 self.top = Some(top);
                 self
@@ -3208,6 +3482,13 @@ pub mod disaster_recovery_configs {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Check the give Namespace name availability."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: Name of the resource group within the azure subscription."]
+        #[doc = "* `namespace_name`: The Namespace name"]
+        #[doc = "* `parameters`: Parameters to check availability of the given Alias name"]
         pub fn check_name_availability(
             &self,
             subscription_id: impl Into<String>,
@@ -3223,6 +3504,12 @@ pub mod disaster_recovery_configs {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Gets all Alias(Disaster Recovery configurations)"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group within the azure subscription."]
+        #[doc = "* `namespace_name`: The Namespace name"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(
             &self,
             resource_group_name: impl Into<String>,
@@ -3236,6 +3523,13 @@ pub mod disaster_recovery_configs {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Retrieves Alias(Disaster Recovery configuration) for primary or secondary namespace"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group within the azure subscription."]
+        #[doc = "* `namespace_name`: The Namespace name"]
+        #[doc = "* `alias`: The Disaster Recovery configuration name"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -3251,6 +3545,14 @@ pub mod disaster_recovery_configs {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates a new Alias(Disaster Recovery configuration)"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group within the azure subscription."]
+        #[doc = "* `namespace_name`: The Namespace name"]
+        #[doc = "* `alias`: The Disaster Recovery configuration name"]
+        #[doc = "* `parameters`: Parameters required to create an Alias(Disaster Recovery configuration)"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -3268,6 +3570,13 @@ pub mod disaster_recovery_configs {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes an Alias(Disaster Recovery configuration)"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group within the azure subscription."]
+        #[doc = "* `namespace_name`: The Namespace name"]
+        #[doc = "* `alias`: The Disaster Recovery configuration name"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -3283,6 +3592,13 @@ pub mod disaster_recovery_configs {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "This operation disables the Disaster Recovery and stops replicating changes from primary to secondary namespaces"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group within the azure subscription."]
+        #[doc = "* `namespace_name`: The Namespace name"]
+        #[doc = "* `alias`: The Disaster Recovery configuration name"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn break_pairing(
             &self,
             resource_group_name: impl Into<String>,
@@ -3298,6 +3614,13 @@ pub mod disaster_recovery_configs {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Invokes GEO DR failover and reconfigure the alias to point to the secondary namespace"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group within the azure subscription."]
+        #[doc = "* `namespace_name`: The Namespace name"]
+        #[doc = "* `alias`: The Disaster Recovery configuration name"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn fail_over(
             &self,
             resource_group_name: impl Into<String>,
@@ -3313,6 +3636,13 @@ pub mod disaster_recovery_configs {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets a list of authorization rules for a Namespace."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group within the azure subscription."]
+        #[doc = "* `namespace_name`: The Namespace name"]
+        #[doc = "* `alias`: The Disaster Recovery configuration name"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_authorization_rules(
             &self,
             resource_group_name: impl Into<String>,
@@ -3328,6 +3658,14 @@ pub mod disaster_recovery_configs {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets an AuthorizationRule for a Namespace by rule name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group within the azure subscription."]
+        #[doc = "* `namespace_name`: The Namespace name"]
+        #[doc = "* `alias`: The Disaster Recovery configuration name"]
+        #[doc = "* `authorization_rule_name`: The authorization rule name."]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get_authorization_rule(
             &self,
             resource_group_name: impl Into<String>,
@@ -3345,6 +3683,14 @@ pub mod disaster_recovery_configs {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the primary and secondary connection strings for the Namespace."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group within the azure subscription."]
+        #[doc = "* `namespace_name`: The Namespace name"]
+        #[doc = "* `alias`: The Disaster Recovery configuration name"]
+        #[doc = "* `authorization_rule_name`: The authorization rule name."]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_keys(
             &self,
             resource_group_name: impl Into<String>,
@@ -3922,6 +4268,14 @@ pub mod consumer_groups {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a description for the specified consumer group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group within the azure subscription."]
+        #[doc = "* `namespace_name`: The Namespace name"]
+        #[doc = "* `event_hub_name`: The Event Hub name"]
+        #[doc = "* `consumer_group_name`: The consumer group name"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -3939,6 +4293,15 @@ pub mod consumer_groups {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates an Event Hubs consumer group as a nested resource within a Namespace."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group within the azure subscription."]
+        #[doc = "* `namespace_name`: The Namespace name"]
+        #[doc = "* `event_hub_name`: The Event Hub name"]
+        #[doc = "* `consumer_group_name`: The consumer group name"]
+        #[doc = "* `parameters`: Parameters supplied to create or update a consumer group resource."]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -3958,6 +4321,14 @@ pub mod consumer_groups {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes a consumer group from the specified Event Hub and resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group within the azure subscription."]
+        #[doc = "* `namespace_name`: The Namespace name"]
+        #[doc = "* `event_hub_name`: The Event Hub name"]
+        #[doc = "* `consumer_group_name`: The consumer group name"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -3975,6 +4346,13 @@ pub mod consumer_groups {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets all the consumer groups in a Namespace. An empty feed is returned if no consumer group exists in the Namespace."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group within the azure subscription."]
+        #[doc = "* `namespace_name`: The Namespace name"]
+        #[doc = "* `event_hub_name`: The Event Hub name"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_event_hub(
             &self,
             resource_group_name: impl Into<String>,
@@ -4154,10 +4532,12 @@ pub mod consumer_groups {
             pub(crate) top: Option<i64>,
         }
         impl Builder {
+            #[doc = "Skip is only used if a previous operation returned a partial result. If a previous response contains a nextLink element, the value of the nextLink element will include a skip parameter that specifies a starting point to use for subsequent calls."]
             pub fn skip(mut self, skip: i64) -> Self {
                 self.skip = Some(skip);
                 self
             }
+            #[doc = "May be used to limit the number of results to the most recent N usageDetails."]
             pub fn top(mut self, top: i64) -> Self {
                 self.top = Some(top);
                 self
@@ -4241,6 +4621,12 @@ pub mod schema_registry {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets all the Schema Groups in a Namespace."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group within the azure subscription."]
+        #[doc = "* `namespace_name`: The Namespace name"]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_namespace(
             &self,
             resource_group_name: impl Into<String>,
@@ -4256,6 +4642,11 @@ pub mod schema_registry {
                 top: None,
             }
         }
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group within the azure subscription."]
+        #[doc = "* `namespace_name`: The Namespace name"]
+        #[doc = "* `schema_group_name`: The Schema Group name "]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -4271,6 +4662,12 @@ pub mod schema_registry {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group within the azure subscription."]
+        #[doc = "* `namespace_name`: The Namespace name"]
+        #[doc = "* `schema_group_name`: The Schema Group name "]
+        #[doc = "* `parameters`: Parameters supplied to create an Event Hub resource."]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -4288,6 +4685,11 @@ pub mod schema_registry {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: Name of the resource group within the azure subscription."]
+        #[doc = "* `namespace_name`: The Namespace name"]
+        #[doc = "* `schema_group_name`: The Schema Group name "]
+        #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -4317,10 +4719,12 @@ pub mod schema_registry {
             pub(crate) top: Option<i64>,
         }
         impl Builder {
+            #[doc = "Skip is only used if a previous operation returned a partial result. If a previous response contains a nextLink element, the value of the nextLink element will include a skip parameter that specifies a starting point to use for subsequent calls."]
             pub fn skip(mut self, skip: i64) -> Self {
                 self.skip = Some(skip);
                 self
             }
+            #[doc = "May be used to limit the number of results to the most recent N usageDetails."]
             pub fn top(mut self, top: i64) -> Self {
                 self.top = Some(top);
                 self

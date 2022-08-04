@@ -95,6 +95,9 @@ pub mod marketplace_agreements {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "List Datadog marketplace agreements in the subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -102,6 +105,9 @@ pub mod marketplace_agreements {
             }
         }
         #[doc = "Create Datadog marketplace agreement in the subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
         pub fn create_or_update(&self, subscription_id: impl Into<String>) -> create_or_update::Builder {
             create_or_update::Builder {
                 client: self.0.clone(),
@@ -248,6 +254,11 @@ pub mod monitors {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "List the api keys for a given monitor resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the Datadog resource belongs."]
+        #[doc = "* `monitor_name`: Monitor resource name"]
         pub fn list_api_keys(
             &self,
             subscription_id: impl Into<String>,
@@ -262,6 +273,11 @@ pub mod monitors {
             }
         }
         #[doc = "Get the default api key."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the Datadog resource belongs."]
+        #[doc = "* `monitor_name`: Monitor resource name"]
         pub fn get_default_key(
             &self,
             subscription_id: impl Into<String>,
@@ -276,6 +292,11 @@ pub mod monitors {
             }
         }
         #[doc = "Set the default api key."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the Datadog resource belongs."]
+        #[doc = "* `monitor_name`: Monitor resource name"]
         pub fn set_default_key(
             &self,
             subscription_id: impl Into<String>,
@@ -291,6 +312,11 @@ pub mod monitors {
             }
         }
         #[doc = "List the hosts for a given monitor resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the Datadog resource belongs."]
+        #[doc = "* `monitor_name`: Monitor resource name"]
         pub fn list_hosts(
             &self,
             subscription_id: impl Into<String>,
@@ -305,6 +331,11 @@ pub mod monitors {
             }
         }
         #[doc = "List all Azure resources associated to the same Datadog organization as the target resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the Datadog resource belongs."]
+        #[doc = "* `monitor_name`: Monitor resource name"]
         pub fn list_linked_resources(
             &self,
             subscription_id: impl Into<String>,
@@ -319,6 +350,11 @@ pub mod monitors {
             }
         }
         #[doc = "List the resources currently being monitored by the Datadog monitor resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the Datadog resource belongs."]
+        #[doc = "* `monitor_name`: Monitor resource name"]
         pub fn list_monitored_resources(
             &self,
             subscription_id: impl Into<String>,
@@ -333,6 +369,9 @@ pub mod monitors {
             }
         }
         #[doc = "List all monitors under the specified subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -340,6 +379,10 @@ pub mod monitors {
             }
         }
         #[doc = "List all monitors under the specified resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the Datadog resource belongs."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -352,6 +395,11 @@ pub mod monitors {
             }
         }
         #[doc = "Get the properties of a specific monitor resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the Datadog resource belongs."]
+        #[doc = "* `monitor_name`: Monitor resource name"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -366,6 +414,11 @@ pub mod monitors {
             }
         }
         #[doc = "Create a monitor resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the Datadog resource belongs."]
+        #[doc = "* `monitor_name`: Monitor resource name"]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -381,6 +434,11 @@ pub mod monitors {
             }
         }
         #[doc = "Update a monitor resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the Datadog resource belongs."]
+        #[doc = "* `monitor_name`: Monitor resource name"]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -396,6 +454,11 @@ pub mod monitors {
             }
         }
         #[doc = "Delete a monitor resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the Datadog resource belongs."]
+        #[doc = "* `monitor_name`: Monitor resource name"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -410,6 +473,11 @@ pub mod monitors {
             }
         }
         #[doc = "Refresh the set password link and return a latest one."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the Datadog resource belongs."]
+        #[doc = "* `monitor_name`: Monitor resource name"]
         pub fn refresh_set_password_link(
             &self,
             subscription_id: impl Into<String>,
@@ -1392,6 +1460,11 @@ pub mod tag_rules {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "List the tag rules for a given monitor resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the Datadog resource belongs."]
+        #[doc = "* `monitor_name`: Monitor resource name"]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -1406,6 +1479,12 @@ pub mod tag_rules {
             }
         }
         #[doc = "Get a tag rule set for a given monitor resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the Datadog resource belongs."]
+        #[doc = "* `monitor_name`: Monitor resource name"]
+        #[doc = "* `rule_set_name`: Rule set name"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1422,6 +1501,12 @@ pub mod tag_rules {
             }
         }
         #[doc = "Create or update a tag rule set for a given monitor resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the Datadog resource belongs."]
+        #[doc = "* `monitor_name`: Monitor resource name"]
+        #[doc = "* `rule_set_name`: Rule set name"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -1641,6 +1726,11 @@ pub mod single_sign_on_configurations {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "List the single sign-on configurations for a given monitor resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the Datadog resource belongs."]
+        #[doc = "* `monitor_name`: Monitor resource name"]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -1655,6 +1745,12 @@ pub mod single_sign_on_configurations {
             }
         }
         #[doc = "Gets the datadog single sign-on resource for the given Monitor."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the Datadog resource belongs."]
+        #[doc = "* `monitor_name`: Monitor resource name"]
+        #[doc = "* `configuration_name`: Configuration name"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1671,6 +1767,12 @@ pub mod single_sign_on_configurations {
             }
         }
         #[doc = "Configures single-sign-on for this resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the Datadog resource belongs."]
+        #[doc = "* `monitor_name`: Monitor resource name"]
+        #[doc = "* `configuration_name`: Configuration name"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,

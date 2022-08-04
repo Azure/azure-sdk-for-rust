@@ -82,12 +82,18 @@ impl Client {
     }
 }
 impl Client {
+    #[doc = "Returns location for user tenant."]
     pub fn get_locations(&self) -> get_locations::Builder {
         get_locations::Builder { client: self.clone() }
     }
+    #[doc = "Returns location for given tenant."]
     pub fn get_location_by_host_name(&self) -> get_location_by_host_name::Builder {
         get_location_by_host_name::Builder { client: self.clone() }
     }
+    #[doc = "Returns Intune Manageable apps."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `host_name`: Location hostName for the tenant"]
     pub fn get_apps(&self, host_name: impl Into<String>) -> get_apps::Builder {
         get_apps::Builder {
             client: self.clone(),
@@ -97,6 +103,11 @@ impl Client {
             select: None,
         }
     }
+    #[doc = "Get devices for a user."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `host_name`: Location hostName for the tenant"]
+    #[doc = "* `user_name`: user unique Name"]
     pub fn get_mam_user_devices(&self, host_name: impl Into<String>, user_name: impl Into<String>) -> get_mam_user_devices::Builder {
         get_mam_user_devices::Builder {
             client: self.clone(),
@@ -107,6 +118,12 @@ impl Client {
             select: None,
         }
     }
+    #[doc = "Get a unique device for a user."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `host_name`: Location hostName for the tenant"]
+    #[doc = "* `user_name`: unique user name"]
+    #[doc = "* `device_name`: device name"]
     pub fn get_mam_user_device_by_device_name(
         &self,
         host_name: impl Into<String>,
@@ -121,6 +138,12 @@ impl Client {
             select: None,
         }
     }
+    #[doc = "Wipe a device for a user."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `host_name`: Location hostName for the tenant"]
+    #[doc = "* `user_name`: unique user name"]
+    #[doc = "* `device_name`: device name"]
     pub fn wipe_mam_user_device(
         &self,
         host_name: impl Into<String>,
@@ -134,6 +157,10 @@ impl Client {
             device_name: device_name.into(),
         }
     }
+    #[doc = "Returns operationResults."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `host_name`: Location hostName for the tenant"]
     pub fn get_operation_results(&self, host_name: impl Into<String>) -> get_operation_results::Builder {
         get_operation_results::Builder {
             client: self.clone(),
@@ -143,12 +170,20 @@ impl Client {
             select: None,
         }
     }
+    #[doc = "Returns Intune Tenant level statuses."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `host_name`: Location hostName for the tenant"]
     pub fn get_mam_statuses(&self, host_name: impl Into<String>) -> get_mam_statuses::Builder {
         get_mam_statuses::Builder {
             client: self.clone(),
             host_name: host_name.into(),
         }
     }
+    #[doc = "Returns Intune flagged user collection"]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `host_name`: Location hostName for the tenant"]
     pub fn get_mam_flagged_users(&self, host_name: impl Into<String>) -> get_mam_flagged_users::Builder {
         get_mam_flagged_users::Builder {
             client: self.clone(),
@@ -158,6 +193,11 @@ impl Client {
             select: None,
         }
     }
+    #[doc = "Returns Intune flagged user details"]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `host_name`: Location hostName for the tenant"]
+    #[doc = "* `user_name`: Flagged userName"]
     pub fn get_mam_flagged_user_by_name(
         &self,
         host_name: impl Into<String>,
@@ -170,6 +210,11 @@ impl Client {
             select: None,
         }
     }
+    #[doc = "Returns Intune flagged enrolled app collection for the User"]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `host_name`: Location hostName for the tenant"]
+    #[doc = "* `user_name`: User name for the tenant"]
     pub fn get_mam_user_flagged_enrolled_apps(
         &self,
         host_name: impl Into<String>,
@@ -310,6 +355,7 @@ pub mod get_apps {
         pub(crate) select: Option<String>,
     }
     impl Builder {
+        #[doc = "The filter to apply on the operation."]
         pub fn filter(mut self, filter: impl Into<String>) -> Self {
             self.filter = Some(filter.into());
             self
@@ -318,6 +364,7 @@ pub mod get_apps {
             self.top = Some(top);
             self
         }
+        #[doc = "select specific fields in entity."]
         pub fn select(mut self, select: impl Into<String>) -> Self {
             self.select = Some(select.into());
             self
@@ -409,6 +456,7 @@ pub mod get_mam_user_devices {
         pub(crate) select: Option<String>,
     }
     impl Builder {
+        #[doc = "The filter to apply on the operation."]
         pub fn filter(mut self, filter: impl Into<String>) -> Self {
             self.filter = Some(filter.into());
             self
@@ -417,6 +465,7 @@ pub mod get_mam_user_devices {
             self.top = Some(top);
             self
         }
+        #[doc = "select specific fields in entity."]
         pub fn select(mut self, select: impl Into<String>) -> Self {
             self.select = Some(select.into());
             self
@@ -508,6 +557,7 @@ pub mod get_mam_user_device_by_device_name {
         pub(crate) select: Option<String>,
     }
     impl Builder {
+        #[doc = "select specific fields in entity."]
         pub fn select(mut self, select: impl Into<String>) -> Self {
             self.select = Some(select.into());
             self
@@ -621,6 +671,7 @@ pub mod get_operation_results {
         pub(crate) select: Option<String>,
     }
     impl Builder {
+        #[doc = "The filter to apply on the operation."]
         pub fn filter(mut self, filter: impl Into<String>) -> Self {
             self.filter = Some(filter.into());
             self
@@ -629,6 +680,7 @@ pub mod get_operation_results {
             self.top = Some(top);
             self
         }
+        #[doc = "select specific fields in entity."]
         pub fn select(mut self, select: impl Into<String>) -> Self {
             self.select = Some(select.into());
             self
@@ -793,6 +845,7 @@ pub mod get_mam_flagged_users {
         pub(crate) select: Option<String>,
     }
     impl Builder {
+        #[doc = "The filter to apply on the operation."]
         pub fn filter(mut self, filter: impl Into<String>) -> Self {
             self.filter = Some(filter.into());
             self
@@ -801,6 +854,7 @@ pub mod get_mam_flagged_users {
             self.top = Some(top);
             self
         }
+        #[doc = "select specific fields in entity."]
         pub fn select(mut self, select: impl Into<String>) -> Self {
             self.select = Some(select.into());
             self
@@ -890,6 +944,7 @@ pub mod get_mam_flagged_user_by_name {
         pub(crate) select: Option<String>,
     }
     impl Builder {
+        #[doc = "select specific fields in entity."]
         pub fn select(mut self, select: impl Into<String>) -> Self {
             self.select = Some(select.into());
             self
@@ -950,6 +1005,7 @@ pub mod get_mam_user_flagged_enrolled_apps {
         pub(crate) select: Option<String>,
     }
     impl Builder {
+        #[doc = "The filter to apply on the operation."]
         pub fn filter(mut self, filter: impl Into<String>) -> Self {
             self.filter = Some(filter.into());
             self
@@ -958,6 +1014,7 @@ pub mod get_mam_user_flagged_enrolled_apps {
             self.top = Some(top);
             self
         }
+        #[doc = "select specific fields in entity."]
         pub fn select(mut self, select: impl Into<String>) -> Self {
             self.select = Some(select.into());
             self
@@ -1041,6 +1098,10 @@ pub mod ios {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Returns Intune iOSPolicies."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `host_name`: Location hostName for the tenant"]
         pub fn get_mam_policies(&self, host_name: impl Into<String>) -> get_mam_policies::Builder {
             get_mam_policies::Builder {
                 client: self.0.clone(),
@@ -1050,6 +1111,11 @@ pub mod ios {
                 select: None,
             }
         }
+        #[doc = "Returns Intune iOS policies."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `host_name`: Location hostName for the tenant"]
+        #[doc = "* `policy_name`: Unique name for the policy"]
         pub fn get_mam_policy_by_name(
             &self,
             host_name: impl Into<String>,
@@ -1062,6 +1128,12 @@ pub mod ios {
                 select: None,
             }
         }
+        #[doc = "Creates or updates iOSMAMPolicy."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `host_name`: Location hostName for the tenant"]
+        #[doc = "* `policy_name`: Unique name for the policy"]
+        #[doc = "* `parameters`: Parameters supplied to the Create or update an android policy operation."]
         pub fn create_or_update_mam_policy(
             &self,
             host_name: impl Into<String>,
@@ -1075,6 +1147,12 @@ pub mod ios {
                 parameters: parameters.into(),
             }
         }
+        #[doc = " patch an iOSMAMPolicy."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `host_name`: Location hostName for the tenant"]
+        #[doc = "* `policy_name`: Unique name for the policy"]
+        #[doc = "* `parameters`: Parameters supplied to the Create or update an android policy operation."]
         pub fn patch_mam_policy(
             &self,
             host_name: impl Into<String>,
@@ -1088,6 +1166,11 @@ pub mod ios {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Delete Ios Policy"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `host_name`: Location hostName for the tenant"]
+        #[doc = "* `policy_name`: Unique name for the policy"]
         pub fn delete_mam_policy(&self, host_name: impl Into<String>, policy_name: impl Into<String>) -> delete_mam_policy::Builder {
             delete_mam_policy::Builder {
                 client: self.0.clone(),
@@ -1095,6 +1178,11 @@ pub mod ios {
                 policy_name: policy_name.into(),
             }
         }
+        #[doc = "Get apps for an iOSMAMPolicy."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `host_name`: Location hostName for the tenant"]
+        #[doc = "* `policy_name`: Unique name for the policy"]
         pub fn get_app_for_mam_policy(
             &self,
             host_name: impl Into<String>,
@@ -1109,6 +1197,13 @@ pub mod ios {
                 select: None,
             }
         }
+        #[doc = "Add app to an iOSMAMPolicy."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `host_name`: Location hostName for the tenant"]
+        #[doc = "* `policy_name`: Unique name for the policy"]
+        #[doc = "* `app_name`: application unique Name"]
+        #[doc = "* `parameters`: Parameters supplied to add an app to an ios policy."]
         pub fn add_app_for_mam_policy(
             &self,
             host_name: impl Into<String>,
@@ -1124,6 +1219,12 @@ pub mod ios {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Delete App for Ios Policy"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `host_name`: Location hostName for the tenant"]
+        #[doc = "* `policy_name`: Unique name for the policy"]
+        #[doc = "* `app_name`: application unique Name"]
         pub fn delete_app_for_mam_policy(
             &self,
             host_name: impl Into<String>,
@@ -1137,6 +1238,11 @@ pub mod ios {
                 app_name: app_name.into(),
             }
         }
+        #[doc = "Returns groups for a given iOSMAMPolicy."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `host_name`: Location hostName for the tenant"]
+        #[doc = "* `policy_name`: policy name for the tenant"]
         pub fn get_groups_for_mam_policy(
             &self,
             host_name: impl Into<String>,
@@ -1148,6 +1254,13 @@ pub mod ios {
                 policy_name: policy_name.into(),
             }
         }
+        #[doc = "Add group to an iOSMAMPolicy."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `host_name`: Location hostName for the tenant"]
+        #[doc = "* `policy_name`: Unique name for the policy"]
+        #[doc = "* `group_id`: group Id"]
+        #[doc = "* `parameters`: Parameters supplied to the Create or update app to an android policy operation."]
         pub fn add_group_for_mam_policy(
             &self,
             host_name: impl Into<String>,
@@ -1163,6 +1276,12 @@ pub mod ios {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Delete Group for iOS Policy"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `host_name`: Location hostName for the tenant"]
+        #[doc = "* `policy_name`: Unique name for the policy"]
+        #[doc = "* `group_id`: application unique Name"]
         pub fn delete_group_for_mam_policy(
             &self,
             host_name: impl Into<String>,
@@ -1189,6 +1308,7 @@ pub mod ios {
             pub(crate) select: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the operation."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -1197,6 +1317,7 @@ pub mod ios {
                 self.top = Some(top);
                 self
             }
+            #[doc = "select specific fields in entity."]
             pub fn select(mut self, select: impl Into<String>) -> Self {
                 self.select = Some(select.into());
                 self
@@ -1286,6 +1407,7 @@ pub mod ios {
             pub(crate) select: Option<String>,
         }
         impl Builder {
+            #[doc = "select specific fields in entity."]
             pub fn select(mut self, select: impl Into<String>) -> Self {
                 self.select = Some(select.into());
                 self
@@ -1501,6 +1623,7 @@ pub mod ios {
             pub(crate) select: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the operation."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -1509,6 +1632,7 @@ pub mod ios {
                 self.top = Some(top);
                 self
             }
+            #[doc = "select specific fields in entity."]
             pub fn select(mut self, select: impl Into<String>) -> Self {
                 self.select = Some(select.into());
                 self
@@ -1885,6 +2009,10 @@ pub mod android {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Returns Intune Android policies."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `host_name`: Location hostName for the tenant"]
         pub fn get_mam_policies(&self, host_name: impl Into<String>) -> get_mam_policies::Builder {
             get_mam_policies::Builder {
                 client: self.0.clone(),
@@ -1894,6 +2022,11 @@ pub mod android {
                 select: None,
             }
         }
+        #[doc = "Returns AndroidMAMPolicy with given name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `host_name`: Location hostName for the tenant"]
+        #[doc = "* `policy_name`: Unique name for the policy"]
         pub fn get_mam_policy_by_name(
             &self,
             host_name: impl Into<String>,
@@ -1906,6 +2039,12 @@ pub mod android {
                 select: None,
             }
         }
+        #[doc = "Creates or updates AndroidMAMPolicy."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `host_name`: Location hostName for the tenant"]
+        #[doc = "* `policy_name`: Unique name for the policy"]
+        #[doc = "* `parameters`: Parameters supplied to the Create or update an android policy operation."]
         pub fn create_or_update_mam_policy(
             &self,
             host_name: impl Into<String>,
@@ -1919,6 +2058,12 @@ pub mod android {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Patch AndroidMAMPolicy."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `host_name`: Location hostName for the tenant"]
+        #[doc = "* `policy_name`: Unique name for the policy"]
+        #[doc = "* `parameters`: Parameters supplied to the Create or update an android policy operation."]
         pub fn patch_mam_policy(
             &self,
             host_name: impl Into<String>,
@@ -1932,6 +2077,11 @@ pub mod android {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Delete Android Policy"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `host_name`: Location hostName for the tenant"]
+        #[doc = "* `policy_name`: Unique name for the policy"]
         pub fn delete_mam_policy(&self, host_name: impl Into<String>, policy_name: impl Into<String>) -> delete_mam_policy::Builder {
             delete_mam_policy::Builder {
                 client: self.0.clone(),
@@ -1939,6 +2089,11 @@ pub mod android {
                 policy_name: policy_name.into(),
             }
         }
+        #[doc = "Get apps for an AndroidMAMPolicy."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `host_name`: Location hostName for the tenant"]
+        #[doc = "* `policy_name`: Unique name for the policy"]
         pub fn get_app_for_mam_policy(
             &self,
             host_name: impl Into<String>,
@@ -1953,6 +2108,13 @@ pub mod android {
                 select: None,
             }
         }
+        #[doc = "Add app to an AndroidMAMPolicy."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `host_name`: Location hostName for the tenant"]
+        #[doc = "* `policy_name`: Unique name for the policy"]
+        #[doc = "* `app_name`: application unique Name"]
+        #[doc = "* `parameters`: Parameters supplied to the Create or update app to an android policy operation."]
         pub fn add_app_for_mam_policy(
             &self,
             host_name: impl Into<String>,
@@ -1968,6 +2130,12 @@ pub mod android {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Delete App for Android Policy"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `host_name`: Location hostName for the tenant"]
+        #[doc = "* `policy_name`: Unique name for the policy"]
+        #[doc = "* `app_name`: application unique Name"]
         pub fn delete_app_for_mam_policy(
             &self,
             host_name: impl Into<String>,
@@ -1981,6 +2149,11 @@ pub mod android {
                 app_name: app_name.into(),
             }
         }
+        #[doc = "Returns groups for a given AndroidMAMPolicy."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `host_name`: Location hostName for the tenant"]
+        #[doc = "* `policy_name`: policy name for the tenant"]
         pub fn get_groups_for_mam_policy(
             &self,
             host_name: impl Into<String>,
@@ -1992,6 +2165,13 @@ pub mod android {
                 policy_name: policy_name.into(),
             }
         }
+        #[doc = "Add group to an AndroidMAMPolicy."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `host_name`: Location hostName for the tenant"]
+        #[doc = "* `policy_name`: Unique name for the policy"]
+        #[doc = "* `group_id`: group Id"]
+        #[doc = "* `parameters`: Parameters supplied to the Create or update app to an android policy operation."]
         pub fn add_group_for_mam_policy(
             &self,
             host_name: impl Into<String>,
@@ -2007,6 +2187,12 @@ pub mod android {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Delete Group for Android Policy"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `host_name`: Location hostName for the tenant"]
+        #[doc = "* `policy_name`: Unique name for the policy"]
+        #[doc = "* `group_id`: application unique Name"]
         pub fn delete_group_for_mam_policy(
             &self,
             host_name: impl Into<String>,
@@ -2033,6 +2219,7 @@ pub mod android {
             pub(crate) select: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the operation."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -2041,6 +2228,7 @@ pub mod android {
                 self.top = Some(top);
                 self
             }
+            #[doc = "select specific fields in entity."]
             pub fn select(mut self, select: impl Into<String>) -> Self {
                 self.select = Some(select.into());
                 self
@@ -2130,6 +2318,7 @@ pub mod android {
             pub(crate) select: Option<String>,
         }
         impl Builder {
+            #[doc = "select specific fields in entity."]
             pub fn select(mut self, select: impl Into<String>) -> Self {
                 self.select = Some(select.into());
                 self
@@ -2345,6 +2534,7 @@ pub mod android {
             pub(crate) select: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the operation."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -2353,6 +2543,7 @@ pub mod android {
                 self.top = Some(top);
                 self
             }
+            #[doc = "select specific fields in entity."]
             pub fn select(mut self, select: impl Into<String>) -> Self {
                 self.select = Some(select.into());
                 self

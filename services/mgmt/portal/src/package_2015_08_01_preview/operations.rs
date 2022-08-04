@@ -85,6 +85,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "The Microsoft Portal operations API."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -164,6 +165,12 @@ pub mod dashboards {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the Dashboard."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `dashboard_name`: The name of the dashboard."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -177,6 +184,13 @@ pub mod dashboards {
                 dashboard_name: dashboard_name.into(),
             }
         }
+        #[doc = "Creates or updates a Dashboard."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `dashboard_name`: The name of the dashboard."]
+        #[doc = "* `dashboard`: The parameters required to create or update a dashboard."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -192,6 +206,13 @@ pub mod dashboards {
                 dashboard: dashboard.into(),
             }
         }
+        #[doc = "Updates an existing Dashboard."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `dashboard_name`: The name of the dashboard."]
+        #[doc = "* `dashboard`: The updatable fields of a Dashboard."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -207,6 +228,12 @@ pub mod dashboards {
                 dashboard: dashboard.into(),
             }
         }
+        #[doc = "Deletes the Dashboard."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `dashboard_name`: The name of the dashboard."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -220,6 +247,11 @@ pub mod dashboards {
                 dashboard_name: dashboard_name.into(),
             }
         }
+        #[doc = "Gets all the Dashboards within a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -231,6 +263,10 @@ pub mod dashboards {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Gets all the dashboards within a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)"]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),

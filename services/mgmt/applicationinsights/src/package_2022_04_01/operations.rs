@@ -139,6 +139,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all of the available insights REST API operations."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -218,6 +219,14 @@ pub mod annotations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the list of annotations for a component for given time range"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_name`: The name of the Application Insights component resource."]
+        #[doc = "* `start`: The start time to query from for annotations, cannot be older than 90 days from current date."]
+        #[doc = "* `end`: The end time to query for annotations."]
         pub fn list(
             &self,
             resource_group_name: impl Into<String>,
@@ -235,6 +244,13 @@ pub mod annotations {
                 end: end.into(),
             }
         }
+        #[doc = "Create an Annotation of an Application Insights component."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_name`: The name of the Application Insights component resource."]
+        #[doc = "* `annotation_properties`: Properties that need to be specified to create an annotation of a Application Insights component."]
         pub fn create(
             &self,
             resource_group_name: impl Into<String>,
@@ -250,6 +266,13 @@ pub mod annotations {
                 annotation_properties: annotation_properties.into(),
             }
         }
+        #[doc = "Get the annotation for given id."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_name`: The name of the Application Insights component resource."]
+        #[doc = "* `annotation_id`: The unique annotation ID. This is unique within a Application Insights component."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -265,6 +288,13 @@ pub mod annotations {
                 annotation_id: annotation_id.into(),
             }
         }
+        #[doc = "Delete an Annotation of an Application Insights component."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_name`: The name of the Application Insights component resource."]
+        #[doc = "* `annotation_id`: The unique annotation ID. This is unique within a Application Insights component."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -503,6 +533,12 @@ pub mod api_keys {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a list of API keys of an Application Insights component."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_name`: The name of the Application Insights component resource."]
         pub fn list(
             &self,
             resource_group_name: impl Into<String>,
@@ -516,6 +552,13 @@ pub mod api_keys {
                 resource_name: resource_name.into(),
             }
         }
+        #[doc = "Create an API Key of an Application Insights component."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_name`: The name of the Application Insights component resource."]
+        #[doc = "* `api_key_properties`: Properties that need to be specified to create an API key of a Application Insights component."]
         pub fn create(
             &self,
             resource_group_name: impl Into<String>,
@@ -531,6 +574,13 @@ pub mod api_keys {
                 api_key_properties: api_key_properties.into(),
             }
         }
+        #[doc = "Get the API Key for this key id."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_name`: The name of the Application Insights component resource."]
+        #[doc = "* `key_id`: The API Key ID. This is unique within a Application Insights component."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -546,6 +596,13 @@ pub mod api_keys {
                 key_id: key_id.into(),
             }
         }
+        #[doc = "Delete an API Key of an Application Insights component."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_name`: The name of the Application Insights component resource."]
+        #[doc = "* `key_id`: The API Key ID. This is unique within a Application Insights component."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -782,6 +839,12 @@ pub mod export_configurations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a list of Continuous Export configuration of an Application Insights component."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_name`: The name of the Application Insights component resource."]
         pub fn list(
             &self,
             resource_group_name: impl Into<String>,
@@ -795,6 +858,13 @@ pub mod export_configurations {
                 resource_name: resource_name.into(),
             }
         }
+        #[doc = "Create a Continuous Export configuration of an Application Insights component."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_name`: The name of the Application Insights component resource."]
+        #[doc = "* `export_properties`: Properties that need to be specified to create a Continuous Export configuration of a Application Insights component."]
         pub fn create(
             &self,
             resource_group_name: impl Into<String>,
@@ -810,6 +880,13 @@ pub mod export_configurations {
                 export_properties: export_properties.into(),
             }
         }
+        #[doc = "Get the Continuous Export configuration for this export id."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_name`: The name of the Application Insights component resource."]
+        #[doc = "* `export_id`: The Continuous Export configuration ID. This is unique within a Application Insights component."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -825,6 +902,14 @@ pub mod export_configurations {
                 export_id: export_id.into(),
             }
         }
+        #[doc = "Update the Continuous Export configuration for this export id."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_name`: The name of the Application Insights component resource."]
+        #[doc = "* `export_id`: The Continuous Export configuration ID. This is unique within a Application Insights component."]
+        #[doc = "* `export_properties`: Properties that need to be specified to update the Continuous Export configuration."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -842,6 +927,13 @@ pub mod export_configurations {
                 export_properties: export_properties.into(),
             }
         }
+        #[doc = "Delete a Continuous Export configuration of an Application Insights component."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_name`: The name of the Application Insights component resource."]
+        #[doc = "* `export_id`: The Continuous Export configuration ID. This is unique within a Application Insights component."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -1135,6 +1227,12 @@ pub mod component_current_billing_features {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Returns current billing features for an Application Insights component."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_name`: The name of the Application Insights component resource."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -1148,6 +1246,13 @@ pub mod component_current_billing_features {
                 resource_name: resource_name.into(),
             }
         }
+        #[doc = "Update current billing features for an Application Insights component."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_name`: The name of the Application Insights component resource."]
+        #[doc = "* `billing_features_properties`: Properties that need to be specified to update billing features for an Application Insights component."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -1275,6 +1380,12 @@ pub mod component_quota_status {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Returns daily data volume cap (quota) status for an Application Insights component."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_name`: The name of the Application Insights component resource."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -1346,6 +1457,12 @@ pub mod component_feature_capabilities {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Returns feature capabilities of the application insights component."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_name`: The name of the Application Insights component resource."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -1417,6 +1534,12 @@ pub mod component_available_features {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Returns all available features of the application insights component."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_name`: The name of the Application Insights component resource."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -1488,6 +1611,12 @@ pub mod proactive_detection_configurations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a list of ProactiveDetection configurations of an Application Insights component."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_name`: The name of the Application Insights component resource."]
         pub fn list(
             &self,
             resource_group_name: impl Into<String>,
@@ -1501,6 +1630,13 @@ pub mod proactive_detection_configurations {
                 resource_name: resource_name.into(),
             }
         }
+        #[doc = "Get the ProactiveDetection configuration for this configuration id."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_name`: The name of the Application Insights component resource."]
+        #[doc = "* `configuration_id`: The ProactiveDetection configuration ID. This is unique within a Application Insights component."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -1516,6 +1652,14 @@ pub mod proactive_detection_configurations {
                 configuration_id: configuration_id.into(),
             }
         }
+        #[doc = "Update the ProactiveDetection configuration for this configuration id."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_name`: The name of the Application Insights component resource."]
+        #[doc = "* `configuration_id`: The ProactiveDetection configuration ID. This is unique within a Application Insights component."]
+        #[doc = "* `proactive_detection_properties`: Properties that need to be specified to update the ProactiveDetection configuration."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -1704,6 +1848,12 @@ pub mod work_item_configurations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the list work item configurations that exist for the application"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_name`: The name of the Application Insights component resource."]
         pub fn list(
             &self,
             resource_group_name: impl Into<String>,
@@ -1717,6 +1867,13 @@ pub mod work_item_configurations {
                 resource_name: resource_name.into(),
             }
         }
+        #[doc = "Create a work item configuration for an Application Insights component."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_name`: The name of the Application Insights component resource."]
+        #[doc = "* `work_item_configuration_properties`: Properties that need to be specified to create a work item configuration of a Application Insights component."]
         pub fn create(
             &self,
             resource_group_name: impl Into<String>,
@@ -1732,6 +1889,12 @@ pub mod work_item_configurations {
                 work_item_configuration_properties: work_item_configuration_properties.into(),
             }
         }
+        #[doc = "Gets default work item configurations that exist for the application"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_name`: The name of the Application Insights component resource."]
         pub fn get_default(
             &self,
             resource_group_name: impl Into<String>,
@@ -1745,6 +1908,13 @@ pub mod work_item_configurations {
                 resource_name: resource_name.into(),
             }
         }
+        #[doc = "Gets specified work item configuration for an Application Insights component."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_name`: The name of the Application Insights component resource."]
+        #[doc = "* `work_item_config_id`: The unique work item configuration Id. This can be either friendly name of connector as defined in connector configuration"]
         pub fn get_item(
             &self,
             resource_group_name: impl Into<String>,
@@ -1760,6 +1930,14 @@ pub mod work_item_configurations {
                 work_item_config_id: work_item_config_id.into(),
             }
         }
+        #[doc = "Update a work item configuration for an Application Insights component."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_name`: The name of the Application Insights component resource."]
+        #[doc = "* `work_item_config_id`: The unique work item configuration Id. This can be either friendly name of connector as defined in connector configuration"]
+        #[doc = "* `work_item_configuration_properties`: Properties that need to be specified to update a work item configuration for this Application Insights component."]
         pub fn update_item(
             &self,
             resource_group_name: impl Into<String>,
@@ -1777,6 +1955,13 @@ pub mod work_item_configurations {
                 work_item_configuration_properties: work_item_configuration_properties.into(),
             }
         }
+        #[doc = "Delete a work item configuration of an Application Insights component."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_name`: The name of the Application Insights component resource."]
+        #[doc = "* `work_item_config_id`: The unique work item configuration Id. This can be either friendly name of connector as defined in connector configuration"]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -2117,6 +2302,12 @@ pub mod favorites {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a list of favorites defined within an Application Insights component."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_name`: The name of the Application Insights component resource."]
         pub fn list(
             &self,
             resource_group_name: impl Into<String>,
@@ -2134,6 +2325,13 @@ pub mod favorites {
                 tags: Vec::new(),
             }
         }
+        #[doc = "Get a single favorite by its FavoriteId, defined within an Application Insights component."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_name`: The name of the Application Insights component resource."]
+        #[doc = "* `favorite_id`: The Id of a specific favorite defined in the Application Insights component"]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -2149,6 +2347,14 @@ pub mod favorites {
                 favorite_id: favorite_id.into(),
             }
         }
+        #[doc = "Adds a new favorites to an Application Insights component."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_name`: The name of the Application Insights component resource."]
+        #[doc = "* `favorite_id`: The Id of a specific favorite defined in the Application Insights component"]
+        #[doc = "* `favorite_properties`: Properties that need to be specified to create a new favorite and add it to an Application Insights component."]
         pub fn add(
             &self,
             resource_group_name: impl Into<String>,
@@ -2166,6 +2372,14 @@ pub mod favorites {
                 favorite_properties: favorite_properties.into(),
             }
         }
+        #[doc = "Updates a favorite that has already been added to an Application Insights component."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_name`: The name of the Application Insights component resource."]
+        #[doc = "* `favorite_id`: The Id of a specific favorite defined in the Application Insights component"]
+        #[doc = "* `favorite_properties`: Properties that need to be specified to update the existing favorite."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -2183,6 +2397,13 @@ pub mod favorites {
                 favorite_properties: favorite_properties.into(),
             }
         }
+        #[doc = "Remove a favorite that is associated to an Application Insights component."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_name`: The name of the Application Insights component resource."]
+        #[doc = "* `favorite_id`: The Id of a specific favorite defined in the Application Insights component"]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -2214,18 +2435,22 @@ pub mod favorites {
             pub(crate) tags: Vec<String>,
         }
         impl Builder {
+            #[doc = "The type of favorite. Value can be either shared or user."]
             pub fn favorite_type(mut self, favorite_type: impl Into<String>) -> Self {
                 self.favorite_type = Some(favorite_type.into());
                 self
             }
+            #[doc = "Source type of favorite to return. When left out, the source type defaults to 'other' (not present in this enum)."]
             pub fn source_type(mut self, source_type: impl Into<String>) -> Self {
                 self.source_type = Some(source_type.into());
                 self
             }
+            #[doc = "Flag indicating whether or not to return the full content for each applicable favorite. If false, only return summary content for favorites."]
             pub fn can_fetch_content(mut self, can_fetch_content: bool) -> Self {
                 self.can_fetch_content = Some(can_fetch_content);
                 self
             }
+            #[doc = "Tags that must be present on each favorite returned."]
             pub fn tags(mut self, tags: Vec<String>) -> Self {
                 self.tags = tags;
                 self
@@ -2503,6 +2728,12 @@ pub mod web_test_locations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a list of web test locations available to this Application Insights component."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_name`: The name of the Application Insights component resource."]
         pub fn list(
             &self,
             resource_group_name: impl Into<String>,
@@ -2575,6 +2806,11 @@ pub mod web_tests {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get all Application Insights web tests defined within a specified resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_by_resource_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -2586,6 +2822,12 @@ pub mod web_tests {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get a specific Application Insights web test definition."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `web_test_name`: The name of the Application Insights webtest resource."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -2599,6 +2841,13 @@ pub mod web_tests {
                 web_test_name: web_test_name.into(),
             }
         }
+        #[doc = "Creates or updates an Application Insights web test definition."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `web_test_name`: The name of the Application Insights webtest resource."]
+        #[doc = "* `web_test_definition`: Properties that need to be specified to create or update an Application Insights web test definition."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -2614,6 +2863,13 @@ pub mod web_tests {
                 web_test_definition: web_test_definition.into(),
             }
         }
+        #[doc = "Creates or updates an Application Insights web test definition."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `web_test_name`: The name of the Application Insights webtest resource."]
+        #[doc = "* `web_test_tags`: Updated tag information to set into the web test instance."]
         pub fn update_tags(
             &self,
             resource_group_name: impl Into<String>,
@@ -2629,6 +2885,12 @@ pub mod web_tests {
                 web_test_tags: web_test_tags.into(),
             }
         }
+        #[doc = "Deletes an Application Insights web test."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `web_test_name`: The name of the Application Insights webtest resource."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -2642,12 +2904,22 @@ pub mod web_tests {
                 web_test_name: web_test_name.into(),
             }
         }
+        #[doc = "Get all Application Insights web test alerts definitions within a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get all Application Insights web tests defined for the specified component."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `component_name`: The name of the Application Insights component resource."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_by_component(
             &self,
             component_name: impl Into<String>,
@@ -3108,6 +3380,13 @@ pub mod analytics_items {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a list of Analytics Items defined within an Application Insights component."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `resource_name`: The name of the Application Insights component resource."]
+        #[doc = "* `scope_path`: Enum indicating if this item definition is owned by a specific user or is shared between all users with access to the Application Insights component."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -3126,6 +3405,13 @@ pub mod analytics_items {
                 include_content: None,
             }
         }
+        #[doc = "Gets a specific Analytics Items defined within an Application Insights component."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `resource_name`: The name of the Application Insights component resource."]
+        #[doc = "* `scope_path`: Enum indicating if this item definition is owned by a specific user or is shared between all users with access to the Application Insights component."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -3143,6 +3429,14 @@ pub mod analytics_items {
                 name: None,
             }
         }
+        #[doc = "Adds or Updates a specific Analytics Item within an Application Insights component."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `resource_name`: The name of the Application Insights component resource."]
+        #[doc = "* `scope_path`: Enum indicating if this item definition is owned by a specific user or is shared between all users with access to the Application Insights component."]
+        #[doc = "* `item_properties`: Properties that need to be specified to create a new item and add it to an Application Insights component."]
         pub fn put(
             &self,
             subscription_id: impl Into<String>,
@@ -3161,6 +3455,13 @@ pub mod analytics_items {
                 override_item: None,
             }
         }
+        #[doc = "Deletes a specific Analytics Items defined within an Application Insights component."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `resource_name`: The name of the Application Insights component resource."]
+        #[doc = "* `scope_path`: Enum indicating if this item definition is owned by a specific user or is shared between all users with access to the Application Insights component."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -3194,14 +3495,17 @@ pub mod analytics_items {
             pub(crate) include_content: Option<bool>,
         }
         impl Builder {
+            #[doc = "Enum indicating if this item definition is owned by a specific user or is shared between all users with access to the Application Insights component."]
             pub fn scope(mut self, scope: impl Into<String>) -> Self {
                 self.scope = Some(scope.into());
                 self
             }
+            #[doc = "Enum indicating the type of the Analytics item."]
             pub fn type_(mut self, type_: impl Into<String>) -> Self {
                 self.type_ = Some(type_.into());
                 self
             }
+            #[doc = "Flag indicating whether or not to return the content of each applicable item. If false, only return the item information."]
             pub fn include_content(mut self, include_content: bool) -> Self {
                 self.include_content = Some(include_content);
                 self
@@ -3273,10 +3577,12 @@ pub mod analytics_items {
             pub(crate) name: Option<String>,
         }
         impl Builder {
+            #[doc = "The Id of a specific item defined in the Application Insights component"]
             pub fn id(mut self, id: impl Into<String>) -> Self {
                 self.id = Some(id.into());
                 self
             }
+            #[doc = "The name of a specific item defined in the Application Insights component"]
             pub fn name(mut self, name: impl Into<String>) -> Self {
                 self.name = Some(name.into());
                 self
@@ -3343,6 +3649,7 @@ pub mod analytics_items {
             pub(crate) override_item: Option<bool>,
         }
         impl Builder {
+            #[doc = "Flag indicating whether or not to force save an item. This allows overriding an item if it already exists."]
             pub fn override_item(mut self, override_item: bool) -> Self {
                 self.override_item = Some(override_item);
                 self
@@ -3409,10 +3716,12 @@ pub mod analytics_items {
             pub(crate) name: Option<String>,
         }
         impl Builder {
+            #[doc = "The Id of a specific item defined in the Application Insights component"]
             pub fn id(mut self, id: impl Into<String>) -> Self {
                 self.id = Some(id.into());
                 self
             }
+            #[doc = "The name of a specific item defined in the Application Insights component"]
             pub fn name(mut self, name: impl Into<String>) -> Self {
                 self.name = Some(name.into());
                 self
@@ -3466,6 +3775,11 @@ pub mod workbook_templates {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get all Workbook templates defined within a specified resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -3477,6 +3791,12 @@ pub mod workbook_templates {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Get a single workbook template by its resourceName."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `resource_name`: The name of the Application Insights component resource."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -3490,6 +3810,13 @@ pub mod workbook_templates {
                 resource_name: resource_name.into(),
             }
         }
+        #[doc = "Create a new workbook template."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `resource_name`: The name of the Application Insights component resource."]
+        #[doc = "* `workbook_template_properties`: Properties that need to be specified to create a new workbook."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -3505,6 +3832,12 @@ pub mod workbook_templates {
                 workbook_template_properties: workbook_template_properties.into(),
             }
         }
+        #[doc = "Updates a workbook template that has already been added."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `resource_name`: The name of the Application Insights component resource."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -3519,6 +3852,12 @@ pub mod workbook_templates {
                 workbook_template_update_parameters: None,
             }
         }
+        #[doc = "Delete a workbook template."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `resource_name`: The name of the Application Insights component resource."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -3711,6 +4050,7 @@ pub mod workbook_templates {
             pub(crate) workbook_template_update_parameters: Option<models::WorkbookTemplateUpdateParameters>,
         }
         impl Builder {
+            #[doc = "Properties that need to be specified to patch a workbook template."]
             pub fn workbook_template_update_parameters(
                 mut self,
                 workbook_template_update_parameters: impl Into<models::WorkbookTemplateUpdateParameters>,
@@ -3822,6 +4162,12 @@ pub mod my_workbooks {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get all private workbooks defined within a specified resource group and category."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `category`: Category of workbook to return."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -3838,6 +4184,11 @@ pub mod my_workbooks {
                 can_fetch_content: None,
             }
         }
+        #[doc = "Get all private workbooks defined within a specified subscription and category."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `category`: Category of workbook to return."]
         pub fn list_by_subscription(
             &self,
             subscription_id: impl Into<String>,
@@ -3851,6 +4202,12 @@ pub mod my_workbooks {
                 can_fetch_content: None,
             }
         }
+        #[doc = "Get a single private workbook by its resourceName."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `resource_name`: The name of the Application Insights component resource."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -3864,6 +4221,13 @@ pub mod my_workbooks {
                 resource_name: resource_name.into(),
             }
         }
+        #[doc = "Create a new private workbook."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `resource_name`: The name of the Application Insights component resource."]
+        #[doc = "* `workbook_properties`: Properties that need to be specified to create a new private workbook."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -3880,6 +4244,13 @@ pub mod my_workbooks {
                 source_id: None,
             }
         }
+        #[doc = "Updates a private workbook that has already been added."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `resource_name`: The name of the Application Insights component resource."]
+        #[doc = "* `workbook_properties`: Properties that need to be specified to create a new private workbook."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -3896,6 +4267,12 @@ pub mod my_workbooks {
                 source_id: None,
             }
         }
+        #[doc = "Delete a private workbook."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `resource_name`: The name of the Application Insights component resource."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -3924,14 +4301,17 @@ pub mod my_workbooks {
             pub(crate) can_fetch_content: Option<bool>,
         }
         impl Builder {
+            #[doc = "Tags presents on each workbook returned."]
             pub fn tags(mut self, tags: Vec<String>) -> Self {
                 self.tags = tags;
                 self
             }
+            #[doc = "Azure Resource Id that will fetch all linked workbooks."]
             pub fn source_id(mut self, source_id: impl Into<String>) -> Self {
                 self.source_id = Some(source_id.into());
                 self
             }
+            #[doc = "Flag indicating whether or not to return the full content for each applicable workbook. If false, only return summary content for workbooks."]
             pub fn can_fetch_content(mut self, can_fetch_content: bool) -> Self {
                 self.can_fetch_content = Some(can_fetch_content);
                 self
@@ -4024,10 +4404,12 @@ pub mod my_workbooks {
             pub(crate) can_fetch_content: Option<bool>,
         }
         impl Builder {
+            #[doc = "Tags presents on each workbook returned."]
             pub fn tags(mut self, tags: Vec<String>) -> Self {
                 self.tags = tags;
                 self
             }
+            #[doc = "Flag indicating whether or not to return the full content for each applicable workbook. If false, only return summary content for workbooks."]
             pub fn can_fetch_content(mut self, can_fetch_content: bool) -> Self {
                 self.can_fetch_content = Some(can_fetch_content);
                 self
@@ -4173,6 +4555,7 @@ pub mod my_workbooks {
             pub(crate) source_id: Option<String>,
         }
         impl Builder {
+            #[doc = "Azure Resource Id that will fetch all linked workbooks."]
             pub fn source_id(mut self, source_id: impl Into<String>) -> Self {
                 self.source_id = Some(source_id.into());
                 self
@@ -4240,6 +4623,7 @@ pub mod my_workbooks {
             pub(crate) source_id: Option<String>,
         }
         impl Builder {
+            #[doc = "Azure Resource Id that will fetch all linked workbooks."]
             pub fn source_id(mut self, source_id: impl Into<String>) -> Self {
                 self.source_id = Some(source_id.into());
                 self
@@ -4347,6 +4731,11 @@ pub mod workbooks {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get all Workbooks defined within a specified subscription and category."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `category`: Category of workbook to return."]
         pub fn list_by_subscription(
             &self,
             subscription_id: impl Into<String>,
@@ -4360,6 +4749,12 @@ pub mod workbooks {
                 can_fetch_content: None,
             }
         }
+        #[doc = "Get all Workbooks defined within a specified resource group and category."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `category`: Category of workbook to return."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -4376,6 +4771,12 @@ pub mod workbooks {
                 can_fetch_content: None,
             }
         }
+        #[doc = "Get a single workbook by its resourceName."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `resource_name`: The name of the resource."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -4390,6 +4791,13 @@ pub mod workbooks {
                 can_fetch_content: None,
             }
         }
+        #[doc = "Create a new workbook."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `resource_name`: The name of the resource."]
+        #[doc = "* `workbook_properties`: Properties that need to be specified to create a new workbook."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -4406,6 +4814,12 @@ pub mod workbooks {
                 source_id: None,
             }
         }
+        #[doc = "Updates a workbook that has already been added."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `resource_name`: The name of the resource."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -4421,6 +4835,12 @@ pub mod workbooks {
                 workbook_update_parameters: None,
             }
         }
+        #[doc = "Delete a workbook."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `resource_name`: The name of the resource."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -4434,6 +4854,12 @@ pub mod workbooks {
                 resource_name: resource_name.into(),
             }
         }
+        #[doc = "Get the revisions for the workbook defined by its resourceName."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `resource_name`: The name of the resource."]
         pub fn revisions_list(
             &self,
             subscription_id: impl Into<String>,
@@ -4447,6 +4873,13 @@ pub mod workbooks {
                 resource_name: resource_name.into(),
             }
         }
+        #[doc = "Get a single workbook revision defined by its revisionId."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `resource_name`: The name of the resource."]
+        #[doc = "* `revision_id`: The id of the workbook's revision."]
         pub fn revision_get(
             &self,
             subscription_id: impl Into<String>,
@@ -4475,10 +4908,12 @@ pub mod workbooks {
             pub(crate) can_fetch_content: Option<bool>,
         }
         impl Builder {
+            #[doc = "Tags presents on each workbook returned."]
             pub fn tags(mut self, tags: Vec<String>) -> Self {
                 self.tags = tags;
                 self
             }
+            #[doc = "Flag indicating whether or not to return the full content for each applicable workbook. If false, only return summary content for workbooks."]
             pub fn can_fetch_content(mut self, can_fetch_content: bool) -> Self {
                 self.can_fetch_content = Some(can_fetch_content);
                 self
@@ -4569,14 +5004,17 @@ pub mod workbooks {
             pub(crate) can_fetch_content: Option<bool>,
         }
         impl Builder {
+            #[doc = "Tags presents on each workbook returned."]
             pub fn tags(mut self, tags: Vec<String>) -> Self {
                 self.tags = tags;
                 self
             }
+            #[doc = "Azure Resource Id that will fetch all linked workbooks."]
             pub fn source_id(mut self, source_id: impl Into<String>) -> Self {
                 self.source_id = Some(source_id.into());
                 self
             }
+            #[doc = "Flag indicating whether or not to return the full content for each applicable workbook. If false, only return summary content for workbooks."]
             pub fn can_fetch_content(mut self, can_fetch_content: bool) -> Self {
                 self.can_fetch_content = Some(can_fetch_content);
                 self
@@ -4669,6 +5107,7 @@ pub mod workbooks {
             pub(crate) can_fetch_content: Option<bool>,
         }
         impl Builder {
+            #[doc = "Flag indicating whether or not to return the full content for each applicable workbook. If false, only return summary content for workbooks."]
             pub fn can_fetch_content(mut self, can_fetch_content: bool) -> Self {
                 self.can_fetch_content = Some(can_fetch_content);
                 self
@@ -4736,6 +5175,7 @@ pub mod workbooks {
             pub(crate) source_id: Option<String>,
         }
         impl Builder {
+            #[doc = "Azure Resource Id that will fetch all linked workbooks."]
             pub fn source_id(mut self, source_id: impl Into<String>) -> Self {
                 self.source_id = Some(source_id.into());
                 self
@@ -4803,10 +5243,12 @@ pub mod workbooks {
             pub(crate) workbook_update_parameters: Option<models::WorkbookUpdateParameters>,
         }
         impl Builder {
+            #[doc = "Azure Resource Id that will fetch all linked workbooks."]
             pub fn source_id(mut self, source_id: impl Into<String>) -> Self {
                 self.source_id = Some(source_id.into());
                 self
             }
+            #[doc = "Properties that need to be specified to create a new workbook."]
             pub fn workbook_update_parameters(mut self, workbook_update_parameters: impl Into<models::WorkbookUpdateParameters>) -> Self {
                 self.workbook_update_parameters = Some(workbook_update_parameters.into());
                 self
@@ -5050,12 +5492,21 @@ pub mod components {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a list of all Application Insights components within a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets a list of Application Insights components within a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_by_resource_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -5067,6 +5518,12 @@ pub mod components {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Returns an Application Insights component."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_name`: The name of the Application Insights component resource."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -5080,6 +5537,13 @@ pub mod components {
                 resource_name: resource_name.into(),
             }
         }
+        #[doc = "Creates (or updates) an Application Insights component. Note: You cannot specify a different value for InstrumentationKey nor AppId in the Put operation."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_name`: The name of the Application Insights component resource."]
+        #[doc = "* `insight_properties`: Properties that need to be specified to create an Application Insights component."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -5095,6 +5559,13 @@ pub mod components {
                 insight_properties: insight_properties.into(),
             }
         }
+        #[doc = "Updates an existing component's tags. To update other fields use the CreateOrUpdate method."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_name`: The name of the Application Insights component resource."]
+        #[doc = "* `component_tags`: Updated tag information to set into the component instance."]
         pub fn update_tags(
             &self,
             resource_group_name: impl Into<String>,
@@ -5110,6 +5581,12 @@ pub mod components {
                 component_tags: component_tags.into(),
             }
         }
+        #[doc = "Deletes an Application Insights component."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_name`: The name of the Application Insights component resource."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -5123,6 +5600,13 @@ pub mod components {
                 resource_name: resource_name.into(),
             }
         }
+        #[doc = "Purges data in an Application Insights component by a set of user-defined filters.\n\nIn order to manage system resources, purge requests are throttled at 50 requests per hour. You should batch the execution of purge requests by sending a single command whose predicate includes all user identities that require purging. Use the in operator to specify multiple identities. You should run the query prior to using for a purge request to verify that the results are expected.\nNote: this operation is intended for Classic resources, for  workspace-based Application Insights resource please run purge operation (directly on the workspace)(https://docs.microsoft.com/en-us/rest/api/loganalytics/workspace-purge/purge) , scoped to specific resource id."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_name`: The name of the Application Insights component resource."]
+        #[doc = "* `body`: Describes the body of a request to purge data in a single table of an Application Insights component"]
         pub fn purge(
             &self,
             resource_group_name: impl Into<String>,
@@ -5138,6 +5622,13 @@ pub mod components {
                 body: body.into(),
             }
         }
+        #[doc = "Get status for an ongoing purge operation."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_name`: The name of the Application Insights component resource."]
+        #[doc = "* `purge_id`: In a purge status request, this is the Id of the operation the status of which is returned."]
         pub fn get_purge_status(
             &self,
             resource_group_name: impl Into<String>,
@@ -5630,6 +6121,13 @@ pub mod component_linked_storage_accounts {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Returns the current linked storage settings for an Application Insights component."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_name`: The name of the Application Insights component resource."]
+        #[doc = "* `storage_type`: The type of the Application Insights component data source for the linked storage account."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -5645,6 +6143,14 @@ pub mod component_linked_storage_accounts {
                 storage_type: storage_type.into(),
             }
         }
+        #[doc = "Replace current linked storage account for an Application Insights component."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_name`: The name of the Application Insights component resource."]
+        #[doc = "* `storage_type`: The type of the Application Insights component data source for the linked storage account."]
+        #[doc = "* `linked_storage_accounts_properties`: Properties that need to be specified to update linked storage accounts for an Application Insights component."]
         pub fn create_and_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -5662,6 +6168,14 @@ pub mod component_linked_storage_accounts {
                 linked_storage_accounts_properties: linked_storage_accounts_properties.into(),
             }
         }
+        #[doc = "Update linked storage accounts for an Application Insights component."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_name`: The name of the Application Insights component resource."]
+        #[doc = "* `storage_type`: The type of the Application Insights component data source for the linked storage account."]
+        #[doc = "* `linked_storage_accounts_properties`: Properties that need to be specified to update a linked storage accounts for an Application Insights component."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -5679,6 +6193,13 @@ pub mod component_linked_storage_accounts {
                 linked_storage_accounts_properties: linked_storage_accounts_properties.into(),
             }
         }
+        #[doc = "Delete linked storage accounts for an Application Insights component."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_name`: The name of the Application Insights component resource."]
+        #[doc = "* `storage_type`: The type of the Application Insights component data source for the linked storage account."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -5921,6 +6442,10 @@ pub mod live_token {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "**Gets an access token for live metrics stream data.**"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_uri`: The identifier of the resource."]
         pub fn get(&self, resource_uri: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),

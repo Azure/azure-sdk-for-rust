@@ -371,6 +371,13 @@ pub mod recoverable_databases {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a recoverable database, which is a resource representing a database's geo backup"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `database_name`: The name of the database"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -386,6 +393,12 @@ pub mod recoverable_databases {
                 database_name: database_name.into(),
             }
         }
+        #[doc = "Gets a list of recoverable databases"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
         pub fn list_by_server(
             &self,
             subscription_id: impl Into<String>,
@@ -512,6 +525,13 @@ pub mod restorable_dropped_databases {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a deleted database that can be restored"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `restorable_droppeded_database_id`: The id of the deleted database in the form of databaseName,deletionTimeInFileTimeFormat"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -527,6 +547,12 @@ pub mod restorable_dropped_databases {
                 restorable_droppeded_database_id: restorable_droppeded_database_id.into(),
             }
         }
+        #[doc = "Gets a list of deleted databases that can be restored"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
         pub fn list_by_server(
             &self,
             subscription_id: impl Into<String>,
@@ -653,6 +679,13 @@ pub mod server_connection_policies {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the server's secure connection policy."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `connection_policy_name`: The name of the connection policy."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -668,6 +701,14 @@ pub mod server_connection_policies {
                 connection_policy_name: connection_policy_name.into(),
             }
         }
+        #[doc = "Creates or updates the server's connection policy."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `connection_policy_name`: The name of the connection policy."]
+        #[doc = "* `parameters`: The required parameters for updating a secure connection policy."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -810,6 +851,14 @@ pub mod database_threat_detection_policies {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a database's threat detection policy."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `database_name`: The name of the database for which database Threat Detection policy is defined."]
+        #[doc = "* `security_alert_policy_name`: The name of the security alert policy."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -827,6 +876,15 @@ pub mod database_threat_detection_policies {
                 security_alert_policy_name: security_alert_policy_name.into(),
             }
         }
+        #[doc = "Creates or updates a database's threat detection policy."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `database_name`: The name of the database for which database Threat Detection policy is defined."]
+        #[doc = "* `security_alert_policy_name`: The name of the security alert policy."]
+        #[doc = "* `parameters`: The database Threat Detection policy."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -959,6 +1017,14 @@ pub mod data_masking_policies {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a database data masking policy."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `database_name`: The name of the database."]
+        #[doc = "* `data_masking_policy_name`: The name of the database for which the data masking rule applies."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -976,6 +1042,15 @@ pub mod data_masking_policies {
                 data_masking_policy_name: data_masking_policy_name.into(),
             }
         }
+        #[doc = "Creates or updates a database data masking policy"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `database_name`: The name of the database."]
+        #[doc = "* `data_masking_policy_name`: The name of the database for which the data masking rule applies."]
+        #[doc = "* `parameters`: Parameters for creating or updating a data masking policy."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -1115,6 +1190,16 @@ pub mod data_masking_rules {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Creates or updates a database data masking rule."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `database_name`: The name of the database."]
+        #[doc = "* `data_masking_policy_name`: The name of the database for which the data masking rule applies."]
+        #[doc = "* `data_masking_rule_name`: The name of the data masking rule."]
+        #[doc = "* `parameters`: The required parameters for creating or updating a data masking rule."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -1136,6 +1221,14 @@ pub mod data_masking_rules {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Gets a list of database data masking rules."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `database_name`: The name of the database."]
+        #[doc = "* `data_masking_policy_name`: The name of the database for which the data masking rule applies."]
         pub fn list_by_database(
             &self,
             subscription_id: impl Into<String>,
@@ -1268,6 +1361,13 @@ pub mod firewall_rules {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a firewall rule."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `firewall_rule_name`: The name of the firewall rule."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1283,6 +1383,14 @@ pub mod firewall_rules {
                 firewall_rule_name: firewall_rule_name.into(),
             }
         }
+        #[doc = "Creates or updates a firewall rule."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `firewall_rule_name`: The name of the firewall rule."]
+        #[doc = "* `parameters`: The required parameters for creating or updating a firewall rule."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -1300,6 +1408,13 @@ pub mod firewall_rules {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Deletes a firewall rule."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `firewall_rule_name`: The name of the firewall rule."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1315,6 +1430,12 @@ pub mod firewall_rules {
                 firewall_rule_name: firewall_rule_name.into(),
             }
         }
+        #[doc = "Returns a list of firewall rules."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
         pub fn list_by_server(
             &self,
             subscription_id: impl Into<String>,
@@ -1561,6 +1682,14 @@ pub mod geo_backup_policies {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a geo backup policy."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `database_name`: The name of the database."]
+        #[doc = "* `geo_backup_policy_name`: The name of the geo backup policy."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1578,6 +1707,15 @@ pub mod geo_backup_policies {
                 geo_backup_policy_name: geo_backup_policy_name.into(),
             }
         }
+        #[doc = "Updates a database geo backup policy."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `database_name`: The name of the database."]
+        #[doc = "* `geo_backup_policy_name`: The name of the geo backup policy."]
+        #[doc = "* `parameters`: The required parameters for creating or updating the geo backup policy."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -1597,6 +1735,13 @@ pub mod geo_backup_policies {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Returns a list of geo backup policies."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `database_name`: The name of the database."]
         pub fn list_by_database(
             &self,
             subscription_id: impl Into<String>,
@@ -1796,6 +1941,14 @@ pub mod databases {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Returns database metrics."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `database_name`: The name of the database."]
+        #[doc = "* `filter`: An OData filter expression that describes a subset of metrics to return."]
         pub fn list_metrics(
             &self,
             subscription_id: impl Into<String>,
@@ -1813,6 +1966,13 @@ pub mod databases {
                 filter: filter.into(),
             }
         }
+        #[doc = "Returns database metric definitions."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `database_name`: The name of the database."]
         pub fn list_metric_definitions(
             &self,
             subscription_id: impl Into<String>,
@@ -1828,6 +1988,14 @@ pub mod databases {
                 database_name: database_name.into(),
             }
         }
+        #[doc = "Exports a database."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `database_name`: The name of the database."]
+        #[doc = "* `parameters`: The database export request parameters."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn export(
             &self,
             resource_group_name: impl Into<String>,
@@ -1845,6 +2013,12 @@ pub mod databases {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets a list of databases."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn list_by_server(
             &self,
             resource_group_name: impl Into<String>,
@@ -1858,6 +2032,13 @@ pub mod databases {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets a database."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `database_name`: The name of the database."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -1873,6 +2054,14 @@ pub mod databases {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates a new database or updates an existing database."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `database_name`: The name of the database."]
+        #[doc = "* `parameters`: The requested database resource state."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -1890,6 +2079,14 @@ pub mod databases {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates an existing database."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `database_name`: The name of the database."]
+        #[doc = "* `parameters`: The requested database resource state."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -1907,6 +2104,13 @@ pub mod databases {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes the database."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `database_name`: The name of the database."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -1922,6 +2126,13 @@ pub mod databases {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets a list of databases in an elastic pool."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `elastic_pool_name`: The name of the elastic pool."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn list_by_elastic_pool(
             &self,
             resource_group_name: impl Into<String>,
@@ -1937,6 +2148,13 @@ pub mod databases {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Pauses a database."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `database_name`: The name of the database to be paused."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn pause(
             &self,
             resource_group_name: impl Into<String>,
@@ -1952,6 +2170,13 @@ pub mod databases {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Resumes a database."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `database_name`: The name of the database to be resumed."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn resume(
             &self,
             resource_group_name: impl Into<String>,
@@ -1967,6 +2192,13 @@ pub mod databases {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Failovers a database."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `database_name`: The name of the database to failover."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn failover(
             &self,
             resource_group_name: impl Into<String>,
@@ -1983,6 +2215,12 @@ pub mod databases {
                 replica_type: None,
             }
         }
+        #[doc = "Gets a list of inaccessible databases in a logical server"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn list_inaccessible_by_server(
             &self,
             resource_group_name: impl Into<String>,
@@ -1996,6 +2234,13 @@ pub mod databases {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Upgrades a data warehouse."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `database_name`: The name of the database to be upgraded."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn upgrade_data_warehouse(
             &self,
             resource_group_name: impl Into<String>,
@@ -2011,6 +2256,14 @@ pub mod databases {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Renames a database."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `database_name`: The name of the database to rename."]
+        #[doc = "* `parameters`: The resource move definition for renaming this database."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn rename(
             &self,
             resource_group_name: impl Into<String>,
@@ -2743,6 +2996,7 @@ pub mod databases {
             pub(crate) replica_type: Option<String>,
         }
         impl Builder {
+            #[doc = "The type of replica to be failed over."]
             pub fn replica_type(mut self, replica_type: impl Into<String>) -> Self {
                 self.replica_type = Some(replica_type.into());
                 self
@@ -2983,6 +3237,14 @@ pub mod elastic_pools {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Returns elastic pool  metrics."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `elastic_pool_name`: The name of the elastic pool."]
+        #[doc = "* `filter`: An OData filter expression that describes a subset of metrics to return."]
         pub fn list_metrics(
             &self,
             subscription_id: impl Into<String>,
@@ -3000,6 +3262,13 @@ pub mod elastic_pools {
                 filter: filter.into(),
             }
         }
+        #[doc = "Returns elastic pool metric definitions."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `elastic_pool_name`: The name of the elastic pool."]
         pub fn list_metric_definitions(
             &self,
             subscription_id: impl Into<String>,
@@ -3015,6 +3284,12 @@ pub mod elastic_pools {
                 elastic_pool_name: elastic_pool_name.into(),
             }
         }
+        #[doc = "Gets all elastic pools in a server."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn list_by_server(
             &self,
             resource_group_name: impl Into<String>,
@@ -3029,6 +3304,13 @@ pub mod elastic_pools {
                 skip: None,
             }
         }
+        #[doc = "Gets an elastic pool."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `elastic_pool_name`: The name of the elastic pool."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -3044,6 +3326,14 @@ pub mod elastic_pools {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates an elastic pool."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `elastic_pool_name`: The name of the elastic pool."]
+        #[doc = "* `parameters`: The elastic pool parameters."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -3061,6 +3351,14 @@ pub mod elastic_pools {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates an elastic pool."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `elastic_pool_name`: The name of the elastic pool."]
+        #[doc = "* `parameters`: The elastic pool update parameters."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -3078,6 +3376,13 @@ pub mod elastic_pools {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes an elastic pool."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `elastic_pool_name`: The name of the elastic pool."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -3093,6 +3398,13 @@ pub mod elastic_pools {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Failovers an elastic pool."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `elastic_pool_name`: The name of the elastic pool to failover."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn failover(
             &self,
             resource_group_name: impl Into<String>,
@@ -3234,6 +3546,7 @@ pub mod elastic_pools {
             pub(crate) skip: Option<i64>,
         }
         impl Builder {
+            #[doc = "The number of elements in the collection to skip."]
             pub fn skip(mut self, skip: i64) -> Self {
                 self.skip = Some(skip);
                 self
@@ -3612,6 +3925,13 @@ pub mod recommended_elastic_pools {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a recommended elastic pool."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `recommended_elastic_pool_name`: The name of the recommended elastic pool to be retrieved."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -3627,6 +3947,12 @@ pub mod recommended_elastic_pools {
                 recommended_elastic_pool_name: recommended_elastic_pool_name.into(),
             }
         }
+        #[doc = "Returns recommended elastic pools."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
         pub fn list_by_server(
             &self,
             subscription_id: impl Into<String>,
@@ -3640,6 +3966,13 @@ pub mod recommended_elastic_pools {
                 server_name: server_name.into(),
             }
         }
+        #[doc = "Returns recommended elastic pool metrics."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `recommended_elastic_pool_name`: The name of the recommended elastic pool to be retrieved."]
         pub fn list_metrics(
             &self,
             subscription_id: impl Into<String>,
@@ -3823,6 +4156,14 @@ pub mod replication_links {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a database replication link."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `database_name`: The name of the database to get the link for."]
+        #[doc = "* `link_id`: The replication link ID to be retrieved."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -3840,6 +4181,14 @@ pub mod replication_links {
                 link_id: link_id.into(),
             }
         }
+        #[doc = "Deletes a database replication link. Cannot be done during failover."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `database_name`: The name of the database that has the replication link to be dropped."]
+        #[doc = "* `link_id`: The ID of the replication link to be deleted."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -3857,6 +4206,14 @@ pub mod replication_links {
                 link_id: link_id.into(),
             }
         }
+        #[doc = "Sets which replica database is primary by failing over from the current primary replica database."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `database_name`: The name of the database that has the replication link to be failed over."]
+        #[doc = "* `link_id`: The ID of the replication link to be failed over."]
         pub fn failover(
             &self,
             subscription_id: impl Into<String>,
@@ -3874,6 +4231,14 @@ pub mod replication_links {
                 link_id: link_id.into(),
             }
         }
+        #[doc = "Sets which replica database is primary by failing over from the current primary replica database. This operation might result in data loss."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `database_name`: The name of the database that has the replication link to be failed over."]
+        #[doc = "* `link_id`: The ID of the replication link to be failed over."]
         pub fn failover_allow_data_loss(
             &self,
             subscription_id: impl Into<String>,
@@ -3891,6 +4256,15 @@ pub mod replication_links {
                 link_id: link_id.into(),
             }
         }
+        #[doc = "Deletes a database replication link in forced or friendly way."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `database_name`: The name of the database that has the replication link to be failed over."]
+        #[doc = "* `link_id`: The ID of the replication link to be failed over."]
+        #[doc = "* `parameters`: The required parameters for unlinking replication link."]
         pub fn unlink(
             &self,
             subscription_id: impl Into<String>,
@@ -3910,6 +4284,13 @@ pub mod replication_links {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Lists a database's replication links."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `database_name`: The name of the database to retrieve links for."]
         pub fn list_by_database(
             &self,
             subscription_id: impl Into<String>,
@@ -4253,6 +4634,13 @@ pub mod server_communication_links {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Returns a server communication link."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `communication_link_name`: The name of the server communication link."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -4268,6 +4656,14 @@ pub mod server_communication_links {
                 communication_link_name: communication_link_name.into(),
             }
         }
+        #[doc = "Creates a server communication link."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `communication_link_name`: The name of the server communication link."]
+        #[doc = "* `parameters`: The required parameters for creating a server communication link."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -4285,6 +4681,13 @@ pub mod server_communication_links {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Deletes a server communication link."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `communication_link_name`: The name of the server communication link."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -4300,6 +4703,12 @@ pub mod server_communication_links {
                 communication_link_name: communication_link_name.into(),
             }
         }
+        #[doc = "Gets a list of server communication links."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
         pub fn list_by_server(
             &self,
             subscription_id: impl Into<String>,
@@ -4538,6 +4947,13 @@ pub mod service_objectives {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a database service objective."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `service_objective_name`: The name of the service objective to retrieve."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -4553,6 +4969,12 @@ pub mod service_objectives {
                 service_objective_name: service_objective_name.into(),
             }
         }
+        #[doc = "Returns database service objectives."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
         pub fn list_by_server(
             &self,
             subscription_id: impl Into<String>,
@@ -4679,6 +5101,13 @@ pub mod elastic_pool_activities {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Returns elastic pool activities."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `elastic_pool_name`: The name of the elastic pool for which to get the current activity."]
         pub fn list_by_elastic_pool(
             &self,
             subscription_id: impl Into<String>,
@@ -4755,6 +5184,13 @@ pub mod elastic_pool_database_activities {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Returns activity on databases inside of an elastic pool."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `elastic_pool_name`: The name of the elastic pool."]
         pub fn list_by_elastic_pool(
             &self,
             subscription_id: impl Into<String>,
@@ -4824,6 +5260,14 @@ pub mod service_tier_advisors {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a service tier advisor."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `database_name`: The name of database."]
+        #[doc = "* `service_tier_advisor_name`: The name of service tier advisor."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -4841,6 +5285,13 @@ pub mod service_tier_advisors {
                 service_tier_advisor_name: service_tier_advisor_name.into(),
             }
         }
+        #[doc = "Returns service tier advisors for specified database."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `database_name`: The name of database."]
         pub fn list_by_database(
             &self,
             subscription_id: impl Into<String>,
@@ -4973,6 +5424,14 @@ pub mod transparent_data_encryptions {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a database's transparent data encryption configuration."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `database_name`: The name of the database for which the transparent data encryption applies."]
+        #[doc = "* `transparent_data_encryption_name`: The name of the transparent data encryption configuration."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -4990,6 +5449,15 @@ pub mod transparent_data_encryptions {
                 transparent_data_encryption_name: transparent_data_encryption_name.into(),
             }
         }
+        #[doc = "Creates or updates a database's transparent data encryption configuration."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `database_name`: The name of the database for which setting the transparent data encryption applies."]
+        #[doc = "* `transparent_data_encryption_name`: The name of the transparent data encryption configuration."]
+        #[doc = "* `parameters`: The required parameters for creating or updating transparent data encryption."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -5122,6 +5590,14 @@ pub mod transparent_data_encryption_activities {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Returns a database's transparent data encryption operation result."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `database_name`: The name of the database for which the transparent data encryption applies."]
+        #[doc = "* `transparent_data_encryption_name`: The name of the transparent data encryption configuration."]
         pub fn list_by_configuration(
             &self,
             subscription_id: impl Into<String>,
@@ -5194,6 +5670,12 @@ pub mod server_usages {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Returns server usages."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
         pub fn list_by_server(
             &self,
             subscription_id: impl Into<String>,
@@ -5266,6 +5748,13 @@ pub mod database_usages {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Returns database usages."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `database_name`: The name of the database."]
         pub fn list_by_database(
             &self,
             subscription_id: impl Into<String>,
@@ -5342,6 +5831,13 @@ pub mod database_automatic_tuning {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a database's automatic tuning."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `database_name`: The name of the database."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -5357,6 +5853,14 @@ pub mod database_automatic_tuning {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Update automatic tuning properties for target database."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `database_name`: The name of the database."]
+        #[doc = "* `parameters`: The requested automatic tuning resource state."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -5490,6 +5994,13 @@ pub mod encryption_protectors {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Revalidates an existing encryption protector."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `encryption_protector_name`: The name of the encryption protector to be updated."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn revalidate(
             &self,
             resource_group_name: impl Into<String>,
@@ -5505,6 +6016,12 @@ pub mod encryption_protectors {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets a list of server encryption protectors"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn list_by_server(
             &self,
             resource_group_name: impl Into<String>,
@@ -5518,6 +6035,13 @@ pub mod encryption_protectors {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets a server encryption protector."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `encryption_protector_name`: The name of the encryption protector to be retrieved."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -5533,6 +6057,14 @@ pub mod encryption_protectors {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates an existing encryption protector."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `encryption_protector_name`: The name of the encryption protector to be updated."]
+        #[doc = "* `parameters`: The requested encryption protector resource state."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -5807,6 +6339,13 @@ pub mod failover_groups {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a failover group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server containing the failover group."]
+        #[doc = "* `failover_group_name`: The name of the failover group."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -5822,6 +6361,14 @@ pub mod failover_groups {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates a failover group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server containing the failover group."]
+        #[doc = "* `failover_group_name`: The name of the failover group."]
+        #[doc = "* `parameters`: The failover group parameters."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -5839,6 +6386,14 @@ pub mod failover_groups {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates a failover group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server containing the failover group."]
+        #[doc = "* `failover_group_name`: The name of the failover group."]
+        #[doc = "* `parameters`: The failover group parameters."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -5856,6 +6411,13 @@ pub mod failover_groups {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes a failover group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server containing the failover group."]
+        #[doc = "* `failover_group_name`: The name of the failover group."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -5871,6 +6433,12 @@ pub mod failover_groups {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists the failover groups in a server."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server containing the failover group."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn list_by_server(
             &self,
             resource_group_name: impl Into<String>,
@@ -5884,6 +6452,13 @@ pub mod failover_groups {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Fails over from the current primary server to this server."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server containing the failover group."]
+        #[doc = "* `failover_group_name`: The name of the failover group."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn failover(
             &self,
             resource_group_name: impl Into<String>,
@@ -5899,6 +6474,13 @@ pub mod failover_groups {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Fails over from the current primary server to this server. This operation might result in data loss."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server containing the failover group."]
+        #[doc = "* `failover_group_name`: The name of the failover group."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn force_failover_allow_data_loss(
             &self,
             resource_group_name: impl Into<String>,
@@ -6355,6 +6937,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all of the available SQL Rest API operations."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -6433,6 +7016,12 @@ pub mod server_keys {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a list of server keys."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn list_by_server(
             &self,
             resource_group_name: impl Into<String>,
@@ -6446,6 +7035,13 @@ pub mod server_keys {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets a server key."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `key_name`: The name of the server key to be retrieved."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -6461,6 +7057,14 @@ pub mod server_keys {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates a server key."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `key_name`: The name of the server key to be operated on (updated or created). The key name is required to be in the format of 'vault_key_version'. For example, if the keyId is https://YourVaultName.vault.azure.net/keys/YourKeyName/01234567890123456789012345678901, then the server key name should be formatted as: YourVaultName_YourKeyName_01234567890123456789012345678901"]
+        #[doc = "* `parameters`: The requested server key resource state."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -6478,6 +7082,13 @@ pub mod server_keys {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes the server key with the given name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `key_name`: The name of the server key to be deleted."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -6757,6 +7368,13 @@ pub mod sync_agents {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a sync agent."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server on which the sync agent is hosted."]
+        #[doc = "* `sync_agent_name`: The name of the sync agent."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -6772,6 +7390,14 @@ pub mod sync_agents {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates a sync agent."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server on which the sync agent is hosted."]
+        #[doc = "* `sync_agent_name`: The name of the sync agent."]
+        #[doc = "* `parameters`: The requested sync agent resource state."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -6789,6 +7415,13 @@ pub mod sync_agents {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes a sync agent."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server on which the sync agent is hosted."]
+        #[doc = "* `sync_agent_name`: The name of the sync agent."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -6804,6 +7437,12 @@ pub mod sync_agents {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists sync agents in a server."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server on which the sync agent is hosted."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn list_by_server(
             &self,
             resource_group_name: impl Into<String>,
@@ -6817,6 +7456,13 @@ pub mod sync_agents {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Generates a sync agent key."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server on which the sync agent is hosted."]
+        #[doc = "* `sync_agent_name`: The name of the sync agent."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn generate_key(
             &self,
             resource_group_name: impl Into<String>,
@@ -6832,6 +7478,13 @@ pub mod sync_agents {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists databases linked to a sync agent."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server on which the sync agent is hosted."]
+        #[doc = "* `sync_agent_name`: The name of the sync agent."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn list_linked_databases(
             &self,
             resource_group_name: impl Into<String>,
@@ -7246,6 +7899,11 @@ pub mod subscription_usages {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets all subscription usage metrics in a given location."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `location_name`: The name of the region where the resource is located."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn list_by_location(&self, location_name: impl Into<String>, subscription_id: impl Into<String>) -> list_by_location::Builder {
             list_by_location::Builder {
                 client: self.0.clone(),
@@ -7253,6 +7911,12 @@ pub mod subscription_usages {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets a subscription usage metric."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `location_name`: The name of the region where the resource is located."]
+        #[doc = "* `usage_name`: Name of usage metric to return."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn get(
             &self,
             location_name: impl Into<String>,
@@ -7400,12 +8064,21 @@ pub mod virtual_clusters {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a list of all virtualClusters in the subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets a list of virtual clusters in a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn list_by_resource_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -7417,6 +8090,12 @@ pub mod virtual_clusters {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets a virtual cluster."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `virtual_cluster_name`: The name of the virtual cluster."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -7430,6 +8109,13 @@ pub mod virtual_clusters {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates a virtual cluster."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `virtual_cluster_name`: The name of the virtual cluster."]
+        #[doc = "* `parameters`: The requested managed instance resource state."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -7445,6 +8131,12 @@ pub mod virtual_clusters {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes a virtual cluster."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `virtual_cluster_name`: The name of the virtual cluster."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -7782,6 +8474,13 @@ pub mod virtual_network_rules {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a virtual network rule."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `virtual_network_rule_name`: The name of the virtual network rule."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -7797,6 +8496,14 @@ pub mod virtual_network_rules {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates an existing virtual network rule."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `virtual_network_rule_name`: The name of the virtual network rule."]
+        #[doc = "* `parameters`: The requested virtual Network Rule Resource state."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -7814,6 +8521,13 @@ pub mod virtual_network_rules {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes the virtual network rule with the given name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `virtual_network_rule_name`: The name of the virtual network rule."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -7829,6 +8543,12 @@ pub mod virtual_network_rules {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets a list of virtual network rules in a server."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn list_by_server(
             &self,
             resource_group_name: impl Into<String>,
@@ -8106,6 +8826,14 @@ pub mod extended_database_blob_auditing_policies {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets an extended database's blob auditing policy."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `database_name`: The name of the database."]
+        #[doc = "* `blob_auditing_policy_name`: The name of the blob auditing policy."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -8123,6 +8851,15 @@ pub mod extended_database_blob_auditing_policies {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates an extended database's blob auditing policy."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `database_name`: The name of the database."]
+        #[doc = "* `blob_auditing_policy_name`: The name of the blob auditing policy."]
+        #[doc = "* `parameters`: The extended database blob auditing policy."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -8142,6 +8879,13 @@ pub mod extended_database_blob_auditing_policies {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists extended auditing settings of a database."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `database_name`: The name of the database."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn list_by_database(
             &self,
             resource_group_name: impl Into<String>,
@@ -8343,6 +9087,13 @@ pub mod extended_server_blob_auditing_policies {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets an extended server's blob auditing policy."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `blob_auditing_policy_name`: The name of the blob auditing policy."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -8358,6 +9109,14 @@ pub mod extended_server_blob_auditing_policies {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates an extended server's blob auditing policy."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `blob_auditing_policy_name`: The name of the blob auditing policy."]
+        #[doc = "* `parameters`: Properties of extended blob auditing policy"]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -8375,6 +9134,12 @@ pub mod extended_server_blob_auditing_policies {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists extended auditing settings of a server."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn list_by_server(
             &self,
             resource_group_name: impl Into<String>,
@@ -8588,6 +9353,13 @@ pub mod server_blob_auditing_policies {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a server's blob auditing policy."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `blob_auditing_policy_name`: The name of the blob auditing policy."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -8603,6 +9375,14 @@ pub mod server_blob_auditing_policies {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates a server's blob auditing policy."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `blob_auditing_policy_name`: The name of the blob auditing policy."]
+        #[doc = "* `parameters`: Properties of blob auditing policy"]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -8620,6 +9400,12 @@ pub mod server_blob_auditing_policies {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists auditing settings of a server."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn list_by_server(
             &self,
             resource_group_name: impl Into<String>,
@@ -8833,6 +9619,14 @@ pub mod database_blob_auditing_policies {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a database's blob auditing policy."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `database_name`: The name of the database."]
+        #[doc = "* `blob_auditing_policy_name`: The name of the blob auditing policy."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -8850,6 +9644,15 @@ pub mod database_blob_auditing_policies {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates a database's blob auditing policy."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `database_name`: The name of the database."]
+        #[doc = "* `blob_auditing_policy_name`: The name of the blob auditing policy."]
+        #[doc = "* `parameters`: The database blob auditing policy."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -8869,6 +9672,13 @@ pub mod database_blob_auditing_policies {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists auditing settings of a database."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `database_name`: The name of the database."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn list_by_database(
             &self,
             resource_group_name: impl Into<String>,
@@ -9093,6 +9903,16 @@ pub mod database_vulnerability_assessment_rule_baselines {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a database's vulnerability assessment rule baseline."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `database_name`: The name of the database for which the vulnerability assessment rule baseline is defined."]
+        #[doc = "* `vulnerability_assessment_name`: The name of the vulnerability assessment."]
+        #[doc = "* `rule_id`: The vulnerability assessment rule ID."]
+        #[doc = "* `baseline_name`: The name of the vulnerability assessment rule baseline (default implies a baseline on a database level rule and master for server level rule)."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -9114,6 +9934,17 @@ pub mod database_vulnerability_assessment_rule_baselines {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates a database's vulnerability assessment rule baseline."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `database_name`: The name of the database for which the vulnerability assessment rule baseline is defined."]
+        #[doc = "* `vulnerability_assessment_name`: The name of the vulnerability assessment."]
+        #[doc = "* `rule_id`: The vulnerability assessment rule ID."]
+        #[doc = "* `baseline_name`: The name of the vulnerability assessment rule baseline (default implies a baseline on a database level rule and master for server level rule)."]
+        #[doc = "* `parameters`: The requested rule baseline resource."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -9137,6 +9968,16 @@ pub mod database_vulnerability_assessment_rule_baselines {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Removes the database's vulnerability assessment rule baseline."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `database_name`: The name of the database for which the vulnerability assessment rule baseline is defined."]
+        #[doc = "* `vulnerability_assessment_name`: The name of the vulnerability assessment."]
+        #[doc = "* `rule_id`: The vulnerability assessment rule ID."]
+        #[doc = "* `baseline_name`: The name of the vulnerability assessment rule baseline (default implies a baseline on a database level rule and master for server level rule)."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -9312,6 +10153,14 @@ pub mod database_vulnerability_assessments {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the database's vulnerability assessment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `database_name`: The name of the database for which the vulnerability assessment is defined."]
+        #[doc = "* `vulnerability_assessment_name`: The name of the vulnerability assessment."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -9329,6 +10178,15 @@ pub mod database_vulnerability_assessments {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates the database's vulnerability assessment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `database_name`: The name of the database for which the vulnerability assessment is defined."]
+        #[doc = "* `vulnerability_assessment_name`: The name of the vulnerability assessment."]
+        #[doc = "* `parameters`: The requested resource."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -9348,6 +10206,14 @@ pub mod database_vulnerability_assessments {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Removes the database's vulnerability assessment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `database_name`: The name of the database for which the vulnerability assessment is defined."]
+        #[doc = "* `vulnerability_assessment_name`: The name of the vulnerability assessment."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -9365,6 +10231,13 @@ pub mod database_vulnerability_assessments {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists the vulnerability assessment policies associated with a database."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `database_name`: The name of the database for which the vulnerability assessment policies are defined."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn list_by_database(
             &self,
             resource_group_name: impl Into<String>,
@@ -9610,6 +10483,12 @@ pub mod job_agents {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a list of job agents in a server."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn list_by_server(
             &self,
             resource_group_name: impl Into<String>,
@@ -9623,6 +10502,13 @@ pub mod job_agents {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets a job agent."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `job_agent_name`: The name of the job agent to be retrieved."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -9638,6 +10524,14 @@ pub mod job_agents {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates a job agent."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `job_agent_name`: The name of the job agent to be created or updated."]
+        #[doc = "* `parameters`: The requested job agent resource state."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -9655,6 +10549,14 @@ pub mod job_agents {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates a job agent."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `job_agent_name`: The name of the job agent to be updated."]
+        #[doc = "* `parameters`: The update to the job agent."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -9672,6 +10574,13 @@ pub mod job_agents {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes a job agent."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `job_agent_name`: The name of the job agent to be deleted."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -10013,6 +10922,13 @@ pub mod job_credentials {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a list of jobs credentials."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `job_agent_name`: The name of the job agent."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn list_by_agent(
             &self,
             resource_group_name: impl Into<String>,
@@ -10028,6 +10944,14 @@ pub mod job_credentials {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets a jobs credential."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `job_agent_name`: The name of the job agent."]
+        #[doc = "* `credential_name`: The name of the credential."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -10045,6 +10969,15 @@ pub mod job_credentials {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates a job credential."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `job_agent_name`: The name of the job agent."]
+        #[doc = "* `credential_name`: The name of the credential."]
+        #[doc = "* `parameters`: The requested job credential state."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -10064,6 +10997,14 @@ pub mod job_credentials {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes a job credential."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `job_agent_name`: The name of the job agent."]
+        #[doc = "* `credential_name`: The name of the credential."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -10347,6 +11288,13 @@ pub mod job_executions {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all executions in a job agent."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `job_agent_name`: The name of the job agent."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn list_by_agent(
             &self,
             resource_group_name: impl Into<String>,
@@ -10369,6 +11317,15 @@ pub mod job_executions {
                 top: None,
             }
         }
+        #[doc = "Requests cancellation of a job execution."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `job_agent_name`: The name of the job agent."]
+        #[doc = "* `job_name`: The name of the job."]
+        #[doc = "* `job_execution_id`: The id of the job execution to cancel."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn cancel(
             &self,
             resource_group_name: impl Into<String>,
@@ -10388,6 +11345,14 @@ pub mod job_executions {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Starts an elastic job execution."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `job_agent_name`: The name of the job agent."]
+        #[doc = "* `job_name`: The name of the job to get."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn create(
             &self,
             resource_group_name: impl Into<String>,
@@ -10405,6 +11370,14 @@ pub mod job_executions {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists a job's executions."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `job_agent_name`: The name of the job agent."]
+        #[doc = "* `job_name`: The name of the job to get."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn list_by_job(
             &self,
             resource_group_name: impl Into<String>,
@@ -10429,6 +11402,15 @@ pub mod job_executions {
                 top: None,
             }
         }
+        #[doc = "Gets a job execution."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `job_agent_name`: The name of the job agent."]
+        #[doc = "* `job_name`: The name of the job."]
+        #[doc = "* `job_execution_id`: The id of the job execution"]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -10448,6 +11430,15 @@ pub mod job_executions {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates a job execution."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `job_agent_name`: The name of the job agent."]
+        #[doc = "* `job_name`: The name of the job to get."]
+        #[doc = "* `job_execution_id`: The job execution id to create the job execution under."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -10487,30 +11478,37 @@ pub mod job_executions {
             pub(crate) top: Option<i64>,
         }
         impl Builder {
+            #[doc = "If specified, only job executions created at or after the specified time are included."]
             pub fn create_time_min(mut self, create_time_min: impl Into<String>) -> Self {
                 self.create_time_min = Some(create_time_min.into());
                 self
             }
+            #[doc = "If specified, only job executions created before the specified time are included."]
             pub fn create_time_max(mut self, create_time_max: impl Into<String>) -> Self {
                 self.create_time_max = Some(create_time_max.into());
                 self
             }
+            #[doc = "If specified, only job executions completed at or after the specified time are included."]
             pub fn end_time_min(mut self, end_time_min: impl Into<String>) -> Self {
                 self.end_time_min = Some(end_time_min.into());
                 self
             }
+            #[doc = "If specified, only job executions completed before the specified time are included."]
             pub fn end_time_max(mut self, end_time_max: impl Into<String>) -> Self {
                 self.end_time_max = Some(end_time_max.into());
                 self
             }
+            #[doc = "If specified, only active or only completed job executions are included."]
             pub fn is_active(mut self, is_active: bool) -> Self {
                 self.is_active = Some(is_active);
                 self
             }
+            #[doc = "The number of elements in the collection to skip."]
             pub fn skip(mut self, skip: i64) -> Self {
                 self.skip = Some(skip);
                 self
             }
+            #[doc = "The number of elements to return from the collection."]
             pub fn top(mut self, top: i64) -> Self {
                 self.top = Some(top);
                 self
@@ -10733,30 +11731,37 @@ pub mod job_executions {
             pub(crate) top: Option<i64>,
         }
         impl Builder {
+            #[doc = "If specified, only job executions created at or after the specified time are included."]
             pub fn create_time_min(mut self, create_time_min: impl Into<String>) -> Self {
                 self.create_time_min = Some(create_time_min.into());
                 self
             }
+            #[doc = "If specified, only job executions created before the specified time are included."]
             pub fn create_time_max(mut self, create_time_max: impl Into<String>) -> Self {
                 self.create_time_max = Some(create_time_max.into());
                 self
             }
+            #[doc = "If specified, only job executions completed at or after the specified time are included."]
             pub fn end_time_min(mut self, end_time_min: impl Into<String>) -> Self {
                 self.end_time_min = Some(end_time_min.into());
                 self
             }
+            #[doc = "If specified, only job executions completed before the specified time are included."]
             pub fn end_time_max(mut self, end_time_max: impl Into<String>) -> Self {
                 self.end_time_max = Some(end_time_max.into());
                 self
             }
+            #[doc = "If specified, only active or only completed job executions are included."]
             pub fn is_active(mut self, is_active: bool) -> Self {
                 self.is_active = Some(is_active);
                 self
             }
+            #[doc = "The number of elements in the collection to skip."]
             pub fn skip(mut self, skip: i64) -> Self {
                 self.skip = Some(skip);
                 self
             }
+            #[doc = "The number of elements to return from the collection."]
             pub fn top(mut self, top: i64) -> Self {
                 self.top = Some(top);
                 self
@@ -10984,6 +11989,13 @@ pub mod jobs {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a list of jobs."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `job_agent_name`: The name of the job agent."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn list_by_agent(
             &self,
             resource_group_name: impl Into<String>,
@@ -10999,6 +12011,14 @@ pub mod jobs {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets a job."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `job_agent_name`: The name of the job agent."]
+        #[doc = "* `job_name`: The name of the job to get."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -11016,6 +12036,15 @@ pub mod jobs {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates a job."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `job_agent_name`: The name of the job agent."]
+        #[doc = "* `job_name`: The name of the job to get."]
+        #[doc = "* `parameters`: The requested job state."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -11035,6 +12064,14 @@ pub mod jobs {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes a job."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `job_agent_name`: The name of the job agent."]
+        #[doc = "* `job_name`: The name of the job to delete."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -11318,6 +12355,15 @@ pub mod job_step_executions {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists the step executions of a job execution."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `job_agent_name`: The name of the job agent."]
+        #[doc = "* `job_name`: The name of the job to get."]
+        #[doc = "* `job_execution_id`: The id of the job execution"]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn list_by_job_execution(
             &self,
             resource_group_name: impl Into<String>,
@@ -11344,6 +12390,16 @@ pub mod job_step_executions {
                 top: None,
             }
         }
+        #[doc = "Gets a step execution of a job execution."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `job_agent_name`: The name of the job agent."]
+        #[doc = "* `job_name`: The name of the job to get."]
+        #[doc = "* `job_execution_id`: The unique id of the job execution"]
+        #[doc = "* `step_name`: The name of the step."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -11387,30 +12443,37 @@ pub mod job_step_executions {
             pub(crate) top: Option<i64>,
         }
         impl Builder {
+            #[doc = "If specified, only job executions created at or after the specified time are included."]
             pub fn create_time_min(mut self, create_time_min: impl Into<String>) -> Self {
                 self.create_time_min = Some(create_time_min.into());
                 self
             }
+            #[doc = "If specified, only job executions created before the specified time are included."]
             pub fn create_time_max(mut self, create_time_max: impl Into<String>) -> Self {
                 self.create_time_max = Some(create_time_max.into());
                 self
             }
+            #[doc = "If specified, only job executions completed at or after the specified time are included."]
             pub fn end_time_min(mut self, end_time_min: impl Into<String>) -> Self {
                 self.end_time_min = Some(end_time_min.into());
                 self
             }
+            #[doc = "If specified, only job executions completed before the specified time are included."]
             pub fn end_time_max(mut self, end_time_max: impl Into<String>) -> Self {
                 self.end_time_max = Some(end_time_max.into());
                 self
             }
+            #[doc = "If specified, only active or only completed job executions are included."]
             pub fn is_active(mut self, is_active: bool) -> Self {
                 self.is_active = Some(is_active);
                 self
             }
+            #[doc = "The number of elements in the collection to skip."]
             pub fn skip(mut self, skip: i64) -> Self {
                 self.skip = Some(skip);
                 self
             }
+            #[doc = "The number of elements to return from the collection."]
             pub fn top(mut self, top: i64) -> Self {
                 self.top = Some(top);
                 self
@@ -11552,6 +12615,15 @@ pub mod job_steps {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets all job steps in the specified job version."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `job_agent_name`: The name of the job agent."]
+        #[doc = "* `job_name`: The name of the job to get."]
+        #[doc = "* `job_version`: The version of the job to get."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn list_by_version(
             &self,
             resource_group_name: impl Into<String>,
@@ -11571,6 +12643,16 @@ pub mod job_steps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the specified version of a job step."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `job_agent_name`: The name of the job agent."]
+        #[doc = "* `job_name`: The name of the job."]
+        #[doc = "* `job_version`: The version of the job to get."]
+        #[doc = "* `step_name`: The name of the job step."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn get_by_version(
             &self,
             resource_group_name: impl Into<String>,
@@ -11592,6 +12674,14 @@ pub mod job_steps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets all job steps for a job's current version."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `job_agent_name`: The name of the job agent."]
+        #[doc = "* `job_name`: The name of the job to get."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn list_by_job(
             &self,
             resource_group_name: impl Into<String>,
@@ -11609,6 +12699,15 @@ pub mod job_steps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets a job step in a job's current version."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `job_agent_name`: The name of the job agent."]
+        #[doc = "* `job_name`: The name of the job."]
+        #[doc = "* `step_name`: The name of the job step."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -11628,6 +12727,16 @@ pub mod job_steps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates a job step. This will implicitly create a new job version."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `job_agent_name`: The name of the job agent."]
+        #[doc = "* `job_name`: The name of the job."]
+        #[doc = "* `step_name`: The name of the job step."]
+        #[doc = "* `parameters`: The requested state of the job step."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -11649,6 +12758,15 @@ pub mod job_steps {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes a job step. This will implicitly create a new job version."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `job_agent_name`: The name of the job agent."]
+        #[doc = "* `job_name`: The name of the job."]
+        #[doc = "* `step_name`: The name of the job step to delete."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -12067,6 +13185,15 @@ pub mod job_target_executions {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists target executions for all steps of a job execution."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `job_agent_name`: The name of the job agent."]
+        #[doc = "* `job_name`: The name of the job to get."]
+        #[doc = "* `job_execution_id`: The id of the job execution"]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn list_by_job_execution(
             &self,
             resource_group_name: impl Into<String>,
@@ -12093,6 +13220,16 @@ pub mod job_target_executions {
                 top: None,
             }
         }
+        #[doc = "Lists the target executions of a job step execution."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `job_agent_name`: The name of the job agent."]
+        #[doc = "* `job_name`: The name of the job to get."]
+        #[doc = "* `job_execution_id`: The id of the job execution"]
+        #[doc = "* `step_name`: The name of the step."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn list_by_step(
             &self,
             resource_group_name: impl Into<String>,
@@ -12121,6 +13258,17 @@ pub mod job_target_executions {
                 top: None,
             }
         }
+        #[doc = "Gets a target execution."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `job_agent_name`: The name of the job agent."]
+        #[doc = "* `job_name`: The name of the job to get."]
+        #[doc = "* `job_execution_id`: The unique id of the job execution"]
+        #[doc = "* `step_name`: The name of the step."]
+        #[doc = "* `target_id`: The target id."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -12166,30 +13314,37 @@ pub mod job_target_executions {
             pub(crate) top: Option<i64>,
         }
         impl Builder {
+            #[doc = "If specified, only job executions created at or after the specified time are included."]
             pub fn create_time_min(mut self, create_time_min: impl Into<String>) -> Self {
                 self.create_time_min = Some(create_time_min.into());
                 self
             }
+            #[doc = "If specified, only job executions created before the specified time are included."]
             pub fn create_time_max(mut self, create_time_max: impl Into<String>) -> Self {
                 self.create_time_max = Some(create_time_max.into());
                 self
             }
+            #[doc = "If specified, only job executions completed at or after the specified time are included."]
             pub fn end_time_min(mut self, end_time_min: impl Into<String>) -> Self {
                 self.end_time_min = Some(end_time_min.into());
                 self
             }
+            #[doc = "If specified, only job executions completed before the specified time are included."]
             pub fn end_time_max(mut self, end_time_max: impl Into<String>) -> Self {
                 self.end_time_max = Some(end_time_max.into());
                 self
             }
+            #[doc = "If specified, only active or only completed job executions are included."]
             pub fn is_active(mut self, is_active: bool) -> Self {
                 self.is_active = Some(is_active);
                 self
             }
+            #[doc = "The number of elements in the collection to skip."]
             pub fn skip(mut self, skip: i64) -> Self {
                 self.skip = Some(skip);
                 self
             }
+            #[doc = "The number of elements to return from the collection."]
             pub fn top(mut self, top: i64) -> Self {
                 self.top = Some(top);
                 self
@@ -12298,30 +13453,37 @@ pub mod job_target_executions {
             pub(crate) top: Option<i64>,
         }
         impl Builder {
+            #[doc = "If specified, only job executions created at or after the specified time are included."]
             pub fn create_time_min(mut self, create_time_min: impl Into<String>) -> Self {
                 self.create_time_min = Some(create_time_min.into());
                 self
             }
+            #[doc = "If specified, only job executions created before the specified time are included."]
             pub fn create_time_max(mut self, create_time_max: impl Into<String>) -> Self {
                 self.create_time_max = Some(create_time_max.into());
                 self
             }
+            #[doc = "If specified, only job executions completed at or after the specified time are included."]
             pub fn end_time_min(mut self, end_time_min: impl Into<String>) -> Self {
                 self.end_time_min = Some(end_time_min.into());
                 self
             }
+            #[doc = "If specified, only job executions completed before the specified time are included."]
             pub fn end_time_max(mut self, end_time_max: impl Into<String>) -> Self {
                 self.end_time_max = Some(end_time_max.into());
                 self
             }
+            #[doc = "If specified, only active or only completed job executions are included."]
             pub fn is_active(mut self, is_active: bool) -> Self {
                 self.is_active = Some(is_active);
                 self
             }
+            #[doc = "The number of elements in the collection to skip."]
             pub fn skip(mut self, skip: i64) -> Self {
                 self.skip = Some(skip);
                 self
             }
+            #[doc = "The number of elements to return from the collection."]
             pub fn top(mut self, top: i64) -> Self {
                 self.top = Some(top);
                 self
@@ -12464,6 +13626,13 @@ pub mod job_target_groups {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets all target groups in an agent."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `job_agent_name`: The name of the job agent."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn list_by_agent(
             &self,
             resource_group_name: impl Into<String>,
@@ -12479,6 +13648,14 @@ pub mod job_target_groups {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets a target group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `job_agent_name`: The name of the job agent."]
+        #[doc = "* `target_group_name`: The name of the target group."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -12496,6 +13673,15 @@ pub mod job_target_groups {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates a target group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `job_agent_name`: The name of the job agent."]
+        #[doc = "* `target_group_name`: The name of the target group."]
+        #[doc = "* `parameters`: The requested state of the target group."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -12515,6 +13701,14 @@ pub mod job_target_groups {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes a target group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `job_agent_name`: The name of the job agent."]
+        #[doc = "* `target_group_name`: The name of the target group."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -12798,6 +13992,14 @@ pub mod job_versions {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets all versions of a job."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `job_agent_name`: The name of the job agent."]
+        #[doc = "* `job_name`: The name of the job to get."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn list_by_job(
             &self,
             resource_group_name: impl Into<String>,
@@ -12815,6 +14017,15 @@ pub mod job_versions {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets a job version."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `job_agent_name`: The name of the job agent."]
+        #[doc = "* `job_name`: The name of the job."]
+        #[doc = "* `job_version`: The version of the job to get."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -12980,6 +14191,14 @@ pub mod managed_backup_short_term_retention_policies {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a managed database's short term retention policy."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `managed_instance_name`: The name of the managed instance."]
+        #[doc = "* `database_name`: The name of the database."]
+        #[doc = "* `policy_name`: The policy name."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -12997,6 +14216,15 @@ pub mod managed_backup_short_term_retention_policies {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates a managed database's short term retention policy."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `managed_instance_name`: The name of the managed instance."]
+        #[doc = "* `database_name`: The name of the database."]
+        #[doc = "* `policy_name`: The policy name. Should always be \"default\"."]
+        #[doc = "* `parameters`: The short term retention policy info."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -13016,6 +14244,15 @@ pub mod managed_backup_short_term_retention_policies {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates a managed database's short term retention policy."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `managed_instance_name`: The name of the managed instance."]
+        #[doc = "* `database_name`: The name of the database."]
+        #[doc = "* `policy_name`: The policy name. Should always be \"default\"."]
+        #[doc = "* `parameters`: The short term retention policy info."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -13035,6 +14272,13 @@ pub mod managed_backup_short_term_retention_policies {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets a managed database's short term retention policy list."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `managed_instance_name`: The name of the managed instance."]
+        #[doc = "* `database_name`: The name of the database."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn list_by_database(
             &self,
             resource_group_name: impl Into<String>,
@@ -13289,6 +14533,13 @@ pub mod managed_restorable_dropped_database_backup_short_term_retention_policies
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a dropped database's short term retention policy."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `managed_instance_name`: The name of the managed instance."]
+        #[doc = "* `policy_name`: The policy name."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -13306,6 +14557,14 @@ pub mod managed_restorable_dropped_database_backup_short_term_retention_policies
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Sets a database's long term retention policy."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `managed_instance_name`: The name of the managed instance."]
+        #[doc = "* `policy_name`: The policy name. Should always be \"default\"."]
+        #[doc = "* `parameters`: The long term retention policy info."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -13325,6 +14584,14 @@ pub mod managed_restorable_dropped_database_backup_short_term_retention_policies
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Sets a database's long term retention policy."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `managed_instance_name`: The name of the managed instance."]
+        #[doc = "* `policy_name`: The policy name. Should always be \"default\"."]
+        #[doc = "* `parameters`: The long term retention policy info."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -13344,6 +14611,12 @@ pub mod managed_restorable_dropped_database_backup_short_term_retention_policies
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets a dropped database's short term retention policy list."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `managed_instance_name`: The name of the managed instance."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn list_by_restorable_dropped_database(
             &self,
             resource_group_name: impl Into<String>,
@@ -13598,6 +14871,12 @@ pub mod server_automatic_tuning {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieves server automatic tuning options."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -13611,6 +14890,13 @@ pub mod server_automatic_tuning {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Update automatic tuning options on server."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `parameters`: The requested automatic tuning resource state."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -13738,6 +15024,13 @@ pub mod server_dns_aliases {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a server DNS alias."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server that the alias is pointing to."]
+        #[doc = "* `dns_alias_name`: The name of the server DNS alias."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -13753,6 +15046,13 @@ pub mod server_dns_aliases {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates a server dns alias."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server that the alias is pointing to."]
+        #[doc = "* `dns_alias_name`: The name of the server DNS alias."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -13768,6 +15068,13 @@ pub mod server_dns_aliases {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes the server DNS alias with the given name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server that the alias is pointing to."]
+        #[doc = "* `dns_alias_name`: The name of the server DNS alias."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -13783,6 +15090,12 @@ pub mod server_dns_aliases {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets a list of server DNS aliases for a server."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server that the alias is pointing to."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn list_by_server(
             &self,
             resource_group_name: impl Into<String>,
@@ -13796,6 +15109,13 @@ pub mod server_dns_aliases {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Acquires server DNS alias from another server."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server that the alias is pointing to."]
+        #[doc = "* `dns_alias_name`: The name of the server dns alias."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn acquire(
             &self,
             resource_group_name: impl Into<String>,
@@ -14133,6 +15453,13 @@ pub mod server_security_alert_policies {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get a server's security alert policy."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `security_alert_policy_name`: The name of the security alert policy."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -14148,6 +15475,14 @@ pub mod server_security_alert_policies {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates a threat detection policy."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `security_alert_policy_name`: The name of the threat detection policy."]
+        #[doc = "* `parameters`: The server security alert policy."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -14165,6 +15500,12 @@ pub mod server_security_alert_policies {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get the server's threat detection policies."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn list_by_server(
             &self,
             resource_group_name: impl Into<String>,
@@ -14378,6 +15719,12 @@ pub mod restorable_dropped_managed_databases {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a list of restorable dropped managed databases."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `managed_instance_name`: The name of the managed instance."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn list_by_instance(
             &self,
             resource_group_name: impl Into<String>,
@@ -14391,6 +15738,12 @@ pub mod restorable_dropped_managed_databases {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets a restorable dropped managed database."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `managed_instance_name`: The name of the managed instance."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -14537,6 +15890,13 @@ pub mod restore_points {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a list of database restore points."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `database_name`: The name of the database."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn list_by_database(
             &self,
             resource_group_name: impl Into<String>,
@@ -14552,6 +15912,14 @@ pub mod restore_points {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates a restore point for a data warehouse."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `database_name`: The name of the database."]
+        #[doc = "* `parameters`: The definition for creating the restore point of this database."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn create(
             &self,
             resource_group_name: impl Into<String>,
@@ -14569,6 +15937,14 @@ pub mod restore_points {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets a restore point."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `database_name`: The name of the database."]
+        #[doc = "* `restore_point_name`: The name of the restore point."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -14586,6 +15962,14 @@ pub mod restore_points {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes a restore point."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `database_name`: The name of the database."]
+        #[doc = "* `restore_point_name`: The name of the restore point."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -14840,6 +16224,14 @@ pub mod managed_database_security_alert_policies {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a managed database's security alert policy."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `managed_instance_name`: The name of the managed instance."]
+        #[doc = "* `database_name`: The name of the managed database for which the security alert policy is defined."]
+        #[doc = "* `security_alert_policy_name`: The name of the security alert policy."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -14857,6 +16249,15 @@ pub mod managed_database_security_alert_policies {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates a database's security alert policy."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `managed_instance_name`: The name of the managed instance."]
+        #[doc = "* `database_name`: The name of the managed database for which the security alert policy is defined."]
+        #[doc = "* `security_alert_policy_name`: The name of the security alert policy."]
+        #[doc = "* `parameters`: The database security alert policy."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -14876,6 +16277,13 @@ pub mod managed_database_security_alert_policies {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets a list of managed database's security alert policies."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `managed_instance_name`: The name of the managed instance."]
+        #[doc = "* `database_name`: The name of the managed database for which the security alert policies are defined."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn list_by_database(
             &self,
             resource_group_name: impl Into<String>,
@@ -15077,6 +16485,13 @@ pub mod managed_server_security_alert_policies {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get a managed server's threat detection policy."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `managed_instance_name`: The name of the managed instance."]
+        #[doc = "* `security_alert_policy_name`: The name of the security alert policy."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -15092,6 +16507,14 @@ pub mod managed_server_security_alert_policies {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates a threat detection policy."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `managed_instance_name`: The name of the managed instance."]
+        #[doc = "* `security_alert_policy_name`: The name of the security alert policy."]
+        #[doc = "* `parameters`: The managed server security alert policy."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -15109,6 +16532,12 @@ pub mod managed_server_security_alert_policies {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get the managed server's threat detection policies."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `managed_instance_name`: The name of the managed instance."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn list_by_instance(
             &self,
             resource_group_name: impl Into<String>,
@@ -15322,6 +16751,13 @@ pub mod sensitivity_labels {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the sensitivity labels of a given database"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `database_name`: The name of the database."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn list_current_by_database(
             &self,
             resource_group_name: impl Into<String>,
@@ -15338,6 +16774,13 @@ pub mod sensitivity_labels {
                 filter: None,
             }
         }
+        #[doc = "Gets the sensitivity labels of a given database"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `database_name`: The name of the database."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn list_recommended_by_database(
             &self,
             resource_group_name: impl Into<String>,
@@ -15356,6 +16799,16 @@ pub mod sensitivity_labels {
                 filter: None,
             }
         }
+        #[doc = "Enables sensitivity recommendations on a given column (recommendations are enabled by default on all columns)"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `database_name`: The name of the database."]
+        #[doc = "* `schema_name`: The name of the schema."]
+        #[doc = "* `table_name`: The name of the table."]
+        #[doc = "* `column_name`: The name of the column."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn enable_recommendation(
             &self,
             resource_group_name: impl Into<String>,
@@ -15379,6 +16832,16 @@ pub mod sensitivity_labels {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Disables sensitivity recommendations on a given column"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `database_name`: The name of the database."]
+        #[doc = "* `schema_name`: The name of the schema."]
+        #[doc = "* `table_name`: The name of the table."]
+        #[doc = "* `column_name`: The name of the column."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn disable_recommendation(
             &self,
             resource_group_name: impl Into<String>,
@@ -15402,6 +16865,17 @@ pub mod sensitivity_labels {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the sensitivity label of a given column"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `database_name`: The name of the database."]
+        #[doc = "* `schema_name`: The name of the schema."]
+        #[doc = "* `table_name`: The name of the table."]
+        #[doc = "* `column_name`: The name of the column."]
+        #[doc = "* `sensitivity_label_source`: The source of the sensitivity label."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -15425,6 +16899,18 @@ pub mod sensitivity_labels {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates the sensitivity label of a given column"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `database_name`: The name of the database."]
+        #[doc = "* `schema_name`: The name of the schema."]
+        #[doc = "* `table_name`: The name of the table."]
+        #[doc = "* `column_name`: The name of the column."]
+        #[doc = "* `sensitivity_label_source`: The source of the sensitivity label."]
+        #[doc = "* `parameters`: The column sensitivity label resource."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -15450,6 +16936,17 @@ pub mod sensitivity_labels {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes the sensitivity label of a given column"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `database_name`: The name of the database."]
+        #[doc = "* `schema_name`: The name of the schema."]
+        #[doc = "* `table_name`: The name of the table."]
+        #[doc = "* `column_name`: The name of the column."]
+        #[doc = "* `sensitivity_label_source`: The source of the sensitivity label."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -15487,6 +16984,7 @@ pub mod sensitivity_labels {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "An OData filter expression that filters elements in the collection."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -15570,6 +17068,7 @@ pub mod sensitivity_labels {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "Specifies whether to include disabled recommendations or not."]
             pub fn include_disabled_recommendations(mut self, include_disabled_recommendations: bool) -> Self {
                 self.include_disabled_recommendations = Some(include_disabled_recommendations);
                 self
@@ -15578,6 +17077,7 @@ pub mod sensitivity_labels {
                 self.skip_token = Some(skip_token.into());
                 self
             }
+            #[doc = "An OData filter expression that filters elements in the collection."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -15915,6 +17415,12 @@ pub mod managed_instance_administrators {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a list of managed instance administrators."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `managed_instance_name`: The name of the managed instance."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn list_by_instance(
             &self,
             resource_group_name: impl Into<String>,
@@ -15928,6 +17434,13 @@ pub mod managed_instance_administrators {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets a managed instance administrator."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `managed_instance_name`: The name of the managed instance."]
+        #[doc = "* `administrator_name`: The administrator name."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -15943,6 +17456,14 @@ pub mod managed_instance_administrators {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates a managed instance administrator."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `managed_instance_name`: The name of the managed instance."]
+        #[doc = "* `administrator_name`: The requested administrator name."]
+        #[doc = "* `parameters`: The requested administrator parameters."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -15960,6 +17481,13 @@ pub mod managed_instance_administrators {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes a managed instance administrator."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `managed_instance_name`: The name of the managed instance."]
+        #[doc = "* `administrator_name`: The administrator name."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -16237,6 +17765,14 @@ pub mod database_operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Cancels the asynchronous operation on the database."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `database_name`: The name of the database."]
+        #[doc = "* `operation_id`: The operation identifier."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn cancel(
             &self,
             resource_group_name: impl Into<String>,
@@ -16254,6 +17790,13 @@ pub mod database_operations {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets a list of operations performed on the database."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `database_name`: The name of the database."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn list_by_database(
             &self,
             resource_group_name: impl Into<String>,
@@ -16408,6 +17951,13 @@ pub mod elastic_pool_operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Cancels the asynchronous operation on the elastic pool."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `operation_id`: The operation identifier."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn cancel(
             &self,
             resource_group_name: impl Into<String>,
@@ -16425,6 +17975,12 @@ pub mod elastic_pool_operations {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets a list of operations performed on the elastic pool."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn list_by_elastic_pool(
             &self,
             resource_group_name: impl Into<String>,
@@ -16579,6 +18135,14 @@ pub mod database_vulnerability_assessment_scans {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists the vulnerability assessment scans of a database."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `database_name`: The name of the database."]
+        #[doc = "* `vulnerability_assessment_name`: The name of the vulnerability assessment."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn list_by_database(
             &self,
             resource_group_name: impl Into<String>,
@@ -16596,6 +18160,15 @@ pub mod database_vulnerability_assessment_scans {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets a vulnerability assessment scan record of a database."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `database_name`: The name of the database."]
+        #[doc = "* `vulnerability_assessment_name`: The name of the vulnerability assessment."]
+        #[doc = "* `scan_id`: The vulnerability assessment scan Id of the scan to retrieve."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -16615,6 +18188,15 @@ pub mod database_vulnerability_assessment_scans {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Executes a Vulnerability Assessment database scan."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `database_name`: The name of the database."]
+        #[doc = "* `vulnerability_assessment_name`: The name of the vulnerability assessment."]
+        #[doc = "* `scan_id`: The vulnerability assessment scan Id of the scan to retrieve."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn initiate_scan(
             &self,
             resource_group_name: impl Into<String>,
@@ -16634,6 +18216,15 @@ pub mod database_vulnerability_assessment_scans {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Convert an existing scan result to a human readable format. If already exists nothing happens"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `database_name`: The name of the scanned database."]
+        #[doc = "* `vulnerability_assessment_name`: The name of the vulnerability assessment."]
+        #[doc = "* `scan_id`: The vulnerability assessment scan Id."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn export(
             &self,
             resource_group_name: impl Into<String>,
@@ -16893,6 +18484,16 @@ pub mod managed_database_vulnerability_assessment_rule_baselines {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a database's vulnerability assessment rule baseline."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `managed_instance_name`: The name of the managed instance."]
+        #[doc = "* `database_name`: The name of the database for which the vulnerability assessment rule baseline is defined."]
+        #[doc = "* `vulnerability_assessment_name`: The name of the vulnerability assessment."]
+        #[doc = "* `rule_id`: The vulnerability assessment rule ID."]
+        #[doc = "* `baseline_name`: The name of the vulnerability assessment rule baseline (default implies a baseline on a database level rule and master for server level rule)."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -16914,6 +18515,17 @@ pub mod managed_database_vulnerability_assessment_rule_baselines {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates a database's vulnerability assessment rule baseline."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `managed_instance_name`: The name of the managed instance."]
+        #[doc = "* `database_name`: The name of the database for which the vulnerability assessment rule baseline is defined."]
+        #[doc = "* `vulnerability_assessment_name`: The name of the vulnerability assessment."]
+        #[doc = "* `rule_id`: The vulnerability assessment rule ID."]
+        #[doc = "* `baseline_name`: The name of the vulnerability assessment rule baseline (default implies a baseline on a database level rule and master for server level rule)."]
+        #[doc = "* `parameters`: The requested rule baseline resource."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -16937,6 +18549,16 @@ pub mod managed_database_vulnerability_assessment_rule_baselines {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Removes the database's vulnerability assessment rule baseline."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `managed_instance_name`: The name of the managed instance."]
+        #[doc = "* `database_name`: The name of the database for which the vulnerability assessment rule baseline is defined."]
+        #[doc = "* `vulnerability_assessment_name`: The name of the vulnerability assessment."]
+        #[doc = "* `rule_id`: The vulnerability assessment rule ID."]
+        #[doc = "* `baseline_name`: The name of the vulnerability assessment rule baseline (default implies a baseline on a database level rule and master for server level rule)."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -17112,6 +18734,14 @@ pub mod managed_database_vulnerability_assessment_scans {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists the vulnerability assessment scans of a database."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `managed_instance_name`: The name of the managed instance."]
+        #[doc = "* `database_name`: The name of the database."]
+        #[doc = "* `vulnerability_assessment_name`: The name of the vulnerability assessment."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn list_by_database(
             &self,
             resource_group_name: impl Into<String>,
@@ -17129,6 +18759,15 @@ pub mod managed_database_vulnerability_assessment_scans {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets a vulnerability assessment scan record of a database."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `managed_instance_name`: The name of the managed instance."]
+        #[doc = "* `database_name`: The name of the database."]
+        #[doc = "* `vulnerability_assessment_name`: The name of the vulnerability assessment."]
+        #[doc = "* `scan_id`: The vulnerability assessment scan Id of the scan to retrieve."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -17148,6 +18787,15 @@ pub mod managed_database_vulnerability_assessment_scans {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Executes a Vulnerability Assessment database scan."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `managed_instance_name`: The name of the managed instance."]
+        #[doc = "* `database_name`: The name of the database."]
+        #[doc = "* `vulnerability_assessment_name`: The name of the vulnerability assessment."]
+        #[doc = "* `scan_id`: The vulnerability assessment scan Id of the scan to retrieve."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn initiate_scan(
             &self,
             resource_group_name: impl Into<String>,
@@ -17167,6 +18815,15 @@ pub mod managed_database_vulnerability_assessment_scans {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Convert an existing scan result to a human readable format. If already exists nothing happens"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `managed_instance_name`: The name of the managed instance."]
+        #[doc = "* `database_name`: The name of the scanned database."]
+        #[doc = "* `vulnerability_assessment_name`: The name of the vulnerability assessment."]
+        #[doc = "* `scan_id`: The vulnerability assessment scan Id."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn export(
             &self,
             resource_group_name: impl Into<String>,
@@ -17426,6 +19083,14 @@ pub mod managed_database_vulnerability_assessments {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the database's vulnerability assessment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `managed_instance_name`: The name of the managed instance."]
+        #[doc = "* `database_name`: The name of the database for which the vulnerability assessment is defined."]
+        #[doc = "* `vulnerability_assessment_name`: The name of the vulnerability assessment."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -17443,6 +19108,15 @@ pub mod managed_database_vulnerability_assessments {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates the database's vulnerability assessment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `managed_instance_name`: The name of the managed instance."]
+        #[doc = "* `database_name`: The name of the database for which the vulnerability assessment is defined."]
+        #[doc = "* `vulnerability_assessment_name`: The name of the vulnerability assessment."]
+        #[doc = "* `parameters`: The requested resource."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -17462,6 +19136,14 @@ pub mod managed_database_vulnerability_assessments {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Removes the database's vulnerability assessment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `managed_instance_name`: The name of the managed instance."]
+        #[doc = "* `database_name`: The name of the database for which the vulnerability assessment is defined."]
+        #[doc = "* `vulnerability_assessment_name`: The name of the vulnerability assessment."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -17479,6 +19161,13 @@ pub mod managed_database_vulnerability_assessments {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists the vulnerability assessments of a managed database."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `managed_instance_name`: The name of the managed instance."]
+        #[doc = "* `database_name`: The name of the database for which the vulnerability assessment is defined."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn list_by_database(
             &self,
             resource_group_name: impl Into<String>,
@@ -17724,6 +19413,13 @@ pub mod instance_failover_groups {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a failover group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `location_name`: The name of the region where the resource is located."]
+        #[doc = "* `failover_group_name`: The name of the failover group."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -17739,6 +19435,14 @@ pub mod instance_failover_groups {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates a failover group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `location_name`: The name of the region where the resource is located."]
+        #[doc = "* `failover_group_name`: The name of the failover group."]
+        #[doc = "* `parameters`: The failover group parameters."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -17756,6 +19460,13 @@ pub mod instance_failover_groups {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes a failover group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `location_name`: The name of the region where the resource is located."]
+        #[doc = "* `failover_group_name`: The name of the failover group."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -17771,6 +19482,12 @@ pub mod instance_failover_groups {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists the failover groups in a location."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `location_name`: The name of the region where the resource is located."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn list_by_location(
             &self,
             resource_group_name: impl Into<String>,
@@ -17784,6 +19501,13 @@ pub mod instance_failover_groups {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Fails over from the current primary managed instance to this managed instance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `location_name`: The name of the region where the resource is located."]
+        #[doc = "* `failover_group_name`: The name of the failover group."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn failover(
             &self,
             resource_group_name: impl Into<String>,
@@ -17799,6 +19523,13 @@ pub mod instance_failover_groups {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Fails over from the current primary managed instance to this managed instance. This operation might result in data loss."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `location_name`: The name of the region where the resource is located."]
+        #[doc = "* `failover_group_name`: The name of the failover group."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn force_failover_allow_data_loss(
             &self,
             resource_group_name: impl Into<String>,
@@ -18193,6 +19924,13 @@ pub mod tde_certificates {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Creates a TDE certificate for a given server."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `parameters`: The requested TDE certificate to be created or updated."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn create(
             &self,
             resource_group_name: impl Into<String>,
@@ -18270,6 +20008,13 @@ pub mod managed_instance_tde_certificates {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Creates a TDE certificate for a given server."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `managed_instance_name`: The name of the managed instance."]
+        #[doc = "* `parameters`: The requested TDE certificate to be created or updated."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn create(
             &self,
             resource_group_name: impl Into<String>,
@@ -18347,6 +20092,12 @@ pub mod managed_instance_keys {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a list of managed instance keys."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `managed_instance_name`: The name of the managed instance."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn list_by_instance(
             &self,
             resource_group_name: impl Into<String>,
@@ -18361,6 +20112,13 @@ pub mod managed_instance_keys {
                 filter: None,
             }
         }
+        #[doc = "Gets a managed instance key."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `managed_instance_name`: The name of the managed instance."]
+        #[doc = "* `key_name`: The name of the managed instance key to be retrieved."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -18376,6 +20134,14 @@ pub mod managed_instance_keys {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates a managed instance key."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `managed_instance_name`: The name of the managed instance."]
+        #[doc = "* `key_name`: The name of the managed instance key to be operated on (updated or created)."]
+        #[doc = "* `parameters`: The requested managed instance key resource state."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -18393,6 +20159,13 @@ pub mod managed_instance_keys {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes the managed instance key with the given name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `managed_instance_name`: The name of the managed instance."]
+        #[doc = "* `key_name`: The name of the managed instance key to be deleted."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -18421,6 +20194,7 @@ pub mod managed_instance_keys {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "An OData filter expression that filters elements in the collection."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -18680,6 +20454,13 @@ pub mod managed_instance_encryption_protectors {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Revalidates an existing encryption protector."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `managed_instance_name`: The name of the managed instance."]
+        #[doc = "* `encryption_protector_name`: The name of the encryption protector to be updated."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn revalidate(
             &self,
             resource_group_name: impl Into<String>,
@@ -18695,6 +20476,12 @@ pub mod managed_instance_encryption_protectors {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets a list of managed instance encryption protectors"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `managed_instance_name`: The name of the managed instance."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn list_by_instance(
             &self,
             resource_group_name: impl Into<String>,
@@ -18708,6 +20495,13 @@ pub mod managed_instance_encryption_protectors {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets a managed instance encryption protector."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `managed_instance_name`: The name of the managed instance."]
+        #[doc = "* `encryption_protector_name`: The name of the encryption protector to be retrieved."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -18723,6 +20517,14 @@ pub mod managed_instance_encryption_protectors {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates an existing encryption protector."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `managed_instance_name`: The name of the managed instance."]
+        #[doc = "* `encryption_protector_name`: The name of the encryption protector to be updated."]
+        #[doc = "* `parameters`: The requested encryption protector resource state."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -18990,6 +20792,12 @@ pub mod recoverable_managed_databases {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a list of recoverable managed databases."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `managed_instance_name`: The name of the managed instance."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn list_by_instance(
             &self,
             resource_group_name: impl Into<String>,
@@ -19003,6 +20811,12 @@ pub mod recoverable_managed_databases {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets a recoverable managed database."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `managed_instance_name`: The name of the managed instance."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -19156,6 +20970,14 @@ pub mod backup_short_term_retention_policies {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a database's short term retention policy."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `database_name`: The name of the database."]
+        #[doc = "* `policy_name`: The policy name. Should always be \"default\"."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -19173,6 +20995,15 @@ pub mod backup_short_term_retention_policies {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates a database's short term retention policy."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `database_name`: The name of the database."]
+        #[doc = "* `policy_name`: The policy name. Should always be \"default\"."]
+        #[doc = "* `parameters`: The short term retention policy info."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -19192,6 +21023,15 @@ pub mod backup_short_term_retention_policies {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates a database's short term retention policy."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `database_name`: The name of the database."]
+        #[doc = "* `policy_name`: The policy name. Should always be \"default\"."]
+        #[doc = "* `parameters`: The short term retention policy info."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -19211,6 +21051,13 @@ pub mod backup_short_term_retention_policies {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets a database's short term retention policy."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `database_name`: The name of the database."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn list_by_database(
             &self,
             resource_group_name: impl Into<String>,
@@ -19465,6 +21312,13 @@ pub mod managed_instance_vulnerability_assessments {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the managed instance's vulnerability assessment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `managed_instance_name`: The name of the managed instance for which the vulnerability assessment is defined."]
+        #[doc = "* `vulnerability_assessment_name`: The name of the vulnerability assessment."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -19480,6 +21334,14 @@ pub mod managed_instance_vulnerability_assessments {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates the managed instance's vulnerability assessment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `managed_instance_name`: The name of the managed instance for which the vulnerability assessment is defined."]
+        #[doc = "* `vulnerability_assessment_name`: The name of the vulnerability assessment."]
+        #[doc = "* `parameters`: The requested resource."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -19497,6 +21359,13 @@ pub mod managed_instance_vulnerability_assessments {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Removes the managed instance's vulnerability assessment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `managed_instance_name`: The name of the managed instance for which the vulnerability assessment is defined."]
+        #[doc = "* `vulnerability_assessment_name`: The name of the vulnerability assessment."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -19512,6 +21381,12 @@ pub mod managed_instance_vulnerability_assessments {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the managed instance's vulnerability assessment policies."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `managed_instance_name`: The name of the managed instance for which the vulnerability assessments is defined."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn list_by_instance(
             &self,
             resource_group_name: impl Into<String>,
@@ -19779,6 +21654,13 @@ pub mod server_vulnerability_assessments {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the server's vulnerability assessment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server for which the vulnerability assessment is defined."]
+        #[doc = "* `vulnerability_assessment_name`: The name of the vulnerability assessment."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -19794,6 +21676,14 @@ pub mod server_vulnerability_assessments {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates the server's vulnerability assessment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server for which the vulnerability assessment is defined."]
+        #[doc = "* `vulnerability_assessment_name`: The name of the vulnerability assessment."]
+        #[doc = "* `parameters`: The requested resource."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -19811,6 +21701,13 @@ pub mod server_vulnerability_assessments {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Removes the server's vulnerability assessment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server for which the vulnerability assessment is defined."]
+        #[doc = "* `vulnerability_assessment_name`: The name of the vulnerability assessment."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -19826,6 +21723,12 @@ pub mod server_vulnerability_assessments {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists the vulnerability assessment policies associated with a server."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn list_by_server(
             &self,
             resource_group_name: impl Into<String>,
@@ -20092,6 +21995,17 @@ pub mod managed_database_sensitivity_labels {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the sensitivity label of a given column"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `managed_instance_name`: The name of the managed instance."]
+        #[doc = "* `database_name`: The name of the database."]
+        #[doc = "* `schema_name`: The name of the schema."]
+        #[doc = "* `table_name`: The name of the table."]
+        #[doc = "* `column_name`: The name of the column."]
+        #[doc = "* `sensitivity_label_source`: The source of the sensitivity label."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -20115,6 +22029,18 @@ pub mod managed_database_sensitivity_labels {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates the sensitivity label of a given column"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `managed_instance_name`: The name of the managed instance."]
+        #[doc = "* `database_name`: The name of the database."]
+        #[doc = "* `schema_name`: The name of the schema."]
+        #[doc = "* `table_name`: The name of the table."]
+        #[doc = "* `column_name`: The name of the column."]
+        #[doc = "* `sensitivity_label_source`: The source of the sensitivity label."]
+        #[doc = "* `parameters`: The column sensitivity label resource."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -20140,6 +22066,17 @@ pub mod managed_database_sensitivity_labels {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes the sensitivity label of a given column"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `managed_instance_name`: The name of the managed instance."]
+        #[doc = "* `database_name`: The name of the database."]
+        #[doc = "* `schema_name`: The name of the schema."]
+        #[doc = "* `table_name`: The name of the table."]
+        #[doc = "* `column_name`: The name of the column."]
+        #[doc = "* `sensitivity_label_source`: The source of the sensitivity label."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -20163,6 +22100,16 @@ pub mod managed_database_sensitivity_labels {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Disables sensitivity recommendations on a given column"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `managed_instance_name`: The name of the managed instance."]
+        #[doc = "* `database_name`: The name of the database."]
+        #[doc = "* `schema_name`: The name of the schema."]
+        #[doc = "* `table_name`: The name of the table."]
+        #[doc = "* `column_name`: The name of the column."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn disable_recommendation(
             &self,
             resource_group_name: impl Into<String>,
@@ -20186,6 +22133,16 @@ pub mod managed_database_sensitivity_labels {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Enables sensitivity recommendations on a given column (recommendations are enabled by default on all columns)"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `managed_instance_name`: The name of the managed instance."]
+        #[doc = "* `database_name`: The name of the database."]
+        #[doc = "* `schema_name`: The name of the schema."]
+        #[doc = "* `table_name`: The name of the table."]
+        #[doc = "* `column_name`: The name of the column."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn enable_recommendation(
             &self,
             resource_group_name: impl Into<String>,
@@ -20209,6 +22166,13 @@ pub mod managed_database_sensitivity_labels {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the sensitivity labels of a given database"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `managed_instance_name`: The name of the managed instance."]
+        #[doc = "* `database_name`: The name of the database."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn list_current_by_database(
             &self,
             resource_group_name: impl Into<String>,
@@ -20225,6 +22189,13 @@ pub mod managed_database_sensitivity_labels {
                 filter: None,
             }
         }
+        #[doc = "Gets the sensitivity labels of a given database"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `managed_instance_name`: The name of the managed instance."]
+        #[doc = "* `database_name`: The name of the database."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn list_recommended_by_database(
             &self,
             resource_group_name: impl Into<String>,
@@ -20513,6 +22484,7 @@ pub mod managed_database_sensitivity_labels {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "An OData filter expression that filters elements in the collection."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -20596,6 +22568,7 @@ pub mod managed_database_sensitivity_labels {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "Specifies whether to include disabled recommendations or not."]
             pub fn include_disabled_recommendations(mut self, include_disabled_recommendations: bool) -> Self {
                 self.include_disabled_recommendations = Some(include_disabled_recommendations);
                 self
@@ -20604,6 +22577,7 @@ pub mod managed_database_sensitivity_labels {
                 self.skip_token = Some(skip_token.into());
                 self
             }
+            #[doc = "An OData filter expression that filters elements in the collection."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -20685,6 +22659,12 @@ pub mod instance_pools {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets an instance pool."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `instance_pool_name`: The name of the instance pool to be retrieved."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -20698,6 +22678,13 @@ pub mod instance_pools {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates an instance pool."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `instance_pool_name`: The name of the instance pool to be created or updated."]
+        #[doc = "* `parameters`: The requested instance pool resource state."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -20713,6 +22700,13 @@ pub mod instance_pools {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates an instance pool."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `instance_pool_name`: The name of the instance pool to be updated."]
+        #[doc = "* `parameters`: The requested instance pool resource state."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -20728,6 +22722,12 @@ pub mod instance_pools {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes an instance pool"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `instance_pool_name`: The name of the instance pool to be deleted"]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -20741,6 +22741,11 @@ pub mod instance_pools {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets a list of instance pools in the resource group"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn list_by_resource_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -20752,6 +22757,10 @@ pub mod instance_pools {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets a list of all instance pools in the subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -21148,6 +23157,12 @@ pub mod usages {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets all instance pool usage metrics"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `instance_pool_name`: The name of the instance pool to be retrieved."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn list_by_instance_pool(
             &self,
             resource_group_name: impl Into<String>,
@@ -21175,6 +23190,7 @@ pub mod usages {
             pub(crate) expand_children: Option<bool>,
         }
         impl Builder {
+            #[doc = "Optional request parameter to include managed instance usages within the instance pool."]
             pub fn expand_children(mut self, expand_children: bool) -> Self {
                 self.expand_children = Some(expand_children);
                 self
@@ -21256,6 +23272,12 @@ pub mod private_link_resources {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the private link resources for SQL server."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn list_by_server(
             &self,
             resource_group_name: impl Into<String>,
@@ -21269,6 +23291,13 @@ pub mod private_link_resources {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets a private link resource for SQL server."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `group_name`: The name of the private link resource."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -21422,6 +23451,11 @@ pub mod servers {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a list of servers in a resource groups."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn list_by_resource_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -21433,6 +23467,12 @@ pub mod servers {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets a server."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -21446,6 +23486,13 @@ pub mod servers {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates a server."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `parameters`: The requested server resource state."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -21461,6 +23508,13 @@ pub mod servers {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates a server."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `parameters`: The requested server resource state."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -21476,6 +23530,12 @@ pub mod servers {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes a server."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -21489,12 +23549,21 @@ pub mod servers {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets a list of all servers in the subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Determines whether a resource can be created with the specified name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `parameters`: The name availability request parameters."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn check_name_availability(
             &self,
             parameters: impl Into<models::CheckNameAvailabilityRequest>,
@@ -21506,6 +23575,13 @@ pub mod servers {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Imports a bacpac into a new database."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `parameters`: The database import request parameters."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn import_database(
             &self,
             resource_group_name: impl Into<String>,
@@ -22021,6 +24097,11 @@ pub mod capabilities {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the subscription capabilities available for the specified location."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `location_name`: The location name whose capabilities are retrieved."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn list_by_location(&self, location_name: impl Into<String>, subscription_id: impl Into<String>) -> list_by_location::Builder {
             list_by_location::Builder {
                 client: self.0.clone(),
@@ -22041,6 +24122,7 @@ pub mod capabilities {
             pub(crate) include: Option<String>,
         }
         impl Builder {
+            #[doc = "If specified, restricts the response to only include the selected item."]
             pub fn include(mut self, include: impl Into<String>) -> Self {
                 self.include = Some(include.into());
                 self
@@ -22093,6 +24175,14 @@ pub mod long_term_retention_managed_instance_backups {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a long term retention backup for a managed database."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `location_name`: The location of the database."]
+        #[doc = "* `managed_instance_name`: The name of the managed instance."]
+        #[doc = "* `database_name`: The name of the managed database."]
+        #[doc = "* `backup_name`: The backup name."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn get(
             &self,
             location_name: impl Into<String>,
@@ -22110,6 +24200,14 @@ pub mod long_term_retention_managed_instance_backups {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes a long term retention backup."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `location_name`: The location of the database."]
+        #[doc = "* `managed_instance_name`: The name of the managed instance."]
+        #[doc = "* `database_name`: The name of the managed database."]
+        #[doc = "* `backup_name`: The backup name."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn delete(
             &self,
             location_name: impl Into<String>,
@@ -22127,6 +24225,13 @@ pub mod long_term_retention_managed_instance_backups {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists all long term retention backups for a managed database."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `location_name`: The location of the database."]
+        #[doc = "* `managed_instance_name`: The name of the managed instance."]
+        #[doc = "* `database_name`: The name of the managed database."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn list_by_database(
             &self,
             location_name: impl Into<String>,
@@ -22144,6 +24249,12 @@ pub mod long_term_retention_managed_instance_backups {
                 database_state: None,
             }
         }
+        #[doc = "Lists the long term retention backups for a given managed instance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `location_name`: The location of the database"]
+        #[doc = "* `managed_instance_name`: The name of the managed instance."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn list_by_instance(
             &self,
             location_name: impl Into<String>,
@@ -22159,6 +24270,11 @@ pub mod long_term_retention_managed_instance_backups {
                 database_state: None,
             }
         }
+        #[doc = "Lists the long term retention backups for managed databases in a given location."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `location_name`: The location of the database."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn list_by_location(&self, location_name: impl Into<String>, subscription_id: impl Into<String>) -> list_by_location::Builder {
             list_by_location::Builder {
                 client: self.0.clone(),
@@ -22168,6 +24284,15 @@ pub mod long_term_retention_managed_instance_backups {
                 database_state: None,
             }
         }
+        #[doc = "Gets a long term retention backup for a managed database."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `location_name`: The location of the database."]
+        #[doc = "* `managed_instance_name`: The name of the managed instance."]
+        #[doc = "* `database_name`: The name of the managed database."]
+        #[doc = "* `backup_name`: The backup name."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn get_by_resource_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -22187,6 +24312,15 @@ pub mod long_term_retention_managed_instance_backups {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes a long term retention backup."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `location_name`: The location of the database"]
+        #[doc = "* `managed_instance_name`: The name of the managed instance."]
+        #[doc = "* `database_name`: The name of the managed database."]
+        #[doc = "* `backup_name`: The backup name."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn delete_by_resource_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -22206,6 +24340,14 @@ pub mod long_term_retention_managed_instance_backups {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists all long term retention backups for a managed database."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `location_name`: The location of the database"]
+        #[doc = "* `managed_instance_name`: The name of the managed instance."]
+        #[doc = "* `database_name`: The name of the managed database."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn list_by_resource_group_database(
             &self,
             resource_group_name: impl Into<String>,
@@ -22225,6 +24367,13 @@ pub mod long_term_retention_managed_instance_backups {
                 database_state: None,
             }
         }
+        #[doc = "Lists the long term retention backups for a given managed instance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `location_name`: The location of the database."]
+        #[doc = "* `managed_instance_name`: The name of the managed instance."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn list_by_resource_group_instance(
             &self,
             resource_group_name: impl Into<String>,
@@ -22242,6 +24391,12 @@ pub mod long_term_retention_managed_instance_backups {
                 database_state: None,
             }
         }
+        #[doc = "Lists the long term retention backups for managed databases in a given location."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `location_name`: The location of the database."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn list_by_resource_group_location(
             &self,
             resource_group_name: impl Into<String>,
@@ -22370,10 +24525,12 @@ pub mod long_term_retention_managed_instance_backups {
             pub(crate) database_state: Option<String>,
         }
         impl Builder {
+            #[doc = "Whether or not to only get the latest backup for each database."]
             pub fn only_latest_per_database(mut self, only_latest_per_database: bool) -> Self {
                 self.only_latest_per_database = Some(only_latest_per_database);
                 self
             }
+            #[doc = "Whether to query against just live databases, just deleted databases, or all databases."]
             pub fn database_state(mut self, database_state: impl Into<String>) -> Self {
                 self.database_state = Some(database_state.into());
                 self
@@ -22461,10 +24618,12 @@ pub mod long_term_retention_managed_instance_backups {
             pub(crate) database_state: Option<String>,
         }
         impl Builder {
+            #[doc = "Whether or not to only get the latest backup for each database."]
             pub fn only_latest_per_database(mut self, only_latest_per_database: bool) -> Self {
                 self.only_latest_per_database = Some(only_latest_per_database);
                 self
             }
+            #[doc = "Whether to query against just live databases, just deleted databases, or all databases."]
             pub fn database_state(mut self, database_state: impl Into<String>) -> Self {
                 self.database_state = Some(database_state.into());
                 self
@@ -22551,10 +24710,12 @@ pub mod long_term_retention_managed_instance_backups {
             pub(crate) database_state: Option<String>,
         }
         impl Builder {
+            #[doc = "Whether or not to only get the latest backup for each database."]
             pub fn only_latest_per_database(mut self, only_latest_per_database: bool) -> Self {
                 self.only_latest_per_database = Some(only_latest_per_database);
                 self
             }
+            #[doc = "Whether to query against just live databases, just deleted databases, or all databases."]
             pub fn database_state(mut self, database_state: impl Into<String>) -> Self {
                 self.database_state = Some(database_state.into());
                 self
@@ -22749,10 +24910,12 @@ pub mod long_term_retention_managed_instance_backups {
             pub(crate) database_state: Option<String>,
         }
         impl Builder {
+            #[doc = "Whether or not to only get the latest backup for each database."]
             pub fn only_latest_per_database(mut self, only_latest_per_database: bool) -> Self {
                 self.only_latest_per_database = Some(only_latest_per_database);
                 self
             }
+            #[doc = "Whether to query against just live databases, just deleted databases, or all databases."]
             pub fn database_state(mut self, database_state: impl Into<String>) -> Self {
                 self.database_state = Some(database_state.into());
                 self
@@ -22841,10 +25004,12 @@ pub mod long_term_retention_managed_instance_backups {
             pub(crate) database_state: Option<String>,
         }
         impl Builder {
+            #[doc = "Whether or not to only get the latest backup for each database."]
             pub fn only_latest_per_database(mut self, only_latest_per_database: bool) -> Self {
                 self.only_latest_per_database = Some(only_latest_per_database);
                 self
             }
+            #[doc = "Whether to query against just live databases, just deleted databases, or all databases."]
             pub fn database_state(mut self, database_state: impl Into<String>) -> Self {
                 self.database_state = Some(database_state.into());
                 self
@@ -22932,10 +25097,12 @@ pub mod long_term_retention_managed_instance_backups {
             pub(crate) database_state: Option<String>,
         }
         impl Builder {
+            #[doc = "Whether or not to only get the latest backup for each database."]
             pub fn only_latest_per_database(mut self, only_latest_per_database: bool) -> Self {
                 self.only_latest_per_database = Some(only_latest_per_database);
                 self
             }
+            #[doc = "Whether to query against just live databases, just deleted databases, or all databases."]
             pub fn database_state(mut self, database_state: impl Into<String>) -> Self {
                 self.database_state = Some(database_state.into());
                 self
@@ -23015,6 +25182,14 @@ pub mod managed_instance_long_term_retention_policies {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a managed database's long term retention policy."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `managed_instance_name`: The name of the managed instance."]
+        #[doc = "* `database_name`: The name of the database."]
+        #[doc = "* `policy_name`: The policy name. Should always be Default."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -23032,6 +25207,15 @@ pub mod managed_instance_long_term_retention_policies {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Sets a managed database's long term retention policy."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `managed_instance_name`: The name of the managed instance."]
+        #[doc = "* `database_name`: The name of the database."]
+        #[doc = "* `policy_name`: The policy name. Should always be Default."]
+        #[doc = "* `parameters`: The long term retention policy info."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -23051,6 +25235,13 @@ pub mod managed_instance_long_term_retention_policies {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets a database's long term retention policy."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `managed_instance_name`: The name of the managed instance."]
+        #[doc = "* `database_name`: The name of the database."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn list_by_database(
             &self,
             resource_group_name: impl Into<String>,
@@ -23250,6 +25441,14 @@ pub mod workload_groups {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a workload group"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `database_name`: The name of the database."]
+        #[doc = "* `workload_group_name`: The name of the workload group."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -23267,6 +25466,15 @@ pub mod workload_groups {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates a workload group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `database_name`: The name of the database."]
+        #[doc = "* `workload_group_name`: The name of the workload group."]
+        #[doc = "* `parameters`: The requested workload group state."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -23286,6 +25494,14 @@ pub mod workload_groups {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes a workload group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `database_name`: The name of the database."]
+        #[doc = "* `workload_group_name`: The name of the workload group to delete."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -23303,6 +25519,13 @@ pub mod workload_groups {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the list of workload groups"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `database_name`: The name of the database."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn list_by_database(
             &self,
             resource_group_name: impl Into<String>,
@@ -23590,6 +25813,15 @@ pub mod workload_classifiers {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a workload classifier"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `database_name`: The name of the database."]
+        #[doc = "* `workload_group_name`: The name of the workload group from which to receive the classifier from."]
+        #[doc = "* `workload_classifier_name`: The name of the workload classifier."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -23609,6 +25841,16 @@ pub mod workload_classifiers {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates a workload classifier."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `database_name`: The name of the database."]
+        #[doc = "* `workload_group_name`: The name of the workload group from which to receive the classifier from."]
+        #[doc = "* `workload_classifier_name`: The name of the workload classifier to create/update."]
+        #[doc = "* `parameters`: The properties of the workload classifier."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -23630,6 +25872,15 @@ pub mod workload_classifiers {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes a workload classifier."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `database_name`: The name of the database."]
+        #[doc = "* `workload_group_name`: The name of the workload group from which to receive the classifier from."]
+        #[doc = "* `workload_classifier_name`: The name of the workload classifier to delete."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -23649,6 +25900,14 @@ pub mod workload_classifiers {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the list of workload classifiers for a workload group"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `database_name`: The name of the database."]
+        #[doc = "* `workload_group_name`: The name of the workload group from which to receive the classifiers from."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn list_by_workload_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -23911,6 +26170,12 @@ pub mod managed_instance_operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Cancels the asynchronous operation on the managed instance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `managed_instance_name`: The name of the managed instance."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn cancel(
             &self,
             resource_group_name: impl Into<String>,
@@ -23926,6 +26191,12 @@ pub mod managed_instance_operations {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets a list of operations performed on the managed instance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `managed_instance_name`: The name of the managed instance."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn list_by_managed_instance(
             &self,
             resource_group_name: impl Into<String>,
@@ -23939,6 +26210,12 @@ pub mod managed_instance_operations {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets a management operation on a managed instance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `managed_instance_name`: The name of the managed instance."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -24143,6 +26420,13 @@ pub mod server_azure_ad_administrators {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a Azure Active Directory administrator."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `administrator_name`: The name of server active directory administrator."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -24158,6 +26442,14 @@ pub mod server_azure_ad_administrators {
                 administrator_name: administrator_name.into(),
             }
         }
+        #[doc = "Creates or updates an existing Azure Active Directory administrator."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `administrator_name`: The name of server active directory administrator."]
+        #[doc = "* `parameters`: The requested Azure Active Directory administrator Resource state."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -24175,6 +26467,13 @@ pub mod server_azure_ad_administrators {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Deletes the Azure Active Directory administrator with the given name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `administrator_name`: The name of server active directory administrator."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -24190,6 +26489,12 @@ pub mod server_azure_ad_administrators {
                 administrator_name: administrator_name.into(),
             }
         }
+        #[doc = "Gets a list of Azure Active Directory administrators in a server."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
         pub fn list_by_server(
             &self,
             subscription_id: impl Into<String>,
@@ -24467,6 +26772,11 @@ pub mod sync_groups {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a collection of sync database ids."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `location_name`: The name of the region where the resource is located."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn list_sync_database_ids(
             &self,
             location_name: impl Into<String>,
@@ -24478,6 +26788,14 @@ pub mod sync_groups {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Refreshes a hub database schema."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `database_name`: The name of the database on which the sync group is hosted."]
+        #[doc = "* `sync_group_name`: The name of the sync group."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn refresh_hub_schema(
             &self,
             resource_group_name: impl Into<String>,
@@ -24495,6 +26813,14 @@ pub mod sync_groups {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets a collection of hub database schemas."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `database_name`: The name of the database on which the sync group is hosted."]
+        #[doc = "* `sync_group_name`: The name of the sync group."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn list_hub_schemas(
             &self,
             resource_group_name: impl Into<String>,
@@ -24512,6 +26838,17 @@ pub mod sync_groups {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets a collection of sync group logs."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `database_name`: The name of the database on which the sync group is hosted."]
+        #[doc = "* `sync_group_name`: The name of the sync group."]
+        #[doc = "* `start_time`: Get logs generated after this time."]
+        #[doc = "* `end_time`: Get logs generated before this time."]
+        #[doc = "* `type_`: The types of logs to retrieve."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn list_logs(
             &self,
             resource_group_name: impl Into<String>,
@@ -24536,6 +26873,14 @@ pub mod sync_groups {
                 continuation_token: None,
             }
         }
+        #[doc = "Cancels a sync group synchronization."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `database_name`: The name of the database on which the sync group is hosted."]
+        #[doc = "* `sync_group_name`: The name of the sync group."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn cancel_sync(
             &self,
             resource_group_name: impl Into<String>,
@@ -24553,6 +26898,14 @@ pub mod sync_groups {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Triggers a sync group synchronization."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `database_name`: The name of the database on which the sync group is hosted."]
+        #[doc = "* `sync_group_name`: The name of the sync group."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn trigger_sync(
             &self,
             resource_group_name: impl Into<String>,
@@ -24570,6 +26923,14 @@ pub mod sync_groups {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets a sync group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `database_name`: The name of the database on which the sync group is hosted."]
+        #[doc = "* `sync_group_name`: The name of the sync group."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -24587,6 +26948,15 @@ pub mod sync_groups {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates a sync group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `database_name`: The name of the database on which the sync group is hosted."]
+        #[doc = "* `sync_group_name`: The name of the sync group."]
+        #[doc = "* `parameters`: The requested sync group resource state."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -24606,6 +26976,15 @@ pub mod sync_groups {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates a sync group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `database_name`: The name of the database on which the sync group is hosted."]
+        #[doc = "* `sync_group_name`: The name of the sync group."]
+        #[doc = "* `parameters`: The requested sync group resource state."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -24625,6 +27004,14 @@ pub mod sync_groups {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes a sync group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `database_name`: The name of the database on which the sync group is hosted."]
+        #[doc = "* `sync_group_name`: The name of the sync group."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -24642,6 +27029,13 @@ pub mod sync_groups {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists sync groups under a hub database."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `database_name`: The name of the database on which the sync group is hosted."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn list_by_database(
             &self,
             resource_group_name: impl Into<String>,
@@ -24876,6 +27270,7 @@ pub mod sync_groups {
             pub(crate) continuation_token: Option<String>,
         }
         impl Builder {
+            #[doc = "The continuation token for this operation."]
             pub fn continuation_token(mut self, continuation_token: impl Into<String>) -> Self {
                 self.continuation_token = Some(continuation_token.into());
                 self
@@ -25383,6 +27778,15 @@ pub mod sync_members {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a sync member."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `database_name`: The name of the database on which the sync group is hosted."]
+        #[doc = "* `sync_group_name`: The name of the sync group on which the sync member is hosted."]
+        #[doc = "* `sync_member_name`: The name of the sync member."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -25402,6 +27806,16 @@ pub mod sync_members {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates a sync member."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `database_name`: The name of the database on which the sync group is hosted."]
+        #[doc = "* `sync_group_name`: The name of the sync group on which the sync member is hosted."]
+        #[doc = "* `sync_member_name`: The name of the sync member."]
+        #[doc = "* `parameters`: The requested sync member resource state."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -25423,6 +27837,16 @@ pub mod sync_members {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates an existing sync member."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `database_name`: The name of the database on which the sync group is hosted."]
+        #[doc = "* `sync_group_name`: The name of the sync group on which the sync member is hosted."]
+        #[doc = "* `sync_member_name`: The name of the sync member."]
+        #[doc = "* `parameters`: The requested sync member resource state."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -25444,6 +27868,15 @@ pub mod sync_members {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes a sync member."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `database_name`: The name of the database on which the sync group is hosted."]
+        #[doc = "* `sync_group_name`: The name of the sync group on which the sync member is hosted."]
+        #[doc = "* `sync_member_name`: The name of the sync member."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -25463,6 +27896,14 @@ pub mod sync_members {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists sync members in the given sync group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `database_name`: The name of the database on which the sync group is hosted."]
+        #[doc = "* `sync_group_name`: The name of the sync group."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn list_by_sync_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -25480,6 +27921,15 @@ pub mod sync_members {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets a sync member database schema."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `database_name`: The name of the database on which the sync group is hosted."]
+        #[doc = "* `sync_group_name`: The name of the sync group on which the sync member is hosted."]
+        #[doc = "* `sync_member_name`: The name of the sync member."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn list_member_schemas(
             &self,
             resource_group_name: impl Into<String>,
@@ -25499,6 +27949,15 @@ pub mod sync_members {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Refreshes a sync member database schema."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `database_name`: The name of the database on which the sync group is hosted."]
+        #[doc = "* `sync_group_name`: The name of the sync group on which the sync member is hosted."]
+        #[doc = "* `sync_member_name`: The name of the sync member."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn refresh_member_schema(
             &self,
             resource_group_name: impl Into<String>,
@@ -25947,6 +28406,14 @@ pub mod import_export {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Imports a bacpac into a new database."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `database_name`: The name of the database."]
+        #[doc = "* `parameters`: The database import request parameters."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn import(
             &self,
             resource_group_name: impl Into<String>,
@@ -26032,6 +28499,12 @@ pub mod managed_databases {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a list of managed databases."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `managed_instance_name`: The name of the managed instance."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn list_by_instance(
             &self,
             resource_group_name: impl Into<String>,
@@ -26045,6 +28518,13 @@ pub mod managed_databases {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets a managed database."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `managed_instance_name`: The name of the managed instance."]
+        #[doc = "* `database_name`: The name of the database."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -26060,6 +28540,14 @@ pub mod managed_databases {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates a new database or updates an existing database."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `managed_instance_name`: The name of the managed instance."]
+        #[doc = "* `database_name`: The name of the database."]
+        #[doc = "* `parameters`: The requested database resource state."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -26077,6 +28565,14 @@ pub mod managed_databases {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates an existing database."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `managed_instance_name`: The name of the managed instance."]
+        #[doc = "* `database_name`: The name of the database."]
+        #[doc = "* `parameters`: The requested database resource state."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -26094,6 +28590,13 @@ pub mod managed_databases {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes a managed database."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `managed_instance_name`: The name of the managed instance."]
+        #[doc = "* `database_name`: The name of the database."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -26109,6 +28612,14 @@ pub mod managed_databases {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Completes the restore operation on a managed database."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `managed_instance_name`: The name of the managed instance."]
+        #[doc = "* `database_name`: The name of the database."]
+        #[doc = "* `parameters`: The definition for completing the restore of this managed database."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn complete_restore(
             &self,
             resource_group_name: impl Into<String>,
@@ -26126,6 +28637,12 @@ pub mod managed_databases {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets a list of inaccessible managed databases in a managed instance"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `managed_instance_name`: The name of the managed instance."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn list_inaccessible_by_instance(
             &self,
             resource_group_name: impl Into<String>,
@@ -26588,6 +29105,14 @@ pub mod managed_database_restore_details {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets managed database restore details."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `managed_instance_name`: The name of the managed instance."]
+        #[doc = "* `database_name`: The name of the database."]
+        #[doc = "* `restore_details_name`: The name of the restore details to retrieve."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -26659,6 +29184,13 @@ pub mod server_azure_ad_only_authentications {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a specific Azure Active Directory only authentication property."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `authentication_name`: The name of server azure active directory only authentication."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -26674,6 +29206,14 @@ pub mod server_azure_ad_only_authentications {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Sets Server Active Directory only authentication property or updates an existing server Active Directory only authentication property."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `authentication_name`: The name of server azure active directory only authentication."]
+        #[doc = "* `parameters`: The required parameters for creating or updating an Active Directory only authentication property."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -26691,6 +29231,13 @@ pub mod server_azure_ad_only_authentications {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes an existing server Active Directory only authentication property."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `authentication_name`: The name of server azure active directory only authentication."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -26706,6 +29253,12 @@ pub mod server_azure_ad_only_authentications {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets a list of server Azure Active Directory only authentications."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn list_by_server(
             &self,
             resource_group_name: impl Into<String>,
@@ -26983,6 +29536,12 @@ pub mod managed_instances {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a list of all managed instances in an instance pool."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `instance_pool_name`: The instance pool name."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn list_by_instance_pool(
             &self,
             resource_group_name: impl Into<String>,
@@ -26996,6 +29555,11 @@ pub mod managed_instances {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets a list of managed instances in a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn list_by_resource_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -27007,6 +29571,12 @@ pub mod managed_instances {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets a managed instance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `managed_instance_name`: The name of the managed instance."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -27020,6 +29590,13 @@ pub mod managed_instances {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates a managed instance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `managed_instance_name`: The name of the managed instance."]
+        #[doc = "* `parameters`: The requested managed instance resource state."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -27035,6 +29612,13 @@ pub mod managed_instances {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates a managed instance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `managed_instance_name`: The name of the managed instance."]
+        #[doc = "* `parameters`: The requested managed instance resource state."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -27050,6 +29634,12 @@ pub mod managed_instances {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes a managed instance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `managed_instance_name`: The name of the managed instance."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -27063,6 +29653,12 @@ pub mod managed_instances {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get top resource consuming queries of a managed instance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `managed_instance_name`: The name of the managed instance."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn list_by_managed_instance(
             &self,
             resource_group_name: impl Into<String>,
@@ -27083,6 +29679,12 @@ pub mod managed_instances {
                 observation_metric: None,
             }
         }
+        #[doc = "Failovers a managed instance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `managed_instance_name`: The name of the managed instance to failover."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn failover(
             &self,
             resource_group_name: impl Into<String>,
@@ -27097,6 +29699,10 @@ pub mod managed_instances {
                 replica_type: None,
             }
         }
+        #[doc = "Gets a list of all managed instances in the subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -27510,30 +30116,37 @@ pub mod managed_instances {
             pub(crate) observation_metric: Option<String>,
         }
         impl Builder {
+            #[doc = "How many 'top queries' to return. Default is 5."]
             pub fn number_of_queries(mut self, number_of_queries: i32) -> Self {
                 self.number_of_queries = Some(number_of_queries);
                 self
             }
+            #[doc = "Comma separated list of databases to be included into search. All DB's are included if this parameter is not specified."]
             pub fn databases(mut self, databases: impl Into<String>) -> Self {
                 self.databases = Some(databases.into());
                 self
             }
+            #[doc = "Start time for observed period."]
             pub fn start_time(mut self, start_time: impl Into<String>) -> Self {
                 self.start_time = Some(start_time.into());
                 self
             }
+            #[doc = "End time for observed period."]
             pub fn end_time(mut self, end_time: impl Into<String>) -> Self {
                 self.end_time = Some(end_time.into());
                 self
             }
+            #[doc = "The time step to be used to summarize the metric values. Default value is PT1H"]
             pub fn interval(mut self, interval: impl Into<String>) -> Self {
                 self.interval = Some(interval.into());
                 self
             }
+            #[doc = "Aggregation function to be used, default value is 'sum'"]
             pub fn aggregation_function(mut self, aggregation_function: impl Into<String>) -> Self {
                 self.aggregation_function = Some(aggregation_function.into());
                 self
             }
+            #[doc = "Metric to be used for ranking top queries. Default is 'cpu'"]
             pub fn observation_metric(mut self, observation_metric: impl Into<String>) -> Self {
                 self.observation_metric = Some(observation_metric.into());
                 self
@@ -27646,6 +30259,7 @@ pub mod managed_instances {
             pub(crate) replica_type: Option<String>,
         }
         impl Builder {
+            #[doc = "The type of replica to be failed over."]
             pub fn replica_type(mut self, replica_type: impl Into<String>) -> Self {
                 self.replica_type = Some(replica_type.into());
                 self
@@ -27772,6 +30386,13 @@ pub mod managed_instance_azure_ad_only_authentications {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a specific Azure Active Directory only authentication property."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `managed_instance_name`: The name of the managed instance."]
+        #[doc = "* `authentication_name`: The name of server azure active directory only authentication."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -27787,6 +30408,14 @@ pub mod managed_instance_azure_ad_only_authentications {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Sets Server Active Directory only authentication property or updates an existing server Active Directory only authentication property."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `managed_instance_name`: The name of the managed instance."]
+        #[doc = "* `authentication_name`: The name of server azure active directory only authentication."]
+        #[doc = "* `parameters`: The required parameters for creating or updating an Active Directory only authentication property."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -27804,6 +30433,13 @@ pub mod managed_instance_azure_ad_only_authentications {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes an existing server Active Directory only authentication property."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `managed_instance_name`: The name of the managed instance."]
+        #[doc = "* `authentication_name`: The name of server azure active directory only authentication."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -27819,6 +30455,12 @@ pub mod managed_instance_azure_ad_only_authentications {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets a list of server Azure Active Directory only authentications."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `managed_instance_name`: The name of the managed instance."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn list_by_instance(
             &self,
             resource_group_name: impl Into<String>,
@@ -28075,6 +30717,13 @@ pub mod server_trust_groups {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a server trust group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `location_name`: The name of the region where the resource is located."]
+        #[doc = "* `server_trust_group_name`: The name of the server trust group."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -28090,6 +30739,14 @@ pub mod server_trust_groups {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates a server trust group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `location_name`: The name of the region where the resource is located."]
+        #[doc = "* `server_trust_group_name`: The name of the server trust group."]
+        #[doc = "* `parameters`: The server trust group parameters."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -28107,6 +30764,13 @@ pub mod server_trust_groups {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes a server trust group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `location_name`: The name of the region where the resource is located."]
+        #[doc = "* `server_trust_group_name`: The name of the server trust group."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -28122,6 +30786,12 @@ pub mod server_trust_groups {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists a server trust group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `location_name`: The name of the region where the resource is located."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn list_by_location(
             &self,
             resource_group_name: impl Into<String>,
@@ -28135,6 +30805,12 @@ pub mod server_trust_groups {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets a server trust groups by instance name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `managed_instance_name`: The name of the managed instance."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn list_by_instance(
             &self,
             resource_group_name: impl Into<String>,
@@ -28490,6 +31166,13 @@ pub mod server_dev_ops_audit_settings {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a server's DevOps audit settings."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `dev_ops_auditing_settings_name`: The name of the devops audit settings. This should always be 'default'."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -28505,6 +31188,14 @@ pub mod server_dev_ops_audit_settings {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates a server's DevOps audit settings."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `dev_ops_auditing_settings_name`: The name of the devops audit settings. This should always be 'default'."]
+        #[doc = "* `parameters`: Properties of DevOps audit settings"]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -28522,6 +31213,12 @@ pub mod server_dev_ops_audit_settings {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists DevOps audit settings of a server."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn list_by_server(
             &self,
             resource_group_name: impl Into<String>,
@@ -28735,6 +31432,15 @@ pub mod long_term_retention_backups {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Copy an existing long term retention backup."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `location_name`: The location of the database."]
+        #[doc = "* `long_term_retention_server_name`: The name of the server"]
+        #[doc = "* `long_term_retention_database_name`: The name of the database"]
+        #[doc = "* `backup_name`: The backup name."]
+        #[doc = "* `parameters`: The parameters needed for long term retention copy request"]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn copy(
             &self,
             location_name: impl Into<String>,
@@ -28754,6 +31460,15 @@ pub mod long_term_retention_backups {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates an existing long term retention backup."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `location_name`: The location of the database."]
+        #[doc = "* `long_term_retention_server_name`: The name of the server"]
+        #[doc = "* `long_term_retention_database_name`: The name of the database"]
+        #[doc = "* `backup_name`: The backup name."]
+        #[doc = "* `parameters`: The requested backup resource state"]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn update(
             &self,
             location_name: impl Into<String>,
@@ -28773,6 +31488,14 @@ pub mod long_term_retention_backups {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets a long term retention backup."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `location_name`: The location of the database."]
+        #[doc = "* `long_term_retention_server_name`: The name of the server"]
+        #[doc = "* `long_term_retention_database_name`: The name of the database"]
+        #[doc = "* `backup_name`: The backup name."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn get(
             &self,
             location_name: impl Into<String>,
@@ -28790,6 +31513,14 @@ pub mod long_term_retention_backups {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes a long term retention backup."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `location_name`: The location of the database"]
+        #[doc = "* `long_term_retention_server_name`: The name of the server"]
+        #[doc = "* `long_term_retention_database_name`: The name of the database"]
+        #[doc = "* `backup_name`: The backup name."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn delete(
             &self,
             location_name: impl Into<String>,
@@ -28807,6 +31538,13 @@ pub mod long_term_retention_backups {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists all long term retention backups for a database."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `location_name`: The location of the database"]
+        #[doc = "* `long_term_retention_server_name`: The name of the server"]
+        #[doc = "* `long_term_retention_database_name`: The name of the database"]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn list_by_database(
             &self,
             location_name: impl Into<String>,
@@ -28824,6 +31562,11 @@ pub mod long_term_retention_backups {
                 database_state: None,
             }
         }
+        #[doc = "Lists the long term retention backups for a given location."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `location_name`: The location of the database"]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn list_by_location(&self, location_name: impl Into<String>, subscription_id: impl Into<String>) -> list_by_location::Builder {
             list_by_location::Builder {
                 client: self.0.clone(),
@@ -28833,6 +31576,12 @@ pub mod long_term_retention_backups {
                 database_state: None,
             }
         }
+        #[doc = "Lists the long term retention backups for a given server."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `location_name`: The location of the database"]
+        #[doc = "* `long_term_retention_server_name`: The name of the server"]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn list_by_server(
             &self,
             location_name: impl Into<String>,
@@ -28848,6 +31597,16 @@ pub mod long_term_retention_backups {
                 database_state: None,
             }
         }
+        #[doc = "Copy an existing long term retention backup to a different server."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `location_name`: The location of the database."]
+        #[doc = "* `long_term_retention_server_name`: The name of the server"]
+        #[doc = "* `long_term_retention_database_name`: The name of the database"]
+        #[doc = "* `backup_name`: The backup name."]
+        #[doc = "* `parameters`: The parameters needed for long term retention copy request"]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn copy_by_resource_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -28869,6 +31628,16 @@ pub mod long_term_retention_backups {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates an existing long term retention backup."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `location_name`: The location of the database."]
+        #[doc = "* `long_term_retention_server_name`: The name of the server"]
+        #[doc = "* `long_term_retention_database_name`: The name of the database"]
+        #[doc = "* `backup_name`: The backup name."]
+        #[doc = "* `parameters`: The requested backup resource state"]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn update_by_resource_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -28890,6 +31659,15 @@ pub mod long_term_retention_backups {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets a long term retention backup."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `location_name`: The location of the database."]
+        #[doc = "* `long_term_retention_server_name`: The name of the server"]
+        #[doc = "* `long_term_retention_database_name`: The name of the database"]
+        #[doc = "* `backup_name`: The backup name."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn get_by_resource_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -28909,6 +31687,15 @@ pub mod long_term_retention_backups {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes a long term retention backup."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `location_name`: The location of the database"]
+        #[doc = "* `long_term_retention_server_name`: The name of the server"]
+        #[doc = "* `long_term_retention_database_name`: The name of the database"]
+        #[doc = "* `backup_name`: The backup name."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn delete_by_resource_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -28928,6 +31715,14 @@ pub mod long_term_retention_backups {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists all long term retention backups for a database."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `location_name`: The location of the database"]
+        #[doc = "* `long_term_retention_server_name`: The name of the server"]
+        #[doc = "* `long_term_retention_database_name`: The name of the database"]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn list_by_resource_group_database(
             &self,
             resource_group_name: impl Into<String>,
@@ -28947,6 +31742,12 @@ pub mod long_term_retention_backups {
                 database_state: None,
             }
         }
+        #[doc = "Lists the long term retention backups for a given location."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `location_name`: The location of the database"]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn list_by_resource_group_location(
             &self,
             resource_group_name: impl Into<String>,
@@ -28962,6 +31763,13 @@ pub mod long_term_retention_backups {
                 database_state: None,
             }
         }
+        #[doc = "Lists the long term retention backups for a given server."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `location_name`: The location of the database"]
+        #[doc = "* `long_term_retention_server_name`: The name of the server"]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn list_by_resource_group_server(
             &self,
             resource_group_name: impl Into<String>,
@@ -29204,10 +32012,12 @@ pub mod long_term_retention_backups {
             pub(crate) database_state: Option<String>,
         }
         impl Builder {
+            #[doc = "Whether or not to only get the latest backup for each database."]
             pub fn only_latest_per_database(mut self, only_latest_per_database: bool) -> Self {
                 self.only_latest_per_database = Some(only_latest_per_database);
                 self
             }
+            #[doc = "Whether to query against just live databases, just deleted databases, or all databases."]
             pub fn database_state(mut self, database_state: impl Into<String>) -> Self {
                 self.database_state = Some(database_state.into());
                 self
@@ -29293,10 +32103,12 @@ pub mod long_term_retention_backups {
             pub(crate) database_state: Option<String>,
         }
         impl Builder {
+            #[doc = "Whether or not to only get the latest backup for each database."]
             pub fn only_latest_per_database(mut self, only_latest_per_database: bool) -> Self {
                 self.only_latest_per_database = Some(only_latest_per_database);
                 self
             }
+            #[doc = "Whether to query against just live databases, just deleted databases, or all databases."]
             pub fn database_state(mut self, database_state: impl Into<String>) -> Self {
                 self.database_state = Some(database_state.into());
                 self
@@ -29388,10 +32200,12 @@ pub mod long_term_retention_backups {
             pub(crate) database_state: Option<String>,
         }
         impl Builder {
+            #[doc = "Whether or not to only get the latest backup for each database."]
             pub fn only_latest_per_database(mut self, only_latest_per_database: bool) -> Self {
                 self.only_latest_per_database = Some(only_latest_per_database);
                 self
             }
+            #[doc = "Whether to query against just live databases, just deleted databases, or all databases."]
             pub fn database_state(mut self, database_state: impl Into<String>) -> Self {
                 self.database_state = Some(database_state.into());
                 self
@@ -29700,10 +32514,12 @@ pub mod long_term_retention_backups {
             pub(crate) database_state: Option<String>,
         }
         impl Builder {
+            #[doc = "Whether or not to only get the latest backup for each database."]
             pub fn only_latest_per_database(mut self, only_latest_per_database: bool) -> Self {
                 self.only_latest_per_database = Some(only_latest_per_database);
                 self
             }
+            #[doc = "Whether to query against just live databases, just deleted databases, or all databases."]
             pub fn database_state(mut self, database_state: impl Into<String>) -> Self {
                 self.database_state = Some(database_state.into());
                 self
@@ -29790,10 +32606,12 @@ pub mod long_term_retention_backups {
             pub(crate) database_state: Option<String>,
         }
         impl Builder {
+            #[doc = "Whether or not to only get the latest backup for each database."]
             pub fn only_latest_per_database(mut self, only_latest_per_database: bool) -> Self {
                 self.only_latest_per_database = Some(only_latest_per_database);
                 self
             }
+            #[doc = "Whether to query against just live databases, just deleted databases, or all databases."]
             pub fn database_state(mut self, database_state: impl Into<String>) -> Self {
                 self.database_state = Some(database_state.into());
                 self
@@ -29887,10 +32705,12 @@ pub mod long_term_retention_backups {
             pub(crate) database_state: Option<String>,
         }
         impl Builder {
+            #[doc = "Whether or not to only get the latest backup for each database."]
             pub fn only_latest_per_database(mut self, only_latest_per_database: bool) -> Self {
                 self.only_latest_per_database = Some(only_latest_per_database);
                 self
             }
+            #[doc = "Whether to query against just live databases, just deleted databases, or all databases."]
             pub fn database_state(mut self, database_state: impl Into<String>) -> Self {
                 self.database_state = Some(database_state.into());
                 self
@@ -29969,6 +32789,14 @@ pub mod long_term_retention_policies {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a database's long term retention policy."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `database_name`: The name of the database."]
+        #[doc = "* `policy_name`: The policy name. Should always be Default."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -29986,6 +32814,15 @@ pub mod long_term_retention_policies {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Sets a database's long term retention policy."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `database_name`: The name of the database."]
+        #[doc = "* `policy_name`: The policy name. Should always be Default."]
+        #[doc = "* `parameters`: The long term retention policy info."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -30005,6 +32842,13 @@ pub mod long_term_retention_policies {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets a database's long term retention policy."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `database_name`: The name of the database."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn list_by_database(
             &self,
             resource_group_name: impl Into<String>,
@@ -30203,6 +33047,13 @@ pub mod private_endpoint_connections {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a private endpoint connection."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `private_endpoint_connection_name`: The name of the private endpoint connection."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -30218,6 +33069,12 @@ pub mod private_endpoint_connections {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Approve or reject a private endpoint connection with a given name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -30235,6 +33092,12 @@ pub mod private_endpoint_connections {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes a private endpoint connection with a given name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -30250,6 +33113,12 @@ pub mod private_endpoint_connections {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets all private endpoint connections on a server."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn list_by_server(
             &self,
             resource_group_name: impl Into<String>,

@@ -82,6 +82,12 @@ pub mod cognitive_services_accounts {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Returns a Cognitive Services account specified by the parameters."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription."]
+        #[doc = "* `account_name`: The name of the cognitive services account within the specified resource group. Cognitive Services account names must be between 3 and 24 characters in length and use numbers and lower-case letters only."]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
         pub fn get_properties(
             &self,
             resource_group_name: impl Into<String>,
@@ -95,6 +101,13 @@ pub mod cognitive_services_accounts {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Create Cognitive Services Account. Accounts is a resource group wide resource type. It holds the keys for developer to access intelligent APIs. It's also the resource type for billing."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription."]
+        #[doc = "* `account_name`: The name of the cognitive services account within the specified resource group. Cognitive Services account names must be between 3 and 24 characters in length and use numbers and lower-case letters only."]
+        #[doc = "* `parameters`: The parameters to provide for the created account."]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
         pub fn create(
             &self,
             resource_group_name: impl Into<String>,
@@ -110,6 +123,13 @@ pub mod cognitive_services_accounts {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates a Cognitive Services account"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription."]
+        #[doc = "* `account_name`: The name of the cognitive services account within the specified resource group. Cognitive Services account names must be between 3 and 24 characters in length and use numbers and lower-case letters only."]
+        #[doc = "* `body`: The parameters to provide for the created account."]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -125,6 +145,12 @@ pub mod cognitive_services_accounts {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes a Cognitive Services account from the resource group. "]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription."]
+        #[doc = "* `account_name`: The name of the cognitive services account within the specified resource group. Cognitive Services account names must be between 3 and 24 characters in length and use numbers and lower-case letters only."]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -138,6 +164,11 @@ pub mod cognitive_services_accounts {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Returns all the resources of a particular type belonging to a resource group"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription."]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
         pub fn list_by_resource_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -149,12 +180,22 @@ pub mod cognitive_services_accounts {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Returns all the resources of a particular type belonging to a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists the account keys for the specified Cognitive Services account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription."]
+        #[doc = "* `account_name`: The name of the cognitive services account within the specified resource group. Cognitive Services account names must be between 3 and 24 characters in length and use numbers and lower-case letters only.  "]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
         pub fn list_keys(
             &self,
             resource_group_name: impl Into<String>,
@@ -168,6 +209,13 @@ pub mod cognitive_services_accounts {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Regenerates the specified account key for the specified Cognitive Services account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription."]
+        #[doc = "* `account_name`: The name of the cognitive services account within the specified resource group. Cognitive Services account names must be between 3 and 24 characters in length and use numbers and lower-case letters only.  "]
+        #[doc = "* `body`: regenerate key parameters."]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
         pub fn regenerate_key(
             &self,
             resource_group_name: impl Into<String>,
@@ -183,6 +231,12 @@ pub mod cognitive_services_accounts {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "List available SKUs for the requested Cognitive Services account"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription."]
+        #[doc = "* `account_name`: The name of the cognitive services account within the specified resource group. Cognitive Services account names must be between 3 and 24 characters in length and use numbers and lower-case letters only.  "]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
         pub fn list_skus(
             &self,
             resource_group_name: impl Into<String>,

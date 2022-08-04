@@ -150,6 +150,12 @@ pub mod servers {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets information about a server."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `server_name`: The name of the server."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -163,6 +169,13 @@ pub mod servers {
                 server_name: server_name.into(),
             }
         }
+        #[doc = "Creates a new server or updates an existing server. The update action will overwrite the existing server."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `parameters`: The required parameters for creating or updating a server."]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -178,6 +191,13 @@ pub mod servers {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Updates an existing server. The request body can contain one to many of the properties present in the normal server definition."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `parameters`: The required parameters for updating a server."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -193,6 +213,12 @@ pub mod servers {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Deletes a server."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `server_name`: The name of the server."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -206,6 +232,11 @@ pub mod servers {
                 server_name: server_name.into(),
             }
         }
+        #[doc = "List all the servers in a given resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -217,12 +248,22 @@ pub mod servers {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "List all the servers in a given subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Restarts a server."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `server_name`: The name of the server."]
         pub fn restart(
             &self,
             subscription_id: impl Into<String>,
@@ -236,6 +277,12 @@ pub mod servers {
                 server_name: server_name.into(),
             }
         }
+        #[doc = "Starts a stopped server."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `server_name`: The name of the server."]
         pub fn start(
             &self,
             subscription_id: impl Into<String>,
@@ -249,6 +296,12 @@ pub mod servers {
                 server_name: server_name.into(),
             }
         }
+        #[doc = "Stops a running server."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `server_name`: The name of the server."]
         pub fn stop(
             &self,
             subscription_id: impl Into<String>,
@@ -767,6 +820,12 @@ pub mod replicas {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List all the replicas for a given server."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `server_name`: The name of the server."]
         pub fn list_by_server(
             &self,
             subscription_id: impl Into<String>,
@@ -839,6 +898,13 @@ pub mod firewall_rules {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets information about a server firewall rule."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `firewall_rule_name`: The name of the server firewall rule."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -854,6 +920,14 @@ pub mod firewall_rules {
                 firewall_rule_name: firewall_rule_name.into(),
             }
         }
+        #[doc = "Creates a new firewall rule or updates an existing firewall rule."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `firewall_rule_name`: The name of the server firewall rule."]
+        #[doc = "* `parameters`: The required parameters for creating or updating a firewall rule."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -871,6 +945,13 @@ pub mod firewall_rules {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Deletes a server firewall rule."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `firewall_rule_name`: The name of the server firewall rule."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -886,6 +967,12 @@ pub mod firewall_rules {
                 firewall_rule_name: firewall_rule_name.into(),
             }
         }
+        #[doc = "List all the firewall rules in a given server."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `server_name`: The name of the server."]
         pub fn list_by_server(
             &self,
             subscription_id: impl Into<String>,
@@ -1138,6 +1225,13 @@ pub mod virtual_network_rules {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a virtual network rule."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `virtual_network_rule_name`: The name of the virtual network rule."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -1153,6 +1247,14 @@ pub mod virtual_network_rules {
                 virtual_network_rule_name: virtual_network_rule_name.into(),
             }
         }
+        #[doc = "Creates or updates an existing virtual network rule."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `virtual_network_rule_name`: The name of the virtual network rule."]
+        #[doc = "* `parameters`: The requested virtual Network Rule Resource state."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -1170,6 +1272,13 @@ pub mod virtual_network_rules {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Deletes the virtual network rule with the given name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `virtual_network_rule_name`: The name of the virtual network rule."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -1185,6 +1294,12 @@ pub mod virtual_network_rules {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets a list of virtual network rules in a server."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_by_server(
             &self,
             resource_group_name: impl Into<String>,
@@ -1462,6 +1577,13 @@ pub mod databases {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets information about a database."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `database_name`: The name of the database."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1477,6 +1599,14 @@ pub mod databases {
                 database_name: database_name.into(),
             }
         }
+        #[doc = "Creates a new database or updates an existing database."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `database_name`: The name of the database."]
+        #[doc = "* `parameters`: The required parameters for creating or updating a database."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -1494,6 +1624,13 @@ pub mod databases {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Deletes a database."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `database_name`: The name of the database."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1509,6 +1646,12 @@ pub mod databases {
                 database_name: database_name.into(),
             }
         }
+        #[doc = "List all the databases in a given server."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `server_name`: The name of the server."]
         pub fn list_by_server(
             &self,
             subscription_id: impl Into<String>,
@@ -1761,6 +1904,13 @@ pub mod configurations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets information about a configuration of server."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `configuration_name`: The name of the server configuration."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1776,6 +1926,14 @@ pub mod configurations {
                 configuration_name: configuration_name.into(),
             }
         }
+        #[doc = "Updates a configuration of a server."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `configuration_name`: The name of the server configuration."]
+        #[doc = "* `parameters`: The required parameters for updating a server configuration."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -1793,6 +1951,12 @@ pub mod configurations {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "List all the configurations in a given server."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `server_name`: The name of the server."]
         pub fn list_by_server(
             &self,
             subscription_id: impl Into<String>,
@@ -1981,6 +2145,13 @@ pub mod server_parameters {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Update a list of configurations in a given server."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `value`: The parameters for updating a list of server configuration."]
         pub fn list_update_configurations(
             &self,
             subscription_id: impl Into<String>,
@@ -2062,6 +2233,12 @@ pub mod log_files {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List all the log files in a given server."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `server_name`: The name of the server."]
         pub fn list_by_server(
             &self,
             subscription_id: impl Into<String>,
@@ -2134,6 +2311,12 @@ pub mod recoverable_servers {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a recoverable MariaDB Server."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `server_name`: The name of the server."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -2205,6 +2388,12 @@ pub mod server_based_performance_tier {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List all the performance tiers for a MariaDB server."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `server_name`: The name of the server."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -2277,6 +2466,11 @@ pub mod location_based_performance_tier {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List all the performance tiers at specified location in a given subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `location_name`: The name of the location."]
         pub fn list(&self, subscription_id: impl Into<String>, location_name: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -2341,6 +2535,11 @@ pub mod check_name_availability {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Check the availability of name for resource"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `name_availability_request`: The required parameters for checking if resource name is available."]
         pub fn execute(
             &self,
             subscription_id: impl Into<String>,
@@ -2408,6 +2607,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all of the available REST API operations."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -2461,6 +2661,13 @@ pub mod query_texts {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieve the Query-Store query texts for the queryId."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `query_id`: The Query-Store query identifier."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -2476,6 +2683,13 @@ pub mod query_texts {
                 query_id: query_id.into(),
             }
         }
+        #[doc = "Retrieve the Query-Store query texts for specified queryIds."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `query_ids`: The query identifiers"]
         pub fn list_by_server(
             &self,
             subscription_id: impl Into<String>,
@@ -2634,6 +2848,13 @@ pub mod top_query_statistics {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieve the query statistic for specified identifier."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `query_statistic_id`: The Query Statistic identifier."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -2649,6 +2870,13 @@ pub mod top_query_statistics {
                 query_statistic_id: query_statistic_id.into(),
             }
         }
+        #[doc = "Retrieve the Query-Store top queries for specified metric and aggregation."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `parameters`: The required parameters for retrieving top query statistics."]
         pub fn list_by_server(
             &self,
             subscription_id: impl Into<String>,
@@ -2804,6 +3032,13 @@ pub mod wait_statistics {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieve wait statistics for specified identifier."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `wait_statistics_id`: The Wait Statistic identifier."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -2819,6 +3054,13 @@ pub mod wait_statistics {
                 wait_statistics_id: wait_statistics_id.into(),
             }
         }
+        #[doc = "Retrieve wait statistics for specified aggregation window."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `parameters`: The required parameters for retrieving wait statistics."]
         pub fn list_by_server(
             &self,
             subscription_id: impl Into<String>,
@@ -2971,6 +3213,12 @@ pub mod wait_statistics {
     }
 }
 impl Client {
+    #[doc = "Reset data for Query Performance Insight."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `subscription_id`: The ID of the target subscription."]
+    #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+    #[doc = "* `server_name`: The name of the server."]
     pub fn reset_query_performance_insight_data(
         &self,
         subscription_id: impl Into<String>,
@@ -2984,6 +3232,14 @@ impl Client {
             server_name: server_name.into(),
         }
     }
+    #[doc = "Create recommendation action session for the advisor."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `subscription_id`: The ID of the target subscription."]
+    #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+    #[doc = "* `server_name`: The name of the server."]
+    #[doc = "* `advisor_name`: The advisor name for recommendation action."]
+    #[doc = "* `database_name`: The name of the database."]
     pub fn create_recommended_action_session(
         &self,
         subscription_id: impl Into<String>,
@@ -3106,6 +3362,13 @@ pub mod advisors {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get a recommendation action advisor."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `advisor_name`: The advisor name for recommendation action."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -3121,6 +3384,12 @@ pub mod advisors {
                 advisor_name: advisor_name.into(),
             }
         }
+        #[doc = "List recommendation action advisors."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `server_name`: The name of the server."]
         pub fn list_by_server(
             &self,
             subscription_id: impl Into<String>,
@@ -3272,6 +3541,14 @@ pub mod recommended_actions {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieve recommended actions from the advisor."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `advisor_name`: The advisor name for recommendation action."]
+        #[doc = "* `recommended_action_name`: The recommended action name."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -3289,6 +3566,13 @@ pub mod recommended_actions {
                 recommended_action_name: recommended_action_name.into(),
             }
         }
+        #[doc = "Retrieve recommended actions from the advisor."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `advisor_name`: The advisor name for recommendation action."]
         pub fn list_by_server(
             &self,
             subscription_id: impl Into<String>,
@@ -3367,6 +3651,7 @@ pub mod recommended_actions {
             pub(crate) session_id: Option<String>,
         }
         impl Builder {
+            #[doc = "The recommendation action session identifier."]
             pub fn session_id(mut self, session_id: impl Into<String>) -> Self {
                 self.session_id = Some(session_id.into());
                 self
@@ -3440,6 +3725,12 @@ pub mod location_based_recommended_action_sessions_operation_status {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Recommendation action session operation status."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `location_name`: The name of the location."]
+        #[doc = "* `operation_id`: The operation identifier."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -3505,6 +3796,12 @@ pub mod location_based_recommended_action_sessions_result {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Recommendation action session operation result."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `location_name`: The name of the location."]
+        #[doc = "* `operation_id`: The operation identifier."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -3614,6 +3911,13 @@ pub mod private_endpoint_connections {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a private endpoint connection."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `private_endpoint_connection_name`: The name of the private endpoint connection."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -3629,6 +3933,12 @@ pub mod private_endpoint_connections {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Approve or reject a private endpoint connection with a given name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -3647,6 +3957,13 @@ pub mod private_endpoint_connections {
             }
         }
         #[doc = "Updates tags on private endpoint connection."]
+        #[doc = "Updates private endpoint connection with the specified tags."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `parameters`: Parameters supplied to the Update private endpoint connection Tags operation."]
         pub fn update_tags(
             &self,
             subscription_id: impl Into<String>,
@@ -3664,6 +3981,12 @@ pub mod private_endpoint_connections {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Deletes a private endpoint connection with a given name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -3679,6 +4002,12 @@ pub mod private_endpoint_connections {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets all private endpoint connections on a server."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_by_server(
             &self,
             resource_group_name: impl Into<String>,
@@ -3979,6 +4308,12 @@ pub mod private_link_resources {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the private link resources for MariaDB server."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_by_server(
             &self,
             resource_group_name: impl Into<String>,
@@ -3992,6 +4327,13 @@ pub mod private_link_resources {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets a private link resource for MariaDB server."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `group_name`: The name of the private link resource."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -4145,6 +4487,13 @@ pub mod server_security_alert_policies {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get a server's security alert policy."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `security_alert_policy_name`: The name of the security alert policy."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -4160,6 +4509,14 @@ pub mod server_security_alert_policies {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates a threat detection policy."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `security_alert_policy_name`: The name of the threat detection policy."]
+        #[doc = "* `parameters`: The server security alert policy."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -4177,6 +4534,12 @@ pub mod server_security_alert_policies {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get the server's threat detection policies."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_by_server(
             &self,
             resource_group_name: impl Into<String>,

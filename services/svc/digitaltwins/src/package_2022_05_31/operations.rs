@@ -91,6 +91,7 @@ pub mod digital_twin_models {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieves model metadata and, optionally, model definitions.\nStatus codes:\n* 200 OK\n* 400 Bad Request\n  * InvalidArgument - The model id is invalid.\n  * LimitExceeded - The maximum number of model ids allowed in 'dependenciesFor' has been reached.\n* 404 Not Found\n  * ModelNotFound - The model was not found."]
         pub fn list(&self) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -101,6 +102,10 @@ pub mod digital_twin_models {
                 max_items_per_page: None,
             }
         }
+        #[doc = "Uploads one or more models. When any error occurs, no models are uploaded.\nStatus codes:\n* 201 Created\n* 400 Bad Request\n  * DTDLParserError - The models provided are not valid DTDL.\n  * InvalidArgument - The model id is invalid.\n  * LimitExceeded - The maximum number of model ids allowed in 'dependenciesFor' has been reached.\n  * ModelVersionNotSupported - The version of DTDL used is not supported.\n* 409 Conflict\n  * ModelAlreadyExists - The model provided already exists."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `models`: An array of models to add."]
         pub fn add(&self, models: Vec<serde_json::Value>) -> add::Builder {
             add::Builder {
                 client: self.0.clone(),
@@ -109,6 +114,10 @@ pub mod digital_twin_models {
                 tracestate: None,
             }
         }
+        #[doc = "Retrieves model metadata and optionally the model definition.\nStatus codes:\n* 200 OK\n* 400 Bad Request\n  * InvalidArgument - The model id is invalid.\n  * MissingArgument - The model id was not provided.\n* 404 Not Found\n  * ModelNotFound - The model was not found."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `id`: The id for the model. The id is globally unique and case sensitive."]
         pub fn get_by_id(&self, id: impl Into<String>) -> get_by_id::Builder {
             get_by_id::Builder {
                 client: self.0.clone(),
@@ -118,6 +127,11 @@ pub mod digital_twin_models {
                 include_model_definition: None,
             }
         }
+        #[doc = "Updates the metadata for a model.\nStatus codes:\n* 204 No Content\n* 400 Bad Request\n  * InvalidArgument - The model id is invalid.\n  * JsonPatchInvalid - The JSON Patch provided is invalid.\n  * MissingArgument - The model id was not provided.\n* 404 Not Found\n  * ModelNotFound - The model was not found.\n* 409 Conflict\n  * ModelReferencesNotDecommissioned - The model refers to models that are not decommissioned."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `id`: The id for the model. The id is globally unique and case sensitive."]
+        #[doc = "* `update_model`: An update specification described by JSON Patch. Only the decommissioned property can be replaced."]
         pub fn update(&self, id: impl Into<String>, update_model: Vec<serde_json::Value>) -> update::Builder {
             update::Builder {
                 client: self.0.clone(),
@@ -127,6 +141,10 @@ pub mod digital_twin_models {
                 tracestate: None,
             }
         }
+        #[doc = "Deletes a model. A model can only be deleted if no other models reference it.\nStatus codes:\n* 204 No Content\n* 400 Bad Request\n  * InvalidArgument - The model id is invalid.\n  * MissingArgument - The model id was not provided.\n* 404 Not Found\n  * ModelNotFound - The model was not found.\n* 409 Conflict\n  * ModelReferencesNotDeleted - The model refers to models that are not deleted."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `id`: The id for the model. The id is globally unique and case sensitive."]
         pub fn delete(&self, id: impl Into<String>) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),
@@ -149,22 +167,27 @@ pub mod digital_twin_models {
             pub(crate) max_items_per_page: Option<i64>,
         }
         impl Builder {
+            #[doc = "Identifies the request in a distributed tracing system."]
             pub fn traceparent(mut self, traceparent: impl Into<String>) -> Self {
                 self.traceparent = Some(traceparent.into());
                 self
             }
+            #[doc = "Provides vendor-specific trace identification information and is a companion to traceparent."]
             pub fn tracestate(mut self, tracestate: impl Into<String>) -> Self {
                 self.tracestate = Some(tracestate.into());
                 self
             }
+            #[doc = "The set of the models which will have their dependencies retrieved. If omitted, all models are retrieved."]
             pub fn dependencies_for(mut self, dependencies_for: Vec<String>) -> Self {
                 self.dependencies_for = dependencies_for;
                 self
             }
+            #[doc = "When true the model definition will be returned as part of the result."]
             pub fn include_model_definition(mut self, include_model_definition: bool) -> Self {
                 self.include_model_definition = Some(include_model_definition);
                 self
             }
+            #[doc = "The maximum number of items to retrieve per request. The server may choose to return less than the requested number."]
             pub fn max_items_per_page(mut self, max_items_per_page: i64) -> Self {
                 self.max_items_per_page = Some(max_items_per_page);
                 self
@@ -259,10 +282,12 @@ pub mod digital_twin_models {
             pub(crate) tracestate: Option<String>,
         }
         impl Builder {
+            #[doc = "Identifies the request in a distributed tracing system."]
             pub fn traceparent(mut self, traceparent: impl Into<String>) -> Self {
                 self.traceparent = Some(traceparent.into());
                 self
             }
+            #[doc = "Provides vendor-specific trace identification information and is a companion to traceparent."]
             pub fn tracestate(mut self, tracestate: impl Into<String>) -> Self {
                 self.tracestate = Some(tracestate.into());
                 self
@@ -321,14 +346,17 @@ pub mod digital_twin_models {
             pub(crate) include_model_definition: Option<bool>,
         }
         impl Builder {
+            #[doc = "Identifies the request in a distributed tracing system."]
             pub fn traceparent(mut self, traceparent: impl Into<String>) -> Self {
                 self.traceparent = Some(traceparent.into());
                 self
             }
+            #[doc = "Provides vendor-specific trace identification information and is a companion to traceparent."]
             pub fn tracestate(mut self, tracestate: impl Into<String>) -> Self {
                 self.tracestate = Some(tracestate.into());
                 self
             }
+            #[doc = "When true the model definition will be returned as part of the result."]
             pub fn include_model_definition(mut self, include_model_definition: bool) -> Self {
                 self.include_model_definition = Some(include_model_definition);
                 self
@@ -391,10 +419,12 @@ pub mod digital_twin_models {
             pub(crate) tracestate: Option<String>,
         }
         impl Builder {
+            #[doc = "Identifies the request in a distributed tracing system."]
             pub fn traceparent(mut self, traceparent: impl Into<String>) -> Self {
                 self.traceparent = Some(traceparent.into());
                 self
             }
+            #[doc = "Provides vendor-specific trace identification information and is a companion to traceparent."]
             pub fn tracestate(mut self, tracestate: impl Into<String>) -> Self {
                 self.tracestate = Some(tracestate.into());
                 self
@@ -448,10 +478,12 @@ pub mod digital_twin_models {
             pub(crate) tracestate: Option<String>,
         }
         impl Builder {
+            #[doc = "Identifies the request in a distributed tracing system."]
             pub fn traceparent(mut self, traceparent: impl Into<String>) -> Self {
                 self.traceparent = Some(traceparent.into());
                 self
             }
+            #[doc = "Provides vendor-specific trace identification information and is a companion to traceparent."]
             pub fn tracestate(mut self, tracestate: impl Into<String>) -> Self {
                 self.tracestate = Some(tracestate.into());
                 self
@@ -498,6 +530,10 @@ pub mod query {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Executes a query that allows traversing relationships and filtering by property values.\nStatus codes:\n* 200 OK\n* 400 Bad Request\n  * BadRequest - The continuation token is invalid.\n  * SqlQueryError - The query contains some errors.\n  * TimeoutError - The query execution timed out after 60 seconds. Try simplifying the query or adding conditions to reduce the result size.\n * 429 Too Many Requests\n  * QuotaReachedError - The maximum query rate limit has been reached."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `query_specification`: The query specification to execute."]
         pub fn query_twins(&self, query_specification: impl Into<models::QuerySpecification>) -> query_twins::Builder {
             query_twins::Builder {
                 client: self.0.clone(),
@@ -520,14 +556,17 @@ pub mod query {
             pub(crate) max_items_per_page: Option<i64>,
         }
         impl Builder {
+            #[doc = "Identifies the request in a distributed tracing system."]
             pub fn traceparent(mut self, traceparent: impl Into<String>) -> Self {
                 self.traceparent = Some(traceparent.into());
                 self
             }
+            #[doc = "Provides vendor-specific trace identification information and is a companion to traceparent."]
             pub fn tracestate(mut self, tracestate: impl Into<String>) -> Self {
                 self.tracestate = Some(tracestate.into());
                 self
             }
+            #[doc = "The maximum number of items to retrieve per request. The server may choose to return less than the requested number."]
             pub fn max_items_per_page(mut self, max_items_per_page: i64) -> Self {
                 self.max_items_per_page = Some(max_items_per_page);
                 self
@@ -582,6 +621,10 @@ pub mod digital_twins {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieves a digital twin.\nStatus codes:\n* 200 OK\n* 400 Bad Request\n  * InvalidArgument - The digital twin id is invalid.\n* 404 Not Found\n  * DigitalTwinNotFound - The digital twin was not found."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `id`: The id of the digital twin. The id is unique within the service and case sensitive."]
         pub fn get_by_id(&self, id: impl Into<String>) -> get_by_id::Builder {
             get_by_id::Builder {
                 client: self.0.clone(),
@@ -590,6 +633,11 @@ pub mod digital_twins {
                 tracestate: None,
             }
         }
+        #[doc = "Adds or replaces a digital twin.\nStatus codes:\n* 200 OK\n* 400 Bad Request\n  * InvalidArgument - The digital twin id or payload is invalid.\n  * ModelDecommissioned - The model for the digital twin is decommissioned.\n  * TwinLimitReached - The maximum number of digital twins allowed has been reached.\n  * ValidationFailed - The digital twin payload is not valid.\n* 412 Precondition Failed\n  * PreconditionFailed - The precondition check (If-Match or If-None-Match) failed."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `id`: The id of the digital twin. The id is unique within the service and case sensitive."]
+        #[doc = "* `twin`: The digital twin instance being added. If provided, the $dtId property is ignored."]
         pub fn add(&self, id: impl Into<String>, twin: impl Into<serde_json::Value>) -> add::Builder {
             add::Builder {
                 client: self.0.clone(),
@@ -600,6 +648,11 @@ pub mod digital_twins {
                 if_none_match: None,
             }
         }
+        #[doc = "Updates a digital twin.\nStatus codes:\n* 204 No Content\n* 400 Bad Request\n  * InvalidArgument - The digital twin id or payload is invalid.\n  * JsonPatchInvalid - The JSON Patch provided is invalid.\n  * ValidationFailed - Applying the patch results in an invalid digital twin.\n* 404 Not Found\n  * DigitalTwinNotFound - The digital twin was not found.\n* 412 Precondition Failed\n  * PreconditionFailed - The precondition check (If-Match or If-None-Match) failed."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `id`: The id of the digital twin. The id is unique within the service and case sensitive."]
+        #[doc = "* `patch_document`: An update specification described by JSON Patch. Updates to property values and $model elements may happen in the same request. Operations are limited to add, replace and remove."]
         pub fn update(&self, id: impl Into<String>, patch_document: Vec<serde_json::Value>) -> update::Builder {
             update::Builder {
                 client: self.0.clone(),
@@ -610,6 +663,10 @@ pub mod digital_twins {
                 if_match: None,
             }
         }
+        #[doc = "Deletes a digital twin. All relationships referencing the digital twin must already be deleted.\nStatus codes:\n* 204 No Content\n* 400 Bad Request\n  * InvalidArgument - The digital twin id is invalid.\n  * RelationshipsNotDeleted - The digital twin contains relationships.\n* 404 Not Found\n  * DigitalTwinNotFound - The digital twin was not found.\n* 412 Precondition Failed\n  * PreconditionFailed - The precondition check (If-Match or If-None-Match) failed."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `id`: The id of the digital twin. The id is unique within the service and case sensitive."]
         pub fn delete(&self, id: impl Into<String>) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),
@@ -619,6 +676,11 @@ pub mod digital_twins {
                 if_match: None,
             }
         }
+        #[doc = "Retrieves a relationship between two digital twins.\nStatus codes:\n* 200 OK\n* 400 Bad Request\n  * InvalidArgument - The digital twin id or relationship id is invalid.\n* 404 Not Found\n  * DigitalTwinNotFound - The digital twin was not found.\n  * RelationshipNotFound - The relationship was not found."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `id`: The id of the digital twin. The id is unique within the service and case sensitive."]
+        #[doc = "* `relationship_id`: The id of the relationship. The id is unique within the digital twin and case sensitive."]
         pub fn get_relationship_by_id(&self, id: impl Into<String>, relationship_id: impl Into<String>) -> get_relationship_by_id::Builder {
             get_relationship_by_id::Builder {
                 client: self.0.clone(),
@@ -628,6 +690,12 @@ pub mod digital_twins {
                 tracestate: None,
             }
         }
+        #[doc = "Adds a relationship between two digital twins.\nStatus codes:\n* 200 OK\n* 400 Bad Request\n  * InvalidArgument - The digital twin id, relationship id, or payload is invalid.\n  * InvalidRelationship - The relationship is invalid.\n  * OperationNotAllowed - The relationship cannot connect to the same digital twin.\n  * ValidationFailed - The relationship content is invalid.\n* 404 Not Found\n  * DigitalTwinNotFound - The digital twin was not found.\n  * TargetTwinNotFound - The digital twin target of the relationship was not found.\n* 412 Precondition Failed\n  * PreconditionFailed - The precondition check (If-Match or If-None-Match) failed."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `id`: The id of the digital twin. The id is unique within the service and case sensitive."]
+        #[doc = "* `relationship_id`: The id of the relationship. The id is unique within the digital twin and case sensitive."]
+        #[doc = "* `relationship`: The data for the relationship."]
         pub fn add_relationship(
             &self,
             id: impl Into<String>,
@@ -644,6 +712,12 @@ pub mod digital_twins {
                 if_none_match: None,
             }
         }
+        #[doc = "Updates the properties on a relationship between two digital twins.\nStatus codes:\n* 204 No Content\n* 400 Bad Request\n  * InvalidArgument - The digital twin id or relationship id is invalid.\n  * InvalidRelationship - The relationship is invalid.\n  * JsonPatchInvalid - The JSON Patch provided is invalid.\n  * ValidationFailed - The relationship content is invalid.\n* 404 Not Found\n  * DigitalTwinNotFound - The digital twin was not found.\n  * RelationshipNotFound - The relationship was not found.\n* 409 Conflict\n  * RelationshipAlreadyExists - The relationship already exists.\n* 412 Precondition Failed\n  * PreconditionFailed - The precondition check (If-Match or If-None-Match) failed."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `id`: The id of the digital twin. The id is unique within the service and case sensitive."]
+        #[doc = "* `relationship_id`: The id of the relationship. The id is unique within the digital twin and case sensitive."]
+        #[doc = "* `patch_document`: JSON Patch description of the update to the relationship properties."]
         pub fn update_relationship(
             &self,
             id: impl Into<String>,
@@ -660,6 +734,11 @@ pub mod digital_twins {
                 if_match: None,
             }
         }
+        #[doc = "Deletes a relationship between two digital twins.\nStatus codes:\n* 204 No Content\n* 400 Bad Request\n  * InvalidArgument - The digital twin id or relationship id is invalid.\n* 404 Not Found\n  * DigitalTwinNotFound - The digital twin was not found.\n  * RelationshipNotFound - The relationship was not found.\n* 412 Precondition Failed\n  * PreconditionFailed - The precondition check (If-Match or If-None-Match) failed."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `id`: The id of the digital twin. The id is unique within the service and case sensitive."]
+        #[doc = "* `relationship_id`: The id of the relationship. The id is unique within the digital twin and case sensitive."]
         pub fn delete_relationship(&self, id: impl Into<String>, relationship_id: impl Into<String>) -> delete_relationship::Builder {
             delete_relationship::Builder {
                 client: self.0.clone(),
@@ -670,6 +749,10 @@ pub mod digital_twins {
                 if_match: None,
             }
         }
+        #[doc = "Retrieves the relationships from a digital twin.\nStatus codes:\n* 200 OK\n* 400 Bad Request\n  * InvalidArgument - The digital twin id is invalid.\n* 404 Not Found\n  * DigitalTwinNotFound - The digital twin was not found."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `id`: The id of the digital twin. The id is unique within the service and case sensitive."]
         pub fn list_relationships(&self, id: impl Into<String>) -> list_relationships::Builder {
             list_relationships::Builder {
                 client: self.0.clone(),
@@ -679,6 +762,10 @@ pub mod digital_twins {
                 relationship_name: None,
             }
         }
+        #[doc = "Retrieves all incoming relationship for a digital twin.\nStatus codes:\n* 200 OK\n* 400 Bad Request\n  * InvalidArgument - The digital twin id is invalid.\n* 404 Not Found\n  * DigitalTwinNotFound - The digital twin was not found."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `id`: The id of the digital twin. The id is unique within the service and case sensitive."]
         pub fn list_incoming_relationships(&self, id: impl Into<String>) -> list_incoming_relationships::Builder {
             list_incoming_relationships::Builder {
                 client: self.0.clone(),
@@ -687,6 +774,12 @@ pub mod digital_twins {
                 tracestate: None,
             }
         }
+        #[doc = "Sends telemetry on behalf of a digital twin.\nStatus codes:\n* 204 No Content\n* 400 Bad Request\n  * InvalidArgument - The digital twin id or message id is invalid.\n  * ValidationFailed - The telemetry content is invalid.\n* 404 Not Found\n  * DigitalTwinNotFound - The digital twin was not found."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `id`: The id of the digital twin. The id is unique within the service and case sensitive."]
+        #[doc = "* `telemetry`: The telemetry measurements to send from the digital twin."]
+        #[doc = "* `message_id`: A unique message identifier (in the scope of the digital twin id) that is commonly used for de-duplicating messages."]
         pub fn send_telemetry(
             &self,
             id: impl Into<String>,
@@ -703,6 +796,13 @@ pub mod digital_twins {
                 telemetry_source_time: None,
             }
         }
+        #[doc = "Sends telemetry on behalf of a component in a digital twin.\nStatus codes:\n* 204 No Content\n* 400 Bad Request\n  * InvalidArgument - The digital twin id, message id, or component path is invalid.\n  * ValidationFailed - The telemetry content is invalid.\n* 404 Not Found\n  * DigitalTwinNotFound - The digital twin was not found.\n  * ComponentNotFound - The component path was not found."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `id`: The id of the digital twin. The id is unique within the service and case sensitive."]
+        #[doc = "* `component_path`: The name of the DTDL component."]
+        #[doc = "* `telemetry`: The telemetry measurements to send from the digital twin's component."]
+        #[doc = "* `message_id`: A unique message identifier (in the scope of the digital twin id) that is commonly used for de-duplicating messages."]
         pub fn send_component_telemetry(
             &self,
             id: impl Into<String>,
@@ -721,6 +821,11 @@ pub mod digital_twins {
                 telemetry_source_time: None,
             }
         }
+        #[doc = "Retrieves a component from a digital twin.\nStatus codes:\n* 200 OK\n* 400 Bad Request\n  * InvalidArgument - The digital twin id or component path is invalid.\n* 404 Not Found\n  * DigitalTwinNotFound - The digital twin was not found.\n  * ComponentNotFound - The component path was not found."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `id`: The id of the digital twin. The id is unique within the service and case sensitive."]
+        #[doc = "* `component_path`: The name of the DTDL component."]
         pub fn get_component(&self, id: impl Into<String>, component_path: impl Into<String>) -> get_component::Builder {
             get_component::Builder {
                 client: self.0.clone(),
@@ -730,6 +835,12 @@ pub mod digital_twins {
                 tracestate: None,
             }
         }
+        #[doc = "Updates a component on a digital twin.\nStatus codes:\n* 204 No Content\n* 400 Bad Request\n  * InvalidArgument - The digital twin id, component path, or payload is invalid.\n  * JsonPatchInvalid - The JSON Patch provided is invalid.\n  * ValidationFailed - Applying the patch results in an invalid digital twin.\n* 404 Not Found\n  * DigitalTwinNotFound - The digital twin was not found.\n* 412 Precondition Failed\n  * PreconditionFailed - The precondition check (If-Match or If-None-Match) failed."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `id`: The id of the digital twin. The id is unique within the service and case sensitive."]
+        #[doc = "* `component_path`: The name of the DTDL component."]
+        #[doc = "* `patch_document`: An update specification described by JSON Patch. Updates to property values and $model elements may happen in the same request. Operations are limited to add, replace and remove."]
         pub fn update_component(
             &self,
             id: impl Into<String>,
@@ -758,10 +869,12 @@ pub mod digital_twins {
             pub(crate) tracestate: Option<String>,
         }
         impl Builder {
+            #[doc = "Identifies the request in a distributed tracing system."]
             pub fn traceparent(mut self, traceparent: impl Into<String>) -> Self {
                 self.traceparent = Some(traceparent.into());
                 self
             }
+            #[doc = "Provides vendor-specific trace identification information and is a companion to traceparent."]
             pub fn tracestate(mut self, tracestate: impl Into<String>) -> Self {
                 self.tracestate = Some(tracestate.into());
                 self
@@ -820,14 +933,17 @@ pub mod digital_twins {
             pub(crate) if_none_match: Option<String>,
         }
         impl Builder {
+            #[doc = "Identifies the request in a distributed tracing system."]
             pub fn traceparent(mut self, traceparent: impl Into<String>) -> Self {
                 self.traceparent = Some(traceparent.into());
                 self
             }
+            #[doc = "Provides vendor-specific trace identification information and is a companion to traceparent."]
             pub fn tracestate(mut self, tracestate: impl Into<String>) -> Self {
                 self.tracestate = Some(tracestate.into());
                 self
             }
+            #[doc = "Only perform the operation if the entity does not already exist."]
             pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
                 self.if_none_match = Some(if_none_match.into());
                 self
@@ -890,14 +1006,17 @@ pub mod digital_twins {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "Identifies the request in a distributed tracing system."]
             pub fn traceparent(mut self, traceparent: impl Into<String>) -> Self {
                 self.traceparent = Some(traceparent.into());
                 self
             }
+            #[doc = "Provides vendor-specific trace identification information and is a companion to traceparent."]
             pub fn tracestate(mut self, tracestate: impl Into<String>) -> Self {
                 self.tracestate = Some(tracestate.into());
                 self
             }
+            #[doc = "Only perform the operation if the entity's etag matches one of the etags provided or * is provided."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -955,14 +1074,17 @@ pub mod digital_twins {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "Identifies the request in a distributed tracing system."]
             pub fn traceparent(mut self, traceparent: impl Into<String>) -> Self {
                 self.traceparent = Some(traceparent.into());
                 self
             }
+            #[doc = "Provides vendor-specific trace identification information and is a companion to traceparent."]
             pub fn tracestate(mut self, tracestate: impl Into<String>) -> Self {
                 self.tracestate = Some(tracestate.into());
                 self
             }
+            #[doc = "Only perform the operation if the entity's etag matches one of the etags provided or * is provided."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -1019,10 +1141,12 @@ pub mod digital_twins {
             pub(crate) tracestate: Option<String>,
         }
         impl Builder {
+            #[doc = "Identifies the request in a distributed tracing system."]
             pub fn traceparent(mut self, traceparent: impl Into<String>) -> Self {
                 self.traceparent = Some(traceparent.into());
                 self
             }
+            #[doc = "Provides vendor-specific trace identification information and is a companion to traceparent."]
             pub fn tracestate(mut self, tracestate: impl Into<String>) -> Self {
                 self.tracestate = Some(tracestate.into());
                 self
@@ -1087,14 +1211,17 @@ pub mod digital_twins {
             pub(crate) if_none_match: Option<String>,
         }
         impl Builder {
+            #[doc = "Identifies the request in a distributed tracing system."]
             pub fn traceparent(mut self, traceparent: impl Into<String>) -> Self {
                 self.traceparent = Some(traceparent.into());
                 self
             }
+            #[doc = "Provides vendor-specific trace identification information and is a companion to traceparent."]
             pub fn tracestate(mut self, tracestate: impl Into<String>) -> Self {
                 self.tracestate = Some(tracestate.into());
                 self
             }
+            #[doc = "Only perform the operation if the entity does not already exist."]
             pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
                 self.if_none_match = Some(if_none_match.into());
                 self
@@ -1163,14 +1290,17 @@ pub mod digital_twins {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "Identifies the request in a distributed tracing system."]
             pub fn traceparent(mut self, traceparent: impl Into<String>) -> Self {
                 self.traceparent = Some(traceparent.into());
                 self
             }
+            #[doc = "Provides vendor-specific trace identification information and is a companion to traceparent."]
             pub fn tracestate(mut self, tracestate: impl Into<String>) -> Self {
                 self.tracestate = Some(tracestate.into());
                 self
             }
+            #[doc = "Only perform the operation if the entity's etag matches one of the etags provided or * is provided."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -1234,14 +1364,17 @@ pub mod digital_twins {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "Identifies the request in a distributed tracing system."]
             pub fn traceparent(mut self, traceparent: impl Into<String>) -> Self {
                 self.traceparent = Some(traceparent.into());
                 self
             }
+            #[doc = "Provides vendor-specific trace identification information and is a companion to traceparent."]
             pub fn tracestate(mut self, tracestate: impl Into<String>) -> Self {
                 self.tracestate = Some(tracestate.into());
                 self
             }
+            #[doc = "Only perform the operation if the entity's etag matches one of the etags provided or * is provided."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -1303,14 +1436,17 @@ pub mod digital_twins {
             pub(crate) relationship_name: Option<String>,
         }
         impl Builder {
+            #[doc = "Identifies the request in a distributed tracing system."]
             pub fn traceparent(mut self, traceparent: impl Into<String>) -> Self {
                 self.traceparent = Some(traceparent.into());
                 self
             }
+            #[doc = "Provides vendor-specific trace identification information and is a companion to traceparent."]
             pub fn tracestate(mut self, tracestate: impl Into<String>) -> Self {
                 self.tracestate = Some(tracestate.into());
                 self
             }
+            #[doc = "The name of the relationship."]
             pub fn relationship_name(mut self, relationship_name: impl Into<String>) -> Self {
                 self.relationship_name = Some(relationship_name.into());
                 self
@@ -1397,10 +1533,12 @@ pub mod digital_twins {
             pub(crate) tracestate: Option<String>,
         }
         impl Builder {
+            #[doc = "Identifies the request in a distributed tracing system."]
             pub fn traceparent(mut self, traceparent: impl Into<String>) -> Self {
                 self.traceparent = Some(traceparent.into());
                 self
             }
+            #[doc = "Provides vendor-specific trace identification information and is a companion to traceparent."]
             pub fn tracestate(mut self, tracestate: impl Into<String>) -> Self {
                 self.tracestate = Some(tracestate.into());
                 self
@@ -1490,14 +1628,17 @@ pub mod digital_twins {
             pub(crate) telemetry_source_time: Option<String>,
         }
         impl Builder {
+            #[doc = "Identifies the request in a distributed tracing system."]
             pub fn traceparent(mut self, traceparent: impl Into<String>) -> Self {
                 self.traceparent = Some(traceparent.into());
                 self
             }
+            #[doc = "Provides vendor-specific trace identification information and is a companion to traceparent."]
             pub fn tracestate(mut self, tracestate: impl Into<String>) -> Self {
                 self.tracestate = Some(tracestate.into());
                 self
             }
+            #[doc = "An RFC 3339 timestamp that identifies the time the telemetry was measured."]
             pub fn telemetry_source_time(mut self, telemetry_source_time: impl Into<String>) -> Self {
                 self.telemetry_source_time = Some(telemetry_source_time.into());
                 self
@@ -1559,14 +1700,17 @@ pub mod digital_twins {
             pub(crate) telemetry_source_time: Option<String>,
         }
         impl Builder {
+            #[doc = "Identifies the request in a distributed tracing system."]
             pub fn traceparent(mut self, traceparent: impl Into<String>) -> Self {
                 self.traceparent = Some(traceparent.into());
                 self
             }
+            #[doc = "Provides vendor-specific trace identification information and is a companion to traceparent."]
             pub fn tracestate(mut self, tracestate: impl Into<String>) -> Self {
                 self.tracestate = Some(tracestate.into());
                 self
             }
+            #[doc = "An RFC 3339 timestamp that identifies the time the telemetry was measured."]
             pub fn telemetry_source_time(mut self, telemetry_source_time: impl Into<String>) -> Self {
                 self.telemetry_source_time = Some(telemetry_source_time.into());
                 self
@@ -1630,10 +1774,12 @@ pub mod digital_twins {
             pub(crate) tracestate: Option<String>,
         }
         impl Builder {
+            #[doc = "Identifies the request in a distributed tracing system."]
             pub fn traceparent(mut self, traceparent: impl Into<String>) -> Self {
                 self.traceparent = Some(traceparent.into());
                 self
             }
+            #[doc = "Provides vendor-specific trace identification information and is a companion to traceparent."]
             pub fn tracestate(mut self, tracestate: impl Into<String>) -> Self {
                 self.tracestate = Some(tracestate.into());
                 self
@@ -1698,14 +1844,17 @@ pub mod digital_twins {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "Identifies the request in a distributed tracing system."]
             pub fn traceparent(mut self, traceparent: impl Into<String>) -> Self {
                 self.traceparent = Some(traceparent.into());
                 self
             }
+            #[doc = "Provides vendor-specific trace identification information and is a companion to traceparent."]
             pub fn tracestate(mut self, tracestate: impl Into<String>) -> Self {
                 self.tracestate = Some(tracestate.into());
                 self
             }
+            #[doc = "Only perform the operation if the entity's etag matches one of the etags provided or * is provided."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -1761,6 +1910,7 @@ pub mod event_routes {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieves all event routes.\nStatus codes:\n* 200 OK"]
         pub fn list(&self) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -1769,6 +1919,10 @@ pub mod event_routes {
                 max_items_per_page: None,
             }
         }
+        #[doc = "Retrieves an event route.\nStatus codes:\n* 200 OK\n* 404 Not Found\n  * EventRouteNotFound - The event route was not found."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `id`: The id for an event route. The id is unique within event routes and case sensitive."]
         pub fn get_by_id(&self, id: impl Into<String>) -> get_by_id::Builder {
             get_by_id::Builder {
                 client: self.0.clone(),
@@ -1777,6 +1931,11 @@ pub mod event_routes {
                 tracestate: None,
             }
         }
+        #[doc = "Adds or replaces an event route.\nStatus codes:\n* 204 No Content\n* 400 Bad Request\n  * EventRouteEndpointInvalid - The endpoint provided does not exist or is not active.\n  * EventRouteFilterInvalid - The event route filter is invalid.\n  * EventRouteIdInvalid - The event route id is invalid.\n  * LimitExceeded - The maximum number of event routes allowed has been reached."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `id`: The id for an event route. The id is unique within event routes and case sensitive."]
+        #[doc = "* `event_route`: The event route data"]
         pub fn add(&self, id: impl Into<String>, event_route: impl Into<models::EventRoute>) -> add::Builder {
             add::Builder {
                 client: self.0.clone(),
@@ -1786,6 +1945,10 @@ pub mod event_routes {
                 tracestate: None,
             }
         }
+        #[doc = "Deletes an event route.\nStatus codes:\n* 204 No Content\n* 404 Not Found\n  * EventRouteNotFound - The event route was not found."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `id`: The id for an event route. The id is unique within event routes and case sensitive."]
         pub fn delete(&self, id: impl Into<String>) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),
@@ -1806,14 +1969,17 @@ pub mod event_routes {
             pub(crate) max_items_per_page: Option<i64>,
         }
         impl Builder {
+            #[doc = "Identifies the request in a distributed tracing system."]
             pub fn traceparent(mut self, traceparent: impl Into<String>) -> Self {
                 self.traceparent = Some(traceparent.into());
                 self
             }
+            #[doc = "Provides vendor-specific trace identification information and is a companion to traceparent."]
             pub fn tracestate(mut self, tracestate: impl Into<String>) -> Self {
                 self.tracestate = Some(tracestate.into());
                 self
             }
+            #[doc = "The maximum number of items to retrieve per request. The server may choose to return less than the requested number."]
             pub fn max_items_per_page(mut self, max_items_per_page: i64) -> Self {
                 self.max_items_per_page = Some(max_items_per_page);
                 self
@@ -1899,10 +2065,12 @@ pub mod event_routes {
             pub(crate) tracestate: Option<String>,
         }
         impl Builder {
+            #[doc = "Identifies the request in a distributed tracing system."]
             pub fn traceparent(mut self, traceparent: impl Into<String>) -> Self {
                 self.traceparent = Some(traceparent.into());
                 self
             }
+            #[doc = "Provides vendor-specific trace identification information and is a companion to traceparent."]
             pub fn tracestate(mut self, tracestate: impl Into<String>) -> Self {
                 self.tracestate = Some(tracestate.into());
                 self
@@ -1960,10 +2128,12 @@ pub mod event_routes {
             pub(crate) tracestate: Option<String>,
         }
         impl Builder {
+            #[doc = "Identifies the request in a distributed tracing system."]
             pub fn traceparent(mut self, traceparent: impl Into<String>) -> Self {
                 self.traceparent = Some(traceparent.into());
                 self
             }
+            #[doc = "Provides vendor-specific trace identification information and is a companion to traceparent."]
             pub fn tracestate(mut self, tracestate: impl Into<String>) -> Self {
                 self.tracestate = Some(tracestate.into());
                 self
@@ -2017,10 +2187,12 @@ pub mod event_routes {
             pub(crate) tracestate: Option<String>,
         }
         impl Builder {
+            #[doc = "Identifies the request in a distributed tracing system."]
             pub fn traceparent(mut self, traceparent: impl Into<String>) -> Self {
                 self.traceparent = Some(traceparent.into());
                 self
             }
+            #[doc = "Provides vendor-specific trace identification information and is a companion to traceparent."]
             pub fn tracestate(mut self, tracestate: impl Into<String>) -> Self {
                 self.tracestate = Some(tracestate.into());
                 self

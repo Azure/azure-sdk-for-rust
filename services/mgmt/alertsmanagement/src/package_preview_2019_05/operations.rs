@@ -92,6 +92,10 @@ pub mod action_rules {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get all action rule in a given subscription"]
+        #[doc = "List all action rules of the subscription and given input filters"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
@@ -109,6 +113,11 @@ pub mod action_rules {
             }
         }
         #[doc = "Get all action rules created in a resource group"]
+        #[doc = "List all action rules of the subscription, created in given resource group and given input filters"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: Resource group name where the resource is created."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -131,6 +140,12 @@ pub mod action_rules {
             }
         }
         #[doc = "Get action rule by name"]
+        #[doc = "Get a specific action rule"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: Resource group name where the resource is created."]
+        #[doc = "* `action_rule_name`: The name of action rule that needs to be fetched"]
         pub fn get_by_name(
             &self,
             subscription_id: impl Into<String>,
@@ -145,6 +160,13 @@ pub mod action_rules {
             }
         }
         #[doc = "Create/update an action rule"]
+        #[doc = "Creates/Updates a specific action rule"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: Resource group name where the resource is created."]
+        #[doc = "* `action_rule_name`: The name of action rule that needs to be created/updated"]
+        #[doc = "* `action_rule`: action rule to be created/updated"]
         pub fn create_update(
             &self,
             subscription_id: impl Into<String>,
@@ -161,6 +183,13 @@ pub mod action_rules {
             }
         }
         #[doc = "Patch action rule"]
+        #[doc = "Update enabled flag and/or tags for the given action rule"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: Resource group name where the resource is created."]
+        #[doc = "* `action_rule_name`: The name that needs to be updated"]
+        #[doc = "* `action_rule_patch`: Parameters supplied to the operation."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -177,6 +206,12 @@ pub mod action_rules {
             }
         }
         #[doc = "Delete action rule"]
+        #[doc = "Deletes a given action rule"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: Resource group name where the resource is created."]
+        #[doc = "* `action_rule_name`: The name that needs to be deleted"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -210,42 +245,52 @@ pub mod action_rules {
             pub(crate) name: Option<String>,
         }
         impl Builder {
+            #[doc = "Filter by target resource group name. Default value is select all."]
             pub fn target_resource_group(mut self, target_resource_group: impl Into<String>) -> Self {
                 self.target_resource_group = Some(target_resource_group.into());
                 self
             }
+            #[doc = "Filter by target resource type. Default value is select all."]
             pub fn target_resource_type(mut self, target_resource_type: impl Into<String>) -> Self {
                 self.target_resource_type = Some(target_resource_type.into());
                 self
             }
+            #[doc = "Filter by target resource( which is full ARM ID) Default value is select all."]
             pub fn target_resource(mut self, target_resource: impl Into<String>) -> Self {
                 self.target_resource = Some(target_resource.into());
                 self
             }
+            #[doc = "Filter by severity.  Default value is select all."]
             pub fn severity(mut self, severity: impl Into<String>) -> Self {
                 self.severity = Some(severity.into());
                 self
             }
+            #[doc = "Filter by monitor service which generates the alert instance. Default value is select all."]
             pub fn monitor_service(mut self, monitor_service: impl Into<String>) -> Self {
                 self.monitor_service = Some(monitor_service.into());
                 self
             }
+            #[doc = "filter by impacted/target scope (provide comma separated list for multiple scopes). The value should be an well constructed ARM id of the scope."]
             pub fn impacted_scope(mut self, impacted_scope: impl Into<String>) -> Self {
                 self.impacted_scope = Some(impacted_scope.into());
                 self
             }
+            #[doc = "filter by alert rule description"]
             pub fn description(mut self, description: impl Into<String>) -> Self {
                 self.description = Some(description.into());
                 self
             }
+            #[doc = "filter by alert rule id"]
             pub fn alert_rule_id(mut self, alert_rule_id: impl Into<String>) -> Self {
                 self.alert_rule_id = Some(alert_rule_id.into());
                 self
             }
+            #[doc = "filter by action group configured as part of action rule"]
             pub fn action_group(mut self, action_group: impl Into<String>) -> Self {
                 self.action_group = Some(action_group.into());
                 self
             }
+            #[doc = "filter by action rule name"]
             pub fn name(mut self, name: impl Into<String>) -> Self {
                 self.name = Some(name.into());
                 self
@@ -369,42 +414,52 @@ pub mod action_rules {
             pub(crate) name: Option<String>,
         }
         impl Builder {
+            #[doc = "Filter by target resource group name. Default value is select all."]
             pub fn target_resource_group(mut self, target_resource_group: impl Into<String>) -> Self {
                 self.target_resource_group = Some(target_resource_group.into());
                 self
             }
+            #[doc = "Filter by target resource type. Default value is select all."]
             pub fn target_resource_type(mut self, target_resource_type: impl Into<String>) -> Self {
                 self.target_resource_type = Some(target_resource_type.into());
                 self
             }
+            #[doc = "Filter by target resource( which is full ARM ID) Default value is select all."]
             pub fn target_resource(mut self, target_resource: impl Into<String>) -> Self {
                 self.target_resource = Some(target_resource.into());
                 self
             }
+            #[doc = "Filter by severity.  Default value is select all."]
             pub fn severity(mut self, severity: impl Into<String>) -> Self {
                 self.severity = Some(severity.into());
                 self
             }
+            #[doc = "Filter by monitor service which generates the alert instance. Default value is select all."]
             pub fn monitor_service(mut self, monitor_service: impl Into<String>) -> Self {
                 self.monitor_service = Some(monitor_service.into());
                 self
             }
+            #[doc = "filter by impacted/target scope (provide comma separated list for multiple scopes). The value should be an well constructed ARM id of the scope."]
             pub fn impacted_scope(mut self, impacted_scope: impl Into<String>) -> Self {
                 self.impacted_scope = Some(impacted_scope.into());
                 self
             }
+            #[doc = "filter by alert rule description"]
             pub fn description(mut self, description: impl Into<String>) -> Self {
                 self.description = Some(description.into());
                 self
             }
+            #[doc = "filter by alert rule id"]
             pub fn alert_rule_id(mut self, alert_rule_id: impl Into<String>) -> Self {
                 self.alert_rule_id = Some(alert_rule_id.into());
                 self
             }
+            #[doc = "filter by action group configured as part of action rule"]
             pub fn action_group(mut self, action_group: impl Into<String>) -> Self {
                 self.action_group = Some(action_group.into());
                 self
             }
+            #[doc = "filter by action rule name"]
             pub fn name(mut self, name: impl Into<String>) -> Self {
                 self.name = Some(name.into());
                 self
@@ -726,6 +781,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List all operations available through Azure Alerts Management Resource Provider."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -807,12 +863,20 @@ pub mod alerts {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List alerts meta data information based on value of identifier parameter."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `identifier`: Identification of the information to be retrieved by API call."]
         pub fn meta_data(&self, identifier: impl Into<String>) -> meta_data::Builder {
             meta_data::Builder {
                 client: self.0.clone(),
                 identifier: identifier.into(),
             }
         }
+        #[doc = "List all existing alerts, where the results can be filtered on the basis of multiple parameters (e.g. time range). The results can then be sorted on the basis specific fields, with the default being lastModifiedDateTime. "]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn get_all(&self, subscription_id: impl Into<String>) -> get_all::Builder {
             get_all::Builder {
                 client: self.0.clone(),
@@ -837,6 +901,11 @@ pub mod alerts {
             }
         }
         #[doc = "Get a specific alert."]
+        #[doc = "Get information related to a specific alert"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `alert_id`: Unique ID of an alert instance."]
         pub fn get_by_id(&self, subscription_id: impl Into<String>, alert_id: impl Into<String>) -> get_by_id::Builder {
             get_by_id::Builder {
                 client: self.0.clone(),
@@ -844,6 +913,12 @@ pub mod alerts {
                 alert_id: alert_id.into(),
             }
         }
+        #[doc = "Change the state of an alert."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `alert_id`: Unique ID of an alert instance."]
+        #[doc = "* `new_state`: New state of the alert."]
         pub fn change_state(
             &self,
             subscription_id: impl Into<String>,
@@ -858,6 +933,11 @@ pub mod alerts {
                 comment: None,
             }
         }
+        #[doc = "Get the history of an alert, which captures any monitor condition changes (Fired/Resolved) and alert state changes (New/Acknowledged/Closed)."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `alert_id`: Unique ID of an alert instance."]
         pub fn get_history(&self, subscription_id: impl Into<String>, alert_id: impl Into<String>) -> get_history::Builder {
             get_history::Builder {
                 client: self.0.clone(),
@@ -865,6 +945,11 @@ pub mod alerts {
                 alert_id: alert_id.into(),
             }
         }
+        #[doc = "Get a summarized count of your alerts grouped by various parameters (e.g. grouping by 'Severity' returns the count of alerts for each severity)."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `groupby`: This parameter allows the result set to be grouped by input fields (Maximum 2 comma separated fields supported). For example, groupby=severity or groupby=severity,alertstate."]
         pub fn get_summary(&self, subscription_id: impl Into<String>, groupby: impl Into<String>) -> get_summary::Builder {
             get_summary::Builder {
                 client: self.0.clone(),
@@ -959,70 +1044,87 @@ pub mod alerts {
             pub(crate) custom_time_range: Option<String>,
         }
         impl Builder {
+            #[doc = "Filter by target resource( which is full ARM ID) Default value is select all."]
             pub fn target_resource(mut self, target_resource: impl Into<String>) -> Self {
                 self.target_resource = Some(target_resource.into());
                 self
             }
+            #[doc = "Filter by target resource type. Default value is select all."]
             pub fn target_resource_type(mut self, target_resource_type: impl Into<String>) -> Self {
                 self.target_resource_type = Some(target_resource_type.into());
                 self
             }
+            #[doc = "Filter by target resource group name. Default value is select all."]
             pub fn target_resource_group(mut self, target_resource_group: impl Into<String>) -> Self {
                 self.target_resource_group = Some(target_resource_group.into());
                 self
             }
+            #[doc = "Filter by monitor service which generates the alert instance. Default value is select all."]
             pub fn monitor_service(mut self, monitor_service: impl Into<String>) -> Self {
                 self.monitor_service = Some(monitor_service.into());
                 self
             }
+            #[doc = "Filter by monitor condition which is either 'Fired' or 'Resolved'. Default value is to select all."]
             pub fn monitor_condition(mut self, monitor_condition: impl Into<String>) -> Self {
                 self.monitor_condition = Some(monitor_condition.into());
                 self
             }
+            #[doc = "Filter by severity.  Default value is select all."]
             pub fn severity(mut self, severity: impl Into<String>) -> Self {
                 self.severity = Some(severity.into());
                 self
             }
+            #[doc = "Filter by state of the alert instance. Default value is to select all."]
             pub fn alert_state(mut self, alert_state: impl Into<String>) -> Self {
                 self.alert_state = Some(alert_state.into());
                 self
             }
+            #[doc = "Filter by specific alert rule.  Default value is to select all."]
             pub fn alert_rule(mut self, alert_rule: impl Into<String>) -> Self {
                 self.alert_rule = Some(alert_rule.into());
                 self
             }
+            #[doc = "Filter the alerts list by the Smart Group Id. Default value is none."]
             pub fn smart_group_id(mut self, smart_group_id: impl Into<String>) -> Self {
                 self.smart_group_id = Some(smart_group_id.into());
                 self
             }
+            #[doc = "Include context which has contextual data specific to the monitor service. Default value is false'"]
             pub fn include_context(mut self, include_context: bool) -> Self {
                 self.include_context = Some(include_context);
                 self
             }
+            #[doc = "Include egress config which would be used for displaying the content in portal.  Default value is 'false'."]
             pub fn include_egress_config(mut self, include_egress_config: bool) -> Self {
                 self.include_egress_config = Some(include_egress_config);
                 self
             }
+            #[doc = "Determines number of alerts returned per page in response. Permissible value is between 1 to 250. When the \"includeContent\"  filter is selected, maximum value allowed is 25. Default value is 25."]
             pub fn page_count(mut self, page_count: i64) -> Self {
                 self.page_count = Some(page_count);
                 self
             }
+            #[doc = "Sort the query results by input field,  Default value is 'lastModifiedDateTime'."]
             pub fn sort_by(mut self, sort_by: impl Into<String>) -> Self {
                 self.sort_by = Some(sort_by.into());
                 self
             }
+            #[doc = "Sort the query results order in either ascending or descending.  Default value is 'desc' for time fields and 'asc' for others."]
             pub fn sort_order(mut self, sort_order: impl Into<String>) -> Self {
                 self.sort_order = Some(sort_order.into());
                 self
             }
+            #[doc = "This filter allows to selection of the fields(comma separated) which would  be part of the essential section. This would allow to project only the  required fields rather than getting entire content.  Default is to fetch all the fields in the essentials section."]
             pub fn select(mut self, select: impl Into<String>) -> Self {
                 self.select = Some(select.into());
                 self
             }
+            #[doc = "Filter by time range by below listed values. Default value is 1 day."]
             pub fn time_range(mut self, time_range: impl Into<String>) -> Self {
                 self.time_range = Some(time_range.into());
                 self
             }
+            #[doc = "Filter by custom time range in the format <start-time>/<end-time>  where time is in (ISO-8601 format)'. Permissible values is within 30 days from  query time. Either timeRange or customTimeRange could be used but not both. Default is none."]
             pub fn custom_time_range(mut self, custom_time_range: impl Into<String>) -> Self {
                 self.custom_time_range = Some(custom_time_range.into());
                 self
@@ -1213,6 +1315,7 @@ pub mod alerts {
             pub(crate) comment: Option<String>,
         }
         impl Builder {
+            #[doc = "reason of change alert state"]
             pub fn comment(mut self, comment: impl Into<String>) -> Self {
                 self.comment = Some(comment.into());
                 self
@@ -1335,46 +1438,57 @@ pub mod alerts {
             pub(crate) custom_time_range: Option<String>,
         }
         impl Builder {
+            #[doc = "Include count of the SmartGroups as part of the summary. Default value is 'false'."]
             pub fn include_smart_groups_count(mut self, include_smart_groups_count: bool) -> Self {
                 self.include_smart_groups_count = Some(include_smart_groups_count);
                 self
             }
+            #[doc = "Filter by target resource( which is full ARM ID) Default value is select all."]
             pub fn target_resource(mut self, target_resource: impl Into<String>) -> Self {
                 self.target_resource = Some(target_resource.into());
                 self
             }
+            #[doc = "Filter by target resource type. Default value is select all."]
             pub fn target_resource_type(mut self, target_resource_type: impl Into<String>) -> Self {
                 self.target_resource_type = Some(target_resource_type.into());
                 self
             }
+            #[doc = "Filter by target resource group name. Default value is select all."]
             pub fn target_resource_group(mut self, target_resource_group: impl Into<String>) -> Self {
                 self.target_resource_group = Some(target_resource_group.into());
                 self
             }
+            #[doc = "Filter by monitor service which generates the alert instance. Default value is select all."]
             pub fn monitor_service(mut self, monitor_service: impl Into<String>) -> Self {
                 self.monitor_service = Some(monitor_service.into());
                 self
             }
+            #[doc = "Filter by monitor condition which is either 'Fired' or 'Resolved'. Default value is to select all."]
             pub fn monitor_condition(mut self, monitor_condition: impl Into<String>) -> Self {
                 self.monitor_condition = Some(monitor_condition.into());
                 self
             }
+            #[doc = "Filter by severity.  Default value is select all."]
             pub fn severity(mut self, severity: impl Into<String>) -> Self {
                 self.severity = Some(severity.into());
                 self
             }
+            #[doc = "Filter by state of the alert instance. Default value is to select all."]
             pub fn alert_state(mut self, alert_state: impl Into<String>) -> Self {
                 self.alert_state = Some(alert_state.into());
                 self
             }
+            #[doc = "Filter by specific alert rule.  Default value is to select all."]
             pub fn alert_rule(mut self, alert_rule: impl Into<String>) -> Self {
                 self.alert_rule = Some(alert_rule.into());
                 self
             }
+            #[doc = "Filter by time range by below listed values. Default value is 1 day."]
             pub fn time_range(mut self, time_range: impl Into<String>) -> Self {
                 self.time_range = Some(time_range.into());
                 self
             }
+            #[doc = "Filter by custom time range in the format <start-time>/<end-time>  where time is in (ISO-8601 format)'. Permissible values is within 30 days from  query time. Either timeRange or customTimeRange could be used but not both. Default is none."]
             pub fn custom_time_range(mut self, custom_time_range: impl Into<String>) -> Self {
                 self.custom_time_range = Some(custom_time_range.into());
                 self
@@ -1465,6 +1579,10 @@ pub mod smart_groups {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get all Smart Groups within a specified subscription"]
+        #[doc = "List all the Smart Groups within a specified subscription. "]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn get_all(&self, subscription_id: impl Into<String>) -> get_all::Builder {
             get_all::Builder {
                 client: self.0.clone(),
@@ -1483,6 +1601,11 @@ pub mod smart_groups {
             }
         }
         #[doc = "Get information related to a specific Smart Group."]
+        #[doc = "Get information related to a specific Smart Group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `smart_group_id`: Smart group unique id. "]
         pub fn get_by_id(&self, subscription_id: impl Into<String>, smart_group_id: impl Into<String>) -> get_by_id::Builder {
             get_by_id::Builder {
                 client: self.0.clone(),
@@ -1490,6 +1613,12 @@ pub mod smart_groups {
                 smart_group_id: smart_group_id.into(),
             }
         }
+        #[doc = "Change the state of a Smart Group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `smart_group_id`: Smart group unique id. "]
+        #[doc = "* `new_state`: New state of the alert."]
         pub fn change_state(
             &self,
             subscription_id: impl Into<String>,
@@ -1503,6 +1632,11 @@ pub mod smart_groups {
                 new_state: new_state.into(),
             }
         }
+        #[doc = "Get the history a smart group, which captures any Smart Group state changes (New/Acknowledged/Closed) ."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `smart_group_id`: Smart group unique id. "]
         pub fn get_history(&self, subscription_id: impl Into<String>, smart_group_id: impl Into<String>) -> get_history::Builder {
             get_history::Builder {
                 client: self.0.clone(),
@@ -1531,46 +1665,57 @@ pub mod smart_groups {
             pub(crate) sort_order: Option<String>,
         }
         impl Builder {
+            #[doc = "Filter by target resource( which is full ARM ID) Default value is select all."]
             pub fn target_resource(mut self, target_resource: impl Into<String>) -> Self {
                 self.target_resource = Some(target_resource.into());
                 self
             }
+            #[doc = "Filter by target resource group name. Default value is select all."]
             pub fn target_resource_group(mut self, target_resource_group: impl Into<String>) -> Self {
                 self.target_resource_group = Some(target_resource_group.into());
                 self
             }
+            #[doc = "Filter by target resource type. Default value is select all."]
             pub fn target_resource_type(mut self, target_resource_type: impl Into<String>) -> Self {
                 self.target_resource_type = Some(target_resource_type.into());
                 self
             }
+            #[doc = "Filter by monitor service which generates the alert instance. Default value is select all."]
             pub fn monitor_service(mut self, monitor_service: impl Into<String>) -> Self {
                 self.monitor_service = Some(monitor_service.into());
                 self
             }
+            #[doc = "Filter by monitor condition which is either 'Fired' or 'Resolved'. Default value is to select all."]
             pub fn monitor_condition(mut self, monitor_condition: impl Into<String>) -> Self {
                 self.monitor_condition = Some(monitor_condition.into());
                 self
             }
+            #[doc = "Filter by severity.  Default value is select all."]
             pub fn severity(mut self, severity: impl Into<String>) -> Self {
                 self.severity = Some(severity.into());
                 self
             }
+            #[doc = "Filter by state of the smart group. Default value is to select all."]
             pub fn smart_group_state(mut self, smart_group_state: impl Into<String>) -> Self {
                 self.smart_group_state = Some(smart_group_state.into());
                 self
             }
+            #[doc = "Filter by time range by below listed values. Default value is 1 day."]
             pub fn time_range(mut self, time_range: impl Into<String>) -> Self {
                 self.time_range = Some(time_range.into());
                 self
             }
+            #[doc = "Determines number of alerts returned per page in response. Permissible value is between 1 to 250. When the \"includeContent\"  filter is selected, maximum value allowed is 25. Default value is 25."]
             pub fn page_count(mut self, page_count: i64) -> Self {
                 self.page_count = Some(page_count);
                 self
             }
+            #[doc = "Sort the query results by input field. Default value is sort by 'lastModifiedDateTime'."]
             pub fn sort_by(mut self, sort_by: impl Into<String>) -> Self {
                 self.sort_by = Some(sort_by.into());
                 self
             }
+            #[doc = "Sort the query results order in either ascending or descending.  Default value is 'desc' for time fields and 'asc' for others."]
             pub fn sort_order(mut self, sort_order: impl Into<String>) -> Self {
                 self.sort_order = Some(sort_order.into());
                 self

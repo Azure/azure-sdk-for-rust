@@ -97,6 +97,7 @@ pub mod kusto_operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists available operations for the Kusto sub-resources inside Microsoft.Synapse provider."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -177,6 +178,12 @@ pub mod kusto_pools {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "List Kusto pools"]
+        #[doc = "List all Kusto pools"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `workspace_name`: The name of the workspace"]
         pub fn list_by_workspace(
             &self,
             resource_group_name: impl Into<String>,
@@ -190,6 +197,13 @@ pub mod kusto_pools {
                 workspace_name: workspace_name.into(),
             }
         }
+        #[doc = "Gets a Kusto pool."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `workspace_name`: The name of the workspace"]
+        #[doc = "* `kusto_pool_name`: The name of the Kusto pool."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
         pub fn get(
             &self,
             workspace_name: impl Into<String>,
@@ -205,6 +219,14 @@ pub mod kusto_pools {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Create or update a Kusto pool."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `workspace_name`: The name of the workspace"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `kusto_pool_name`: The name of the Kusto pool."]
+        #[doc = "* `parameters`: The Kusto pool parameters supplied to the CreateOrUpdate operation."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn create_or_update(
             &self,
             workspace_name: impl Into<String>,
@@ -224,6 +246,14 @@ pub mod kusto_pools {
                 if_none_match: None,
             }
         }
+        #[doc = "Update a Kusto Kusto Pool."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `workspace_name`: The name of the workspace"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `kusto_pool_name`: The name of the Kusto pool."]
+        #[doc = "* `parameters`: The Kusto pool parameters supplied to the Update operation."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn update(
             &self,
             workspace_name: impl Into<String>,
@@ -242,6 +272,13 @@ pub mod kusto_pools {
                 if_match: None,
             }
         }
+        #[doc = "Deletes a Kusto pool."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `workspace_name`: The name of the workspace"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `kusto_pool_name`: The name of the Kusto pool."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn delete(
             &self,
             workspace_name: impl Into<String>,
@@ -257,6 +294,12 @@ pub mod kusto_pools {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Checks that the kusto pool name is valid and is not already in use."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `location`: The name of Azure region."]
+        #[doc = "* `kusto_pool_name`: The name of the cluster."]
         pub fn check_name_availability(
             &self,
             subscription_id: impl Into<String>,
@@ -396,10 +439,12 @@ pub mod kusto_pools {
             pub(crate) if_none_match: Option<String>,
         }
         impl Builder {
+            #[doc = "The ETag of the Kusto Pool. Omit this value to always overwrite the current Kusto Pool. Specify the last-seen ETag value to prevent accidentally overwriting concurrent changes."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
             }
+            #[doc = "Set to '*' to allow a new Kusto Pool to be created, but to prevent updating an existing Kusto Pool. Other values will result in a 412 Pre-condition Failed response."]
             pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
                 self.if_none_match = Some(if_none_match.into());
                 self
@@ -477,6 +522,7 @@ pub mod kusto_pools {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "The ETag of the Kusto Pool. Omit this value to always overwrite the current Kusto Pool. Specify the last-seen ETag value to prevent accidentally overwriting concurrent changes."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -648,6 +694,13 @@ pub mod databases {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Returns the list of databases of the given Kusto pool."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace"]
+        #[doc = "* `kusto_pool_name`: The name of the Kusto pool."]
         pub fn list_by_kusto_pool(
             &self,
             subscription_id: impl Into<String>,
@@ -663,6 +716,14 @@ pub mod databases {
                 kusto_pool_name: kusto_pool_name.into(),
             }
         }
+        #[doc = "Returns a database."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace"]
+        #[doc = "* `kusto_pool_name`: The name of the Kusto pool."]
+        #[doc = "* `database_name`: The name of the database in the Kusto pool."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -680,6 +741,15 @@ pub mod databases {
                 database_name: database_name.into(),
             }
         }
+        #[doc = "Creates or updates a database."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace"]
+        #[doc = "* `kusto_pool_name`: The name of the Kusto pool."]
+        #[doc = "* `database_name`: The name of the database in the Kusto pool."]
+        #[doc = "* `parameters`: The database parameters supplied to the CreateOrUpdate operation."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -699,6 +769,15 @@ pub mod databases {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Updates a database."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace"]
+        #[doc = "* `kusto_pool_name`: The name of the Kusto pool."]
+        #[doc = "* `database_name`: The name of the database in the Kusto pool."]
+        #[doc = "* `parameters`: The database parameters supplied to the Update operation."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -718,6 +797,14 @@ pub mod databases {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Deletes the database with the given name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace"]
+        #[doc = "* `kusto_pool_name`: The name of the Kusto pool."]
+        #[doc = "* `database_name`: The name of the database in the Kusto pool."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1048,6 +1135,14 @@ pub mod data_connections {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Returns the list of data connections of the given Kusto pool database."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace"]
+        #[doc = "* `kusto_pool_name`: The name of the Kusto pool."]
+        #[doc = "* `database_name`: The name of the database in the Kusto pool."]
         pub fn list_by_database(
             &self,
             subscription_id: impl Into<String>,
@@ -1065,6 +1160,15 @@ pub mod data_connections {
                 database_name: database_name.into(),
             }
         }
+        #[doc = "Returns a data connection."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace"]
+        #[doc = "* `kusto_pool_name`: The name of the Kusto pool."]
+        #[doc = "* `database_name`: The name of the database in the Kusto pool."]
+        #[doc = "* `data_connection_name`: The name of the data connection."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1084,6 +1188,16 @@ pub mod data_connections {
                 data_connection_name: data_connection_name.into(),
             }
         }
+        #[doc = "Creates or updates a data connection."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace"]
+        #[doc = "* `kusto_pool_name`: The name of the Kusto pool."]
+        #[doc = "* `database_name`: The name of the database in the Kusto pool."]
+        #[doc = "* `data_connection_name`: The name of the data connection."]
+        #[doc = "* `parameters`: The data connection parameters supplied to the CreateOrUpdate operation."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -1105,6 +1219,16 @@ pub mod data_connections {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Updates a data connection."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace"]
+        #[doc = "* `kusto_pool_name`: The name of the Kusto pool."]
+        #[doc = "* `database_name`: The name of the database in the Kusto pool."]
+        #[doc = "* `data_connection_name`: The name of the data connection."]
+        #[doc = "* `parameters`: The data connection parameters supplied to the Update operation."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -1126,6 +1250,15 @@ pub mod data_connections {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Deletes the data connection with the given name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace"]
+        #[doc = "* `kusto_pool_name`: The name of the Kusto pool."]
+        #[doc = "* `database_name`: The name of the database in the Kusto pool."]
+        #[doc = "* `data_connection_name`: The name of the data connection."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1424,6 +1557,13 @@ pub mod kusto_pool_principal_assignments {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all Kusto pool principalAssignments."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `workspace_name`: The name of the workspace"]
+        #[doc = "* `kusto_pool_name`: The name of the Kusto pool."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
         pub fn list(
             &self,
             workspace_name: impl Into<String>,
@@ -1439,6 +1579,14 @@ pub mod kusto_pool_principal_assignments {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Gets a Kusto pool principalAssignment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `workspace_name`: The name of the workspace"]
+        #[doc = "* `kusto_pool_name`: The name of the Kusto pool."]
+        #[doc = "* `principal_assignment_name`: The name of the Kusto principalAssignment."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
         pub fn get(
             &self,
             workspace_name: impl Into<String>,
@@ -1456,6 +1604,15 @@ pub mod kusto_pool_principal_assignments {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Create a Kusto pool principalAssignment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `workspace_name`: The name of the workspace"]
+        #[doc = "* `kusto_pool_name`: The name of the Kusto pool."]
+        #[doc = "* `principal_assignment_name`: The name of the Kusto principalAssignment."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `parameters`: The Kusto pool principalAssignment's parameters supplied for the operation."]
         pub fn create_or_update(
             &self,
             workspace_name: impl Into<String>,
@@ -1475,6 +1632,14 @@ pub mod kusto_pool_principal_assignments {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Deletes a Kusto pool principalAssignment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `workspace_name`: The name of the workspace"]
+        #[doc = "* `kusto_pool_name`: The name of the Kusto pool."]
+        #[doc = "* `principal_assignment_name`: The name of the Kusto principalAssignment."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
         pub fn delete(
             &self,
             workspace_name: impl Into<String>,
@@ -1706,6 +1871,14 @@ pub mod database_principal_assignments {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all Kusto pool database principalAssignments."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `workspace_name`: The name of the workspace"]
+        #[doc = "* `kusto_pool_name`: The name of the Kusto pool."]
+        #[doc = "* `database_name`: The name of the database in the Kusto pool."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
         pub fn list(
             &self,
             workspace_name: impl Into<String>,
@@ -1723,6 +1896,15 @@ pub mod database_principal_assignments {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Gets a Kusto pool database principalAssignment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `workspace_name`: The name of the workspace"]
+        #[doc = "* `kusto_pool_name`: The name of the Kusto pool."]
+        #[doc = "* `database_name`: The name of the database in the Kusto pool."]
+        #[doc = "* `principal_assignment_name`: The name of the Kusto principalAssignment."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
         pub fn get(
             &self,
             workspace_name: impl Into<String>,
@@ -1742,6 +1924,16 @@ pub mod database_principal_assignments {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Creates a Kusto pool database principalAssignment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `workspace_name`: The name of the workspace"]
+        #[doc = "* `kusto_pool_name`: The name of the Kusto pool."]
+        #[doc = "* `database_name`: The name of the database in the Kusto pool."]
+        #[doc = "* `principal_assignment_name`: The name of the Kusto principalAssignment."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `parameters`: The Kusto principalAssignments parameters supplied for the operation."]
         pub fn create_or_update(
             &self,
             workspace_name: impl Into<String>,
@@ -1763,6 +1955,15 @@ pub mod database_principal_assignments {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Deletes a Kusto pool principalAssignment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `workspace_name`: The name of the workspace"]
+        #[doc = "* `kusto_pool_name`: The name of the Kusto pool."]
+        #[doc = "* `database_name`: The name of the database in the Kusto pool."]
+        #[doc = "* `principal_assignment_name`: The name of the Kusto principalAssignment."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
         pub fn delete(
             &self,
             workspace_name: impl Into<String>,

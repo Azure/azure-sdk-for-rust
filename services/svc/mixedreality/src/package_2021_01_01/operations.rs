@@ -83,6 +83,10 @@ pub mod remote_rendering {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets the status of a particular conversion."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `account_id`: The Azure Remote Rendering account ID."]
+        #[doc = "* `conversion_id`: An ID uniquely identifying the conversion for the given account. The ID is case sensitive, can contain any combination of alphanumeric characters including hyphens and underscores, and cannot contain more than 256 characters."]
         pub fn get_conversion(&self, account_id: impl Into<String>, conversion_id: impl Into<String>) -> get_conversion::Builder {
             get_conversion::Builder {
                 client: self.0.clone(),
@@ -91,6 +95,11 @@ pub mod remote_rendering {
             }
         }
         #[doc = "Creates a conversion using an asset stored in an Azure Blob Storage account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `account_id`: The Azure Remote Rendering account ID."]
+        #[doc = "* `conversion_id`: An ID uniquely identifying the conversion for the given account. The ID is case sensitive, can contain any combination of alphanumeric characters including hyphens and underscores, and cannot contain more than 256 characters."]
+        #[doc = "* `body`: Request body configuring the settings for an asset conversion."]
         pub fn create_conversion(
             &self,
             account_id: impl Into<String>,
@@ -105,6 +114,9 @@ pub mod remote_rendering {
             }
         }
         #[doc = "Gets a list of all conversions."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `account_id`: The Azure Remote Rendering account ID."]
         pub fn list_conversions(&self, account_id: impl Into<String>) -> list_conversions::Builder {
             list_conversions::Builder {
                 client: self.0.clone(),
@@ -112,6 +124,10 @@ pub mod remote_rendering {
             }
         }
         #[doc = "Gets the properties of a particular rendering session."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `account_id`: The Azure Remote Rendering account ID."]
+        #[doc = "* `session_id`: An ID uniquely identifying the rendering session for the given account. The ID is case sensitive, can contain any combination of alphanumeric characters including hyphens and underscores, and cannot contain more than 256 characters."]
         pub fn get_session(&self, account_id: impl Into<String>, session_id: impl Into<String>) -> get_session::Builder {
             get_session::Builder {
                 client: self.0.clone(),
@@ -120,6 +136,11 @@ pub mod remote_rendering {
             }
         }
         #[doc = "Creates a new rendering session."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `account_id`: The Azure Remote Rendering account ID."]
+        #[doc = "* `session_id`: An ID uniquely identifying the rendering session for the given account. The ID is case sensitive, can contain any combination of alphanumeric characters including hyphens and underscores, and cannot contain more than 256 characters."]
+        #[doc = "* `body`: Settings of the session to be created."]
         pub fn create_session(
             &self,
             account_id: impl Into<String>,
@@ -134,6 +155,11 @@ pub mod remote_rendering {
             }
         }
         #[doc = "Updates the max lease time of a particular rendering session."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `account_id`: The Azure Remote Rendering account ID."]
+        #[doc = "* `session_id`: An ID uniquely identifying the rendering session for the given account. The ID is case sensitive, can contain any combination of alphanumeric characters including hyphens and underscores, and cannot contain more than 256 characters."]
+        #[doc = "* `body`: Settings used to update the session."]
         pub fn update_session(
             &self,
             account_id: impl Into<String>,
@@ -148,6 +174,10 @@ pub mod remote_rendering {
             }
         }
         #[doc = "Stops a particular rendering session."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `account_id`: The Azure Remote Rendering account ID."]
+        #[doc = "* `session_id`: An ID uniquely identifying the rendering session for the given account. The ID is case sensitive, can contain any combination of alphanumeric characters including hyphens and underscores, and cannot contain more than 256 characters."]
         pub fn stop_session(&self, account_id: impl Into<String>, session_id: impl Into<String>) -> stop_session::Builder {
             stop_session::Builder {
                 client: self.0.clone(),
@@ -156,6 +186,9 @@ pub mod remote_rendering {
             }
         }
         #[doc = "Gets a list of all rendering sessions."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `account_id`: The Azure Remote Rendering account ID."]
         pub fn list_sessions(&self, account_id: impl Into<String>) -> list_sessions::Builder {
             list_sessions::Builder {
                 client: self.0.clone(),

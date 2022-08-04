@@ -77,6 +77,11 @@ impl Client {
 }
 impl Client {
     #[doc = "Get user settings."]
+    #[doc = "Get current user settings for current signed in user. This operation returns settings for the user's cloud shell preferences including preferred location, storage profile, shell type, font and size settings."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `user_settings_name`: The name of the user settings"]
+    #[doc = "* `location`: The provider location"]
     pub fn get_user_settings_with_location(
         &self,
         user_settings_name: impl Into<String>,
@@ -89,6 +94,12 @@ impl Client {
         }
     }
     #[doc = "put user settings."]
+    #[doc = "Create or update cloud shell settings for current signed in user"]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `user_settings_name`: The name of the user settings"]
+    #[doc = "* `location`: The provider location"]
+    #[doc = "* `parameters`: The properties of the user settings to be created or updated."]
     pub fn put_user_settings_with_location(
         &self,
         user_settings_name: impl Into<String>,
@@ -103,6 +114,12 @@ impl Client {
         }
     }
     #[doc = "patch user settings."]
+    #[doc = "Patch cloud shell settings for current signed in user"]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `user_settings_name`: The name of the user settings"]
+    #[doc = "* `location`: The provider location"]
+    #[doc = "* `parameters`: The properties of the user settings to be updated."]
     pub fn patch_user_settings_with_location(
         &self,
         user_settings_name: impl Into<String>,
@@ -117,6 +134,11 @@ impl Client {
         }
     }
     #[doc = "delete user settings."]
+    #[doc = "Delete cloud shell settings for current signed in user"]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `user_settings_name`: The name of the user settings"]
+    #[doc = "* `location`: The provider location"]
     pub fn delete_user_settings_with_location(
         &self,
         user_settings_name: impl Into<String>,
@@ -129,6 +151,11 @@ impl Client {
         }
     }
     #[doc = "Get console"]
+    #[doc = "Gets the console for the user."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `console_name`: The name of the console"]
+    #[doc = "* `location`: The provider location"]
     pub fn get_console_with_location(
         &self,
         console_name: impl Into<String>,
@@ -141,6 +168,11 @@ impl Client {
         }
     }
     #[doc = "Put console"]
+    #[doc = "Puts a request for a console"]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `console_name`: The name of the console"]
+    #[doc = "* `location`: The provider location"]
     pub fn put_console_with_location(
         &self,
         console_name: impl Into<String>,
@@ -153,6 +185,11 @@ impl Client {
         }
     }
     #[doc = "Delete console"]
+    #[doc = "Deletes the console"]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `console_name`: The name of the console"]
+    #[doc = "* `location`: The provider location"]
     pub fn delete_console_with_location(
         &self,
         console_name: impl Into<String>,
@@ -165,6 +202,11 @@ impl Client {
         }
     }
     #[doc = "Keep alive"]
+    #[doc = "Keep console alive"]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `console_name`: The name of the console"]
+    #[doc = "* `location`: The provider location"]
     pub fn keep_alive_with_location(
         &self,
         console_name: impl Into<String>,
@@ -177,6 +219,10 @@ impl Client {
         }
     }
     #[doc = "Get user settings."]
+    #[doc = "Get current user settings for current signed in user. This operation returns settings for the user's cloud shell preferences including preferred location, storage profile, shell type, font and size settings."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `user_settings_name`: The name of the user settings"]
     pub fn get_user_settings(&self, user_settings_name: impl Into<String>) -> get_user_settings::Builder {
         get_user_settings::Builder {
             client: self.clone(),
@@ -184,6 +230,11 @@ impl Client {
         }
     }
     #[doc = "put user settings."]
+    #[doc = "Create or update cloud shell settings for current signed in user"]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `user_settings_name`: The name of the user settings"]
+    #[doc = "* `parameters`: The properties of the user settings to be created or updated."]
     pub fn put_user_settings(
         &self,
         user_settings_name: impl Into<String>,
@@ -196,6 +247,11 @@ impl Client {
         }
     }
     #[doc = "patch user settings."]
+    #[doc = "Patch cloud shell settings for current signed in user"]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `user_settings_name`: The name of the user settings"]
+    #[doc = "* `parameters`: The properties of the user settings to be updated."]
     pub fn patch_user_settings(
         &self,
         user_settings_name: impl Into<String>,
@@ -208,6 +264,10 @@ impl Client {
         }
     }
     #[doc = "delete user settings."]
+    #[doc = "Delete cloud shell settings for current signed in user"]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `user_settings_name`: The name of the user settings"]
     pub fn delete_user_settings(&self, user_settings_name: impl Into<String>) -> delete_user_settings::Builder {
         delete_user_settings::Builder {
             client: self.clone(),
@@ -215,6 +275,10 @@ impl Client {
         }
     }
     #[doc = "Get console"]
+    #[doc = "Gets the console for the user."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `console_name`: The name of the console"]
     pub fn get_console(&self, console_name: impl Into<String>) -> get_console::Builder {
         get_console::Builder {
             client: self.clone(),
@@ -222,6 +286,11 @@ impl Client {
         }
     }
     #[doc = "Put console"]
+    #[doc = "Puts a request for a console"]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `console_name`: The name of the console"]
+    #[doc = "* `parameters`: The console definition."]
     pub fn put_console(&self, console_name: impl Into<String>, parameters: impl Into<models::ConsoleDefinition>) -> put_console::Builder {
         put_console::Builder {
             client: self.clone(),
@@ -230,6 +299,10 @@ impl Client {
         }
     }
     #[doc = "Delete console"]
+    #[doc = "Deletes the console"]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `console_name`: The name of the console"]
     pub fn delete_console(&self, console_name: impl Into<String>) -> delete_console::Builder {
         delete_console::Builder {
             client: self.clone(),
@@ -237,6 +310,10 @@ impl Client {
         }
     }
     #[doc = "Keep alive"]
+    #[doc = "Keep console alive"]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `console_name`: The name of the console"]
     pub fn keep_alive(&self, console_name: impl Into<String>) -> keep_alive::Builder {
         keep_alive::Builder {
             client: self.clone(),

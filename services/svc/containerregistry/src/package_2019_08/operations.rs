@@ -100,12 +100,22 @@ pub mod blob {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Initiate a resumable blob upload with an empty request body."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `name`: Name of the image (including the namespace)"]
         pub fn start_upload(&self, name: impl Into<String>) -> start_upload::Builder {
             start_upload::Builder {
                 client: self.0.clone(),
                 name: name.into(),
             }
         }
+        #[doc = "Retrieve the blob from the registry identified by `digest`. This endpoint may also support RFC7233 compliant range requests. Support can be detected by issuing a HEAD request. If the header `Accept-Range: bytes` is returned, range requests can be used to fetch partial content."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `name`: Name of the image (including the namespace)"]
+        #[doc = "* `digest`: Digest of a BLOB"]
+        #[doc = "* `range`: Format : bytes=<start>-<end>,  HTTP Range header specifying blob chunk."]
         pub fn get_chunk(&self, name: impl Into<String>, digest: impl Into<String>, range: impl Into<String>) -> get_chunk::Builder {
             get_chunk::Builder {
                 client: self.0.clone(),
@@ -114,6 +124,12 @@ pub mod blob {
                 range: range.into(),
             }
         }
+        #[doc = "Same as GET, except only the headers are returned."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `name`: Name of the image (including the namespace)"]
+        #[doc = "* `digest`: Digest of a BLOB"]
+        #[doc = "* `range`: Format : bytes=<start>-<end>,  HTTP Range header specifying blob chunk."]
         pub fn check_chunk(&self, name: impl Into<String>, digest: impl Into<String>, range: impl Into<String>) -> check_chunk::Builder {
             check_chunk::Builder {
                 client: self.0.clone(),
@@ -122,6 +138,11 @@ pub mod blob {
                 range: range.into(),
             }
         }
+        #[doc = "Retrieve the blob from the registry identified by digest."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `name`: Name of the image (including the namespace)"]
+        #[doc = "* `digest`: Digest of a BLOB"]
         pub fn get(&self, name: impl Into<String>, digest: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -129,6 +150,11 @@ pub mod blob {
                 digest: digest.into(),
             }
         }
+        #[doc = "Removes an already uploaded blob."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `name`: Name of the image (including the namespace)"]
+        #[doc = "* `digest`: Digest of a BLOB"]
         pub fn delete(&self, name: impl Into<String>, digest: impl Into<String>) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),
@@ -136,6 +162,11 @@ pub mod blob {
                 digest: digest.into(),
             }
         }
+        #[doc = "Same as GET, except only the headers are returned."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `name`: Name of the image (including the namespace)"]
+        #[doc = "* `digest`: Digest of a BLOB"]
         pub fn check(&self, name: impl Into<String>, digest: impl Into<String>) -> check::Builder {
             check::Builder {
                 client: self.0.clone(),
@@ -143,6 +174,12 @@ pub mod blob {
                 digest: digest.into(),
             }
         }
+        #[doc = "Mount a blob identified by the `mount` parameter from another repository."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `name`: Name of the image (including the namespace)"]
+        #[doc = "* `from`: Name of the source repository."]
+        #[doc = "* `mount`: Digest of blob to mount from the source repository."]
         pub fn mount(&self, name: impl Into<String>, from: impl Into<String>, mount: impl Into<String>) -> mount::Builder {
             mount::Builder {
                 client: self.0.clone(),
@@ -151,12 +188,21 @@ pub mod blob {
                 mount: mount.into(),
             }
         }
+        #[doc = "Retrieve status of upload identified by uuid. The primary purpose of this endpoint is to resolve the current status of a resumable upload."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `next_blob_uuid_link`: Link acquired from upload start or previous chunk. Note, do not include initial / (must do substring(1) )"]
         pub fn get_status(&self, next_blob_uuid_link: impl Into<String>) -> get_status::Builder {
             get_status::Builder {
                 client: self.0.clone(),
                 next_blob_uuid_link: next_blob_uuid_link.into(),
             }
         }
+        #[doc = "Complete the upload, providing all the data in the body, if necessary. A request without a body will just complete the upload with previously uploaded content."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `digest`: Digest of a BLOB"]
+        #[doc = "* `next_blob_uuid_link`: Link acquired from upload start or previous chunk. Note, do not include initial / (must do substring(1) )"]
         pub fn end_upload(&self, digest: impl Into<String>, next_blob_uuid_link: impl Into<String>) -> end_upload::Builder {
             end_upload::Builder {
                 client: self.0.clone(),
@@ -165,6 +211,11 @@ pub mod blob {
                 value: None,
             }
         }
+        #[doc = "Upload a stream of data without completing the upload."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `value`: Raw data of blob"]
+        #[doc = "* `next_blob_uuid_link`: Link acquired from upload start or previous chunk. Note, do not include initial / (must do substring(1) )"]
         pub fn upload(&self, value: impl Into<serde_json::Value>, next_blob_uuid_link: impl Into<String>) -> upload::Builder {
             upload::Builder {
                 client: self.0.clone(),
@@ -172,6 +223,10 @@ pub mod blob {
                 next_blob_uuid_link: next_blob_uuid_link.into(),
             }
         }
+        #[doc = "Cancel outstanding upload processes, releasing associated resources. If this is not called, the unfinished uploads will eventually timeout."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `next_blob_uuid_link`: Link acquired from upload start or previous chunk. Note, do not include initial / (must do substring(1) )"]
         pub fn cancel_upload(&self, next_blob_uuid_link: impl Into<String>) -> cancel_upload::Builder {
             cancel_upload::Builder {
                 client: self.0.clone(),
@@ -529,6 +584,7 @@ pub mod blob {
             pub(crate) value: Option<serde_json::Value>,
         }
         impl Builder {
+            #[doc = "Optional raw data of blob"]
             pub fn value(mut self, value: impl Into<serde_json::Value>) -> Self {
                 self.value = Some(value.into());
                 self
@@ -649,6 +705,7 @@ pub mod v2_support {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Tells whether this Docker Registry instance supports Docker Registry HTTP API v2"]
         pub fn check(&self) -> check::Builder {
             check::Builder { client: self.0.clone() }
         }
@@ -694,6 +751,11 @@ pub mod manifests {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get the manifest identified by `name` and `reference` where `reference` can be a tag or digest."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `name`: Name of the image (including the namespace)"]
+        #[doc = "* `reference`: A tag or a digest, pointing to a specific image"]
         pub fn get(&self, name: impl Into<String>, reference: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -702,6 +764,12 @@ pub mod manifests {
                 accept: None,
             }
         }
+        #[doc = "Put the manifest identified by `name` and `reference` where `reference` can be a tag or digest."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `name`: Name of the image (including the namespace)"]
+        #[doc = "* `reference`: A tag or a digest, pointing to a specific image"]
+        #[doc = "* `payload`: Manifest body, can take v1 or v2 values depending on accept header"]
         pub fn create(
             &self,
             name: impl Into<String>,
@@ -715,6 +783,11 @@ pub mod manifests {
                 payload: payload.into(),
             }
         }
+        #[doc = "Delete the manifest identified by `name` and `reference`. Note that a manifest can _only_ be deleted by `digest`."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `name`: Name of the image (including the namespace)"]
+        #[doc = "* `reference`: A tag or a digest, pointing to a specific image"]
         pub fn delete(&self, name: impl Into<String>, reference: impl Into<String>) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),
@@ -722,6 +795,10 @@ pub mod manifests {
                 reference: reference.into(),
             }
         }
+        #[doc = "List manifests of a repository"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `name`: Name of the image (including the namespace)"]
         pub fn get_list(&self, name: impl Into<String>) -> get_list::Builder {
             get_list::Builder {
                 client: self.0.clone(),
@@ -731,6 +808,11 @@ pub mod manifests {
                 orderby: None,
             }
         }
+        #[doc = "Get manifest attributes"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `name`: Name of the image (including the namespace)"]
+        #[doc = "* `reference`: A tag or a digest, pointing to a specific image"]
         pub fn get_attributes(&self, name: impl Into<String>, reference: impl Into<String>) -> get_attributes::Builder {
             get_attributes::Builder {
                 client: self.0.clone(),
@@ -738,6 +820,11 @@ pub mod manifests {
                 reference: reference.into(),
             }
         }
+        #[doc = "Update attributes of a manifest"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `name`: Name of the image (including the namespace)"]
+        #[doc = "* `reference`: A tag or a digest, pointing to a specific image"]
         pub fn update_attributes(&self, name: impl Into<String>, reference: impl Into<String>) -> update_attributes::Builder {
             update_attributes::Builder {
                 client: self.0.clone(),
@@ -758,6 +845,7 @@ pub mod manifests {
             pub(crate) accept: Option<String>,
         }
         impl Builder {
+            #[doc = "Accept header string delimited by comma. For example, application/vnd.docker.distribution.manifest.v2+json"]
             pub fn accept(mut self, accept: impl Into<String>) -> Self {
                 self.accept = Some(accept.into());
                 self
@@ -906,14 +994,17 @@ pub mod manifests {
             pub(crate) orderby: Option<String>,
         }
         impl Builder {
+            #[doc = "Query parameter for the last item in previous query. Result set will include values lexically after last."]
             pub fn last(mut self, last: impl Into<String>) -> Self {
                 self.last = Some(last.into());
                 self
             }
+            #[doc = "query parameter for max number of items"]
             pub fn n(mut self, n: i64) -> Self {
                 self.n = Some(n);
                 self
             }
+            #[doc = "orderby query parameter"]
             pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
                 self.orderby = Some(orderby.into());
                 self
@@ -1017,6 +1108,7 @@ pub mod manifests {
             pub(crate) value: Option<models::ManifestChangeableAttributes>,
         }
         impl Builder {
+            #[doc = "Manifest attribute value"]
             pub fn value(mut self, value: impl Into<models::ManifestChangeableAttributes>) -> Self {
                 self.value = Some(value.into());
                 self
@@ -1064,6 +1156,7 @@ pub mod repository {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List repositories"]
         pub fn get_list(&self) -> get_list::Builder {
             get_list::Builder {
                 client: self.0.clone(),
@@ -1071,12 +1164,20 @@ pub mod repository {
                 n: None,
             }
         }
+        #[doc = "Get repository attributes"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `name`: Name of the image (including the namespace)"]
         pub fn get_attributes(&self, name: impl Into<String>) -> get_attributes::Builder {
             get_attributes::Builder {
                 client: self.0.clone(),
                 name: name.into(),
             }
         }
+        #[doc = "Update the attribute identified by `name` where `reference` is the name of the repository."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `name`: Name of the image (including the namespace)"]
         pub fn update_attributes(&self, name: impl Into<String>) -> update_attributes::Builder {
             update_attributes::Builder {
                 client: self.0.clone(),
@@ -1084,6 +1185,10 @@ pub mod repository {
                 value: None,
             }
         }
+        #[doc = "Delete the repository identified by `name`"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `name`: Name of the image (including the namespace)"]
         pub fn delete(&self, name: impl Into<String>) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),
@@ -1101,10 +1206,12 @@ pub mod repository {
             pub(crate) n: Option<i64>,
         }
         impl Builder {
+            #[doc = "Query parameter for the last item in previous query. Result set will include values lexically after last."]
             pub fn last(mut self, last: impl Into<String>) -> Self {
                 self.last = Some(last.into());
                 self
             }
+            #[doc = "query parameter for max number of items"]
             pub fn n(mut self, n: i64) -> Self {
                 self.n = Some(n);
                 self
@@ -1198,6 +1305,7 @@ pub mod repository {
             pub(crate) value: Option<models::RepositoryChangeableAttributes>,
         }
         impl Builder {
+            #[doc = "Repository attribute value"]
             pub fn value(mut self, value: impl Into<models::RepositoryChangeableAttributes>) -> Self {
                 self.value = Some(value.into());
                 self
@@ -1281,6 +1389,10 @@ pub mod tag {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List tags of a repository"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `name`: Name of the image (including the namespace)"]
         pub fn get_list(&self, name: impl Into<String>) -> get_list::Builder {
             get_list::Builder {
                 client: self.0.clone(),
@@ -1291,6 +1403,11 @@ pub mod tag {
                 digest: None,
             }
         }
+        #[doc = "Get tag attributes by tag"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `name`: Name of the image (including the namespace)"]
+        #[doc = "* `reference`: Tag name"]
         pub fn get_attributes(&self, name: impl Into<String>, reference: impl Into<String>) -> get_attributes::Builder {
             get_attributes::Builder {
                 client: self.0.clone(),
@@ -1298,6 +1415,11 @@ pub mod tag {
                 reference: reference.into(),
             }
         }
+        #[doc = "Update tag attributes"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `name`: Name of the image (including the namespace)"]
+        #[doc = "* `reference`: Tag name"]
         pub fn update_attributes(&self, name: impl Into<String>, reference: impl Into<String>) -> update_attributes::Builder {
             update_attributes::Builder {
                 client: self.0.clone(),
@@ -1306,6 +1428,11 @@ pub mod tag {
                 value: None,
             }
         }
+        #[doc = "Delete tag"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `name`: Name of the image (including the namespace)"]
+        #[doc = "* `reference`: Tag name"]
         pub fn delete(&self, name: impl Into<String>, reference: impl Into<String>) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),
@@ -1327,18 +1454,22 @@ pub mod tag {
             pub(crate) digest: Option<String>,
         }
         impl Builder {
+            #[doc = "Query parameter for the last item in previous query. Result set will include values lexically after last."]
             pub fn last(mut self, last: impl Into<String>) -> Self {
                 self.last = Some(last.into());
                 self
             }
+            #[doc = "query parameter for max number of items"]
             pub fn n(mut self, n: i64) -> Self {
                 self.n = Some(n);
                 self
             }
+            #[doc = "orderby query parameter"]
             pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
                 self.orderby = Some(orderby.into());
                 self
             }
+            #[doc = "filter by digest"]
             pub fn digest(mut self, digest: impl Into<String>) -> Self {
                 self.digest = Some(digest.into());
                 self
@@ -1445,6 +1576,7 @@ pub mod tag {
             pub(crate) value: Option<models::TagChangeableAttributes>,
         }
         impl Builder {
+            #[doc = "Tag attribute value"]
             pub fn value(mut self, value: impl Into<models::TagChangeableAttributes>) -> Self {
                 self.value = Some(value.into());
                 self
@@ -1535,6 +1667,11 @@ pub mod refresh_tokens {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Exchange AAD tokens for an ACR refresh Token"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `grant_type`: Can take a value of access_token_refresh_token, or access_token, or refresh_token"]
+        #[doc = "* `service`: Indicates the name of your Azure container registry."]
         pub fn get_from_exchange(&self, grant_type: impl Into<String>, service: impl Into<String>) -> get_from_exchange::Builder {
             get_from_exchange::Builder {
                 client: self.0.clone(),
@@ -1559,14 +1696,17 @@ pub mod refresh_tokens {
             pub(crate) access_token: Option<String>,
         }
         impl Builder {
+            #[doc = "AAD tenant associated to the AAD credentials."]
             pub fn tenant(mut self, tenant: impl Into<String>) -> Self {
                 self.tenant = Some(tenant.into());
                 self
             }
+            #[doc = "AAD refresh token, mandatory when grant_type is access_token_refresh_token or refresh_token"]
             pub fn refresh_token(mut self, refresh_token: impl Into<String>) -> Self {
                 self.refresh_token = Some(refresh_token.into());
                 self
             }
+            #[doc = "AAD access token, mandatory when grant_type is access_token_refresh_token or access_token."]
             pub fn access_token(mut self, access_token: impl Into<String>) -> Self {
                 self.access_token = Some(access_token.into());
                 self
@@ -1614,6 +1754,11 @@ pub mod access_tokens {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Exchange Username, Password and Scope an ACR Access Token"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `service`: Indicates the name of your Azure container registry."]
+        #[doc = "* `scope`: Expected to be a valid scope, and can be specified more than once for multiple scope requests. You can obtain this from the Www-Authenticate response header from the challenge."]
         pub fn get_from_login(&self, service: impl Into<String>, scope: impl Into<String>) -> get_from_login::Builder {
             get_from_login::Builder {
                 client: self.0.clone(),
@@ -1621,6 +1766,13 @@ pub mod access_tokens {
                 scope: scope.into(),
             }
         }
+        #[doc = "Exchange ACR Refresh token for an ACR Access Token"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `grant_type`: Grant type is expected to be refresh_token"]
+        #[doc = "* `service`: Indicates the name of your Azure container registry."]
+        #[doc = "* `scope`: Which is expected to be a valid scope, and can be specified more than once for multiple scope requests. You obtained this from the Www-Authenticate response header from the challenge."]
+        #[doc = "* `refresh_token`: Must be a valid ACR refresh token"]
         pub fn get(
             &self,
             grant_type: impl Into<String>,

@@ -85,6 +85,11 @@ pub mod spark_batch {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List all spark batch jobs which are running under a particular spark pool."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `livy_api_version`: Valid api-version for the request."]
+        #[doc = "* `spark_pool_name`: Name of the spark pool."]
         pub fn get_spark_batch_jobs(
             &self,
             livy_api_version: impl Into<String>,
@@ -99,6 +104,12 @@ pub mod spark_batch {
                 detailed: None,
             }
         }
+        #[doc = "Create new spark batch job."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `livy_api_version`: Valid api-version for the request."]
+        #[doc = "* `spark_pool_name`: Name of the spark pool."]
+        #[doc = "* `spark_batch_job_options`: Livy compatible batch job request payload."]
         pub fn create_spark_batch_job(
             &self,
             livy_api_version: impl Into<String>,
@@ -113,6 +124,12 @@ pub mod spark_batch {
                 detailed: None,
             }
         }
+        #[doc = "Gets a single spark batch job."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `livy_api_version`: Valid api-version for the request."]
+        #[doc = "* `spark_pool_name`: Name of the spark pool."]
+        #[doc = "* `batch_id`: Identifier for the batch job."]
         pub fn get_spark_batch_job(
             &self,
             livy_api_version: impl Into<String>,
@@ -127,6 +144,12 @@ pub mod spark_batch {
                 detailed: None,
             }
         }
+        #[doc = "Cancels a running spark batch job."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `livy_api_version`: Valid api-version for the request."]
+        #[doc = "* `spark_pool_name`: Name of the spark pool."]
+        #[doc = "* `batch_id`: Identifier for the batch job."]
         pub fn cancel_spark_batch_job(
             &self,
             livy_api_version: impl Into<String>,
@@ -154,14 +177,17 @@ pub mod spark_batch {
             pub(crate) detailed: Option<bool>,
         }
         impl Builder {
+            #[doc = "Optional param specifying which index the list should begin from."]
             pub fn from(mut self, from: i32) -> Self {
                 self.from = Some(from);
                 self
             }
+            #[doc = "Optional param specifying the size of the returned list.\r\n            By default it is 20 and that is the maximum."]
             pub fn size(mut self, size: i32) -> Self {
                 self.size = Some(size);
                 self
             }
+            #[doc = "Optional query param specifying whether detailed response is returned beyond plain livy."]
             pub fn detailed(mut self, detailed: bool) -> Self {
                 self.detailed = Some(detailed);
                 self
@@ -224,6 +250,7 @@ pub mod spark_batch {
             pub(crate) detailed: Option<bool>,
         }
         impl Builder {
+            #[doc = "Optional query param specifying whether detailed response is returned beyond plain livy."]
             pub fn detailed(mut self, detailed: bool) -> Self {
                 self.detailed = Some(detailed);
                 self
@@ -281,6 +308,7 @@ pub mod spark_batch {
             pub(crate) detailed: Option<bool>,
         }
         impl Builder {
+            #[doc = "Optional query param specifying whether detailed response is returned beyond plain livy."]
             pub fn detailed(mut self, detailed: bool) -> Self {
                 self.detailed = Some(detailed);
                 self
@@ -376,6 +404,11 @@ pub mod spark_session {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List all spark sessions which are running under a particular spark pool."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `livy_api_version`: Valid api-version for the request."]
+        #[doc = "* `spark_pool_name`: Name of the spark pool."]
         pub fn get_spark_sessions(
             &self,
             livy_api_version: impl Into<String>,
@@ -390,6 +423,12 @@ pub mod spark_session {
                 detailed: None,
             }
         }
+        #[doc = "Create new spark session."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `livy_api_version`: Valid api-version for the request."]
+        #[doc = "* `spark_pool_name`: Name of the spark pool."]
+        #[doc = "* `spark_session_options`: Livy compatible batch job request payload."]
         pub fn create_spark_session(
             &self,
             livy_api_version: impl Into<String>,
@@ -404,6 +443,12 @@ pub mod spark_session {
                 detailed: None,
             }
         }
+        #[doc = "Gets a single spark session."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `livy_api_version`: Valid api-version for the request."]
+        #[doc = "* `spark_pool_name`: Name of the spark pool."]
+        #[doc = "* `session_id`: Identifier for the session."]
         pub fn get_spark_session(
             &self,
             livy_api_version: impl Into<String>,
@@ -418,6 +463,12 @@ pub mod spark_session {
                 detailed: None,
             }
         }
+        #[doc = "Cancels a running spark session."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `livy_api_version`: Valid api-version for the request."]
+        #[doc = "* `spark_pool_name`: Name of the spark pool."]
+        #[doc = "* `session_id`: Identifier for the session."]
         pub fn cancel_spark_session(
             &self,
             livy_api_version: impl Into<String>,
@@ -431,6 +482,12 @@ pub mod spark_session {
                 session_id,
             }
         }
+        #[doc = "Sends a keep alive call to the current session to reset the session timeout."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `livy_api_version`: Valid api-version for the request."]
+        #[doc = "* `spark_pool_name`: Name of the spark pool."]
+        #[doc = "* `session_id`: Identifier for the session."]
         pub fn reset_spark_session_timeout(
             &self,
             livy_api_version: impl Into<String>,
@@ -444,6 +501,12 @@ pub mod spark_session {
                 session_id,
             }
         }
+        #[doc = "Gets a list of statements within a spark session."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `livy_api_version`: Valid api-version for the request."]
+        #[doc = "* `spark_pool_name`: Name of the spark pool."]
+        #[doc = "* `session_id`: Identifier for the session."]
         pub fn get_spark_statements(
             &self,
             livy_api_version: impl Into<String>,
@@ -457,6 +520,13 @@ pub mod spark_session {
                 session_id,
             }
         }
+        #[doc = "Create statement within a spark session."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `livy_api_version`: Valid api-version for the request."]
+        #[doc = "* `spark_pool_name`: Name of the spark pool."]
+        #[doc = "* `session_id`: Identifier for the session."]
+        #[doc = "* `spark_statement_options`: Livy compatible batch job request payload."]
         pub fn create_spark_statement(
             &self,
             livy_api_version: impl Into<String>,
@@ -472,6 +542,13 @@ pub mod spark_session {
                 spark_statement_options: spark_statement_options.into(),
             }
         }
+        #[doc = "Gets a single statement within a spark session."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `livy_api_version`: Valid api-version for the request."]
+        #[doc = "* `spark_pool_name`: Name of the spark pool."]
+        #[doc = "* `session_id`: Identifier for the session."]
+        #[doc = "* `statement_id`: Identifier for the statement."]
         pub fn get_spark_statement(
             &self,
             livy_api_version: impl Into<String>,
@@ -487,6 +564,13 @@ pub mod spark_session {
                 statement_id,
             }
         }
+        #[doc = "Kill a statement within a session."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `livy_api_version`: Valid api-version for the request."]
+        #[doc = "* `spark_pool_name`: Name of the spark pool."]
+        #[doc = "* `session_id`: Identifier for the session."]
+        #[doc = "* `statement_id`: Identifier for the statement."]
         pub fn cancel_spark_statement(
             &self,
             livy_api_version: impl Into<String>,
@@ -516,14 +600,17 @@ pub mod spark_session {
             pub(crate) detailed: Option<bool>,
         }
         impl Builder {
+            #[doc = "Optional param specifying which index the list should begin from."]
             pub fn from(mut self, from: i32) -> Self {
                 self.from = Some(from);
                 self
             }
+            #[doc = "Optional param specifying the size of the returned list.\r\n            By default it is 20 and that is the maximum."]
             pub fn size(mut self, size: i32) -> Self {
                 self.size = Some(size);
                 self
             }
+            #[doc = "Optional query param specifying whether detailed response is returned beyond plain livy."]
             pub fn detailed(mut self, detailed: bool) -> Self {
                 self.detailed = Some(detailed);
                 self
@@ -586,6 +673,7 @@ pub mod spark_session {
             pub(crate) detailed: Option<bool>,
         }
         impl Builder {
+            #[doc = "Optional query param specifying whether detailed response is returned beyond plain livy."]
             pub fn detailed(mut self, detailed: bool) -> Self {
                 self.detailed = Some(detailed);
                 self
@@ -643,6 +731,7 @@ pub mod spark_session {
             pub(crate) detailed: Option<bool>,
         }
         impl Builder {
+            #[doc = "Optional query param specifying whether detailed response is returned beyond plain livy."]
             pub fn detailed(mut self, detailed: bool) -> Self {
                 self.detailed = Some(detailed);
                 self

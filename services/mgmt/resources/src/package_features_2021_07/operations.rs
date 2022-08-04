@@ -82,6 +82,7 @@ impl Client {
     }
 }
 impl Client {
+    #[doc = "Lists all of the available Microsoft.Features REST API operations."]
     pub fn list_operations(&self) -> list_operations::Builder {
         list_operations::Builder { client: self.clone() }
     }
@@ -159,12 +160,21 @@ pub mod features {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets all the preview features that are available through AFEC for the subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID."]
         pub fn list_all(&self, subscription_id: impl Into<String>) -> list_all::Builder {
             list_all::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets all the preview features in a provider namespace that are available through AFEC for the subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_provider_namespace`: The namespace of the resource provider for getting features."]
+        #[doc = "* `subscription_id`: The Azure subscription ID."]
         pub fn list(&self, resource_provider_namespace: impl Into<String>, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -172,6 +182,12 @@ pub mod features {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the preview feature with the specified name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_provider_namespace`: The resource provider namespace for the feature."]
+        #[doc = "* `feature_name`: The name of the feature to get."]
+        #[doc = "* `subscription_id`: The Azure subscription ID."]
         pub fn get(
             &self,
             resource_provider_namespace: impl Into<String>,
@@ -185,6 +201,12 @@ pub mod features {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Registers the preview feature for the subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_provider_namespace`: The namespace of the resource provider."]
+        #[doc = "* `feature_name`: The name of the feature to register."]
+        #[doc = "* `subscription_id`: The Azure subscription ID."]
         pub fn register(
             &self,
             resource_provider_namespace: impl Into<String>,
@@ -198,6 +220,12 @@ pub mod features {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Unregisters the preview feature for the subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_provider_namespace`: The namespace of the resource provider."]
+        #[doc = "* `feature_name`: The name of the feature to unregister."]
+        #[doc = "* `subscription_id`: The Azure subscription ID."]
         pub fn unregister(
             &self,
             resource_provider_namespace: impl Into<String>,
@@ -525,6 +553,12 @@ pub mod subscription_feature_registrations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Returns a feature registration"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID."]
+        #[doc = "* `provider_namespace`: The provider namespace."]
+        #[doc = "* `feature_name`: The feature name."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -538,6 +572,12 @@ pub mod subscription_feature_registrations {
                 feature_name: feature_name.into(),
             }
         }
+        #[doc = "Create or update a feature registration."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID."]
+        #[doc = "* `provider_namespace`: The provider namespace."]
+        #[doc = "* `feature_name`: The feature name."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -552,6 +592,12 @@ pub mod subscription_feature_registrations {
                 subscription_feature_registration_type: None,
             }
         }
+        #[doc = "Deletes a feature registration"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID."]
+        #[doc = "* `provider_namespace`: The provider namespace."]
+        #[doc = "* `feature_name`: The feature name."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -565,6 +611,11 @@ pub mod subscription_feature_registrations {
                 feature_name: feature_name.into(),
             }
         }
+        #[doc = "Returns subscription feature registrations for given subscription and provider namespace."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID."]
+        #[doc = "* `provider_namespace`: The provider namespace."]
         pub fn list_by_subscription(
             &self,
             subscription_id: impl Into<String>,
@@ -576,6 +627,10 @@ pub mod subscription_feature_registrations {
                 provider_namespace: provider_namespace.into(),
             }
         }
+        #[doc = "Returns subscription feature registrations for given subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID."]
         pub fn list_all_by_subscription(&self, subscription_id: impl Into<String>) -> list_all_by_subscription::Builder {
             list_all_by_subscription::Builder {
                 client: self.0.clone(),
@@ -647,6 +702,7 @@ pub mod subscription_feature_registrations {
             pub(crate) subscription_feature_registration_type: Option<models::SubscriptionFeatureRegistration>,
         }
         impl Builder {
+            #[doc = "Subscription Feature Registration Type details."]
             pub fn subscription_feature_registration_type(
                 mut self,
                 subscription_feature_registration_type: impl Into<models::SubscriptionFeatureRegistration>,

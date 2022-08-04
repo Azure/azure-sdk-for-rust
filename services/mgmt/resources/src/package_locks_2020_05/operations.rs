@@ -85,6 +85,7 @@ pub mod authorization_operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all of the available Microsoft.Authorization REST API operations."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -164,6 +165,12 @@ pub mod management_locks {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a management lock at the resource group level."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the locked resource group."]
+        #[doc = "* `lock_name`: The name of the lock to get."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn get_at_resource_group_level(
             &self,
             resource_group_name: impl Into<String>,
@@ -178,6 +185,13 @@ pub mod management_locks {
             }
         }
         #[doc = "Creates or updates a management lock at the resource group level."]
+        #[doc = "When you apply a lock at a parent scope, all child resources inherit the same lock. To create management locks, you must have access to Microsoft.Authorization/* or Microsoft.Authorization/locks/* actions. Of the built-in roles, only Owner and User Access Administrator are granted those actions."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group to lock."]
+        #[doc = "* `lock_name`: The lock name. The lock name can be a maximum of 260 characters. It cannot contain <, > %, &, :, \\, ?, /, or any control characters."]
+        #[doc = "* `parameters`: The management lock parameters."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn create_or_update_at_resource_group_level(
             &self,
             resource_group_name: impl Into<String>,
@@ -194,6 +208,12 @@ pub mod management_locks {
             }
         }
         #[doc = "Deletes a management lock at the resource group level."]
+        #[doc = "To delete management locks, you must have access to Microsoft.Authorization/* or Microsoft.Authorization/locks/* actions. Of the built-in roles, only Owner and User Access Administrator are granted those actions."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group containing the lock."]
+        #[doc = "* `lock_name`: The name of lock to delete."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn delete_at_resource_group_level(
             &self,
             resource_group_name: impl Into<String>,
@@ -207,6 +227,11 @@ pub mod management_locks {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get a management lock by scope."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `scope`: The scope for the lock. "]
+        #[doc = "* `lock_name`: The name of lock."]
         pub fn get_by_scope(&self, scope: impl Into<String>, lock_name: impl Into<String>) -> get_by_scope::Builder {
             get_by_scope::Builder {
                 client: self.0.clone(),
@@ -214,6 +239,12 @@ pub mod management_locks {
                 lock_name: lock_name.into(),
             }
         }
+        #[doc = "Create or update a management lock by scope."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `scope`: The scope for the lock. When providing a scope for the assignment, use '/subscriptions/{subscriptionId}' for subscriptions, '/subscriptions/{subscriptionId}/resourcegroups/{resourceGroupName}' for resource groups, and '/subscriptions/{subscriptionId}/resourcegroups/{resourceGroupName}/providers/{resourceProviderNamespace}/{parentResourcePathIfPresent}/{resourceType}/{resourceName}' for resources."]
+        #[doc = "* `lock_name`: The name of lock."]
+        #[doc = "* `parameters`: Create or update management lock parameters."]
         pub fn create_or_update_by_scope(
             &self,
             scope: impl Into<String>,
@@ -227,6 +258,11 @@ pub mod management_locks {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Delete a management lock by scope."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `scope`: The scope for the lock. "]
+        #[doc = "* `lock_name`: The name of lock."]
         pub fn delete_by_scope(&self, scope: impl Into<String>, lock_name: impl Into<String>) -> delete_by_scope::Builder {
             delete_by_scope::Builder {
                 client: self.0.clone(),
@@ -234,6 +270,16 @@ pub mod management_locks {
                 lock_name: lock_name.into(),
             }
         }
+        #[doc = "Get the management lock of a resource or any level below resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. "]
+        #[doc = "* `resource_provider_namespace`: The namespace of the resource provider."]
+        #[doc = "* `parent_resource_path`: An extra path parameter needed in some services, like SQL Databases."]
+        #[doc = "* `resource_type`: The type of the resource."]
+        #[doc = "* `resource_name`: The name of the resource."]
+        #[doc = "* `lock_name`: The name of lock."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn get_at_resource_level(
             &self,
             resource_group_name: impl Into<String>,
@@ -256,6 +302,17 @@ pub mod management_locks {
             }
         }
         #[doc = "Creates or updates a management lock at the resource level or any level below the resource."]
+        #[doc = "When you apply a lock at a parent scope, all child resources inherit the same lock. To create management locks, you must have access to Microsoft.Authorization/* or Microsoft.Authorization/locks/* actions. Of the built-in roles, only Owner and User Access Administrator are granted those actions."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group containing the resource to lock. "]
+        #[doc = "* `resource_provider_namespace`: The resource provider namespace of the resource to lock."]
+        #[doc = "* `parent_resource_path`: The parent resource identity."]
+        #[doc = "* `resource_type`: The resource type of the resource to lock."]
+        #[doc = "* `resource_name`: The name of the resource to lock."]
+        #[doc = "* `lock_name`: The name of lock. The lock name can be a maximum of 260 characters. It cannot contain <, > %, &, :, \\, ?, /, or any control characters."]
+        #[doc = "* `parameters`: Parameters for creating or updating a  management lock."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn create_or_update_at_resource_level(
             &self,
             resource_group_name: impl Into<String>,
@@ -280,6 +337,16 @@ pub mod management_locks {
             }
         }
         #[doc = "Deletes the management lock of a resource or any level below the resource."]
+        #[doc = "To delete management locks, you must have access to Microsoft.Authorization/* or Microsoft.Authorization/locks/* actions. Of the built-in roles, only Owner and User Access Administrator are granted those actions."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group containing the resource with the lock to delete. "]
+        #[doc = "* `resource_provider_namespace`: The resource provider namespace of the resource with the lock to delete."]
+        #[doc = "* `parent_resource_path`: The parent resource identity."]
+        #[doc = "* `resource_type`: The resource type of the resource with the lock to delete."]
+        #[doc = "* `resource_name`: The name of the resource with the lock to delete."]
+        #[doc = "* `lock_name`: The name of the lock to delete."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn delete_at_resource_level(
             &self,
             resource_group_name: impl Into<String>,
@@ -301,6 +368,11 @@ pub mod management_locks {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets a management lock at the subscription level."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `lock_name`: The name of the lock to get."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn get_at_subscription_level(
             &self,
             lock_name: impl Into<String>,
@@ -313,6 +385,12 @@ pub mod management_locks {
             }
         }
         #[doc = "Creates or updates a management lock at the subscription level."]
+        #[doc = "When you apply a lock at a parent scope, all child resources inherit the same lock. To create management locks, you must have access to Microsoft.Authorization/* or Microsoft.Authorization/locks/* actions. Of the built-in roles, only Owner and User Access Administrator are granted those actions."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `lock_name`: The name of lock. The lock name can be a maximum of 260 characters. It cannot contain <, > %, &, :, \\, ?, /, or any control characters."]
+        #[doc = "* `parameters`: The management lock parameters."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn create_or_update_at_subscription_level(
             &self,
             lock_name: impl Into<String>,
@@ -327,6 +405,11 @@ pub mod management_locks {
             }
         }
         #[doc = "Deletes the management lock at the subscription level."]
+        #[doc = "To delete management locks, you must have access to Microsoft.Authorization/* or Microsoft.Authorization/locks/* actions. Of the built-in roles, only Owner and User Access Administrator are granted those actions."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `lock_name`: The name of lock to delete."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn delete_at_subscription_level(
             &self,
             lock_name: impl Into<String>,
@@ -338,6 +421,11 @@ pub mod management_locks {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets all the management locks for a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group containing the locks to get."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_at_resource_group_level(
             &self,
             resource_group_name: impl Into<String>,
@@ -350,6 +438,15 @@ pub mod management_locks {
                 filter: None,
             }
         }
+        #[doc = "Gets all the management locks for a resource or any level below resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group containing the locked resource. The name is case insensitive."]
+        #[doc = "* `resource_provider_namespace`: The namespace of the resource provider."]
+        #[doc = "* `parent_resource_path`: The parent resource identity."]
+        #[doc = "* `resource_type`: The resource type of the locked resource."]
+        #[doc = "* `resource_name`: The name of the locked resource."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_at_resource_level(
             &self,
             resource_group_name: impl Into<String>,
@@ -370,6 +467,10 @@ pub mod management_locks {
                 filter: None,
             }
         }
+        #[doc = "Gets all the management locks for a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_at_subscription_level(&self, subscription_id: impl Into<String>) -> list_at_subscription_level::Builder {
             list_at_subscription_level::Builder {
                 client: self.0.clone(),
@@ -377,6 +478,10 @@ pub mod management_locks {
                 filter: None,
             }
         }
+        #[doc = "Gets all the management locks for a scope."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `scope`: The scope for the lock. When providing a scope for the assignment, use '/subscriptions/{subscriptionId}' for subscriptions, '/subscriptions/{subscriptionId}/resourcegroups/{resourceGroupName}' for resource groups, and '/subscriptions/{subscriptionId}/resourcegroups/{resourceGroupName}/providers/{resourceProviderNamespace}/{parentResourcePathIfPresent}/{resourceType}/{resourceName}' for resources."]
         pub fn list_by_scope(&self, scope: impl Into<String>) -> list_by_scope::Builder {
             list_by_scope::Builder {
                 client: self.0.clone(),
@@ -1080,6 +1185,7 @@ pub mod management_locks {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the operation."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -1168,6 +1274,7 @@ pub mod management_locks {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the operation."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -1255,6 +1362,7 @@ pub mod management_locks {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the operation."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -1337,6 +1445,7 @@ pub mod management_locks {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the operation."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self

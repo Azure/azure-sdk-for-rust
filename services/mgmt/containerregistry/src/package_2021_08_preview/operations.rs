@@ -124,6 +124,12 @@ pub mod connected_registries {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all connected registries for the specified container registry."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the container registry belongs."]
+        #[doc = "* `registry_name`: The name of the container registry."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -138,6 +144,13 @@ pub mod connected_registries {
                 filter: None,
             }
         }
+        #[doc = "Gets the properties of the connected registry."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the container registry belongs."]
+        #[doc = "* `registry_name`: The name of the container registry."]
+        #[doc = "* `connected_registry_name`: The name of the connected registry."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -153,6 +166,14 @@ pub mod connected_registries {
                 connected_registry_name: connected_registry_name.into(),
             }
         }
+        #[doc = "Creates a connected registry for a container registry with the specified parameters."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the container registry belongs."]
+        #[doc = "* `registry_name`: The name of the container registry."]
+        #[doc = "* `connected_registry_name`: The name of the connected registry."]
+        #[doc = "* `connected_registry_create_parameters`: The parameters for creating a connectedRegistry."]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -170,6 +191,14 @@ pub mod connected_registries {
                 connected_registry_create_parameters: connected_registry_create_parameters.into(),
             }
         }
+        #[doc = "Updates a connected registry with the specified parameters."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the container registry belongs."]
+        #[doc = "* `registry_name`: The name of the container registry."]
+        #[doc = "* `connected_registry_name`: The name of the connected registry."]
+        #[doc = "* `connected_registry_update_parameters`: The parameters for updating a connectedRegistry."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -187,6 +216,13 @@ pub mod connected_registries {
                 connected_registry_update_parameters: connected_registry_update_parameters.into(),
             }
         }
+        #[doc = "Deletes a connected registry from a container registry."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the container registry belongs."]
+        #[doc = "* `registry_name`: The name of the container registry."]
+        #[doc = "* `connected_registry_name`: The name of the connected registry."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -202,6 +238,13 @@ pub mod connected_registries {
                 connected_registry_name: connected_registry_name.into(),
             }
         }
+        #[doc = "Deactivates the connected registry instance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the container registry belongs."]
+        #[doc = "* `registry_name`: The name of the container registry."]
+        #[doc = "* `connected_registry_name`: The name of the connected registry."]
         pub fn deactivate(
             &self,
             subscription_id: impl Into<String>,
@@ -230,6 +273,7 @@ pub mod connected_registries {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "An OData filter expression that describes a subset of connectedRegistries to return. The parameters that can be filtered are parent.id (the resource id of the connectedRegistry parent), mode, and connectionState. The supported operator is eq."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -575,6 +619,12 @@ pub mod export_pipelines {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all export pipelines for the specified container registry."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the container registry belongs."]
+        #[doc = "* `registry_name`: The name of the container registry."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -588,6 +638,13 @@ pub mod export_pipelines {
                 registry_name: registry_name.into(),
             }
         }
+        #[doc = "Gets the properties of the export pipeline."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the container registry belongs."]
+        #[doc = "* `registry_name`: The name of the container registry."]
+        #[doc = "* `export_pipeline_name`: The name of the export pipeline."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -603,6 +660,14 @@ pub mod export_pipelines {
                 export_pipeline_name: export_pipeline_name.into(),
             }
         }
+        #[doc = "Creates an export pipeline for a container registry with the specified parameters."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the container registry belongs."]
+        #[doc = "* `registry_name`: The name of the container registry."]
+        #[doc = "* `export_pipeline_name`: The name of the export pipeline."]
+        #[doc = "* `export_pipeline_create_parameters`: The parameters for creating an export pipeline."]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -620,6 +685,13 @@ pub mod export_pipelines {
                 export_pipeline_create_parameters: export_pipeline_create_parameters.into(),
             }
         }
+        #[doc = "Deletes an export pipeline from a container registry."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the container registry belongs."]
+        #[doc = "* `registry_name`: The name of the container registry."]
+        #[doc = "* `export_pipeline_name`: The name of the export pipeline."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -897,6 +969,13 @@ pub mod registries {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Copies an image to this container registry from the specified container registry."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the container registry belongs."]
+        #[doc = "* `registry_name`: The name of the container registry."]
+        #[doc = "* `parameters`: The parameters specifying the image to copy and the source container registry."]
         pub fn import_image(
             &self,
             subscription_id: impl Into<String>,
@@ -912,6 +991,11 @@ pub mod registries {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Checks whether the container registry name is available for use. The name must contain only alphanumeric characters, be globally unique, and between 5 and 50 characters in length."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `registry_name_check_request`: The object containing information for the availability request."]
         pub fn check_name_availability(
             &self,
             subscription_id: impl Into<String>,
@@ -923,12 +1007,21 @@ pub mod registries {
                 registry_name_check_request: registry_name_check_request.into(),
             }
         }
+        #[doc = "Lists all the container registries under the specified subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists all the container registries under the specified resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the container registry belongs."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -940,6 +1033,12 @@ pub mod registries {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Gets the properties of the specified container registry."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the container registry belongs."]
+        #[doc = "* `registry_name`: The name of the container registry."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -953,6 +1052,13 @@ pub mod registries {
                 registry_name: registry_name.into(),
             }
         }
+        #[doc = "Creates a container registry with the specified parameters."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the container registry belongs."]
+        #[doc = "* `registry_name`: The name of the container registry."]
+        #[doc = "* `registry`: The parameters for creating a container registry."]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -968,6 +1074,13 @@ pub mod registries {
                 registry: registry.into(),
             }
         }
+        #[doc = "Updates a container registry with the specified parameters."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the container registry belongs."]
+        #[doc = "* `registry_name`: The name of the container registry."]
+        #[doc = "* `registry_update_parameters`: The parameters for updating a container registry."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -983,6 +1096,12 @@ pub mod registries {
                 registry_update_parameters: registry_update_parameters.into(),
             }
         }
+        #[doc = "Deletes a container registry."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the container registry belongs."]
+        #[doc = "* `registry_name`: The name of the container registry."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -996,6 +1115,12 @@ pub mod registries {
                 registry_name: registry_name.into(),
             }
         }
+        #[doc = "Gets the quota usages for the specified container registry."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the container registry belongs."]
+        #[doc = "* `registry_name`: The name of the container registry."]
         pub fn list_usages(
             &self,
             subscription_id: impl Into<String>,
@@ -1009,6 +1134,12 @@ pub mod registries {
                 registry_name: registry_name.into(),
             }
         }
+        #[doc = "Lists the private link resources for a container registry."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the container registry belongs."]
+        #[doc = "* `registry_name`: The name of the container registry."]
         pub fn list_private_link_resources(
             &self,
             subscription_id: impl Into<String>,
@@ -1022,6 +1153,12 @@ pub mod registries {
                 registry_name: registry_name.into(),
             }
         }
+        #[doc = "Lists the login credentials for the specified container registry."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the container registry belongs."]
+        #[doc = "* `registry_name`: The name of the container registry."]
         pub fn list_credentials(
             &self,
             subscription_id: impl Into<String>,
@@ -1035,6 +1172,13 @@ pub mod registries {
                 registry_name: registry_name.into(),
             }
         }
+        #[doc = "Regenerates one of the login credentials for the specified container registry."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the container registry belongs."]
+        #[doc = "* `registry_name`: The name of the container registry."]
+        #[doc = "* `regenerate_credential_parameters`: Specifies name of the password which should be regenerated -- password or password2."]
         pub fn regenerate_credential(
             &self,
             subscription_id: impl Into<String>,
@@ -1050,6 +1194,13 @@ pub mod registries {
                 regenerate_credential_parameters: regenerate_credential_parameters.into(),
             }
         }
+        #[doc = "Generate keys for a token of a specified container registry."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the container registry belongs."]
+        #[doc = "* `registry_name`: The name of the container registry."]
+        #[doc = "* `generate_credentials_parameters`: The parameters for generating credentials."]
         pub fn generate_credentials(
             &self,
             subscription_id: impl Into<String>,
@@ -1065,6 +1216,13 @@ pub mod registries {
                 generate_credentials_parameters: generate_credentials_parameters.into(),
             }
         }
+        #[doc = "Schedules a new run based on the request parameters and add it to the run queue."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the container registry belongs."]
+        #[doc = "* `registry_name`: The name of the container registry."]
+        #[doc = "* `run_request`: The parameters of a run that needs to scheduled."]
         pub fn schedule_run(
             &self,
             subscription_id: impl Into<String>,
@@ -1080,6 +1238,12 @@ pub mod registries {
                 run_request: run_request.into(),
             }
         }
+        #[doc = "Get the upload location for the user to be able to upload the source."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the container registry belongs."]
+        #[doc = "* `registry_name`: The name of the container registry."]
         pub fn get_build_source_upload_url(
             &self,
             subscription_id: impl Into<String>,
@@ -1983,6 +2147,12 @@ pub mod import_pipelines {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all import pipelines for the specified container registry."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the container registry belongs."]
+        #[doc = "* `registry_name`: The name of the container registry."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -1996,6 +2166,13 @@ pub mod import_pipelines {
                 registry_name: registry_name.into(),
             }
         }
+        #[doc = "Gets the properties of the import pipeline."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the container registry belongs."]
+        #[doc = "* `registry_name`: The name of the container registry."]
+        #[doc = "* `import_pipeline_name`: The name of the import pipeline."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -2011,6 +2188,14 @@ pub mod import_pipelines {
                 import_pipeline_name: import_pipeline_name.into(),
             }
         }
+        #[doc = "Creates an import pipeline for a container registry with the specified parameters."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the container registry belongs."]
+        #[doc = "* `registry_name`: The name of the container registry."]
+        #[doc = "* `import_pipeline_name`: The name of the import pipeline."]
+        #[doc = "* `import_pipeline_create_parameters`: The parameters for creating an import pipeline."]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -2028,6 +2213,13 @@ pub mod import_pipelines {
                 import_pipeline_create_parameters: import_pipeline_create_parameters.into(),
             }
         }
+        #[doc = "Deletes an import pipeline from a container registry."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the container registry belongs."]
+        #[doc = "* `registry_name`: The name of the container registry."]
+        #[doc = "* `import_pipeline_name`: The name of the import pipeline."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -2305,6 +2497,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all of the available Azure Container Registry REST API operations."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -2386,6 +2579,12 @@ pub mod pipeline_runs {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all the pipeline runs for the specified container registry."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the container registry belongs."]
+        #[doc = "* `registry_name`: The name of the container registry."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -2399,6 +2598,13 @@ pub mod pipeline_runs {
                 registry_name: registry_name.into(),
             }
         }
+        #[doc = "Gets the detailed information for a given pipeline run."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the container registry belongs."]
+        #[doc = "* `registry_name`: The name of the container registry."]
+        #[doc = "* `pipeline_run_name`: The name of the pipeline run."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -2414,6 +2620,14 @@ pub mod pipeline_runs {
                 pipeline_run_name: pipeline_run_name.into(),
             }
         }
+        #[doc = "Creates a pipeline run for a container registry with the specified parameters"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the container registry belongs."]
+        #[doc = "* `registry_name`: The name of the container registry."]
+        #[doc = "* `pipeline_run_name`: The name of the pipeline run."]
+        #[doc = "* `pipeline_run_create_parameters`: The parameters for creating a pipeline run."]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -2431,6 +2645,13 @@ pub mod pipeline_runs {
                 pipeline_run_create_parameters: pipeline_run_create_parameters.into(),
             }
         }
+        #[doc = "Deletes a pipeline run from a container registry."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the container registry belongs."]
+        #[doc = "* `registry_name`: The name of the container registry."]
+        #[doc = "* `pipeline_run_name`: The name of the pipeline run."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -2708,6 +2929,12 @@ pub mod private_endpoint_connections {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List all private endpoint connections in a container registry."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the container registry belongs."]
+        #[doc = "* `registry_name`: The name of the container registry."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -2721,6 +2948,13 @@ pub mod private_endpoint_connections {
                 registry_name: registry_name.into(),
             }
         }
+        #[doc = "Get the specified private endpoint connection associated with the container registry."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the container registry belongs."]
+        #[doc = "* `registry_name`: The name of the container registry."]
+        #[doc = "* `private_endpoint_connection_name`: The name of the private endpoint connection."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -2736,6 +2970,14 @@ pub mod private_endpoint_connections {
                 private_endpoint_connection_name: private_endpoint_connection_name.into(),
             }
         }
+        #[doc = "Update the state of specified private endpoint connection associated with the container registry."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the container registry belongs."]
+        #[doc = "* `registry_name`: The name of the container registry."]
+        #[doc = "* `private_endpoint_connection_name`: The name of the private endpoint connection."]
+        #[doc = "* `private_endpoint_connection`: The parameters for creating a private endpoint connection."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -2753,6 +2995,13 @@ pub mod private_endpoint_connections {
                 private_endpoint_connection: private_endpoint_connection.into(),
             }
         }
+        #[doc = "Deletes the specified private endpoint connection associated with the container registry."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the container registry belongs."]
+        #[doc = "* `registry_name`: The name of the container registry."]
+        #[doc = "* `private_endpoint_connection_name`: The name of the private endpoint connection."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -3003,6 +3252,12 @@ pub mod replications {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all the replications for the specified container registry."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the container registry belongs."]
+        #[doc = "* `registry_name`: The name of the container registry."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -3016,6 +3271,13 @@ pub mod replications {
                 registry_name: registry_name.into(),
             }
         }
+        #[doc = "Gets the properties of the specified replication."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the container registry belongs."]
+        #[doc = "* `registry_name`: The name of the container registry."]
+        #[doc = "* `replication_name`: The name of the replication."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -3031,6 +3293,14 @@ pub mod replications {
                 replication_name: replication_name.into(),
             }
         }
+        #[doc = "Creates a replication for a container registry with the specified parameters."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the container registry belongs."]
+        #[doc = "* `registry_name`: The name of the container registry."]
+        #[doc = "* `replication_name`: The name of the replication."]
+        #[doc = "* `replication`: The parameters for creating a replication."]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -3048,6 +3318,14 @@ pub mod replications {
                 replication: replication.into(),
             }
         }
+        #[doc = "Updates a replication for a container registry with the specified parameters."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the container registry belongs."]
+        #[doc = "* `registry_name`: The name of the container registry."]
+        #[doc = "* `replication_name`: The name of the replication."]
+        #[doc = "* `replication_update_parameters`: The parameters for updating a replication."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -3065,6 +3343,13 @@ pub mod replications {
                 replication_update_parameters: replication_update_parameters.into(),
             }
         }
+        #[doc = "Deletes a replication from a container registry."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the container registry belongs."]
+        #[doc = "* `registry_name`: The name of the container registry."]
+        #[doc = "* `replication_name`: The name of the replication."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -3408,6 +3693,12 @@ pub mod scope_maps {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all the scope maps for the specified container registry."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the container registry belongs."]
+        #[doc = "* `registry_name`: The name of the container registry."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -3421,6 +3712,13 @@ pub mod scope_maps {
                 registry_name: registry_name.into(),
             }
         }
+        #[doc = "Gets the properties of the specified scope map."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the container registry belongs."]
+        #[doc = "* `registry_name`: The name of the container registry."]
+        #[doc = "* `scope_map_name`: The name of the scope map."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -3436,6 +3734,14 @@ pub mod scope_maps {
                 scope_map_name: scope_map_name.into(),
             }
         }
+        #[doc = "Creates a scope map for a container registry with the specified parameters."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the container registry belongs."]
+        #[doc = "* `registry_name`: The name of the container registry."]
+        #[doc = "* `scope_map_name`: The name of the scope map."]
+        #[doc = "* `scope_map_create_parameters`: The parameters for creating a scope map."]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -3453,6 +3759,14 @@ pub mod scope_maps {
                 scope_map_create_parameters: scope_map_create_parameters.into(),
             }
         }
+        #[doc = "Updates a scope map with the specified parameters."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the container registry belongs."]
+        #[doc = "* `registry_name`: The name of the container registry."]
+        #[doc = "* `scope_map_name`: The name of the scope map."]
+        #[doc = "* `scope_map_update_parameters`: The parameters for updating a scope map."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -3470,6 +3784,13 @@ pub mod scope_maps {
                 scope_map_update_parameters: scope_map_update_parameters.into(),
             }
         }
+        #[doc = "Deletes a scope map from a container registry."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the container registry belongs."]
+        #[doc = "* `registry_name`: The name of the container registry."]
+        #[doc = "* `scope_map_name`: The name of the scope map."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -3813,6 +4134,12 @@ pub mod tokens {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all the tokens for the specified container registry."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the container registry belongs."]
+        #[doc = "* `registry_name`: The name of the container registry."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -3826,6 +4153,13 @@ pub mod tokens {
                 registry_name: registry_name.into(),
             }
         }
+        #[doc = "Gets the properties of the specified token."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the container registry belongs."]
+        #[doc = "* `registry_name`: The name of the container registry."]
+        #[doc = "* `token_name`: The name of the token."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -3841,6 +4175,14 @@ pub mod tokens {
                 token_name: token_name.into(),
             }
         }
+        #[doc = "Creates a token for a container registry with the specified parameters."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the container registry belongs."]
+        #[doc = "* `registry_name`: The name of the container registry."]
+        #[doc = "* `token_name`: The name of the token."]
+        #[doc = "* `token_create_parameters`: The parameters for creating a token."]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -3858,6 +4200,14 @@ pub mod tokens {
                 token_create_parameters: token_create_parameters.into(),
             }
         }
+        #[doc = "Updates a token with the specified parameters."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the container registry belongs."]
+        #[doc = "* `registry_name`: The name of the container registry."]
+        #[doc = "* `token_name`: The name of the token."]
+        #[doc = "* `token_update_parameters`: The parameters for updating a token."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -3875,6 +4225,13 @@ pub mod tokens {
                 token_update_parameters: token_update_parameters.into(),
             }
         }
+        #[doc = "Deletes a token from a container registry."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the container registry belongs."]
+        #[doc = "* `registry_name`: The name of the container registry."]
+        #[doc = "* `token_name`: The name of the token."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -4218,6 +4575,12 @@ pub mod webhooks {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all the webhooks for the specified container registry."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the container registry belongs."]
+        #[doc = "* `registry_name`: The name of the container registry."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -4231,6 +4594,13 @@ pub mod webhooks {
                 registry_name: registry_name.into(),
             }
         }
+        #[doc = "Gets the properties of the specified webhook."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the container registry belongs."]
+        #[doc = "* `registry_name`: The name of the container registry."]
+        #[doc = "* `webhook_name`: The name of the webhook."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -4246,6 +4616,14 @@ pub mod webhooks {
                 webhook_name: webhook_name.into(),
             }
         }
+        #[doc = "Creates a webhook for a container registry with the specified parameters."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the container registry belongs."]
+        #[doc = "* `registry_name`: The name of the container registry."]
+        #[doc = "* `webhook_name`: The name of the webhook."]
+        #[doc = "* `webhook_create_parameters`: The parameters for creating a webhook."]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -4263,6 +4641,14 @@ pub mod webhooks {
                 webhook_create_parameters: webhook_create_parameters.into(),
             }
         }
+        #[doc = "Updates a webhook with the specified parameters."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the container registry belongs."]
+        #[doc = "* `registry_name`: The name of the container registry."]
+        #[doc = "* `webhook_name`: The name of the webhook."]
+        #[doc = "* `webhook_update_parameters`: The parameters for updating a webhook."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -4280,6 +4666,13 @@ pub mod webhooks {
                 webhook_update_parameters: webhook_update_parameters.into(),
             }
         }
+        #[doc = "Deletes a webhook from a container registry."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the container registry belongs."]
+        #[doc = "* `registry_name`: The name of the container registry."]
+        #[doc = "* `webhook_name`: The name of the webhook."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -4295,6 +4688,13 @@ pub mod webhooks {
                 webhook_name: webhook_name.into(),
             }
         }
+        #[doc = "Triggers a ping event to be sent to the webhook."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the container registry belongs."]
+        #[doc = "* `registry_name`: The name of the container registry."]
+        #[doc = "* `webhook_name`: The name of the webhook."]
         pub fn ping(
             &self,
             subscription_id: impl Into<String>,
@@ -4310,6 +4710,13 @@ pub mod webhooks {
                 webhook_name: webhook_name.into(),
             }
         }
+        #[doc = "Lists recent events for the specified webhook."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the container registry belongs."]
+        #[doc = "* `registry_name`: The name of the container registry."]
+        #[doc = "* `webhook_name`: The name of the webhook."]
         pub fn list_events(
             &self,
             subscription_id: impl Into<String>,
@@ -4325,6 +4732,13 @@ pub mod webhooks {
                 webhook_name: webhook_name.into(),
             }
         }
+        #[doc = "Gets the configuration of service URI and custom headers for the webhook."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the container registry belongs."]
+        #[doc = "* `registry_name`: The name of the container registry."]
+        #[doc = "* `webhook_name`: The name of the webhook."]
         pub fn get_callback_config(
             &self,
             subscription_id: impl Into<String>,
@@ -4845,6 +5259,13 @@ pub mod agent_pools {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the detailed information for a given agent pool."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the container registry belongs."]
+        #[doc = "* `registry_name`: The name of the container registry."]
+        #[doc = "* `agent_pool_name`: The name of the agent pool."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -4860,6 +5281,14 @@ pub mod agent_pools {
                 agent_pool_name: agent_pool_name.into(),
             }
         }
+        #[doc = "Creates an agent pool for a container registry with the specified parameters."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the container registry belongs."]
+        #[doc = "* `registry_name`: The name of the container registry."]
+        #[doc = "* `agent_pool_name`: The name of the agent pool."]
+        #[doc = "* `agent_pool`: The parameters of an agent pool that needs to scheduled."]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -4877,6 +5306,14 @@ pub mod agent_pools {
                 agent_pool: agent_pool.into(),
             }
         }
+        #[doc = "Updates an agent pool with the specified parameters."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the container registry belongs."]
+        #[doc = "* `registry_name`: The name of the container registry."]
+        #[doc = "* `agent_pool_name`: The name of the agent pool."]
+        #[doc = "* `update_parameters`: The parameters for updating an agent pool."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -4894,6 +5331,13 @@ pub mod agent_pools {
                 update_parameters: update_parameters.into(),
             }
         }
+        #[doc = "Deletes a specified agent pool resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the container registry belongs."]
+        #[doc = "* `registry_name`: The name of the container registry."]
+        #[doc = "* `agent_pool_name`: The name of the agent pool."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -4909,6 +5353,12 @@ pub mod agent_pools {
                 agent_pool_name: agent_pool_name.into(),
             }
         }
+        #[doc = "Lists all the agent pools for a specified container registry."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the container registry belongs."]
+        #[doc = "* `registry_name`: The name of the container registry."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -4922,6 +5372,13 @@ pub mod agent_pools {
                 registry_name: registry_name.into(),
             }
         }
+        #[doc = "Gets the count of queued runs for a given agent pool."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the container registry belongs."]
+        #[doc = "* `registry_name`: The name of the container registry."]
+        #[doc = "* `agent_pool_name`: The name of the agent pool."]
         pub fn get_queue_status(
             &self,
             subscription_id: impl Into<String>,
@@ -5313,6 +5770,12 @@ pub mod runs {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets all the runs for a registry."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the container registry belongs."]
+        #[doc = "* `registry_name`: The name of the container registry."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -5328,6 +5791,13 @@ pub mod runs {
                 top: None,
             }
         }
+        #[doc = "Gets the detailed information for a given run."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the container registry belongs."]
+        #[doc = "* `registry_name`: The name of the container registry."]
+        #[doc = "* `run_id`: The run ID."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -5343,6 +5813,14 @@ pub mod runs {
                 run_id: run_id.into(),
             }
         }
+        #[doc = "Patch the run properties."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the container registry belongs."]
+        #[doc = "* `registry_name`: The name of the container registry."]
+        #[doc = "* `run_id`: The run ID."]
+        #[doc = "* `run_update_parameters`: The run update properties."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -5360,6 +5838,13 @@ pub mod runs {
                 run_update_parameters: run_update_parameters.into(),
             }
         }
+        #[doc = "Gets a link to download the run logs."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the container registry belongs."]
+        #[doc = "* `registry_name`: The name of the container registry."]
+        #[doc = "* `run_id`: The run ID."]
         pub fn get_log_sas_url(
             &self,
             subscription_id: impl Into<String>,
@@ -5375,6 +5860,13 @@ pub mod runs {
                 run_id: run_id.into(),
             }
         }
+        #[doc = "Cancel an existing run."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the container registry belongs."]
+        #[doc = "* `registry_name`: The name of the container registry."]
+        #[doc = "* `run_id`: The run ID."]
         pub fn cancel(
             &self,
             subscription_id: impl Into<String>,
@@ -5404,10 +5896,12 @@ pub mod runs {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The runs filter to apply on the operation. Arithmetic operators are not supported. The allowed string function is 'contains'. All logical operators except 'Not', 'Has', 'All' are allowed."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "$top is supported for get list of runs, which limits the maximum number of runs to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -5715,6 +6209,13 @@ pub mod task_runs {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the detailed information for a given task run."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the container registry belongs."]
+        #[doc = "* `registry_name`: The name of the container registry."]
+        #[doc = "* `task_run_name`: The name of the task run."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -5730,6 +6231,14 @@ pub mod task_runs {
                 task_run_name: task_run_name.into(),
             }
         }
+        #[doc = "Creates a task run for a container registry with the specified parameters."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the container registry belongs."]
+        #[doc = "* `registry_name`: The name of the container registry."]
+        #[doc = "* `task_run_name`: The name of the task run."]
+        #[doc = "* `task_run`: The parameters of a run that needs to scheduled."]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -5747,6 +6256,14 @@ pub mod task_runs {
                 task_run: task_run.into(),
             }
         }
+        #[doc = "Updates a task run with the specified parameters."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the container registry belongs."]
+        #[doc = "* `registry_name`: The name of the container registry."]
+        #[doc = "* `task_run_name`: The name of the task run."]
+        #[doc = "* `update_parameters`: The parameters for updating a task run."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -5764,6 +6281,13 @@ pub mod task_runs {
                 update_parameters: update_parameters.into(),
             }
         }
+        #[doc = "Deletes a specified task run resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the container registry belongs."]
+        #[doc = "* `registry_name`: The name of the container registry."]
+        #[doc = "* `task_run_name`: The name of the task run."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -5779,6 +6303,13 @@ pub mod task_runs {
                 task_run_name: task_run_name.into(),
             }
         }
+        #[doc = "Gets the detailed information for a given task run that includes all secrets."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the container registry belongs."]
+        #[doc = "* `registry_name`: The name of the container registry."]
+        #[doc = "* `task_run_name`: The name of the task run."]
         pub fn get_details(
             &self,
             subscription_id: impl Into<String>,
@@ -5794,6 +6325,12 @@ pub mod task_runs {
                 task_run_name: task_run_name.into(),
             }
         }
+        #[doc = "Lists all the task runs for a specified container registry."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the container registry belongs."]
+        #[doc = "* `registry_name`: The name of the container registry."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -6183,6 +6720,12 @@ pub mod tasks {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all the tasks for a specified container registry."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the container registry belongs."]
+        #[doc = "* `registry_name`: The name of the container registry."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -6196,6 +6739,13 @@ pub mod tasks {
                 registry_name: registry_name.into(),
             }
         }
+        #[doc = "Get the properties of a specified task."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the container registry belongs."]
+        #[doc = "* `registry_name`: The name of the container registry."]
+        #[doc = "* `task_name`: The name of the container registry task."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -6211,6 +6761,14 @@ pub mod tasks {
                 task_name: task_name.into(),
             }
         }
+        #[doc = "Creates a task for a container registry with the specified parameters."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the container registry belongs."]
+        #[doc = "* `registry_name`: The name of the container registry."]
+        #[doc = "* `task_name`: The name of the container registry task."]
+        #[doc = "* `task_create_parameters`: The parameters for creating a task."]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -6228,6 +6786,14 @@ pub mod tasks {
                 task_create_parameters: task_create_parameters.into(),
             }
         }
+        #[doc = "Updates a task with the specified parameters."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the container registry belongs."]
+        #[doc = "* `registry_name`: The name of the container registry."]
+        #[doc = "* `task_name`: The name of the container registry task."]
+        #[doc = "* `task_update_parameters`: The parameters for updating a task."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -6245,6 +6811,13 @@ pub mod tasks {
                 task_update_parameters: task_update_parameters.into(),
             }
         }
+        #[doc = "Deletes a specified task."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the container registry belongs."]
+        #[doc = "* `registry_name`: The name of the container registry."]
+        #[doc = "* `task_name`: The name of the container registry task."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -6260,6 +6833,13 @@ pub mod tasks {
                 task_name: task_name.into(),
             }
         }
+        #[doc = "Returns a task with extended information that includes all secrets."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group to which the container registry belongs."]
+        #[doc = "* `registry_name`: The name of the container registry."]
+        #[doc = "* `task_name`: The name of the container registry task."]
         pub fn get_details(
             &self,
             subscription_id: impl Into<String>,

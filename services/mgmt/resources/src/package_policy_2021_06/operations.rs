@@ -95,6 +95,10 @@ pub mod data_policy_manifests {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Retrieves a data policy manifest."]
+        #[doc = "This operation retrieves the data policy manifest with the given policy mode."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `policy_mode`: The policy mode of the data policy manifest to get."]
         pub fn get_by_policy_mode(&self, policy_mode: impl Into<String>) -> get_by_policy_mode::Builder {
             get_by_policy_mode::Builder {
                 client: self.0.clone(),
@@ -102,6 +106,7 @@ pub mod data_policy_manifests {
             }
         }
         #[doc = "Retrieves data policy manifests"]
+        #[doc = "This operation retrieves a list of all the data policy manifests that match the optional given $filter. Valid values for $filter are: \"$filter=namespace eq '{0}'\". If $filter is not provided, the unfiltered list includes all data policy manifests for data resource types. If $filter=namespace is provided, the returned list only includes all data policy manifests that have a namespace matching the provided value."]
         pub fn list(&self) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -166,6 +171,7 @@ pub mod data_policy_manifests {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the operation. Valid values for $filter are: \"namespace eq '{value}'\". If $filter is not provided, no filtering is performed. If $filter=namespace eq '{value}' is provided, the returned list only includes all data policy manifests that have a namespace matching the provided value."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -243,6 +249,11 @@ pub mod policy_assignments {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Retrieves a policy assignment."]
+        #[doc = "This operation retrieves a single policy assignment, given its name and the scope it was created at."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `scope`: The scope of the policy assignment. Valid scopes are: management group (format: '/providers/Microsoft.Management/managementGroups/{managementGroup}'), subscription (format: '/subscriptions/{subscriptionId}'), resource group (format: '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}', or resource (format: '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{resourceProviderNamespace}/[{parentResourcePath}/]{resourceType}/{resourceName}'"]
+        #[doc = "* `policy_assignment_name`: The name of the policy assignment to get."]
         pub fn get(&self, scope: impl Into<String>, policy_assignment_name: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -251,6 +262,12 @@ pub mod policy_assignments {
             }
         }
         #[doc = "Creates or updates a policy assignment."]
+        #[doc = " This operation creates or updates a policy assignment with the given scope and name. Policy assignments apply to all resources contained within their scope. For example, when you assign a policy at resource group scope, that policy applies to all resources in the group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `scope`: The scope of the policy assignment. Valid scopes are: management group (format: '/providers/Microsoft.Management/managementGroups/{managementGroup}'), subscription (format: '/subscriptions/{subscriptionId}'), resource group (format: '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}', or resource (format: '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{resourceProviderNamespace}/[{parentResourcePath}/]{resourceType}/{resourceName}'"]
+        #[doc = "* `policy_assignment_name`: The name of the policy assignment."]
+        #[doc = "* `parameters`: Parameters for the policy assignment."]
         pub fn create(
             &self,
             scope: impl Into<String>,
@@ -265,6 +282,12 @@ pub mod policy_assignments {
             }
         }
         #[doc = "Updates a policy assignment."]
+        #[doc = " This operation updates a policy assignment with the given scope and name. Policy assignments apply to all resources contained within their scope. For example, when you assign a policy at resource group scope, that policy applies to all resources in the group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `scope`: The scope of the policy assignment. Valid scopes are: management group (format: '/providers/Microsoft.Management/managementGroups/{managementGroup}'), subscription (format: '/subscriptions/{subscriptionId}'), resource group (format: '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}', or resource (format: '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{resourceProviderNamespace}/[{parentResourcePath}/]{resourceType}/{resourceName}'"]
+        #[doc = "* `policy_assignment_name`: The name of the policy assignment."]
+        #[doc = "* `parameters`: Parameters for policy assignment patch request."]
         pub fn update(
             &self,
             scope: impl Into<String>,
@@ -279,6 +302,11 @@ pub mod policy_assignments {
             }
         }
         #[doc = "Deletes a policy assignment."]
+        #[doc = "This operation deletes a policy assignment, given its name and the scope it was created in. The scope of a policy assignment is the part of its ID preceding '/providers/Microsoft.Authorization/policyAssignments/{policyAssignmentName}'."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `scope`: The scope of the policy assignment. Valid scopes are: management group (format: '/providers/Microsoft.Management/managementGroups/{managementGroup}'), subscription (format: '/subscriptions/{subscriptionId}'), resource group (format: '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}', or resource (format: '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{resourceProviderNamespace}/[{parentResourcePath}/]{resourceType}/{resourceName}'"]
+        #[doc = "* `policy_assignment_name`: The name of the policy assignment to delete."]
         pub fn delete(&self, scope: impl Into<String>, policy_assignment_name: impl Into<String>) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),
@@ -287,6 +315,11 @@ pub mod policy_assignments {
             }
         }
         #[doc = "Retrieves all policy assignments that apply to a resource group."]
+        #[doc = "This operation retrieves the list of all policy assignments associated with the given resource group in the given subscription that match the optional given $filter. Valid values for $filter are: 'atScope()', 'atExactScope()' or 'policyDefinitionId eq '{value}''. If $filter is not provided, the unfiltered list includes all policy assignments associated with the resource group, including those that apply directly or apply from containing scopes, as well as any applied to resources contained within the resource group. If $filter=atScope() is provided, the returned list includes all policy assignments that apply to the resource group, which is everything in the unfiltered list except those applied to resources contained within the resource group. If $filter=atExactScope() is provided, the returned list only includes all policy assignments that at the resource group. If $filter=policyDefinitionId eq '{value}' is provided, the returned list includes all policy assignments of the policy definition whose id is {value} that apply to the resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains policy assignments."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_for_resource_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -301,6 +334,15 @@ pub mod policy_assignments {
             }
         }
         #[doc = "Retrieves all policy assignments that apply to a resource."]
+        #[doc = "This operation retrieves the list of all policy assignments associated with the specified resource in the given resource group and subscription that match the optional given $filter. Valid values for $filter are: 'atScope()', 'atExactScope()' or 'policyDefinitionId eq '{value}''. If $filter is not provided, the unfiltered list includes all policy assignments associated with the resource, including those that apply directly or from all containing scopes, as well as any applied to resources contained within the resource. If $filter=atScope() is provided, the returned list includes all policy assignments that apply to the resource, which is everything in the unfiltered list except those applied to resources contained within the resource. If $filter=atExactScope() is provided, the returned list only includes all policy assignments that at the resource level. If $filter=policyDefinitionId eq '{value}' is provided, the returned list includes all policy assignments of the policy definition whose id is {value} that apply to the resource. Three parameters plus the resource name are used to identify a specific resource. If the resource is not part of a parent resource (the more common case), the parent resource path should not be provided (or provided as ''). For example a web app could be specified as ({resourceProviderNamespace} == 'Microsoft.Web', {parentResourcePath} == '', {resourceType} == 'sites', {resourceName} == 'MyWebApp'). If the resource is part of a parent resource, then all parameters should be provided. For example a virtual machine DNS name could be specified as ({resourceProviderNamespace} == 'Microsoft.Compute', {parentResourcePath} == 'virtualMachines/MyVirtualMachine', {resourceType} == 'domainNames', {resourceName} == 'MyComputerName'). A convenient alternative to providing the namespace and type name separately is to provide both in the {resourceType} parameter, format: ({resourceProviderNamespace} == '', {parentResourcePath} == '', {resourceType} == 'Microsoft.Web/sites', {resourceName} == 'MyWebApp')."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group containing the resource."]
+        #[doc = "* `resource_provider_namespace`: The namespace of the resource provider. For example, the namespace of a virtual machine is Microsoft.Compute (from Microsoft.Compute/virtualMachines)"]
+        #[doc = "* `parent_resource_path`: The parent resource path. Use empty string if there is none."]
+        #[doc = "* `resource_type`: The resource type name. For example the type name of a web app is 'sites' (from Microsoft.Web/sites)."]
+        #[doc = "* `resource_name`: The name of the resource."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_for_resource(
             &self,
             resource_group_name: impl Into<String>,
@@ -323,6 +365,10 @@ pub mod policy_assignments {
             }
         }
         #[doc = "Retrieves all policy assignments that apply to a management group."]
+        #[doc = "This operation retrieves the list of all policy assignments applicable to the management group that match the given $filter. Valid values for $filter are: 'atScope()', 'atExactScope()' or 'policyDefinitionId eq '{value}''. If $filter=atScope() is provided, the returned list includes all policy assignments that are assigned to the management group or the management group's ancestors. If $filter=atExactScope() is provided, the returned list only includes all policy assignments that at the management group. If $filter=policyDefinitionId eq '{value}' is provided, the returned list includes all policy assignments of the policy definition whose id is {value} that apply to the management group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `management_group_id`: The ID of the management group."]
         pub fn list_for_management_group(&self, management_group_id: impl Into<String>) -> list_for_management_group::Builder {
             list_for_management_group::Builder {
                 client: self.0.clone(),
@@ -332,6 +378,10 @@ pub mod policy_assignments {
             }
         }
         #[doc = "Retrieves all policy assignments that apply to a subscription."]
+        #[doc = "This operation retrieves the list of all policy assignments associated with the given subscription that match the optional given $filter. Valid values for $filter are: 'atScope()', 'atExactScope()' or 'policyDefinitionId eq '{value}''. If $filter is not provided, the unfiltered list includes all policy assignments associated with the subscription, including those that apply directly or from management groups that contain the given subscription, as well as any applied to objects contained within the subscription. If $filter=atScope() is provided, the returned list includes all policy assignments that apply to the subscription, which is everything in the unfiltered list except those applied to objects contained within the subscription. If $filter=atExactScope() is provided, the returned list only includes all policy assignments that at the subscription. If $filter=policyDefinitionId eq '{value}' is provided, the returned list includes all policy assignments of the policy definition whose id is {value}."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -341,6 +391,10 @@ pub mod policy_assignments {
             }
         }
         #[doc = "Retrieves the policy assignment with the given ID."]
+        #[doc = "The operation retrieves the policy assignment with the given ID. Policy assignment IDs have this format: '{scope}/providers/Microsoft.Authorization/policyAssignments/{policyAssignmentName}'. Valid scopes are: management group (format: '/providers/Microsoft.Management/managementGroups/{managementGroup}'), subscription (format: '/subscriptions/{subscriptionId}'), resource group (format: '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}', or resource (format: '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{resourceProviderNamespace}/[{parentResourcePath}/]{resourceType}/{resourceName}'."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `policy_assignment_id`: The ID of the policy assignment to get. Use the format '{scope}/providers/Microsoft.Authorization/policyAssignments/{policyAssignmentName}'."]
         pub fn get_by_id(&self, policy_assignment_id: impl Into<String>) -> get_by_id::Builder {
             get_by_id::Builder {
                 client: self.0.clone(),
@@ -348,6 +402,11 @@ pub mod policy_assignments {
             }
         }
         #[doc = "Creates or updates a policy assignment."]
+        #[doc = "This operation creates or updates the policy assignment with the given ID. Policy assignments made on a scope apply to all resources contained in that scope. For example, when you assign a policy to a resource group that policy applies to all resources in the group. Policy assignment IDs have this format: '{scope}/providers/Microsoft.Authorization/policyAssignments/{policyAssignmentName}'. Valid scopes are: management group (format: '/providers/Microsoft.Management/managementGroups/{managementGroup}'), subscription (format: '/subscriptions/{subscriptionId}'), resource group (format: '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}', or resource (format: '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{resourceProviderNamespace}/[{parentResourcePath}/]{resourceType}/{resourceName}'."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `policy_assignment_id`: The ID of the policy assignment to create. Use the format '{scope}/providers/Microsoft.Authorization/policyAssignments/{policyAssignmentName}'."]
+        #[doc = "* `parameters`: Parameters for policy assignment."]
         pub fn create_by_id(
             &self,
             policy_assignment_id: impl Into<String>,
@@ -360,6 +419,11 @@ pub mod policy_assignments {
             }
         }
         #[doc = "Updates a policy assignment."]
+        #[doc = "This operation updates the policy assignment with the given ID. Policy assignments made on a scope apply to all resources contained in that scope. For example, when you assign a policy to a resource group that policy applies to all resources in the group. Policy assignment IDs have this format: '{scope}/providers/Microsoft.Authorization/policyAssignments/{policyAssignmentName}'. Valid scopes are: management group (format: '/providers/Microsoft.Management/managementGroups/{managementGroup}'), subscription (format: '/subscriptions/{subscriptionId}'), resource group (format: '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}', or resource (format: '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{resourceProviderNamespace}/[{parentResourcePath}/]{resourceType}/{resourceName}'."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `policy_assignment_id`: The ID of the policy assignment to update. Use the format '{scope}/providers/Microsoft.Authorization/policyAssignments/{policyAssignmentName}'."]
+        #[doc = "* `parameters`: Parameters for policy assignment patch request."]
         pub fn update_by_id(
             &self,
             policy_assignment_id: impl Into<String>,
@@ -372,6 +436,10 @@ pub mod policy_assignments {
             }
         }
         #[doc = "Deletes a policy assignment."]
+        #[doc = "This operation deletes the policy with the given ID. Policy assignment IDs have this format: '{scope}/providers/Microsoft.Authorization/policyAssignments/{policyAssignmentName}'. Valid formats for {scope} are: '/providers/Microsoft.Management/managementGroups/{managementGroup}' (management group), '/subscriptions/{subscriptionId}' (subscription), '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}' (resource group), or '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{resourceProviderNamespace}/[{parentResourcePath}/]{resourceType}/{resourceName}' (resource)."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `policy_assignment_id`: The ID of the policy assignment to delete. Use the format '{scope}/providers/Microsoft.Authorization/policyAssignments/{policyAssignmentName}'."]
         pub fn delete_by_id(&self, policy_assignment_id: impl Into<String>) -> delete_by_id::Builder {
             delete_by_id::Builder {
                 client: self.0.clone(),
@@ -600,10 +668,12 @@ pub mod policy_assignments {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the operation. Valid values for $filter are: 'atScope()', 'atExactScope()' or 'policyDefinitionId eq '{value}''. If $filter is not provided, no filtering is performed. If $filter=atScope() is provided, the returned list only includes all policy assignments that apply to the scope, which is everything in the unfiltered list except those applied to sub scopes contained within the given scope. If $filter=atExactScope() is provided, the returned list only includes all policy assignments that at the given scope. If $filter=policyDefinitionId eq '{value}' is provided, the returned list includes all policy assignments of the policy definition whose id is {value}."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Maximum number of records to return. When the $top filter is not provided, it will return 500 records."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -696,10 +766,12 @@ pub mod policy_assignments {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the operation. Valid values for $filter are: 'atScope()', 'atExactScope()' or 'policyDefinitionId eq '{value}''. If $filter is not provided, no filtering is performed. If $filter=atScope() is provided, the returned list only includes all policy assignments that apply to the scope, which is everything in the unfiltered list except those applied to sub scopes contained within the given scope. If $filter=atExactScope() is provided, the returned list only includes all policy assignments that at the given scope. If $filter=policyDefinitionId eq '{value}' is provided, the returned list includes all policy assignments of the policy definition whose id is {value}."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Maximum number of records to return. When the $top filter is not provided, it will return 500 records."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -782,10 +854,12 @@ pub mod policy_assignments {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the operation. Valid values for $filter are: 'atScope()', 'atExactScope()' or 'policyDefinitionId eq '{value}''. If $filter is not provided, no filtering is performed. If $filter=atScope() is provided, the returned list only includes all policy assignments that apply to the scope, which is everything in the unfiltered list except those applied to sub scopes contained within the given scope. If $filter=atExactScope() is provided, the returned list only includes all policy assignments that at the given scope. If $filter=policyDefinitionId eq '{value}' is provided, the returned list includes all policy assignments of the policy definition whose id is {value}."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Maximum number of records to return. When the $top filter is not provided, it will return 500 records."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -872,10 +946,12 @@ pub mod policy_assignments {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the operation. Valid values for $filter are: 'atScope()', 'atExactScope()' or 'policyDefinitionId eq '{value}''. If $filter is not provided, no filtering is performed. If $filter=atScope() is provided, the returned list only includes all policy assignments that apply to the scope, which is everything in the unfiltered list except those applied to sub scopes contained within the given scope. If $filter=atExactScope() is provided, the returned list only includes all policy assignments that at the given scope. If $filter=policyDefinitionId eq '{value}' is provided, the returned list includes all policy assignments of the policy definition whose id is {value}."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Maximum number of records to return. When the $top filter is not provided, it will return 500 records."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -1142,6 +1218,11 @@ pub mod policy_definitions {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Retrieves a policy definition in a subscription."]
+        #[doc = "This operation retrieves the policy definition in the given subscription with the given name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `policy_definition_name`: The name of the policy definition to get."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn get(&self, policy_definition_name: impl Into<String>, subscription_id: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -1150,6 +1231,12 @@ pub mod policy_definitions {
             }
         }
         #[doc = "Creates or updates a policy definition in a subscription."]
+        #[doc = "This operation creates or updates a policy definition in the given subscription with the given name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `policy_definition_name`: The name of the policy definition to create."]
+        #[doc = "* `parameters`: The policy definition properties."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn create_or_update(
             &self,
             policy_definition_name: impl Into<String>,
@@ -1164,6 +1251,11 @@ pub mod policy_definitions {
             }
         }
         #[doc = "Deletes a policy definition in a subscription."]
+        #[doc = "This operation deletes the policy definition in the given subscription with the given name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `policy_definition_name`: The name of the policy definition to delete."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn delete(&self, policy_definition_name: impl Into<String>, subscription_id: impl Into<String>) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),
@@ -1172,6 +1264,10 @@ pub mod policy_definitions {
             }
         }
         #[doc = "Retrieves a built-in policy definition."]
+        #[doc = "This operation retrieves the built-in policy definition with the given name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `policy_definition_name`: The name of the built-in policy definition to get."]
         pub fn get_built_in(&self, policy_definition_name: impl Into<String>) -> get_built_in::Builder {
             get_built_in::Builder {
                 client: self.0.clone(),
@@ -1179,6 +1275,11 @@ pub mod policy_definitions {
             }
         }
         #[doc = "Retrieve a policy definition in a management group."]
+        #[doc = "This operation retrieves the policy definition in the given management group with the given name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `policy_definition_name`: The name of the policy definition to get."]
+        #[doc = "* `management_group_id`: The ID of the management group."]
         pub fn get_at_management_group(
             &self,
             policy_definition_name: impl Into<String>,
@@ -1191,6 +1292,12 @@ pub mod policy_definitions {
             }
         }
         #[doc = "Creates or updates a policy definition in a management group."]
+        #[doc = "This operation creates or updates a policy definition in the given management group with the given name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `policy_definition_name`: The name of the policy definition to create."]
+        #[doc = "* `parameters`: The policy definition properties."]
+        #[doc = "* `management_group_id`: The ID of the management group."]
         pub fn create_or_update_at_management_group(
             &self,
             policy_definition_name: impl Into<String>,
@@ -1205,6 +1312,11 @@ pub mod policy_definitions {
             }
         }
         #[doc = "Deletes a policy definition in a management group."]
+        #[doc = "This operation deletes the policy definition in the given management group with the given name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `policy_definition_name`: The name of the policy definition to delete."]
+        #[doc = "* `management_group_id`: The ID of the management group."]
         pub fn delete_at_management_group(
             &self,
             policy_definition_name: impl Into<String>,
@@ -1217,6 +1329,10 @@ pub mod policy_definitions {
             }
         }
         #[doc = "Retrieves policy definitions in a subscription"]
+        #[doc = "This operation retrieves a list of all the policy definitions in a given subscription that match the optional given $filter. Valid values for $filter are: 'atExactScope()', 'policyType -eq {value}' or 'category eq '{value}''. If $filter is not provided, the unfiltered list includes all policy definitions associated with the subscription, including those that apply directly or from management groups that contain the given subscription. If $filter=atExactScope() is provided, the returned list only includes all policy definitions that at the given subscription. If $filter='policyType -eq {value}' is provided, the returned list only includes all policy definitions whose type match the {value}. Possible policyType values are NotSpecified, BuiltIn, Custom, and Static. If $filter='category -eq {value}' is provided, the returned list only includes all policy definitions whose category match the {value}."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -1226,6 +1342,7 @@ pub mod policy_definitions {
             }
         }
         #[doc = "Retrieve built-in policy definitions"]
+        #[doc = "This operation retrieves a list of all the built-in policy definitions that match the optional given $filter. If $filter='policyType -eq {value}' is provided, the returned list only includes all built-in policy definitions whose type match the {value}. Possible policyType values are NotSpecified, BuiltIn, Custom, and Static. If $filter='category -eq {value}' is provided, the returned list only includes all built-in policy definitions whose category match the {value}."]
         pub fn list_built_in(&self) -> list_built_in::Builder {
             list_built_in::Builder {
                 client: self.0.clone(),
@@ -1234,6 +1351,10 @@ pub mod policy_definitions {
             }
         }
         #[doc = "Retrieve policy definitions in a management group"]
+        #[doc = "This operation retrieves a list of all the policy definitions in a given management group that match the optional given $filter. Valid values for $filter are: 'atExactScope()', 'policyType -eq {value}' or 'category eq '{value}''. If $filter is not provided, the unfiltered list includes all policy definitions associated with the management group, including those that apply directly or from management groups that contain the given management group. If $filter=atExactScope() is provided, the returned list only includes all policy definitions that at the given management group. If $filter='policyType -eq {value}' is provided, the returned list only includes all policy definitions whose type match the {value}. Possible policyType values are NotSpecified, BuiltIn, Custom, and Static. If $filter='category -eq {value}' is provided, the returned list only includes all policy definitions whose category match the {value}."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `management_group_id`: The ID of the management group."]
         pub fn list_by_management_group(&self, management_group_id: impl Into<String>) -> list_by_management_group::Builder {
             list_by_management_group::Builder {
                 client: self.0.clone(),
@@ -1608,10 +1729,12 @@ pub mod policy_definitions {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the operation. Valid values for $filter are: 'atExactScope()', 'policyType -eq {value}' or 'category eq '{value}''. If $filter is not provided, no filtering is performed. If $filter=atExactScope() is provided, the returned list only includes all policy definitions that at the given scope. If $filter='policyType -eq {value}' is provided, the returned list only includes all policy definitions whose type match the {value}. Possible policyType values are NotSpecified, BuiltIn, Custom, and Static. If $filter='category -eq {value}' is provided, the returned list only includes all policy definitions whose category match the {value}."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Maximum number of records to return. When the $top filter is not provided, it will return 500 records."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -1697,10 +1820,12 @@ pub mod policy_definitions {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the operation. Valid values for $filter are: 'atExactScope()', 'policyType -eq {value}' or 'category eq '{value}''. If $filter is not provided, no filtering is performed. If $filter=atExactScope() is provided, the returned list only includes all policy definitions that at the given scope. If $filter='policyType -eq {value}' is provided, the returned list only includes all policy definitions whose type match the {value}. Possible policyType values are NotSpecified, BuiltIn, Custom, and Static. If $filter='category -eq {value}' is provided, the returned list only includes all policy definitions whose category match the {value}."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Maximum number of records to return. When the $top filter is not provided, it will return 500 records."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -1786,10 +1911,12 @@ pub mod policy_definitions {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the operation. Valid values for $filter are: 'atExactScope()', 'policyType -eq {value}' or 'category eq '{value}''. If $filter is not provided, no filtering is performed. If $filter=atExactScope() is provided, the returned list only includes all policy definitions that at the given scope. If $filter='policyType -eq {value}' is provided, the returned list only includes all policy definitions whose type match the {value}. Possible policyType values are NotSpecified, BuiltIn, Custom, and Static. If $filter='category -eq {value}' is provided, the returned list only includes all policy definitions whose category match the {value}."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Maximum number of records to return. When the $top filter is not provided, it will return 500 records."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -1871,6 +1998,11 @@ pub mod policy_set_definitions {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Retrieves a policy set definition."]
+        #[doc = "This operation retrieves the policy set definition in the given subscription with the given name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `policy_set_definition_name`: The name of the policy set definition to get."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn get(&self, policy_set_definition_name: impl Into<String>, subscription_id: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -1879,6 +2011,12 @@ pub mod policy_set_definitions {
             }
         }
         #[doc = "Creates or updates a policy set definition."]
+        #[doc = "This operation creates or updates a policy set definition in the given subscription with the given name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `policy_set_definition_name`: The name of the policy set definition to create."]
+        #[doc = "* `parameters`: The policy set definition properties."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn create_or_update(
             &self,
             policy_set_definition_name: impl Into<String>,
@@ -1893,6 +2031,11 @@ pub mod policy_set_definitions {
             }
         }
         #[doc = "Deletes a policy set definition."]
+        #[doc = "This operation deletes the policy set definition in the given subscription with the given name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `policy_set_definition_name`: The name of the policy set definition to delete."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn delete(&self, policy_set_definition_name: impl Into<String>, subscription_id: impl Into<String>) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),
@@ -1901,6 +2044,10 @@ pub mod policy_set_definitions {
             }
         }
         #[doc = "Retrieves a built in policy set definition."]
+        #[doc = "This operation retrieves the built-in policy set definition with the given name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `policy_set_definition_name`: The name of the policy set definition to get."]
         pub fn get_built_in(&self, policy_set_definition_name: impl Into<String>) -> get_built_in::Builder {
             get_built_in::Builder {
                 client: self.0.clone(),
@@ -1908,6 +2055,10 @@ pub mod policy_set_definitions {
             }
         }
         #[doc = "Retrieves the policy set definitions for a subscription."]
+        #[doc = "This operation retrieves a list of all the policy set definitions in a given subscription that match the optional given $filter. Valid values for $filter are: 'atExactScope()', 'policyType -eq {value}' or 'category eq '{value}''. If $filter is not provided, the unfiltered list includes all policy set definitions associated with the subscription, including those that apply directly or from management groups that contain the given subscription. If $filter=atExactScope() is provided, the returned list only includes all policy set definitions that at the given subscription. If $filter='policyType -eq {value}' is provided, the returned list only includes all policy set definitions whose type match the {value}. Possible policyType values are NotSpecified, BuiltIn and Custom. If $filter='category -eq {value}' is provided, the returned list only includes all policy set definitions whose category match the {value}."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -1917,6 +2068,7 @@ pub mod policy_set_definitions {
             }
         }
         #[doc = "Retrieves built-in policy set definitions."]
+        #[doc = "This operation retrieves a list of all the built-in policy set definitions that match the optional given $filter. If $filter='category -eq {value}' is provided, the returned list only includes all built-in policy set definitions whose category match the {value}."]
         pub fn list_built_in(&self) -> list_built_in::Builder {
             list_built_in::Builder {
                 client: self.0.clone(),
@@ -1925,6 +2077,11 @@ pub mod policy_set_definitions {
             }
         }
         #[doc = "Retrieves a policy set definition."]
+        #[doc = "This operation retrieves the policy set definition in the given management group with the given name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `policy_set_definition_name`: The name of the policy set definition to get."]
+        #[doc = "* `management_group_id`: The ID of the management group."]
         pub fn get_at_management_group(
             &self,
             policy_set_definition_name: impl Into<String>,
@@ -1937,6 +2094,12 @@ pub mod policy_set_definitions {
             }
         }
         #[doc = "Creates or updates a policy set definition."]
+        #[doc = "This operation creates or updates a policy set definition in the given management group with the given name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `policy_set_definition_name`: The name of the policy set definition to create."]
+        #[doc = "* `parameters`: The policy set definition properties."]
+        #[doc = "* `management_group_id`: The ID of the management group."]
         pub fn create_or_update_at_management_group(
             &self,
             policy_set_definition_name: impl Into<String>,
@@ -1951,6 +2114,11 @@ pub mod policy_set_definitions {
             }
         }
         #[doc = "Deletes a policy set definition."]
+        #[doc = "This operation deletes the policy set definition in the given management group with the given name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `policy_set_definition_name`: The name of the policy set definition to delete."]
+        #[doc = "* `management_group_id`: The ID of the management group."]
         pub fn delete_at_management_group(
             &self,
             policy_set_definition_name: impl Into<String>,
@@ -1963,6 +2131,10 @@ pub mod policy_set_definitions {
             }
         }
         #[doc = "Retrieves all policy set definitions in management group."]
+        #[doc = "This operation retrieves a list of all the policy set definitions in a given management group that match the optional given $filter. Valid values for $filter are: 'atExactScope()', 'policyType -eq {value}' or 'category eq '{value}''. If $filter is not provided, the unfiltered list includes all policy set definitions associated with the management group, including those that apply directly or from management groups that contain the given management group. If $filter=atExactScope() is provided, the returned list only includes all policy set definitions that at the given management group. If $filter='policyType -eq {value}' is provided, the returned list only includes all policy set definitions whose type match the {value}. Possible policyType values are NotSpecified, BuiltIn and Custom. If $filter='category -eq {value}' is provided, the returned list only includes all policy set definitions whose category match the {value}."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `management_group_id`: The ID of the management group."]
         pub fn list_by_management_group(&self, management_group_id: impl Into<String>) -> list_by_management_group::Builder {
             list_by_management_group::Builder {
                 client: self.0.clone(),
@@ -2193,10 +2365,12 @@ pub mod policy_set_definitions {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the operation. Valid values for $filter are: 'atExactScope()', 'policyType -eq {value}' or 'category eq '{value}''. If $filter is not provided, no filtering is performed. If $filter=atExactScope() is provided, the returned list only includes all policy set definitions that at the given scope. If $filter='policyType -eq {value}' is provided, the returned list only includes all policy set definitions whose type match the {value}. Possible policyType values are NotSpecified, BuiltIn, Custom, and Static. If $filter='category -eq {value}' is provided, the returned list only includes all policy set definitions whose category match the {value}."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Maximum number of records to return. When the $top filter is not provided, it will return 500 records."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -2282,10 +2456,12 @@ pub mod policy_set_definitions {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the operation. Valid values for $filter are: 'atExactScope()', 'policyType -eq {value}' or 'category eq '{value}''. If $filter is not provided, no filtering is performed. If $filter=atExactScope() is provided, the returned list only includes all policy set definitions that at the given scope. If $filter='policyType -eq {value}' is provided, the returned list only includes all policy set definitions whose type match the {value}. Possible policyType values are NotSpecified, BuiltIn, Custom, and Static. If $filter='category -eq {value}' is provided, the returned list only includes all policy set definitions whose category match the {value}."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Maximum number of records to return. When the $top filter is not provided, it will return 500 records."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -2518,10 +2694,12 @@ pub mod policy_set_definitions {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the operation. Valid values for $filter are: 'atExactScope()', 'policyType -eq {value}' or 'category eq '{value}''. If $filter is not provided, no filtering is performed. If $filter=atExactScope() is provided, the returned list only includes all policy set definitions that at the given scope. If $filter='policyType -eq {value}' is provided, the returned list only includes all policy set definitions whose type match the {value}. Possible policyType values are NotSpecified, BuiltIn, Custom, and Static. If $filter='category -eq {value}' is provided, the returned list only includes all policy set definitions whose category match the {value}."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Maximum number of records to return. When the $top filter is not provided, it will return 500 records."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -2603,6 +2781,11 @@ pub mod policy_exemptions {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Retrieves a policy exemption."]
+        #[doc = "This operation retrieves a single policy exemption, given its name and the scope it was created at."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `scope`: The scope of the policy exemption. Valid scopes are: management group (format: '/providers/Microsoft.Management/managementGroups/{managementGroup}'), subscription (format: '/subscriptions/{subscriptionId}'), resource group (format: '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}', or resource (format: '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{resourceProviderNamespace}/[{parentResourcePath}/]{resourceType}/{resourceName}'"]
+        #[doc = "* `policy_exemption_name`: The name of the policy exemption to delete."]
         pub fn get(&self, scope: impl Into<String>, policy_exemption_name: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -2611,6 +2794,12 @@ pub mod policy_exemptions {
             }
         }
         #[doc = "Creates or updates a policy exemption."]
+        #[doc = " This operation creates or updates a policy exemption with the given scope and name. Policy exemptions apply to all resources contained within their scope. For example, when you create a policy exemption at resource group scope for a policy assignment at the same or above level, the exemption exempts to all applicable resources in the resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `scope`: The scope of the policy exemption. Valid scopes are: management group (format: '/providers/Microsoft.Management/managementGroups/{managementGroup}'), subscription (format: '/subscriptions/{subscriptionId}'), resource group (format: '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}', or resource (format: '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{resourceProviderNamespace}/[{parentResourcePath}/]{resourceType}/{resourceName}'"]
+        #[doc = "* `policy_exemption_name`: The name of the policy exemption to delete."]
+        #[doc = "* `parameters`: Parameters for the policy exemption."]
         pub fn create_or_update(
             &self,
             scope: impl Into<String>,
@@ -2625,6 +2814,11 @@ pub mod policy_exemptions {
             }
         }
         #[doc = "Deletes a policy exemption."]
+        #[doc = "This operation deletes a policy exemption, given its name and the scope it was created in. The scope of a policy exemption is the part of its ID preceding '/providers/Microsoft.Authorization/policyExemptions/{policyExemptionName}'."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `scope`: The scope of the policy exemption. Valid scopes are: management group (format: '/providers/Microsoft.Management/managementGroups/{managementGroup}'), subscription (format: '/subscriptions/{subscriptionId}'), resource group (format: '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}', or resource (format: '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{resourceProviderNamespace}/[{parentResourcePath}/]{resourceType}/{resourceName}'"]
+        #[doc = "* `policy_exemption_name`: The name of the policy exemption to delete."]
         pub fn delete(&self, scope: impl Into<String>, policy_exemption_name: impl Into<String>) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),
@@ -2633,6 +2827,10 @@ pub mod policy_exemptions {
             }
         }
         #[doc = "Retrieves all policy exemptions that apply to a subscription."]
+        #[doc = "This operation retrieves the list of all policy exemptions associated with the given subscription that match the optional given $filter. Valid values for $filter are: 'atScope()', 'atExactScope()', 'excludeExpired()' or 'policyAssignmentId eq '{value}''. If $filter is not provided, the unfiltered list includes all policy exemptions associated with the subscription, including those that apply directly or from management groups that contain the given subscription, as well as any applied to objects contained within the subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -2641,6 +2839,11 @@ pub mod policy_exemptions {
             }
         }
         #[doc = "Retrieves all policy exemptions that apply to a resource group."]
+        #[doc = "This operation retrieves the list of all policy exemptions associated with the given resource group in the given subscription that match the optional given $filter. Valid values for $filter are: 'atScope()', 'atExactScope()', 'excludeExpired()' or 'policyAssignmentId eq '{value}''. If $filter is not provided, the unfiltered list includes all policy exemptions associated with the resource group, including those that apply directly or apply from containing scopes, as well as any applied to resources contained within the resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group containing the resource."]
         pub fn list_for_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -2654,6 +2857,15 @@ pub mod policy_exemptions {
             }
         }
         #[doc = "Retrieves all policy exemptions that apply to a resource."]
+        #[doc = "This operation retrieves the list of all policy exemptions associated with the specified resource in the given resource group and subscription that match the optional given $filter. Valid values for $filter are: 'atScope()', 'atExactScope()', 'excludeExpired()' or 'policyAssignmentId eq '{value}''. If $filter is not provided, the unfiltered list includes all policy exemptions associated with the resource, including those that apply directly or from all containing scopes, as well as any applied to resources contained within the resource. Three parameters plus the resource name are used to identify a specific resource. If the resource is not part of a parent resource (the more common case), the parent resource path should not be provided (or provided as ''). For example a web app could be specified as ({resourceProviderNamespace} == 'Microsoft.Web', {parentResourcePath} == '', {resourceType} == 'sites', {resourceName} == 'MyWebApp'). If the resource is part of a parent resource, then all parameters should be provided. For example a virtual machine DNS name could be specified as ({resourceProviderNamespace} == 'Microsoft.Compute', {parentResourcePath} == 'virtualMachines/MyVirtualMachine', {resourceType} == 'domainNames', {resourceName} == 'MyComputerName'). A convenient alternative to providing the namespace and type name separately is to provide both in the {resourceType} parameter, format: ({resourceProviderNamespace} == '', {parentResourcePath} == '', {resourceType} == 'Microsoft.Web/sites', {resourceName} == 'MyWebApp')."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group containing the resource."]
+        #[doc = "* `resource_provider_namespace`: The namespace of the resource provider. For example, the namespace of a virtual machine is Microsoft.Compute (from Microsoft.Compute/virtualMachines)"]
+        #[doc = "* `parent_resource_path`: The parent resource path. Use empty string if there is none."]
+        #[doc = "* `resource_type`: The resource type name. For example the type name of a web app is 'sites' (from Microsoft.Web/sites)."]
+        #[doc = "* `resource_name`: The name of the resource."]
         pub fn list_for_resource(
             &self,
             subscription_id: impl Into<String>,
@@ -2675,6 +2887,10 @@ pub mod policy_exemptions {
             }
         }
         #[doc = "Retrieves all policy exemptions that apply to a management group."]
+        #[doc = "This operation retrieves the list of all policy exemptions applicable to the management group that match the given $filter. Valid values for $filter are: 'atScope()', 'atExactScope()', 'excludeExpired()' or 'policyAssignmentId eq '{value}''. If $filter=atScope() is provided, the returned list includes all policy exemptions that are assigned to the management group or the management group's ancestors."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `management_group_id`: The ID of the management group."]
         pub fn list_for_management_group(&self, management_group_id: impl Into<String>) -> list_for_management_group::Builder {
             list_for_management_group::Builder {
                 client: self.0.clone(),
@@ -2855,6 +3071,7 @@ pub mod policy_exemptions {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the operation. Valid values for $filter are: 'atScope()', 'atExactScope()', 'excludeExpired()' or 'policyAssignmentId eq '{value}''. If $filter is not provided, no filtering is performed. If $filter is not provided, the unfiltered list includes all policy exemptions associated with the scope, including those that apply directly or apply from containing scopes. If $filter=atScope() is provided, the returned list only includes all policy exemptions that apply to the scope, which is everything in the unfiltered list except those applied to sub scopes contained within the given scope. If $filter=atExactScope() is provided, the returned list only includes all policy exemptions that at the given scope. If $filter=excludeExpired() is provided, the returned list only includes all policy exemptions that either haven't expired or didn't set expiration date. If $filter=policyAssignmentId eq '{value}' is provided. the returned list only includes all policy exemptions that are associated with the give policyAssignmentId."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -2938,6 +3155,7 @@ pub mod policy_exemptions {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the operation. Valid values for $filter are: 'atScope()', 'atExactScope()', 'excludeExpired()' or 'policyAssignmentId eq '{value}''. If $filter is not provided, no filtering is performed. If $filter is not provided, the unfiltered list includes all policy exemptions associated with the scope, including those that apply directly or apply from containing scopes. If $filter=atScope() is provided, the returned list only includes all policy exemptions that apply to the scope, which is everything in the unfiltered list except those applied to sub scopes contained within the given scope. If $filter=atExactScope() is provided, the returned list only includes all policy exemptions that at the given scope. If $filter=excludeExpired() is provided, the returned list only includes all policy exemptions that either haven't expired or didn't set expiration date. If $filter=policyAssignmentId eq '{value}' is provided. the returned list only includes all policy exemptions that are associated with the give policyAssignmentId."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -3026,6 +3244,7 @@ pub mod policy_exemptions {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the operation. Valid values for $filter are: 'atScope()', 'atExactScope()', 'excludeExpired()' or 'policyAssignmentId eq '{value}''. If $filter is not provided, no filtering is performed. If $filter is not provided, the unfiltered list includes all policy exemptions associated with the scope, including those that apply directly or apply from containing scopes. If $filter=atScope() is provided, the returned list only includes all policy exemptions that apply to the scope, which is everything in the unfiltered list except those applied to sub scopes contained within the given scope. If $filter=atExactScope() is provided, the returned list only includes all policy exemptions that at the given scope. If $filter=excludeExpired() is provided, the returned list only includes all policy exemptions that either haven't expired or didn't set expiration date. If $filter=policyAssignmentId eq '{value}' is provided. the returned list only includes all policy exemptions that are associated with the give policyAssignmentId."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -3104,6 +3323,7 @@ pub mod policy_exemptions {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the operation. Valid values for $filter are: 'atScope()', 'atExactScope()', 'excludeExpired()' or 'policyAssignmentId eq '{value}''. If $filter is not provided, no filtering is performed. If $filter is not provided, the unfiltered list includes all policy exemptions associated with the scope, including those that apply directly or apply from containing scopes. If $filter=atScope() is provided, the returned list only includes all policy exemptions that apply to the scope, which is everything in the unfiltered list except those applied to sub scopes contained within the given scope. If $filter=atExactScope() is provided, the returned list only includes all policy exemptions that at the given scope. If $filter=excludeExpired() is provided, the returned list only includes all policy exemptions that either haven't expired or didn't set expiration date. If $filter=policyAssignmentId eq '{value}' is provided. the returned list only includes all policy exemptions that are associated with the give policyAssignmentId."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self

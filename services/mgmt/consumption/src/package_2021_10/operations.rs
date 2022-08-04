@@ -130,6 +130,10 @@ pub mod usage_details {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists the usage details for the defined scope. Usage details are available via this API only for May 1, 2014 or later."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `scope`: The scope associated with usage details operations. This includes '/subscriptions/{subscriptionId}/' for subscription scope, '/providers/Microsoft.Billing/billingAccounts/{billingAccountId}' for Billing Account scope, '/providers/Microsoft.Billing/departments/{departmentId}' for Department scope, '/providers/Microsoft.Billing/enrollmentAccounts/{enrollmentAccountId}' for EnrollmentAccount scope and '/providers/Microsoft.Management/managementGroups/{managementGroupId}' for Management Group scope. For subscription, billing account, department, enrollment account and management group, you can also add billing period to the scope using '/providers/Microsoft.Billing/billingPeriods/{billingPeriodName}'. For e.g. to specify billing period at department scope use '/providers/Microsoft.Billing/departments/{departmentId}/providers/Microsoft.Billing/billingPeriods/{billingPeriodName}'. Also, Modern Commerce Account scopes are '/providers/Microsoft.Billing/billingAccounts/{billingAccountId}' for billingAccount scope, '/providers/Microsoft.Billing/billingAccounts/{billingAccountId}/billingProfiles/{billingProfileId}' for billingProfile scope, 'providers/Microsoft.Billing/billingAccounts/{billingAccountId}/billingProfiles/{billingProfileId}/invoiceSections/{invoiceSectionId}' for invoiceSection scope, and 'providers/Microsoft.Billing/billingAccounts/{billingAccountId}/customers/{customerId}' specific for partners."]
         pub fn list(&self, scope: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -169,22 +173,27 @@ pub mod usage_details {
             pub(crate) metric: Option<String>,
         }
         impl Builder {
+            #[doc = "May be used to expand the properties/additionalInfo or properties/meterDetails within a list of usage details. By default, these fields are not included when listing usage details."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
             }
+            #[doc = "May be used to filter usageDetails by properties/resourceGroup, properties/resourceName, properties/resourceId, properties/chargeType, properties/reservationId, properties/publisherType or tags. The filter supports 'eq', 'lt', 'gt', 'le', 'ge', and 'and'. It does not currently support 'ne', 'or', or 'not'. Tag filter is a key value pair string where key and value is separated by a colon (:). PublisherType Filter accepts two values azure and marketplace and it is currently supported for Web Direct Offer Type"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Skiptoken is only used if a previous operation returned a partial result. If a previous response contains a nextLink element, the value of the nextLink element will include a skiptoken parameter that specifies a starting point to use for subsequent calls."]
             pub fn skiptoken(mut self, skiptoken: impl Into<String>) -> Self {
                 self.skiptoken = Some(skiptoken.into());
                 self
             }
+            #[doc = "May be used to limit the number of results to the most recent N usageDetails."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Allows to select different type of cost/usage records."]
             pub fn metric(mut self, metric: impl Into<String>) -> Self {
                 self.metric = Some(metric.into());
                 self
@@ -275,6 +284,10 @@ pub mod marketplaces {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists the marketplaces for a scope at the defined scope. Marketplaces are available via this API only for May 1, 2014 or later."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `scope`: The scope associated with marketplace operations. This includes '/subscriptions/{subscriptionId}/' for subscription scope, '/providers/Microsoft.Billing/billingAccounts/{billingAccountId}' for Billing Account scope, '/providers/Microsoft.Billing/departments/{departmentId}' for Department scope, '/providers/Microsoft.Billing/enrollmentAccounts/{enrollmentAccountId}' for EnrollmentAccount scope and '/providers/Microsoft.Management/managementGroups/{managementGroupId}' for Management Group scope. For subscription, billing account, department, enrollment account and ManagementGroup, you can also add billing period to the scope using '/providers/Microsoft.Billing/billingPeriods/{billingPeriodName}'. For e.g. to specify billing period at department scope use '/providers/Microsoft.Billing/departments/{departmentId}/providers/Microsoft.Billing/billingPeriods/{billingPeriodName}'"]
         pub fn list(&self, scope: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -310,14 +323,17 @@ pub mod marketplaces {
             pub(crate) skiptoken: Option<String>,
         }
         impl Builder {
+            #[doc = "May be used to filter marketplaces by properties/usageEnd (Utc time), properties/usageStart (Utc time), properties/resourceGroup, properties/instanceName or properties/instanceId. The filter supports 'eq', 'lt', 'gt', 'le', 'ge', and 'and'. It does not currently support 'ne', 'or', or 'not'."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "May be used to limit the number of results to the most recent N marketplaces."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Skiptoken is only used if a previous operation returned a partial result. If a previous response contains a nextLink element, the value of the nextLink element will include a skiptoken parameter that specifies a starting point to use for subsequent calls."]
             pub fn skiptoken(mut self, skiptoken: impl Into<String>) -> Self {
                 self.skiptoken = Some(skiptoken.into());
                 self
@@ -402,12 +418,21 @@ pub mod budgets {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all budgets for the defined scope."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `scope`: The scope associated with budget operations. This includes '/subscriptions/{subscriptionId}/' for subscription scope, '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}' for resourceGroup scope, '/providers/Microsoft.Billing/billingAccounts/{billingAccountId}' for Billing Account scope, '/providers/Microsoft.Billing/billingAccounts/{billingAccountId}/departments/{departmentId}' for Department scope, '/providers/Microsoft.Billing/billingAccounts/{billingAccountId}/enrollmentAccounts/{enrollmentAccountId}' for EnrollmentAccount scope, '/providers/Microsoft.Management/managementGroups/{managementGroupId}' for Management Group scope, '/providers/Microsoft.Billing/billingAccounts/{billingAccountId}/billingProfiles/{billingProfileId}' for billingProfile scope, 'providers/Microsoft.Billing/billingAccounts/{billingAccountId}/invoiceSections/{invoiceSectionId}' for invoiceSection scope."]
         pub fn list(&self, scope: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
                 scope: scope.into(),
             }
         }
+        #[doc = "Gets the budget for the scope by budget name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `scope`: The scope associated with budget operations. This includes '/subscriptions/{subscriptionId}/' for subscription scope, '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}' for resourceGroup scope, '/providers/Microsoft.Billing/billingAccounts/{billingAccountId}' for Billing Account scope, '/providers/Microsoft.Billing/billingAccounts/{billingAccountId}/departments/{departmentId}' for Department scope, '/providers/Microsoft.Billing/billingAccounts/{billingAccountId}/enrollmentAccounts/{enrollmentAccountId}' for EnrollmentAccount scope, '/providers/Microsoft.Management/managementGroups/{managementGroupId}' for Management Group scope, '/providers/Microsoft.Billing/billingAccounts/{billingAccountId}/billingProfiles/{billingProfileId}' for billingProfile scope, 'providers/Microsoft.Billing/billingAccounts/{billingAccountId}/invoiceSections/{invoiceSectionId}' for invoiceSection scope."]
+        #[doc = "* `budget_name`: Budget Name."]
         pub fn get(&self, scope: impl Into<String>, budget_name: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -415,6 +440,12 @@ pub mod budgets {
                 budget_name: budget_name.into(),
             }
         }
+        #[doc = "The operation to create or update a budget. You can optionally provide an eTag if desired as a form of concurrency control. To obtain the latest eTag for a given budget, perform a get operation prior to your put operation."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `scope`: The scope associated with budget operations. This includes '/subscriptions/{subscriptionId}/' for subscription scope, '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}' for resourceGroup scope, '/providers/Microsoft.Billing/billingAccounts/{billingAccountId}' for Billing Account scope, '/providers/Microsoft.Billing/billingAccounts/{billingAccountId}/departments/{departmentId}' for Department scope, '/providers/Microsoft.Billing/billingAccounts/{billingAccountId}/enrollmentAccounts/{enrollmentAccountId}' for EnrollmentAccount scope, '/providers/Microsoft.Management/managementGroups/{managementGroupId}' for Management Group scope, '/providers/Microsoft.Billing/billingAccounts/{billingAccountId}/billingProfiles/{billingProfileId}' for billingProfile scope, 'providers/Microsoft.Billing/billingAccounts/{billingAccountId}/invoiceSections/{invoiceSectionId}' for invoiceSection scope."]
+        #[doc = "* `budget_name`: Budget Name."]
+        #[doc = "* `parameters`: Parameters supplied to the Create Budget operation."]
         pub fn create_or_update(
             &self,
             scope: impl Into<String>,
@@ -428,6 +459,11 @@ pub mod budgets {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "The operation to delete a budget."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `scope`: The scope associated with budget operations. This includes '/subscriptions/{subscriptionId}/' for subscription scope, '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}' for resourceGroup scope, '/providers/Microsoft.Billing/billingAccounts/{billingAccountId}' for Billing Account scope, '/providers/Microsoft.Billing/billingAccounts/{billingAccountId}/departments/{departmentId}' for Department scope, '/providers/Microsoft.Billing/billingAccounts/{billingAccountId}/enrollmentAccounts/{enrollmentAccountId}' for EnrollmentAccount scope, '/providers/Microsoft.Management/managementGroups/{managementGroupId}' for Management Group scope, '/providers/Microsoft.Billing/billingAccounts/{billingAccountId}/billingProfiles/{billingProfileId}' for billingProfile scope, 'providers/Microsoft.Billing/billingAccounts/{billingAccountId}/invoiceSections/{invoiceSectionId}' for invoiceSection scope."]
+        #[doc = "* `budget_name`: Budget Name."]
         pub fn delete(&self, scope: impl Into<String>, budget_name: impl Into<String>) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),
@@ -672,6 +708,10 @@ pub mod tags {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get all available tag keys for the defined scope"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `scope`: The scope associated with tags operations. This includes '/subscriptions/{subscriptionId}/' for subscription scope, '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}' for resourceGroup scope, '/providers/Microsoft.Billing/billingAccounts/{billingAccountId}' for Billing Account scope, '/providers/Microsoft.Billing/billingAccounts/{billingAccountId}/departments/{departmentId}' for Department scope, '/providers/Microsoft.Billing/billingAccounts/{billingAccountId}/enrollmentAccounts/{enrollmentAccountId}' for EnrollmentAccount scope and '/providers/Microsoft.Management/managementGroups/{managementGroupId}' for Management Group scope.."]
         pub fn get(&self, scope: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -737,6 +777,10 @@ pub mod charges {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists the charges based for the defined scope."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `scope`: The scope associated with charges operations. This includes '/providers/Microsoft.Billing/billingAccounts/{billingAccountId}/departments/{departmentId}' for Department scope, and '/providers/Microsoft.Billing/billingAccounts/{billingAccountId}/enrollmentAccounts/{enrollmentAccountId}' for EnrollmentAccount scope. For department and enrollment accounts, you can also add billing period to the scope using '/providers/Microsoft.Billing/billingPeriods/{billingPeriodName}'. For e.g. to specify billing period at department scope use '/providers/Microsoft.Billing/billingAccounts/{billingAccountId}/departments/{departmentId}/providers/Microsoft.Billing/billingPeriods/{billingPeriodName}'. Also, Modern Commerce Account scopes are '/providers/Microsoft.Billing/billingAccounts/{billingAccountId}' for billingAccount scope, '/providers/Microsoft.Billing/billingAccounts/{billingAccountId}/billingProfiles/{billingProfileId}' for billingProfile scope, 'providers/Microsoft.Billing/billingAccounts/{billingAccountId}/billingProfiles/{billingProfileId}/invoiceSections/{invoiceSectionId}' for invoiceSection scope, and 'providers/Microsoft.Billing/billingAccounts/{billingAccountId}/customers/{customerId}' specific for partners."]
         pub fn list(&self, scope: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -761,18 +805,22 @@ pub mod charges {
             pub(crate) apply: Option<String>,
         }
         impl Builder {
+            #[doc = "Start date"]
             pub fn start_date(mut self, start_date: impl Into<String>) -> Self {
                 self.start_date = Some(start_date.into());
                 self
             }
+            #[doc = "End date"]
             pub fn end_date(mut self, end_date: impl Into<String>) -> Self {
                 self.end_date = Some(end_date.into());
                 self
             }
+            #[doc = "May be used to filter charges by properties/usageEnd (Utc time), properties/usageStart (Utc time). The filter supports 'eq', 'lt', 'gt', 'le', 'ge', and 'and'. It does not currently support 'ne', 'or', or 'not'. Tag filter is a key value pair string where key and value is separated by a colon (:)."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "May be used to group charges for billingAccount scope by properties/billingProfileId, properties/invoiceSectionId, properties/customerId (specific for Partner Led), or for billingProfile scope by properties/invoiceSectionId."]
             pub fn apply(mut self, apply: impl Into<String>) -> Self {
                 self.apply = Some(apply.into());
                 self
@@ -833,12 +881,21 @@ pub mod balances {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the balances for a scope by billingAccountId. Balances are available via this API only for May 1, 2014 or later."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `billing_account_id`: BillingAccount ID"]
         pub fn get_by_billing_account(&self, billing_account_id: impl Into<String>) -> get_by_billing_account::Builder {
             get_by_billing_account::Builder {
                 client: self.0.clone(),
                 billing_account_id: billing_account_id.into(),
             }
         }
+        #[doc = "Gets the balances for a scope by billing period and billingAccountId. Balances are available via this API only for May 1, 2014 or later."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `billing_account_id`: BillingAccount ID"]
+        #[doc = "* `billing_period_name`: Billing Period Name."]
         pub fn get_for_billing_period_by_billing_account(
             &self,
             billing_account_id: impl Into<String>,
@@ -954,6 +1011,11 @@ pub mod reservations_summaries {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists the reservations summaries for daily or monthly grain."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `reservation_order_id`: Order Id of the reservation"]
+        #[doc = "* `grain`: Can be daily or monthly"]
         pub fn list_by_reservation_order(
             &self,
             reservation_order_id: impl Into<String>,
@@ -966,6 +1028,12 @@ pub mod reservations_summaries {
                 filter: None,
             }
         }
+        #[doc = "Lists the reservations summaries for daily or monthly grain."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `reservation_order_id`: Order Id of the reservation"]
+        #[doc = "* `reservation_id`: Id of the reservation"]
+        #[doc = "* `grain`: Can be daily or monthly"]
         pub fn list_by_reservation_order_and_reservation(
             &self,
             reservation_order_id: impl Into<String>,
@@ -980,6 +1048,11 @@ pub mod reservations_summaries {
                 filter: None,
             }
         }
+        #[doc = "Lists the reservations summaries for the defined scope daily or monthly grain."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_scope`: The scope associated with reservations summaries operations. This includes '/providers/Microsoft.Billing/billingAccounts/{billingAccountId}' for BillingAccount scope (legacy), and '/providers/Microsoft.Billing/billingAccounts/{billingAccountId}/billingProfiles/{billingProfileId}' for BillingProfile scope (modern). "]
+        #[doc = "* `grain`: Can be daily or monthly"]
         pub fn list(&self, resource_scope: impl Into<String>, grain: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -1004,6 +1077,7 @@ pub mod reservations_summaries {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "Required only for daily grain. The properties/UsageDate for start date and end date. The filter supports 'le' and  'ge'"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -1090,6 +1164,7 @@ pub mod reservations_summaries {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "Required only for daily grain. The properties/UsageDate for start date and end date. The filter supports 'le' and  'ge'"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -1175,22 +1250,27 @@ pub mod reservations_summaries {
             pub(crate) reservation_order_id: Option<String>,
         }
         impl Builder {
+            #[doc = "Start date. Only applicable when querying with billing profile"]
             pub fn start_date(mut self, start_date: impl Into<String>) -> Self {
                 self.start_date = Some(start_date.into());
                 self
             }
+            #[doc = "End date. Only applicable when querying with billing profile"]
             pub fn end_date(mut self, end_date: impl Into<String>) -> Self {
                 self.end_date = Some(end_date.into());
                 self
             }
+            #[doc = "Required only for daily grain. The properties/UsageDate for start date and end date. The filter supports 'le' and  'ge'. Not applicable when querying with billing profile"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Reservation Id GUID. Only valid if reservationOrderId is also provided. Filter to a specific reservation"]
             pub fn reservation_id(mut self, reservation_id: impl Into<String>) -> Self {
                 self.reservation_id = Some(reservation_id.into());
                 self
             }
+            #[doc = "Reservation Order Id GUID. Required if reservationId is provided. Filter to a specific reservation order"]
             pub fn reservation_order_id(mut self, reservation_order_id: impl Into<String>) -> Self {
                 self.reservation_order_id = Some(reservation_order_id.into());
                 self
@@ -1284,6 +1364,11 @@ pub mod reservations_details {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists the reservations details for provided date range. Note: ARM has a payload size limit of 12MB, so currently callers get 502 when the response size exceeds the ARM limit. In such cases, API call should be made with smaller date ranges."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `reservation_order_id`: Order Id of the reservation"]
+        #[doc = "* `filter`: Filter reservation details by date range. The properties/UsageDate for start date and end date. The filter supports 'le' and  'ge'"]
         pub fn list_by_reservation_order(
             &self,
             reservation_order_id: impl Into<String>,
@@ -1295,6 +1380,12 @@ pub mod reservations_details {
                 filter: filter.into(),
             }
         }
+        #[doc = "Lists the reservations details for provided date range. Note: ARM has a payload size limit of 12MB, so currently callers get 502 when the response size exceeds the ARM limit. In such cases, API call should be made with smaller date ranges."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `reservation_order_id`: Order Id of the reservation"]
+        #[doc = "* `reservation_id`: Id of the reservation"]
+        #[doc = "* `filter`: Filter reservation details by date range. The properties/UsageDate for start date and end date. The filter supports 'le' and  'ge' "]
         pub fn list_by_reservation_order_and_reservation(
             &self,
             reservation_order_id: impl Into<String>,
@@ -1308,6 +1399,10 @@ pub mod reservations_details {
                 filter: filter.into(),
             }
         }
+        #[doc = "Lists the reservations details for the defined scope and provided date range. Note: ARM has a payload size limit of 12MB, so currently callers get 502 when the response size exceeds the ARM limit. In such cases, API call should be made with smaller date ranges."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_scope`: The scope associated with reservations details operations. This includes '/providers/Microsoft.Billing/billingAccounts/{billingAccountId}' for BillingAccount scope (legacy), and '/providers/Microsoft.Billing/billingAccounts/{billingAccountId}/billingProfiles/{billingProfileId}' for BillingProfile scope (modern). "]
         pub fn list(&self, resource_scope: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -1485,22 +1580,27 @@ pub mod reservations_details {
             pub(crate) reservation_order_id: Option<String>,
         }
         impl Builder {
+            #[doc = "Start date. Only applicable when querying with billing profile"]
             pub fn start_date(mut self, start_date: impl Into<String>) -> Self {
                 self.start_date = Some(start_date.into());
                 self
             }
+            #[doc = "End date. Only applicable when querying with billing profile"]
             pub fn end_date(mut self, end_date: impl Into<String>) -> Self {
                 self.end_date = Some(end_date.into());
                 self
             }
+            #[doc = "Filter reservation details by date range. The properties/UsageDate for start date and end date. The filter supports 'le' and  'ge'. Not applicable when querying with billing profile"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Reservation Id GUID. Only valid if reservationOrderId is also provided. Filter to a specific reservation"]
             pub fn reservation_id(mut self, reservation_id: impl Into<String>) -> Self {
                 self.reservation_id = Some(reservation_id.into());
                 self
             }
+            #[doc = "Reservation Order Id GUID. Required if reservationId is provided. Filter to a specific reservation order"]
             pub fn reservation_order_id(mut self, reservation_order_id: impl Into<String>) -> Self {
                 self.reservation_order_id = Some(reservation_order_id.into());
                 self
@@ -1592,6 +1692,10 @@ pub mod reservation_recommendations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List of recommendations for purchasing reserved instances."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_scope`: The scope associated with reservation recommendations operations. This includes '/subscriptions/{subscriptionId}/' for subscription scope, '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}' for resource group scope, '/providers/Microsoft.Billing/billingAccounts/{billingAccountId}' for BillingAccount scope, and '/providers/Microsoft.Billing/billingAccounts/{billingAccountId}/billingProfiles/{billingProfileId}' for billingProfile scope"]
         pub fn list(&self, resource_scope: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -1623,6 +1727,7 @@ pub mod reservation_recommendations {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "May be used to filter reservationRecommendations by: properties/scope with allowed values ['Single', 'Shared'] and default value 'Single'; properties/resourceType with allowed values ['VirtualMachines', 'SQLDatabases', 'PostgreSQL', 'ManagedDisk', 'MySQL', 'RedHat', 'MariaDB', 'RedisCache', 'CosmosDB', 'SqlDataWarehouse', 'SUSELinux', 'AppService', 'BlockBlob', 'AzureDataExplorer', 'VMwareCloudSimple'] and default value 'VirtualMachines'; and properties/lookBackPeriod with allowed values ['Last7Days', 'Last30Days', 'Last60Days'] and default value 'Last7Days'."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -1701,6 +1806,15 @@ pub mod reservation_recommendation_details {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Details of a reservation recommendation for what-if analysis of reserved instances."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_scope`: The scope associated with reservation recommendation details operations. This includes '/subscriptions/{subscriptionId}/' for subscription scope, '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}' for resource group scope, /providers/Microsoft.Billing/billingAccounts/{billingAccountId}' for BillingAccount scope, and '/providers/Microsoft.Billing/billingAccounts/{billingAccountId}/billingProfiles/{billingProfileId}' for billingProfile scope"]
+        #[doc = "* `scope`: Scope of the reservation."]
+        #[doc = "* `region`: Used to select the region the recommendation should be generated for."]
+        #[doc = "* `term`: Specify length of reservation recommendation term."]
+        #[doc = "* `look_back_period`: Filter the time period on which reservation recommendation results are based."]
+        #[doc = "* `product`: Filter the products for which reservation recommendation results are generated. Examples: Standard_DS1_v2 (for VM), Premium_SSD_Managed_Disks_P30 (for Managed Disks)"]
         pub fn get(
             &self,
             resource_scope: impl Into<String>,
@@ -1794,6 +1908,10 @@ pub mod reservation_transactions {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List of transactions for reserved instances on billing account scope. Note: The refund transactions are posted along with its purchase transaction (i.e. in the purchase billing month). For example, The refund is requested in May 2021. This refund transaction will have event date as May 2021 but the billing month as April 2020 when the reservation purchase was made."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `billing_account_id`: BillingAccount ID"]
         pub fn list(&self, billing_account_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -1801,6 +1919,11 @@ pub mod reservation_transactions {
                 filter: None,
             }
         }
+        #[doc = "List of transactions for reserved instances on billing profile scope. The refund transactions are posted along with its purchase transaction (i.e. in the purchase billing month). For example, The refund is requested in May 2021. This refund transaction will have event date as May 2021 but the billing month as April 2020 when the reservation purchase was made."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `billing_account_id`: BillingAccount ID"]
+        #[doc = "* `billing_profile_id`: Azure Billing Profile ID."]
         pub fn list_by_billing_profile(
             &self,
             billing_account_id: impl Into<String>,
@@ -1824,6 +1947,7 @@ pub mod reservation_transactions {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "Filter reservation transactions by date range. The properties/EventDate for start date and end date. The filter supports 'le' and  'ge'. Note: API returns data for the entire start date's and end date's billing month. For example, filter properties/eventDate+ge+2020-01-01+AND+properties/eventDate+le+2020-12-29 will include data for the entire December 2020 month (i.e. will contain records for dates December 30 and 31)"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -1907,6 +2031,7 @@ pub mod reservation_transactions {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "Filter reservation transactions by date range. The properties/EventDate for start date and end date. The filter supports 'le' and  'ge'. Note: API returns data for the entire start date's and end date's billing month. For example, filter properties/eventDate+ge+2020-01-01+AND+properties/eventDate+le+2020-12-29 will include data for entire December 2020 month (i.e. will contain records for dates December 30 and 31)"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -1980,6 +2105,10 @@ pub mod price_sheet {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the price sheet for a subscription. Price sheet is available via this API only for May 1, 2014 or later."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
         pub fn get(&self, subscription_id: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -1989,6 +2118,11 @@ pub mod price_sheet {
                 top: None,
             }
         }
+        #[doc = "Get the price sheet for a scope by subscriptionId and billing period. Price sheet is available via this API only for May 1, 2014 or later."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
+        #[doc = "* `billing_period_name`: Billing Period Name."]
         pub fn get_by_billing_period(
             &self,
             subscription_id: impl Into<String>,
@@ -2016,14 +2150,17 @@ pub mod price_sheet {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "May be used to expand the properties/meterDetails within a price sheet. By default, these fields are not included when returning price sheet."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
             }
+            #[doc = "Skiptoken is only used if a previous operation returned a partial result. If a previous response contains a nextLink element, the value of the nextLink element will include a skiptoken parameter that specifies a starting point to use for subsequent calls."]
             pub fn skiptoken(mut self, skiptoken: impl Into<String>) -> Self {
                 self.skiptoken = Some(skiptoken.into());
                 self
             }
+            #[doc = "May be used to limit the number of results to the top N results."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -2089,14 +2226,17 @@ pub mod price_sheet {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "May be used to expand the properties/meterDetails within a price sheet. By default, these fields are not included when returning price sheet."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
             }
+            #[doc = "Skiptoken is only used if a previous operation returned a partial result. If a previous response contains a nextLink element, the value of the nextLink element will include a skiptoken parameter that specifies a starting point to use for subsequent calls."]
             pub fn skiptoken(mut self, skiptoken: impl Into<String>) -> Self {
                 self.skiptoken = Some(skiptoken.into());
                 self
             }
+            #[doc = "May be used to limit the number of results to the top N results."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -2150,6 +2290,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all of the available consumption REST API operations."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -2229,6 +2370,10 @@ pub mod aggregated_cost {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Provides the aggregate cost of a management group and all child management groups by current billing period."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `management_group_id`: Azure Management Group ID."]
         pub fn get_by_management_group(&self, management_group_id: impl Into<String>) -> get_by_management_group::Builder {
             get_by_management_group::Builder {
                 client: self.0.clone(),
@@ -2236,6 +2381,11 @@ pub mod aggregated_cost {
                 filter: None,
             }
         }
+        #[doc = "Provides the aggregate cost of a management group and all child management groups by specified billing period"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `management_group_id`: Azure Management Group ID."]
+        #[doc = "* `billing_period_name`: Billing Period Name."]
         pub fn get_for_billing_period_by_management_group(
             &self,
             management_group_id: impl Into<String>,
@@ -2258,6 +2408,7 @@ pub mod aggregated_cost {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "May be used to filter aggregated cost by properties/usageStart (Utc time), properties/usageEnd (Utc time). The filter supports 'eq', 'lt', 'gt', 'le', 'ge', and 'and'. It does not currently support 'ne', 'or', or 'not'. Tag filter is a key value pair string where key and value is separated by a colon (:)."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -2354,6 +2505,13 @@ pub mod events {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists the events that decrements Azure credits or Microsoft Azure consumption commitment for a billing account or a billing profile for a given start and end date."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `billing_account_id`: BillingAccount ID"]
+        #[doc = "* `billing_profile_id`: Azure Billing Profile ID."]
+        #[doc = "* `start_date`: Start date"]
+        #[doc = "* `end_date`: End date"]
         pub fn list_by_billing_profile(
             &self,
             billing_account_id: impl Into<String>,
@@ -2369,6 +2527,10 @@ pub mod events {
                 end_date: end_date.into(),
             }
         }
+        #[doc = "Lists the events that decrements Azure credits or Microsoft Azure consumption commitment for a billing account or a billing profile for a given start and end date."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `billing_account_id`: BillingAccount ID"]
         pub fn list_by_billing_account(&self, billing_account_id: impl Into<String>) -> list_by_billing_account::Builder {
             list_by_billing_account::Builder {
                 client: self.0.clone(),
@@ -2469,6 +2631,7 @@ pub mod events {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "May be used to filter the events by lotId, lotSource etc. The filter supports 'eq', 'lt', 'gt', 'le', 'ge', and 'and'. It does not currently support 'ne', 'or', or 'not'. Tag filter is a key value pair string where key and value is separated by a colon (:)."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -2546,6 +2709,11 @@ pub mod lots {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all Azure credits for a billing account or a billing profile. The API is only supported for Microsoft Customer Agreements (MCA) billing accounts."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `billing_account_id`: BillingAccount ID"]
+        #[doc = "* `billing_profile_id`: Azure Billing Profile ID."]
         pub fn list_by_billing_profile(
             &self,
             billing_account_id: impl Into<String>,
@@ -2557,6 +2725,10 @@ pub mod lots {
                 billing_profile_id: billing_profile_id.into(),
             }
         }
+        #[doc = "Lists all Microsoft Azure consumption commitments for a billing account. The API is only supported for Microsoft Customer Agreements (MCA) and Direct Enterprise Agreement (EA)  billing accounts."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `billing_account_id`: BillingAccount ID"]
         pub fn list_by_billing_account(&self, billing_account_id: impl Into<String>) -> list_by_billing_account::Builder {
             list_by_billing_account::Builder {
                 client: self.0.clone(),
@@ -2564,6 +2736,11 @@ pub mod lots {
                 filter: None,
             }
         }
+        #[doc = "Lists all Azure credits for a customer. The API is only supported for Microsoft Partner  Agreements (MPA) billing accounts."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `billing_account_id`: BillingAccount ID"]
+        #[doc = "* `customer_id`: Customer ID"]
         pub fn list_by_customer(&self, billing_account_id: impl Into<String>, customer_id: impl Into<String>) -> list_by_customer::Builder {
             list_by_customer::Builder {
                 client: self.0.clone(),
@@ -2659,6 +2836,7 @@ pub mod lots {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "May be used to filter the lots by Status, Source etc. The filter supports 'eq', 'lt', 'gt', 'le', 'ge', and 'and'. It does not currently support 'ne', 'or', or 'not'. Tag filter is a key value pair string where key and value is separated by a colon (:)."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -2742,6 +2920,7 @@ pub mod lots {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "May be used to filter the lots by Status, Source etc. The filter supports 'eq', 'lt', 'gt', 'le', 'ge', and 'and'. Tag filter is a key value pair string where key and value is separated by a colon (:)."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -2820,6 +2999,11 @@ pub mod credits {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "The credit summary by billingAccountId and billingProfileId."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `billing_account_id`: BillingAccount ID"]
+        #[doc = "* `billing_profile_id`: Azure Billing Profile ID."]
         pub fn get(&self, billing_account_id: impl Into<String>, billing_profile_id: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),

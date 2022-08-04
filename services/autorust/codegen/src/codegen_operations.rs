@@ -843,6 +843,7 @@ impl From<&ParameterType> for ParamKind {
 #[derive(Clone)]
 struct FunctionParam {
     name: String,
+    description: Option<String>,
     variable_name: Ident,
     type_name: TypeNameCode,
     kind: ParamKind,
@@ -911,12 +912,14 @@ fn create_function_params_code(parameters: &[&WebParameter]) -> Result<FunctionP
     let mut params = Vec::new();
     for param in parameters.iter() {
         let name = param.name().to_owned();
+        let description = param.description().clone();
         let variable_name = name.to_snake_case_ident()?;
         let type_name = type_name_gen(&param.type_name()?)?.qualify_models(true).optional(!param.required());
         let kind = ParamKind::from(param.type_());
         let collection_format = param.collection_format().clone();
         params.push(FunctionParam {
             name,
+            description,
             variable_name,
             type_name,
             kind,
@@ -929,6 +932,7 @@ fn create_function_params_code(parameters: &[&WebParameter]) -> Result<FunctionP
 #[derive(Clone)]
 struct BuilderInstanceCode {
     summary: Option<String>,
+    description: Option<String>,
     fname: Ident,
     parameters: FunctionParams,
     in_group: bool,
@@ -938,8 +942,10 @@ impl BuilderInstanceCode {
     fn new(operation: &WebOperationGen, parameters: &FunctionParams, in_group: bool) -> Result<Self> {
         let fname = operation.function_name()?;
         let summary = operation.0.summary.clone();
+        let description = operation.0.description.clone();
         Ok(Self {
             summary,
+            description,
             fname,
             parameters: parameters.clone(),
             in_group,
@@ -978,17 +984,44 @@ impl ToTokens for BuilderInstanceCode {
                 params.push(quote! { #variable_name: None });
             }
         }
-        let summary = if let Some(summary) = &self.summary {
-            quote! {
-                #[doc = #summary]
-            }
-        } else {
-            quote! {}
+
+        let summary = match &self.summary {
+            Some(summary) if !summary.is_empty() => quote! { #[doc = #summary] },
+            _ => quote! {},
         };
+        let description = match &self.description {
+            Some(desc) if !desc.is_empty() => quote! { #[doc = #desc] },
+            _ => quote! {},
+        };
+
+        let mut param_descriptions: Vec<TokenStream> = Vec::new();
+        if self
+            .parameters
+            .required_params()
+            .into_iter()
+            .any(|param| param.description.is_some())
+        {
+            // Add a blank link before the arguments if there is a summary or description.
+            if !summary.is_empty() || !description.is_empty() {
+                param_descriptions.push(quote! { #[doc = ""] });
+            }
+            param_descriptions.push(quote! { #[doc = "Arguments:"] });
+            for required_param in self.parameters.required_params().iter() {
+                if let Some(desc) = &required_param.description {
+                    if !desc.is_empty() {
+                        let doc_comment = format!("* `{}`: {}", required_param.variable_name, desc);
+                        param_descriptions.push(quote! { #[doc = #doc_comment] });
+                    }
+                }
+            }
+        };
+
         let fname = &self.fname;
         let parameters = FunctionCallParamsCode(self.parameters.clone());
         tokens.extend(quote! {
             #summary
+            #description
+            #(#param_descriptions)*
             pub fn #fname(#parameters) -> #fname::Builder {
                 #fname::Builder {
                     #(#params),*
@@ -1077,7 +1110,12 @@ impl ToTokens for BuilderSettersCode {
             if !is_vec {
                 value = quote! { Some(#value) };
             }
+            let doc_comment = match &param.description {
+                Some(desc) if !desc.is_empty() => quote! { #[ doc = #desc ] },
+                _ => quote! {},
+            };
             tokens.extend(quote! {
+                #doc_comment
                 pub fn #variable_name(mut self, #variable_name: #type_name) -> Self {
                     self.#variable_name = #value;
                     self

@@ -85,6 +85,14 @@ pub mod marketplace_agreements {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get marketplace terms."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
+        #[doc = "* `offer_type`: Offer Type, currently only virtualmachine type is supported."]
+        #[doc = "* `publisher_id`: Publisher identifier string of image being deployed."]
+        #[doc = "* `offer_id`: Offer identifier string of image being deployed."]
+        #[doc = "* `plan_id`: Plan identifier string of image being deployed."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -102,6 +110,15 @@ pub mod marketplace_agreements {
                 plan_id: plan_id.into(),
             }
         }
+        #[doc = "Save marketplace terms."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `offer_type`: Offer Type, currently only virtualmachine type is supported."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
+        #[doc = "* `publisher_id`: Publisher identifier string of image being deployed."]
+        #[doc = "* `offer_id`: Offer identifier string of image being deployed."]
+        #[doc = "* `plan_id`: Plan identifier string of image being deployed."]
+        #[doc = "* `parameters`: Parameters supplied to the Create Marketplace Terms operation."]
         pub fn create(
             &self,
             offer_type: impl Into<String>,
@@ -121,6 +138,13 @@ pub mod marketplace_agreements {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Sign marketplace terms."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
+        #[doc = "* `publisher_id`: Publisher identifier string of image being deployed."]
+        #[doc = "* `offer_id`: Offer identifier string of image being deployed."]
+        #[doc = "* `plan_id`: Plan identifier string of image being deployed."]
         pub fn sign(
             &self,
             subscription_id: impl Into<String>,
@@ -136,6 +160,13 @@ pub mod marketplace_agreements {
                 plan_id: plan_id.into(),
             }
         }
+        #[doc = "Cancel marketplace terms."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
+        #[doc = "* `publisher_id`: Publisher identifier string of image being deployed."]
+        #[doc = "* `offer_id`: Offer identifier string of image being deployed."]
+        #[doc = "* `plan_id`: Plan identifier string of image being deployed."]
         pub fn cancel(
             &self,
             subscription_id: impl Into<String>,
@@ -151,6 +182,13 @@ pub mod marketplace_agreements {
                 plan_id: plan_id.into(),
             }
         }
+        #[doc = "Get marketplace agreement."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
+        #[doc = "* `publisher_id`: Publisher identifier string of image being deployed."]
+        #[doc = "* `offer_id`: Offer identifier string of image being deployed."]
+        #[doc = "* `plan_id`: Plan identifier string of image being deployed."]
         pub fn get_agreement(
             &self,
             subscription_id: impl Into<String>,
@@ -166,6 +204,10 @@ pub mod marketplace_agreements {
                 plan_id: plan_id.into(),
             }
         }
+        #[doc = "List marketplace agreements in the subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -488,6 +530,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all of the available Microsoft.MarketplaceOrdering REST API operations."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }

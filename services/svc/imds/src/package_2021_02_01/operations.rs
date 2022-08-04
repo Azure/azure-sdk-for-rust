@@ -88,6 +88,10 @@ pub mod instances {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get Instance Metadata for the Virtual Machine."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `metadata`: This must be set to 'true'."]
         pub fn get_metadata(&self, metadata: impl Into<String>) -> get_metadata::Builder {
             get_metadata::Builder {
                 client: self.0.clone(),
@@ -145,6 +149,10 @@ pub mod attested {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get Attested Data for the Virtual Machine."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `metadata`: This must be set to 'true'."]
         pub fn get_document(&self, metadata: impl Into<String>) -> get_document::Builder {
             get_document::Builder {
                 client: self.0.clone(),
@@ -163,6 +171,7 @@ pub mod attested {
             pub(crate) nonce: Option<String>,
         }
         impl Builder {
+            #[doc = "This is a string of up to 32 random alphanumeric characters."]
             pub fn nonce(mut self, nonce: impl Into<String>) -> Self {
                 self.nonce = Some(nonce.into());
                 self
@@ -211,6 +220,11 @@ pub mod identity {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get a Token from Azure AD"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `metadata`: This must be set to 'true'."]
+        #[doc = "* `resource`: This is the urlencoded identifier URI of the sink resource for the requested Azure AD token. The resulting token contains the corresponding aud for this resource."]
         pub fn get_token(&self, metadata: impl Into<String>, resource: impl Into<String>) -> get_token::Builder {
             get_token::Builder {
                 client: self.0.clone(),
@@ -223,6 +237,10 @@ pub mod identity {
                 bypass_cache: None,
             }
         }
+        #[doc = "Get information about AAD Metadata"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `metadata`: This must be set to 'true'."]
         pub fn get_info(&self, metadata: impl Into<String>) -> get_info::Builder {
             get_info::Builder {
                 client: self.0.clone(),
@@ -245,22 +263,27 @@ pub mod identity {
             pub(crate) bypass_cache: Option<String>,
         }
         impl Builder {
+            #[doc = "This identifies, by Azure AD client id, a specific explicit identity to use when authenticating to Azure AD. Mutually exclusive with object_id and msi_res_id."]
             pub fn client_id(mut self, client_id: impl Into<String>) -> Self {
                 self.client_id = Some(client_id.into());
                 self
             }
+            #[doc = "This identifies, by Azure AD object id, a specific explicit identity to use when authenticating to Azure AD. Mutually exclusive with client_id and msi_res_id."]
             pub fn object_id(mut self, object_id: impl Into<String>) -> Self {
                 self.object_id = Some(object_id.into());
                 self
             }
+            #[doc = "This identifies, by urlencoded ARM resource id, a specific explicit identity to use when authenticating to Azure AD. Mutually exclusive with client_id and object_id."]
             pub fn msi_res_id(mut self, msi_res_id: impl Into<String>) -> Self {
                 self.msi_res_id = Some(msi_res_id.into());
                 self
             }
+            #[doc = "This indicates the authority to request AAD tokens from. Defaults to the known authority of the identity to be used."]
             pub fn authority(mut self, authority: impl Into<String>) -> Self {
                 self.authority = Some(authority.into());
                 self
             }
+            #[doc = "If provided, the value must be 'true'. This indicates to the server that the token must be retrieved from Azure AD and cannot be retrieved from an internal cache."]
             pub fn bypass_cache(mut self, bypass_cache: impl Into<String>) -> Self {
                 self.bypass_cache = Some(bypass_cache.into());
                 self

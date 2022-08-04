@@ -88,6 +88,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "The list of operations provided by Microsoft CustomProviders."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -169,6 +170,12 @@ pub mod custom_resource_provider {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the custom resource provider manifest."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `resource_provider_name`: The name of the resource provider."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -182,6 +189,13 @@ pub mod custom_resource_provider {
                 resource_provider_name: resource_provider_name.into(),
             }
         }
+        #[doc = "Creates or updates the custom resource provider."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `resource_provider_name`: The name of the resource provider."]
+        #[doc = "* `resource_provider`: The parameters required to create or update a custom resource provider definition."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -197,6 +211,13 @@ pub mod custom_resource_provider {
                 resource_provider: resource_provider.into(),
             }
         }
+        #[doc = "Updates an existing custom resource provider. The only value that can be updated via PATCH currently is the tags."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `resource_provider_name`: The name of the resource provider."]
+        #[doc = "* `patchable_resource`: The updatable fields of a custom resource provider."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -212,6 +233,12 @@ pub mod custom_resource_provider {
                 patchable_resource: patchable_resource.into(),
             }
         }
+        #[doc = "Deletes the custom resource provider."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `resource_provider_name`: The name of the resource provider."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -225,6 +252,11 @@ pub mod custom_resource_provider {
                 resource_provider_name: resource_provider_name.into(),
             }
         }
+        #[doc = "Gets all the custom resource providers within a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -236,6 +268,10 @@ pub mod custom_resource_provider {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Gets all the custom resource providers within a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)"]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
@@ -624,6 +660,11 @@ pub mod associations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get an association."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `scope`: The scope of the association."]
+        #[doc = "* `association_name`: The name of the association."]
         pub fn get(&self, scope: impl Into<String>, association_name: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -631,6 +672,12 @@ pub mod associations {
                 association_name: association_name.into(),
             }
         }
+        #[doc = "Create or update an association."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `scope`: The scope of the association. The scope can be any valid REST resource instance. For example, use '/subscriptions/{subscription-id}/resourceGroups/{resource-group-name}/providers/Microsoft.Compute/virtualMachines/{vm-name}' for a virtual machine resource."]
+        #[doc = "* `association_name`: The name of the association."]
+        #[doc = "* `association`: The parameters required to create or update an association."]
         pub fn create_or_update(
             &self,
             scope: impl Into<String>,
@@ -644,6 +691,11 @@ pub mod associations {
                 association: association.into(),
             }
         }
+        #[doc = "Delete an association."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `scope`: The scope of the association."]
+        #[doc = "* `association_name`: The name of the association."]
         pub fn delete(&self, scope: impl Into<String>, association_name: impl Into<String>) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),
@@ -651,6 +703,10 @@ pub mod associations {
                 association_name: association_name.into(),
             }
         }
+        #[doc = "Gets all association for the given scope."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `scope`: The scope of the association."]
         pub fn list_all(&self, scope: impl Into<String>) -> list_all::Builder {
             list_all::Builder {
                 client: self.0.clone(),

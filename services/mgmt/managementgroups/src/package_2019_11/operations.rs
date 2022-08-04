@@ -91,6 +91,7 @@ pub mod management_groups {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List management groups for the authenticated user."]
         pub fn list(&self) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -98,6 +99,10 @@ pub mod management_groups {
                 skiptoken: None,
             }
         }
+        #[doc = "Get the details of the management group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `group_id`: Management Group ID."]
         pub fn get(&self, group_id: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -108,6 +113,11 @@ pub mod management_groups {
                 cache_control: None,
             }
         }
+        #[doc = "Create or update a management group. If a management group is already created and a subsequent create request is issued with different properties, the management group properties will be updated."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `group_id`: Management Group ID."]
+        #[doc = "* `create_management_group_request`: Management group creation parameters."]
         pub fn create_or_update(
             &self,
             group_id: impl Into<String>,
@@ -120,6 +130,11 @@ pub mod management_groups {
                 cache_control: None,
             }
         }
+        #[doc = "Update a management group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `group_id`: Management Group ID."]
+        #[doc = "* `patch_group_request`: Management group patch parameters."]
         pub fn update(
             &self,
             group_id: impl Into<String>,
@@ -132,6 +147,10 @@ pub mod management_groups {
                 cache_control: None,
             }
         }
+        #[doc = "Delete management group. If a management group contains child resources, the request will fail."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `group_id`: Management Group ID."]
         pub fn delete(&self, group_id: impl Into<String>) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),
@@ -139,6 +158,10 @@ pub mod management_groups {
                 cache_control: None,
             }
         }
+        #[doc = "List all entities that descend from a management group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `group_id`: Management Group ID."]
         pub fn get_descendants(&self, group_id: impl Into<String>) -> get_descendants::Builder {
             get_descendants::Builder {
                 client: self.0.clone(),
@@ -158,10 +181,12 @@ pub mod management_groups {
             pub(crate) skiptoken: Option<String>,
         }
         impl Builder {
+            #[doc = "Indicates that the request shouldn't utilize any caches."]
             pub fn cache_control(mut self, cache_control: impl Into<String>) -> Self {
                 self.cache_control = Some(cache_control.into());
                 self
             }
+            #[doc = "Page continuation token is only used if a previous operation returned a partial result. If a previous response contains a nextLink element, the value of the nextLink element will include a token parameter that specifies a starting point to use for subsequent calls."]
             pub fn skiptoken(mut self, skiptoken: impl Into<String>) -> Self {
                 self.skiptoken = Some(skiptoken.into());
                 self
@@ -249,18 +274,22 @@ pub mod management_groups {
             pub(crate) cache_control: Option<String>,
         }
         impl Builder {
+            #[doc = "The $expand=children query string parameter allows clients to request inclusion of children in the response payload.  $expand=path includes the path from the root group to the current group."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
             }
+            #[doc = "The $recurse=true query string parameter allows clients to request inclusion of entire hierarchy in the response payload. Note that  $expand=children must be passed up if $recurse is set to true."]
             pub fn recurse(mut self, recurse: bool) -> Self {
                 self.recurse = Some(recurse);
                 self
             }
+            #[doc = "A filter which allows the exclusion of subscriptions from results (i.e. '$filter=children.childType ne Subscription')"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Indicates that the request shouldn't utilize any caches."]
             pub fn cache_control(mut self, cache_control: impl Into<String>) -> Self {
                 self.cache_control = Some(cache_control.into());
                 self
@@ -331,6 +360,7 @@ pub mod management_groups {
             pub(crate) cache_control: Option<String>,
         }
         impl Builder {
+            #[doc = "Indicates that the request shouldn't utilize any caches."]
             pub fn cache_control(mut self, cache_control: impl Into<String>) -> Self {
                 self.cache_control = Some(cache_control.into());
                 self
@@ -395,6 +425,7 @@ pub mod management_groups {
             pub(crate) cache_control: Option<String>,
         }
         impl Builder {
+            #[doc = "Indicates that the request shouldn't utilize any caches."]
             pub fn cache_control(mut self, cache_control: impl Into<String>) -> Self {
                 self.cache_control = Some(cache_control.into());
                 self
@@ -456,6 +487,7 @@ pub mod management_groups {
             pub(crate) cache_control: Option<String>,
         }
         impl Builder {
+            #[doc = "Indicates that the request shouldn't utilize any caches."]
             pub fn cache_control(mut self, cache_control: impl Into<String>) -> Self {
                 self.cache_control = Some(cache_control.into());
                 self
@@ -515,10 +547,12 @@ pub mod management_groups {
             pub(crate) top: Option<i64>,
         }
         impl Builder {
+            #[doc = "Page continuation token is only used if a previous operation returned a partial result. If a previous response contains a nextLink element, the value of the nextLink element will include a token parameter that specifies a starting point to use for subsequent calls."]
             pub fn skiptoken(mut self, skiptoken: impl Into<String>) -> Self {
                 self.skiptoken = Some(skiptoken.into());
                 self
             }
+            #[doc = "Number of elements to return when retrieving results. Passing this in will override $skipToken."]
             pub fn top(mut self, top: i64) -> Self {
                 self.top = Some(top);
                 self
@@ -599,6 +633,11 @@ pub mod management_group_subscriptions {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Associates existing subscription with the management group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `group_id`: Management Group ID."]
+        #[doc = "* `subscription_id`: Subscription ID."]
         pub fn create(&self, group_id: impl Into<String>, subscription_id: impl Into<String>) -> create::Builder {
             create::Builder {
                 client: self.0.clone(),
@@ -607,6 +646,11 @@ pub mod management_group_subscriptions {
                 cache_control: None,
             }
         }
+        #[doc = "De-associates subscription from the management group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `group_id`: Management Group ID."]
+        #[doc = "* `subscription_id`: Subscription ID."]
         pub fn delete(&self, group_id: impl Into<String>, subscription_id: impl Into<String>) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),
@@ -627,6 +671,7 @@ pub mod management_group_subscriptions {
             pub(crate) cache_control: Option<String>,
         }
         impl Builder {
+            #[doc = "Indicates that the request shouldn't utilize any caches."]
             pub fn cache_control(mut self, cache_control: impl Into<String>) -> Self {
                 self.cache_control = Some(cache_control.into());
                 self
@@ -681,6 +726,7 @@ pub mod management_group_subscriptions {
             pub(crate) cache_control: Option<String>,
         }
         impl Builder {
+            #[doc = "Indicates that the request shouldn't utilize any caches."]
             pub fn cache_control(mut self, cache_control: impl Into<String>) -> Self {
                 self.cache_control = Some(cache_control.into());
                 self
@@ -729,6 +775,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all of the available Management REST API operations."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -805,6 +852,10 @@ pub mod operations {
     }
 }
 impl Client {
+    #[doc = "Checks if the specified management group name is valid and unique"]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `check_name_availability_request`: Management group name availability check parameters."]
     pub fn check_name_availability(
         &self,
         check_name_availability_request: impl Into<models::CheckNameAvailabilityRequest>,
@@ -814,9 +865,11 @@ impl Client {
             check_name_availability_request: check_name_availability_request.into(),
         }
     }
+    #[doc = "Starts backfilling subscriptions for the Tenant."]
     pub fn start_tenant_backfill(&self) -> start_tenant_backfill::Builder {
         start_tenant_backfill::Builder { client: self.clone() }
     }
+    #[doc = "Gets tenant backfill status"]
     pub fn tenant_backfill_status(&self) -> tenant_backfill_status::Builder {
         tenant_backfill_status::Builder { client: self.clone() }
     }
@@ -967,6 +1020,7 @@ pub mod entities {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List all entities (Management Groups, Subscriptions, etc.) for the authenticated user."]
         pub fn list(&self) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -999,38 +1053,47 @@ pub mod entities {
             pub(crate) cache_control: Option<String>,
         }
         impl Builder {
+            #[doc = "Page continuation token is only used if a previous operation returned a partial result. If a previous response contains a nextLink element, the value of the nextLink element will include a token parameter that specifies a starting point to use for subsequent calls."]
             pub fn skiptoken(mut self, skiptoken: impl Into<String>) -> Self {
                 self.skiptoken = Some(skiptoken.into());
                 self
             }
+            #[doc = "Number of entities to skip over when retrieving results. Passing this in will override $skipToken."]
             pub fn skip(mut self, skip: i64) -> Self {
                 self.skip = Some(skip);
                 self
             }
+            #[doc = "Number of elements to return when retrieving results. Passing this in will override $skipToken."]
             pub fn top(mut self, top: i64) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "This parameter specifies the fields to include in the response. Can include any combination of Name,DisplayName,Type,ParentDisplayNameChain,ParentChain, e.g. '$select=Name,DisplayName,Type,ParentDisplayNameChain,ParentNameChain'. When specified the $select parameter can override select in $skipToken."]
             pub fn select(mut self, select: impl Into<String>) -> Self {
                 self.select = Some(select.into());
                 self
             }
+            #[doc = "The $search parameter is used in conjunction with the $filter parameter to return three different outputs depending on the parameter passed in. With $search=AllowedParents the API will return the entity info of all groups that the requested entity will be able to reparent to as determined by the user's permissions.With $search=AllowedChildren the API will return the entity info of all entities that can be added as children of the requested entity.With $search=ParentAndFirstLevelChildren the API will return the parent and  first level of children that the user has either direct access to or indirect access via one of their descendants.With $search=ParentOnly the API will return only the group if the user has access to at least one of the descendants of the group.With $search=ChildrenOnly the API will return only the first level of children of the group entity info specified in $filter.  The user must have direct access to the children entities or one of it's descendants for it to show up in the results."]
             pub fn search(mut self, search: impl Into<String>) -> Self {
                 self.search = Some(search.into());
                 self
             }
+            #[doc = "The filter parameter allows you to filter on the the name or display name fields. You can check for equality on the name field (e.g. name eq '{entityName}')  and you can check for substrings on either the name or display name fields(e.g. contains(name, '{substringToSearch}'), contains(displayName, '{substringToSearch')). Note that the '{entityName}' and '{substringToSearch}' fields are checked case insensitively."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "The view parameter allows clients to filter the type of data that is returned by the getEntities call."]
             pub fn view(mut self, view: impl Into<String>) -> Self {
                 self.view = Some(view.into());
                 self
             }
+            #[doc = "A filter which allows the get entities call to focus on a particular group (i.e. \"$filter=name eq 'groupName'\")"]
             pub fn group_name(mut self, group_name: impl Into<String>) -> Self {
                 self.group_name = Some(group_name.into());
                 self
             }
+            #[doc = "Indicates that the request shouldn't utilize any caches."]
             pub fn cache_control(mut self, cache_control: impl Into<String>) -> Self {
                 self.cache_control = Some(cache_control.into());
                 self

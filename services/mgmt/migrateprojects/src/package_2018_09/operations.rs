@@ -101,6 +101,11 @@ pub mod database_instances {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets a list of database instances in the migrate project."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure Subscription Id in which migrate project was created."]
+        #[doc = "* `resource_group_name`: Name of the Azure Resource Group that migrate project is part of."]
+        #[doc = "* `migrate_project_name`: Name of the Azure Migrate project."]
         pub fn enumerate_database_instances(
             &self,
             subscription_id: impl Into<String>,
@@ -118,6 +123,12 @@ pub mod database_instances {
             }
         }
         #[doc = "Gets a database instance in the migrate project."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure Subscription Id in which migrate project was created."]
+        #[doc = "* `resource_group_name`: Name of the Azure Resource Group that migrate project is part of."]
+        #[doc = "* `migrate_project_name`: Name of the Azure Migrate project."]
+        #[doc = "* `database_instance_name`: Unique name of a database instance in Azure migration hub."]
         pub fn get_database_instance(
             &self,
             subscription_id: impl Into<String>,
@@ -149,14 +160,17 @@ pub mod database_instances {
             pub(crate) accept_language: Option<String>,
         }
         impl Builder {
+            #[doc = "The continuation token."]
             pub fn continuation_token(mut self, continuation_token: impl Into<String>) -> Self {
                 self.continuation_token = Some(continuation_token.into());
                 self
             }
+            #[doc = "The number of items to be returned in a single page. This value is honored only if it is less than the 100."]
             pub fn page_size(mut self, page_size: i64) -> Self {
                 self.page_size = Some(page_size);
                 self
             }
+            #[doc = "Standard request header. Used by service to respond to client in appropriate language."]
             pub fn accept_language(mut self, accept_language: impl Into<String>) -> Self {
                 self.accept_language = Some(accept_language.into());
                 self
@@ -224,6 +238,7 @@ pub mod database_instances {
             pub(crate) accept_language: Option<String>,
         }
         impl Builder {
+            #[doc = "Standard request header. Used by service to respond to client in appropriate language."]
             pub fn accept_language(mut self, accept_language: impl Into<String>) -> Self {
                 self.accept_language = Some(accept_language.into());
                 self
@@ -279,6 +294,11 @@ pub mod databases {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets a list of databases in the migrate project."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure Subscription Id in which migrate project was created."]
+        #[doc = "* `resource_group_name`: Name of the Azure Resource Group that migrate project is part of."]
+        #[doc = "* `migrate_project_name`: Name of the Azure Migrate project."]
         pub fn enumerate_databases(
             &self,
             subscription_id: impl Into<String>,
@@ -296,6 +316,12 @@ pub mod databases {
             }
         }
         #[doc = "Gets a database in the migrate project."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure Subscription Id in which migrate project was created."]
+        #[doc = "* `resource_group_name`: Name of the Azure Resource Group that migrate project is part of."]
+        #[doc = "* `migrate_project_name`: Name of the Azure Migrate project."]
+        #[doc = "* `database_name`: Unique name of a database in Azure migration hub."]
         pub fn get_database(
             &self,
             subscription_id: impl Into<String>,
@@ -327,14 +353,17 @@ pub mod databases {
             pub(crate) accept_language: Option<String>,
         }
         impl Builder {
+            #[doc = "The continuation token."]
             pub fn continuation_token(mut self, continuation_token: impl Into<String>) -> Self {
                 self.continuation_token = Some(continuation_token.into());
                 self
             }
+            #[doc = "The number of items to be returned in a single page. This value is honored only if it is less than the 100."]
             pub fn page_size(mut self, page_size: i64) -> Self {
                 self.page_size = Some(page_size);
                 self
             }
+            #[doc = "Standard request header. Used by service to respond to client in appropriate language."]
             pub fn accept_language(mut self, accept_language: impl Into<String>) -> Self {
                 self.accept_language = Some(accept_language.into());
                 self
@@ -402,6 +431,7 @@ pub mod databases {
             pub(crate) accept_language: Option<String>,
         }
         impl Builder {
+            #[doc = "Standard request header. Used by service to respond to client in appropriate language."]
             pub fn accept_language(mut self, accept_language: impl Into<String>) -> Self {
                 self.accept_language = Some(accept_language.into());
                 self
@@ -457,6 +487,11 @@ pub mod events {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets a list of events in the migrate project."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure Subscription Id in which migrate project was created."]
+        #[doc = "* `resource_group_name`: Name of the Azure Resource Group that migrate project is part of."]
+        #[doc = "* `migrate_project_name`: Name of the Azure Migrate project."]
         pub fn enumerate_events(
             &self,
             subscription_id: impl Into<String>,
@@ -474,6 +509,12 @@ pub mod events {
             }
         }
         #[doc = "Gets an event in the migrate project."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure Subscription Id in which migrate project was created."]
+        #[doc = "* `resource_group_name`: Name of the Azure Resource Group that migrate project is part of."]
+        #[doc = "* `migrate_project_name`: Name of the Azure Migrate project."]
+        #[doc = "* `event_name`: Unique name of an event within a migrate project."]
         pub fn get_event(
             &self,
             subscription_id: impl Into<String>,
@@ -490,6 +531,13 @@ pub mod events {
             }
         }
         #[doc = "Delete the migrate event"]
+        #[doc = "Delete the migrate event. Deleting non-existent migrate event is a no-operation."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure Subscription Id in which migrate project was created."]
+        #[doc = "* `resource_group_name`: Name of the Azure Resource Group that migrate project is part of."]
+        #[doc = "* `migrate_project_name`: Name of the Azure Migrate project."]
+        #[doc = "* `event_name`: Unique name of an event within a migrate project."]
         pub fn delete_event(
             &self,
             subscription_id: impl Into<String>,
@@ -520,14 +568,17 @@ pub mod events {
             pub(crate) accept_language: Option<String>,
         }
         impl Builder {
+            #[doc = "The continuation token."]
             pub fn continuation_token(mut self, continuation_token: impl Into<String>) -> Self {
                 self.continuation_token = Some(continuation_token.into());
                 self
             }
+            #[doc = "The number of items to be returned in a single page. This value is honored only if it is less than the 100."]
             pub fn page_size(mut self, page_size: i64) -> Self {
                 self.page_size = Some(page_size);
                 self
             }
+            #[doc = "Standard request header. Used by service to respond to client in appropriate language."]
             pub fn accept_language(mut self, accept_language: impl Into<String>) -> Self {
                 self.accept_language = Some(accept_language.into());
                 self
@@ -692,6 +743,11 @@ pub mod machines {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets a list of machines in the migrate project."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure Subscription Id in which migrate project was created."]
+        #[doc = "* `resource_group_name`: Name of the Azure Resource Group that migrate project is part of."]
+        #[doc = "* `migrate_project_name`: Name of the Azure Migrate project."]
         pub fn enumerate_machines(
             &self,
             subscription_id: impl Into<String>,
@@ -708,6 +764,12 @@ pub mod machines {
             }
         }
         #[doc = "Gets a machine in the migrate project."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure Subscription Id in which migrate project was created."]
+        #[doc = "* `resource_group_name`: Name of the Azure Resource Group that migrate project is part of."]
+        #[doc = "* `migrate_project_name`: Name of the Azure Migrate project."]
+        #[doc = "* `machine_name`: Unique name of a machine in Azure migration hub."]
         pub fn get_machine(
             &self,
             subscription_id: impl Into<String>,
@@ -737,10 +799,12 @@ pub mod machines {
             pub(crate) page_size: Option<i64>,
         }
         impl Builder {
+            #[doc = "The continuation token."]
             pub fn continuation_token(mut self, continuation_token: impl Into<String>) -> Self {
                 self.continuation_token = Some(continuation_token.into());
                 self
             }
+            #[doc = "The number of items to be returned in a single page. This value is honored only if it is less than the 100."]
             pub fn page_size(mut self, page_size: i64) -> Self {
                 self.page_size = Some(page_size);
                 self
@@ -852,6 +916,11 @@ pub mod migrate_projects {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Method to get a migrate project."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure Subscription Id in which migrate project was created."]
+        #[doc = "* `resource_group_name`: Name of the Azure Resource Group that migrate project is part of."]
+        #[doc = "* `migrate_project_name`: Name of the Azure Migrate project."]
         pub fn get_migrate_project(
             &self,
             subscription_id: impl Into<String>,
@@ -866,6 +935,12 @@ pub mod migrate_projects {
             }
         }
         #[doc = "Method to create or update a migrate project."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure Subscription Id in which migrate project was created."]
+        #[doc = "* `resource_group_name`: Name of the Azure Resource Group that migrate project is part of."]
+        #[doc = "* `migrate_project_name`: Name of the Azure Migrate project."]
+        #[doc = "* `body`: Body with migrate project details."]
         pub fn put_migrate_project(
             &self,
             subscription_id: impl Into<String>,
@@ -883,6 +958,13 @@ pub mod migrate_projects {
             }
         }
         #[doc = "Update migrate project."]
+        #[doc = "Update a migrate project with specified name. Supports partial updates, for example only tags can be provided."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure Subscription Id in which migrate project was created."]
+        #[doc = "* `resource_group_name`: Name of the Azure Resource Group that migrate project is part of."]
+        #[doc = "* `migrate_project_name`: Name of the Azure Migrate project."]
+        #[doc = "* `body`: Body with migrate project details."]
         pub fn patch_migrate_project(
             &self,
             subscription_id: impl Into<String>,
@@ -900,6 +982,12 @@ pub mod migrate_projects {
             }
         }
         #[doc = "Delete the migrate project"]
+        #[doc = "Delete the migrate project. Deleting non-existent project is a no-operation."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure Subscription Id in which migrate project was created."]
+        #[doc = "* `resource_group_name`: Name of the Azure Resource Group that migrate project is part of."]
+        #[doc = "* `migrate_project_name`: Name of the Azure Migrate project."]
         pub fn delete_migrate_project(
             &self,
             subscription_id: impl Into<String>,
@@ -915,6 +1003,12 @@ pub mod migrate_projects {
             }
         }
         #[doc = "Registers a tool with the migrate project."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure Subscription Id in which migrate project was created."]
+        #[doc = "* `resource_group_name`: Name of the Azure Resource Group that migrate project is part of."]
+        #[doc = "* `migrate_project_name`: Name of the Azure Migrate project."]
+        #[doc = "* `input`: Input containing the name of the tool to be registered."]
         pub fn register_tool(
             &self,
             subscription_id: impl Into<String>,
@@ -932,6 +1026,12 @@ pub mod migrate_projects {
             }
         }
         #[doc = "Refresh the summary of the migrate project."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure Subscription Id in which migrate project was created."]
+        #[doc = "* `resource_group_name`: Name of the Azure Resource Group that migrate project is part of."]
+        #[doc = "* `migrate_project_name`: Name of the Azure Migrate project."]
+        #[doc = "* `input`: The goal input which needs to be refreshed."]
         pub fn refresh_migrate_project_summary(
             &self,
             subscription_id: impl Into<String>,
@@ -1017,6 +1117,7 @@ pub mod migrate_projects {
             pub(crate) accept_language: Option<String>,
         }
         impl Builder {
+            #[doc = "Standard request header. Used by service to respond to client in appropriate language."]
             pub fn accept_language(mut self, accept_language: impl Into<String>) -> Self {
                 self.accept_language = Some(accept_language.into());
                 self
@@ -1084,6 +1185,7 @@ pub mod migrate_projects {
             pub(crate) accept_language: Option<String>,
         }
         impl Builder {
+            #[doc = "Standard request header. Used by service to respond to client in appropriate language."]
             pub fn accept_language(mut self, accept_language: impl Into<String>) -> Self {
                 self.accept_language = Some(accept_language.into());
                 self
@@ -1145,6 +1247,7 @@ pub mod migrate_projects {
             pub(crate) accept_language: Option<String>,
         }
         impl Builder {
+            #[doc = "Standard request header. Used by service to respond to client in appropriate language."]
             pub fn accept_language(mut self, accept_language: impl Into<String>) -> Self {
                 self.accept_language = Some(accept_language.into());
                 self
@@ -1202,6 +1305,7 @@ pub mod migrate_projects {
             pub(crate) accept_language: Option<String>,
         }
         impl Builder {
+            #[doc = "Standard request header. Used by service to respond to client in appropriate language."]
             pub fn accept_language(mut self, accept_language: impl Into<String>) -> Self {
                 self.accept_language = Some(accept_language.into());
                 self
@@ -1311,6 +1415,12 @@ pub mod solutions {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets a solution in the migrate project."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure Subscription Id in which migrate project was created."]
+        #[doc = "* `resource_group_name`: Name of the Azure Resource Group that migrate project is part of."]
+        #[doc = "* `migrate_project_name`: Name of the Azure Migrate project."]
+        #[doc = "* `solution_name`: Unique name of a migration solution within a migrate project."]
         pub fn get_solution(
             &self,
             subscription_id: impl Into<String>,
@@ -1327,6 +1437,13 @@ pub mod solutions {
             }
         }
         #[doc = "Creates a solution in the migrate project."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure Subscription Id in which migrate project was created."]
+        #[doc = "* `resource_group_name`: Name of the Azure Resource Group that migrate project is part of."]
+        #[doc = "* `migrate_project_name`: Name of the Azure Migrate project."]
+        #[doc = "* `solution_name`: Unique name of a migration solution within a migrate project."]
+        #[doc = "* `solution_input`: The input for the solution."]
         pub fn put_solution(
             &self,
             subscription_id: impl Into<String>,
@@ -1345,6 +1462,14 @@ pub mod solutions {
             }
         }
         #[doc = "Update solution."]
+        #[doc = "Update a solution with specified name. Supports partial updates, for example only tags can be provided."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure Subscription Id in which migrate project was created."]
+        #[doc = "* `resource_group_name`: Name of the Azure Resource Group that migrate project is part of."]
+        #[doc = "* `migrate_project_name`: Name of the Azure Migrate project."]
+        #[doc = "* `solution_name`: Unique name of a migration solution within a migrate project."]
+        #[doc = "* `solution_input`: The input for the solution."]
         pub fn patch_solution(
             &self,
             subscription_id: impl Into<String>,
@@ -1363,6 +1488,13 @@ pub mod solutions {
             }
         }
         #[doc = "Delete the solution"]
+        #[doc = "Delete the solution. Deleting non-existent project is a no-operation."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure Subscription Id in which migrate project was created."]
+        #[doc = "* `resource_group_name`: Name of the Azure Resource Group that migrate project is part of."]
+        #[doc = "* `migrate_project_name`: Name of the Azure Migrate project."]
+        #[doc = "* `solution_name`: Unique name of a migration solution within a migrate project."]
         pub fn delete_solution(
             &self,
             subscription_id: impl Into<String>,
@@ -1380,6 +1512,11 @@ pub mod solutions {
             }
         }
         #[doc = "Gets the list of solutions in the migrate project."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure Subscription Id in which migrate project was created."]
+        #[doc = "* `resource_group_name`: Name of the Azure Resource Group that migrate project is part of."]
+        #[doc = "* `migrate_project_name`: Name of the Azure Migrate project."]
         pub fn enumerate_solutions(
             &self,
             subscription_id: impl Into<String>,
@@ -1394,6 +1531,12 @@ pub mod solutions {
             }
         }
         #[doc = "Gets the config for the solution in the migrate project."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure Subscription Id in which migrate project was created."]
+        #[doc = "* `resource_group_name`: Name of the Azure Resource Group that migrate project is part of."]
+        #[doc = "* `migrate_project_name`: Name of the Azure Migrate project."]
+        #[doc = "* `solution_name`: Unique name of a migration solution within a migrate project."]
         pub fn get_config(
             &self,
             subscription_id: impl Into<String>,
@@ -1410,6 +1553,12 @@ pub mod solutions {
             }
         }
         #[doc = "Cleanup the solution data in the migrate project."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure Subscription Id in which migrate project was created."]
+        #[doc = "* `resource_group_name`: Name of the Azure Resource Group that migrate project is part of."]
+        #[doc = "* `migrate_project_name`: Name of the Azure Migrate project."]
+        #[doc = "* `solution_name`: Unique name of a migration solution within a migrate project."]
         pub fn cleanup_solution_data(
             &self,
             subscription_id: impl Into<String>,
@@ -1614,6 +1763,7 @@ pub mod solutions {
             pub(crate) accept_language: Option<String>,
         }
         impl Builder {
+            #[doc = "Standard request header. Used by service to respond to client in appropriate language."]
             pub fn accept_language(mut self, accept_language: impl Into<String>) -> Self {
                 self.accept_language = Some(accept_language.into());
                 self
@@ -1823,6 +1973,7 @@ pub mod operations {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get list of operations supported in the API."]
+        #[doc = "Get a list of REST API supported by Microsoft.Migrate provider."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }

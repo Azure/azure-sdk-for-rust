@@ -97,6 +97,12 @@ pub mod bots {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Returns a BotService specified by the parameters."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the Bot resource group in the user subscription."]
+        #[doc = "* `resource_name`: The name of the Bot resource."]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -110,6 +116,13 @@ pub mod bots {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates a Bot Service. Bot Service is a resource group wide resource type."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the Bot resource group in the user subscription."]
+        #[doc = "* `resource_name`: The name of the Bot resource."]
+        #[doc = "* `parameters`: The parameters to provide for the created bot."]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
         pub fn create(
             &self,
             resource_group_name: impl Into<String>,
@@ -125,6 +138,13 @@ pub mod bots {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates a Bot Service"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the Bot resource group in the user subscription."]
+        #[doc = "* `resource_name`: The name of the Bot resource."]
+        #[doc = "* `parameters`: The parameters to provide for the created bot."]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -140,6 +160,12 @@ pub mod bots {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes a Bot Service from the resource group. "]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the Bot resource group in the user subscription."]
+        #[doc = "* `resource_name`: The name of the Bot resource."]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -153,6 +179,11 @@ pub mod bots {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Returns all the resources of a particular type belonging to a resource group"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the Bot resource group in the user subscription."]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
         pub fn list_by_resource_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -164,12 +195,20 @@ pub mod bots {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Returns all the resources of a particular type belonging to a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Check whether a bot name is available."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `parameters`: The request body parameters to provide for the check name availability request"]
         pub fn get_check_name_availability(
             &self,
             parameters: impl Into<models::CheckNameAvailabilityRequestBody>,
@@ -614,6 +653,13 @@ pub mod channels {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Returns a BotService Channel registration specified by the parameters."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the Bot resource group in the user subscription."]
+        #[doc = "* `resource_name`: The name of the Bot resource."]
+        #[doc = "* `channel_name`: The name of the Bot resource."]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -629,6 +675,14 @@ pub mod channels {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates a Channel registration for a Bot Service"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the Bot resource group in the user subscription."]
+        #[doc = "* `resource_name`: The name of the Bot resource."]
+        #[doc = "* `channel_name`: The name of the Channel resource."]
+        #[doc = "* `parameters`: The parameters to provide for the created bot."]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
         pub fn create(
             &self,
             resource_group_name: impl Into<String>,
@@ -646,6 +700,14 @@ pub mod channels {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates a Channel registration for a Bot Service"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the Bot resource group in the user subscription."]
+        #[doc = "* `resource_name`: The name of the Bot resource."]
+        #[doc = "* `channel_name`: The name of the Channel resource."]
+        #[doc = "* `parameters`: The parameters to provide for the created bot."]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -663,6 +725,13 @@ pub mod channels {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes a Channel registration from a Bot Service"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the Bot resource group in the user subscription."]
+        #[doc = "* `resource_name`: The name of the Bot resource."]
+        #[doc = "* `channel_name`: The name of the Bot resource."]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -678,6 +747,13 @@ pub mod channels {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists a Channel registration for a Bot Service including secrets"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the Bot resource group in the user subscription."]
+        #[doc = "* `resource_name`: The name of the Bot resource."]
+        #[doc = "* `channel_name`: The name of the Channel resource."]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
         pub fn list_with_keys(
             &self,
             resource_group_name: impl Into<String>,
@@ -693,6 +769,12 @@ pub mod channels {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Returns all the Channel registrations of a particular BotService resource"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the Bot resource group in the user subscription."]
+        #[doc = "* `resource_name`: The name of the Bot resource."]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
         pub fn list_by_resource_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -1077,6 +1159,14 @@ pub mod direct_line {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Regenerates secret keys and returns them for the DirectLine Channel of a particular BotService resource"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the Bot resource group in the user subscription."]
+        #[doc = "* `resource_name`: The name of the Bot resource."]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
+        #[doc = "* `channel_name`: The name of the Channel resource for which keys are to be regenerated."]
+        #[doc = "* `parameters`: The parameters to provide for the created bot."]
         pub fn regenerate_keys(
             &self,
             resource_group_name: impl Into<String>,
@@ -1149,6 +1239,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all the available BotService operations."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -1228,12 +1319,23 @@ pub mod bot_connection {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists the available Service Providers for creating Connection Settings"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
         pub fn list_service_providers(&self, subscription_id: impl Into<String>) -> list_service_providers::Builder {
             list_service_providers::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get a Connection Setting registration for a Bot Service"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the Bot resource group in the user subscription."]
+        #[doc = "* `resource_name`: The name of the Bot resource."]
+        #[doc = "* `connection_name`: The name of the Bot Service Connection Setting resource."]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
         pub fn list_with_secrets(
             &self,
             resource_group_name: impl Into<String>,
@@ -1249,6 +1351,13 @@ pub mod bot_connection {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get a Connection Setting registration for a Bot Service"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the Bot resource group in the user subscription."]
+        #[doc = "* `resource_name`: The name of the Bot resource."]
+        #[doc = "* `connection_name`: The name of the Bot Service Connection Setting resource."]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -1264,6 +1373,14 @@ pub mod bot_connection {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Register a new Auth Connection for a Bot Service"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the Bot resource group in the user subscription."]
+        #[doc = "* `resource_name`: The name of the Bot resource."]
+        #[doc = "* `connection_name`: The name of the Bot Service Connection Setting resource."]
+        #[doc = "* `parameters`: The parameters to provide for creating the Connection Setting."]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
         pub fn create(
             &self,
             resource_group_name: impl Into<String>,
@@ -1281,6 +1398,14 @@ pub mod bot_connection {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates a Connection Setting registration for a Bot Service"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the Bot resource group in the user subscription."]
+        #[doc = "* `resource_name`: The name of the Bot resource."]
+        #[doc = "* `connection_name`: The name of the Bot Service Connection Setting resource."]
+        #[doc = "* `parameters`: The parameters to provide for updating the Connection Setting."]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -1298,6 +1423,13 @@ pub mod bot_connection {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes a Connection Setting registration for a Bot Service"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the Bot resource group in the user subscription."]
+        #[doc = "* `resource_name`: The name of the Bot resource."]
+        #[doc = "* `connection_name`: The name of the Bot Service Connection Setting resource."]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -1313,6 +1445,12 @@ pub mod bot_connection {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Returns all the Connection Settings registered to a particular BotService resource"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the Bot resource group in the user subscription."]
+        #[doc = "* `resource_name`: The name of the Bot resource."]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
         pub fn list_by_bot_service(
             &self,
             resource_group_name: impl Into<String>,
@@ -1746,6 +1884,10 @@ pub mod host_settings {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get per subscription settings needed to host bot in compute resource such as Azure App Service"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
         pub fn get(&self, subscription_id: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),

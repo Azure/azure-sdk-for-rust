@@ -91,6 +91,10 @@ pub mod software_plan {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Register to Microsoft.SoftwarePlan resource provider."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn register(&self, subscription_id: impl Into<String>) -> register::Builder {
             register::Builder {
                 client: self.0.clone(),
@@ -148,6 +152,10 @@ pub mod hybrid_use_benefit {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get all hybrid use benefits associated with an ARM resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `scope`: The scope at which the operation is performed. This is limited to Microsoft.Compute/virtualMachines and Microsoft.Compute/hostGroups/hosts for now"]
         pub fn list(&self, scope: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -155,6 +163,11 @@ pub mod hybrid_use_benefit {
                 filter: None,
             }
         }
+        #[doc = "Gets a given plan ID"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `scope`: The scope at which the operation is performed. This is limited to Microsoft.Compute/virtualMachines and Microsoft.Compute/hostGroups/hosts for now"]
+        #[doc = "* `plan_id`: This is a unique identifier for a plan. Should be a guid."]
         pub fn get(&self, scope: impl Into<String>, plan_id: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -162,6 +175,12 @@ pub mod hybrid_use_benefit {
                 plan_id: plan_id.into(),
             }
         }
+        #[doc = "Create a new hybrid use benefit under a given scope"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `scope`: The scope at which the operation is performed. This is limited to Microsoft.Compute/virtualMachines and Microsoft.Compute/hostGroups/hosts for now"]
+        #[doc = "* `plan_id`: This is a unique identifier for a plan. Should be a guid."]
+        #[doc = "* `body`: Request body for creating a hybrid use benefit"]
         pub fn create(
             &self,
             scope: impl Into<String>,
@@ -175,6 +194,12 @@ pub mod hybrid_use_benefit {
                 body: body.into(),
             }
         }
+        #[doc = "Updates an existing hybrid use benefit"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `scope`: The scope at which the operation is performed. This is limited to Microsoft.Compute/virtualMachines and Microsoft.Compute/hostGroups/hosts for now"]
+        #[doc = "* `plan_id`: This is a unique identifier for a plan. Should be a guid."]
+        #[doc = "* `body`: Request body for creating a hybrid use benefit"]
         pub fn update(
             &self,
             scope: impl Into<String>,
@@ -188,6 +213,11 @@ pub mod hybrid_use_benefit {
                 body: body.into(),
             }
         }
+        #[doc = "Deletes a given plan ID"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `scope`: The scope at which the operation is performed. This is limited to Microsoft.Compute/virtualMachines and Microsoft.Compute/hostGroups/hosts for now"]
+        #[doc = "* `plan_id`: This is a unique identifier for a plan. Should be a guid."]
         pub fn delete(&self, scope: impl Into<String>, plan_id: impl Into<String>) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),
@@ -206,6 +236,7 @@ pub mod hybrid_use_benefit {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "Supports applying filter on the type of SKU"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -488,6 +519,11 @@ pub mod hybrid_use_benefit_revision {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the version history of a hybrid use benefit"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `scope`: The scope at which the operation is performed. This is limited to Microsoft.Compute/virtualMachines and Microsoft.Compute/hostGroups/hosts for now"]
+        #[doc = "* `plan_id`: This is a unique identifier for a plan. Should be a guid."]
         pub fn list(&self, scope: impl Into<String>, plan_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -578,6 +614,10 @@ pub mod operations {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get operations."]
+        #[doc = "List all the operations."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `scope`: The scope at which the operation is performed. This is limited to Microsoft.Compute/virtualMachines and Microsoft.Compute/hostGroups/hosts for now"]
         pub fn list(&self, scope: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),

@@ -94,6 +94,12 @@ pub mod accounts {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Returns a Cognitive Services account specified by the parameters."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of Cognitive Services account."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn get_properties(
             &self,
             resource_group_name: impl Into<String>,
@@ -107,6 +113,13 @@ pub mod accounts {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Create Cognitive Services Account. Accounts is a resource group wide resource type. It holds the keys for developer to access intelligent APIs. It's also the resource type for billing."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of Cognitive Services account."]
+        #[doc = "* `account`: The parameters to provide for the created account."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn create(
             &self,
             resource_group_name: impl Into<String>,
@@ -122,6 +135,13 @@ pub mod accounts {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates a Cognitive Services account"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of Cognitive Services account."]
+        #[doc = "* `account`: The parameters to provide for the created account."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -137,6 +157,12 @@ pub mod accounts {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes a Cognitive Services account from the resource group. "]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of Cognitive Services account."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -150,6 +176,11 @@ pub mod accounts {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Returns all the resources of a particular type belonging to a resource group"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_by_resource_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -161,12 +192,22 @@ pub mod accounts {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Returns all the resources of a particular type belonging to a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists the account keys for the specified Cognitive Services account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of Cognitive Services account."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_keys(
             &self,
             resource_group_name: impl Into<String>,
@@ -180,6 +221,13 @@ pub mod accounts {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Regenerates the specified account key for the specified Cognitive Services account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of Cognitive Services account."]
+        #[doc = "* `parameters`: regenerate key parameters."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn regenerate_key(
             &self,
             resource_group_name: impl Into<String>,
@@ -195,6 +243,12 @@ pub mod accounts {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "List available SKUs for the requested Cognitive Services account"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of Cognitive Services account."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_skus(
             &self,
             resource_group_name: impl Into<String>,
@@ -208,6 +262,12 @@ pub mod accounts {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get usages for the requested Cognitive Services account"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of Cognitive Services account."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn get_usages(
             &self,
             resource_group_name: impl Into<String>,
@@ -783,6 +843,7 @@ pub mod accounts {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "An OData filter expression that describes a subset of usages to return. The supported parameter is name.value (name of the metric, can have an or of multiple names)."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -836,6 +897,10 @@ pub mod resource_skus {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the list of Microsoft.CognitiveServices SKUs available for your Subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -922,6 +987,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all the available Cognitive Services account operations."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -1000,6 +1066,12 @@ pub mod operations {
     }
 }
 impl Client {
+    #[doc = "Check available SKUs."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `subscription_id`: The ID of the target subscription."]
+    #[doc = "* `location`: Resource location."]
+    #[doc = "* `parameters`: Check SKU Availability POST body."]
     pub fn check_sku_availability(
         &self,
         subscription_id: impl Into<String>,
@@ -1013,6 +1085,11 @@ impl Client {
             parameters: parameters.into(),
         }
     }
+    #[doc = "Check whether a domain is available."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `subscription_id`: The ID of the target subscription."]
+    #[doc = "* `parameters`: Check Domain Availability parameter."]
     pub fn check_domain_availability(
         &self,
         subscription_id: impl Into<String>,
@@ -1131,6 +1208,12 @@ pub mod private_endpoint_connections {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the private endpoint connections associated with the Cognitive Services account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of Cognitive Services account."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list(
             &self,
             resource_group_name: impl Into<String>,
@@ -1144,6 +1227,13 @@ pub mod private_endpoint_connections {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the specified private endpoint connection associated with the Cognitive Services account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of Cognitive Services account."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `private_endpoint_connection_name`: The name of the private endpoint connection associated with the Cognitive Services Account"]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -1159,6 +1249,14 @@ pub mod private_endpoint_connections {
                 private_endpoint_connection_name: private_endpoint_connection_name.into(),
             }
         }
+        #[doc = "Update the state of specified private endpoint connection associated with the Cognitive Services account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of Cognitive Services account."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `private_endpoint_connection_name`: The name of the private endpoint connection associated with the Cognitive Services Account"]
+        #[doc = "* `properties`: The private endpoint connection properties."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -1176,6 +1274,13 @@ pub mod private_endpoint_connections {
                 properties: properties.into(),
             }
         }
+        #[doc = "Deletes the specified private endpoint connection associated with the Cognitive Services account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of Cognitive Services account."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `private_endpoint_connection_name`: The name of the private endpoint connection associated with the Cognitive Services Account"]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -1387,6 +1492,12 @@ pub mod private_link_resources {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the private link resources that need to be created for a Cognitive Services account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `account_name`: The name of Cognitive Services account."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list(
             &self,
             resource_group_name: impl Into<String>,

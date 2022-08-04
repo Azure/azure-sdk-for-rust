@@ -92,6 +92,11 @@ pub mod monitors {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets the user account credentials for a Monitor"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `monitor_name`: Monitor resource name"]
         pub fn get_account_credentials(
             &self,
             subscription_id: impl Into<String>,
@@ -106,6 +111,11 @@ pub mod monitors {
             }
         }
         #[doc = "List the resources currently being monitored by the Dynatrace monitor resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `monitor_name`: Monitor resource name"]
         pub fn list_monitored_resources(
             &self,
             subscription_id: impl Into<String>,
@@ -120,6 +130,11 @@ pub mod monitors {
             }
         }
         #[doc = "Returns the payload that needs to be passed in the request body for installing Dynatrace agent on a VM."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `monitor_name`: Monitor resource name"]
         pub fn get_vm_host_payload(
             &self,
             subscription_id: impl Into<String>,
@@ -134,6 +149,11 @@ pub mod monitors {
             }
         }
         #[doc = "Get a MonitorResource"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `monitor_name`: Monitor resource name"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -148,6 +168,12 @@ pub mod monitors {
             }
         }
         #[doc = "Create a MonitorResource"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `monitor_name`: Monitor resource name"]
+        #[doc = "* `resource`: Resource create parameters."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -164,6 +190,12 @@ pub mod monitors {
             }
         }
         #[doc = "Update a MonitorResource"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `monitor_name`: Monitor resource name"]
+        #[doc = "* `resource`: The resource properties to be updated."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -180,6 +212,11 @@ pub mod monitors {
             }
         }
         #[doc = "Delete a MonitorResource"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `monitor_name`: Monitor resource name"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -194,6 +231,9 @@ pub mod monitors {
             }
         }
         #[doc = "List all MonitorResource by subscriptionId"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_by_subscription_id(&self, subscription_id: impl Into<String>) -> list_by_subscription_id::Builder {
             list_by_subscription_id::Builder {
                 client: self.0.clone(),
@@ -201,6 +241,10 @@ pub mod monitors {
             }
         }
         #[doc = "List MonitorResource resources by resource group"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -213,6 +257,11 @@ pub mod monitors {
             }
         }
         #[doc = "List the compute resources currently being monitored by the Dynatrace resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `monitor_name`: Monitor resource name"]
         pub fn list_hosts(
             &self,
             subscription_id: impl Into<String>,
@@ -227,6 +276,11 @@ pub mod monitors {
             }
         }
         #[doc = "Gets list of App Services with Dynatrace PaaS OneAgent enabled"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `monitor_name`: Monitor resource name"]
         pub fn list_app_services(
             &self,
             subscription_id: impl Into<String>,
@@ -241,6 +295,11 @@ pub mod monitors {
             }
         }
         #[doc = "Gets the SSO configuration details from the partner."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `monitor_name`: Monitor resource name"]
         pub fn get_sso_details(
             &self,
             subscription_id: impl Into<String>,
@@ -256,6 +315,12 @@ pub mod monitors {
             }
         }
         #[doc = "Gets all the Dynatrace environments that a user can link a azure resource to"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `monitor_name`: Monitor resource name"]
+        #[doc = "* `request`: The details of the linkable environment request."]
         pub fn list_linkable_environments(
             &self,
             subscription_id: impl Into<String>,
@@ -1003,6 +1068,7 @@ pub mod monitors {
             pub(crate) request: Option<models::SsoDetailsRequest>,
         }
         impl Builder {
+            #[doc = "The details of the get sso details request."]
             pub fn request(mut self, request: impl Into<models::SsoDetailsRequest>) -> Self {
                 self.request = Some(request.into());
                 self
@@ -1219,6 +1285,12 @@ pub mod tag_rules {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get a TagRule"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `monitor_name`: Monitor resource name"]
+        #[doc = "* `rule_set_name`: Monitor resource name"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1235,6 +1307,13 @@ pub mod tag_rules {
             }
         }
         #[doc = "Create a TagRule"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `monitor_name`: Monitor resource name"]
+        #[doc = "* `rule_set_name`: Monitor resource name"]
+        #[doc = "* `resource`: Resource create parameters."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -1253,6 +1332,13 @@ pub mod tag_rules {
             }
         }
         #[doc = "Update a TagRule"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `monitor_name`: Monitor resource name"]
+        #[doc = "* `rule_set_name`: Monitor resource name"]
+        #[doc = "* `resource`: The resource properties to be updated."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -1271,6 +1357,12 @@ pub mod tag_rules {
             }
         }
         #[doc = "Delete a TagRule"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `monitor_name`: Monitor resource name"]
+        #[doc = "* `rule_set_name`: Monitor resource name"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1287,6 +1379,11 @@ pub mod tag_rules {
             }
         }
         #[doc = "List all TagRule by monitorName"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `monitor_name`: Monitor resource name"]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -1619,6 +1716,12 @@ pub mod single_sign_on {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get a DynatraceSingleSignOnResource"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `monitor_name`: Monitor resource name"]
+        #[doc = "* `configuration_name`: Single Sign On Configuration Name"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1635,6 +1738,13 @@ pub mod single_sign_on {
             }
         }
         #[doc = "Create a DynatraceSingleSignOnResource"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `monitor_name`: Monitor resource name"]
+        #[doc = "* `configuration_name`: Single Sign On Configuration Name"]
+        #[doc = "* `resource`: Resource create parameters."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -1653,6 +1763,11 @@ pub mod single_sign_on {
             }
         }
         #[doc = "List all DynatraceSingleSignOnResource by monitorName"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `monitor_name`: Monitor resource name"]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,

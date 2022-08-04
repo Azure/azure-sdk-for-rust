@@ -97,6 +97,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all of the available REST API operations of the Microsoft.Cache provider."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -175,6 +176,12 @@ pub mod operations_status {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the status of operation."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `location`: The region the operation is in."]
+        #[doc = "* `operation_id`: The operation's unique identifier."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn get(
             &self,
             location: impl Into<String>,
@@ -246,6 +253,12 @@ pub mod redis_enterprise {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets information about a RedisEnterprise cluster"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `cluster_name`: The name of the RedisEnterprise cluster."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -259,6 +272,13 @@ pub mod redis_enterprise {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or updates an existing (overwrite/recreate, with potential downtime) cache cluster"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `cluster_name`: The name of the RedisEnterprise cluster."]
+        #[doc = "* `parameters`: Parameters supplied to the Create RedisEnterprise operation."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn create(
             &self,
             resource_group_name: impl Into<String>,
@@ -274,6 +294,13 @@ pub mod redis_enterprise {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates an existing RedisEnterprise cluster"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `cluster_name`: The name of the RedisEnterprise cluster."]
+        #[doc = "* `parameters`: Parameters supplied to the Update RedisEnterprise operation."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -289,6 +316,12 @@ pub mod redis_enterprise {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes a RedisEnterprise cache cluster."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `cluster_name`: The name of the RedisEnterprise cluster."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -302,6 +335,11 @@ pub mod redis_enterprise {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists all RedisEnterprise clusters in a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_by_resource_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -313,6 +351,10 @@ pub mod redis_enterprise {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets all RedisEnterprise clusters in the specified subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -707,6 +749,12 @@ pub mod databases {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets all databases in the specified RedisEnterprise cluster."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `cluster_name`: The name of the RedisEnterprise cluster."]
         pub fn list_by_cluster(
             &self,
             subscription_id: impl Into<String>,
@@ -720,6 +768,13 @@ pub mod databases {
                 cluster_name: cluster_name.into(),
             }
         }
+        #[doc = "Gets information about a database in a RedisEnterprise cluster."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `cluster_name`: The name of the RedisEnterprise cluster."]
+        #[doc = "* `database_name`: The name of the database."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -735,6 +790,14 @@ pub mod databases {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates a database"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `cluster_name`: The name of the RedisEnterprise cluster."]
+        #[doc = "* `database_name`: The name of the database."]
+        #[doc = "* `parameters`: Parameters supplied to the create or update database operation."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn create(
             &self,
             resource_group_name: impl Into<String>,
@@ -752,6 +815,14 @@ pub mod databases {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates a database"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `cluster_name`: The name of the RedisEnterprise cluster."]
+        #[doc = "* `database_name`: The name of the database."]
+        #[doc = "* `parameters`: Parameters supplied to the create or update database operation."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -769,6 +840,13 @@ pub mod databases {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes a single database"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `cluster_name`: The name of the RedisEnterprise cluster."]
+        #[doc = "* `database_name`: The name of the database."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -784,6 +862,13 @@ pub mod databases {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Retrieves the access keys for the RedisEnterprise database."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `cluster_name`: The name of the RedisEnterprise cluster."]
+        #[doc = "* `database_name`: The name of the database."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_keys(
             &self,
             resource_group_name: impl Into<String>,
@@ -799,6 +884,14 @@ pub mod databases {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Regenerates the RedisEnterprise database's access keys."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `cluster_name`: The name of the RedisEnterprise cluster."]
+        #[doc = "* `database_name`: The name of the database."]
+        #[doc = "* `parameters`: Specifies which key to regenerate."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn regenerate_key(
             &self,
             resource_group_name: impl Into<String>,
@@ -816,6 +909,14 @@ pub mod databases {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Imports database files to target database."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `cluster_name`: The name of the RedisEnterprise cluster."]
+        #[doc = "* `database_name`: The name of the database."]
+        #[doc = "* `parameters`: Storage information for importing into the cluster"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn import(
             &self,
             resource_group_name: impl Into<String>,
@@ -833,6 +934,14 @@ pub mod databases {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Exports a database file from target database."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `cluster_name`: The name of the RedisEnterprise cluster."]
+        #[doc = "* `database_name`: The name of the database."]
+        #[doc = "* `parameters`: Storage information for exporting into the cluster"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn export(
             &self,
             resource_group_name: impl Into<String>,
@@ -850,6 +959,14 @@ pub mod databases {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Forcibly removes the link to the specified database resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `cluster_name`: The name of the RedisEnterprise cluster."]
+        #[doc = "* `database_name`: The name of the database."]
+        #[doc = "* `parameters`: Information identifying the database to be unlinked."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn force_unlink(
             &self,
             resource_group_name: impl Into<String>,
@@ -1482,6 +1599,12 @@ pub mod private_endpoint_connections {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all the private endpoint connections associated with the RedisEnterprise cluster."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `cluster_name`: The name of the RedisEnterprise cluster."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list(
             &self,
             resource_group_name: impl Into<String>,
@@ -1495,6 +1618,13 @@ pub mod private_endpoint_connections {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the specified private endpoint connection associated with the RedisEnterprise cluster."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `cluster_name`: The name of the RedisEnterprise cluster."]
+        #[doc = "* `private_endpoint_connection_name`: The name of the private endpoint connection associated with the Azure resource"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -1510,6 +1640,14 @@ pub mod private_endpoint_connections {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates the state of the specified private endpoint connection associated with the RedisEnterprise cluster."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `cluster_name`: The name of the RedisEnterprise cluster."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `private_endpoint_connection_name`: The name of the private endpoint connection associated with the Azure resource"]
+        #[doc = "* `properties`: The private endpoint connection properties."]
         pub fn put(
             &self,
             resource_group_name: impl Into<String>,
@@ -1527,6 +1665,13 @@ pub mod private_endpoint_connections {
                 properties: properties.into(),
             }
         }
+        #[doc = "Deletes the specified private endpoint connection associated with the RedisEnterprise cluster."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `cluster_name`: The name of the RedisEnterprise cluster."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `private_endpoint_connection_name`: The name of the private endpoint connection associated with the Azure resource"]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -1746,6 +1891,12 @@ pub mod private_link_resources {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the private link resources that need to be created for a RedisEnterprise cluster."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `cluster_name`: The name of the RedisEnterprise cluster."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_by_cluster(
             &self,
             resource_group_name: impl Into<String>,

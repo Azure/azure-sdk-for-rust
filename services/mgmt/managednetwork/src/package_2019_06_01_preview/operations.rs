@@ -94,6 +94,12 @@ pub mod managed_networks {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "The Get ManagedNetworks operation gets a Managed Network Resource, specified by the resource group and Managed Network name"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `managed_network_name`: The name of the Managed Network."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -107,6 +113,13 @@ pub mod managed_networks {
                 managed_network_name: managed_network_name.into(),
             }
         }
+        #[doc = "The Put ManagedNetworks operation creates/updates a Managed Network Resource, specified by resource group and Managed Network name"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `managed_network`: Parameters supplied to the create/update a Managed Network Resource"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `managed_network_name`: The name of the Managed Network."]
         pub fn create_or_update(
             &self,
             managed_network: impl Into<models::ManagedNetwork>,
@@ -122,6 +135,13 @@ pub mod managed_networks {
                 managed_network_name: managed_network_name.into(),
             }
         }
+        #[doc = "Updates the specified Managed Network resource tags."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `parameters`: Parameters supplied to update application gateway tags and/or scope."]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `managed_network_name`: The name of the Managed Network."]
         pub fn update(
             &self,
             parameters: impl Into<models::ManagedNetworkUpdate>,
@@ -137,6 +157,12 @@ pub mod managed_networks {
                 managed_network_name: managed_network_name.into(),
             }
         }
+        #[doc = "The Delete ManagedNetworks operation deletes a Managed Network Resource, specified by the  resource group and Managed Network name"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `managed_network_name`: The name of the Managed Network."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -150,6 +176,11 @@ pub mod managed_networks {
                 managed_network_name: managed_network_name.into(),
             }
         }
+        #[doc = "The ListByResourceGroup ManagedNetwork operation retrieves all the Managed Network resources in a resource group in a paginated format."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -163,6 +194,10 @@ pub mod managed_networks {
                 skiptoken: None,
             }
         }
+        #[doc = "The ListBySubscription  ManagedNetwork operation retrieves all the Managed Network Resources in the current subscription in a paginated format."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
@@ -419,10 +454,12 @@ pub mod managed_networks {
             pub(crate) skiptoken: Option<String>,
         }
         impl Builder {
+            #[doc = "May be used to limit the number of results in a page for list queries."]
             pub fn top(mut self, top: i64) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Skiptoken is only used if a previous operation returned a partial result. If a previous response contains a nextLink element, the value of the nextLink element will include a skiptoken parameter that specifies a starting point to use for subsequent calls."]
             pub fn skiptoken(mut self, skiptoken: impl Into<String>) -> Self {
                 self.skiptoken = Some(skiptoken.into());
                 self
@@ -510,10 +547,12 @@ pub mod managed_networks {
             pub(crate) skiptoken: Option<String>,
         }
         impl Builder {
+            #[doc = "May be used to limit the number of results in a page for list queries."]
             pub fn top(mut self, top: i64) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Skiptoken is only used if a previous operation returned a partial result. If a previous response contains a nextLink element, the value of the nextLink element will include a skiptoken parameter that specifies a starting point to use for subsequent calls."]
             pub fn skiptoken(mut self, skiptoken: impl Into<String>) -> Self {
                 self.skiptoken = Some(skiptoken.into());
                 self
@@ -594,6 +633,11 @@ pub mod scope_assignments {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get the specified scope assignment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `scope`: The base resource of the scope assignment."]
+        #[doc = "* `scope_assignment_name`: The name of the scope assignment to get."]
         pub fn get(&self, scope: impl Into<String>, scope_assignment_name: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -601,6 +645,12 @@ pub mod scope_assignments {
                 scope_assignment_name: scope_assignment_name.into(),
             }
         }
+        #[doc = "Creates a scope assignment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `parameters`: Parameters supplied to the specify which Managed Network this scope is being assigned"]
+        #[doc = "* `scope`: The base resource of the scope assignment to create. The scope can be any REST resource instance. For example, use 'subscriptions/{subscription-id}' for a subscription, 'subscriptions/{subscription-id}/resourceGroups/{resource-group-name}' for a resource group, and 'subscriptions/{subscription-id}/resourceGroups/{resource-group-name}/providers/{resource-provider}/{resource-type}/{resource-name}' for a resource."]
+        #[doc = "* `scope_assignment_name`: The name of the scope assignment to create."]
         pub fn create_or_update(
             &self,
             parameters: impl Into<models::ScopeAssignment>,
@@ -614,6 +664,11 @@ pub mod scope_assignments {
                 scope_assignment_name: scope_assignment_name.into(),
             }
         }
+        #[doc = "Deletes a scope assignment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `scope`: The scope of the scope assignment to delete."]
+        #[doc = "* `scope_assignment_name`: The name of the scope assignment to delete."]
         pub fn delete(&self, scope: impl Into<String>, scope_assignment_name: impl Into<String>) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),
@@ -621,6 +676,10 @@ pub mod scope_assignments {
                 scope_assignment_name: scope_assignment_name.into(),
             }
         }
+        #[doc = "Get the specified scope assignment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `scope`: The base resource of the scope assignment."]
         pub fn list(&self, scope: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -864,6 +923,13 @@ pub mod managed_network_groups {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "The Get ManagedNetworkGroups operation gets a Managed Network Group specified by the resource group, Managed Network name, and group name"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `managed_network_name`: The name of the Managed Network."]
+        #[doc = "* `managed_network_group_name`: The name of the Managed Network Group."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -879,6 +945,14 @@ pub mod managed_network_groups {
                 managed_network_group_name: managed_network_group_name.into(),
             }
         }
+        #[doc = "The Put ManagedNetworkGroups operation creates or updates a Managed Network Group resource"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `managed_network_group`: Parameters supplied to the create/update a Managed Network Group resource"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `managed_network_name`: The name of the Managed Network."]
+        #[doc = "* `managed_network_group_name`: The name of the Managed Network Group."]
         pub fn create_or_update(
             &self,
             managed_network_group: impl Into<models::ManagedNetworkGroup>,
@@ -896,6 +970,13 @@ pub mod managed_network_groups {
                 managed_network_group_name: managed_network_group_name.into(),
             }
         }
+        #[doc = "The Delete ManagedNetworkGroups operation deletes a Managed Network Group specified by the resource group, Managed Network name, and group name"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `managed_network_name`: The name of the Managed Network."]
+        #[doc = "* `managed_network_group_name`: The name of the Managed Network Group."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -911,6 +992,12 @@ pub mod managed_network_groups {
                 managed_network_group_name: managed_network_group_name.into(),
             }
         }
+        #[doc = "The ListByManagedNetwork ManagedNetworkGroup operation retrieves all the Managed Network Groups in a specified Managed Networks in a paginated format."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `managed_network_name`: The name of the Managed Network."]
         pub fn list_by_managed_network(
             &self,
             subscription_id: impl Into<String>,
@@ -1097,10 +1184,12 @@ pub mod managed_network_groups {
             pub(crate) skiptoken: Option<String>,
         }
         impl Builder {
+            #[doc = "May be used to limit the number of results in a page for list queries."]
             pub fn top(mut self, top: i64) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Skiptoken is only used if a previous operation returned a partial result. If a previous response contains a nextLink element, the value of the nextLink element will include a skiptoken parameter that specifies a starting point to use for subsequent calls."]
             pub fn skiptoken(mut self, skiptoken: impl Into<String>) -> Self {
                 self.skiptoken = Some(skiptoken.into());
                 self
@@ -1177,6 +1266,13 @@ pub mod managed_network_peering_policies {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "The Get ManagedNetworkPeeringPolicies operation gets a Managed Network Peering Policy resource, specified by the  resource group, Managed Network name, and peering policy name"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `managed_network_name`: The name of the Managed Network."]
+        #[doc = "* `managed_network_peering_policy_name`: The name of the Managed Network Peering Policy."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1192,6 +1288,14 @@ pub mod managed_network_peering_policies {
                 managed_network_peering_policy_name: managed_network_peering_policy_name.into(),
             }
         }
+        #[doc = "The Put ManagedNetworkPeeringPolicies operation creates/updates a new Managed Network Peering Policy"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `managed_network_policy`: Parameters supplied to create/update a Managed Network Peering Policy"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `managed_network_name`: The name of the Managed Network."]
+        #[doc = "* `managed_network_peering_policy_name`: The name of the Managed Network Peering Policy."]
         pub fn create_or_update(
             &self,
             managed_network_policy: impl Into<models::ManagedNetworkPeeringPolicy>,
@@ -1209,6 +1313,13 @@ pub mod managed_network_peering_policies {
                 managed_network_peering_policy_name: managed_network_peering_policy_name.into(),
             }
         }
+        #[doc = "The Delete ManagedNetworkPeeringPolicies operation deletes a Managed Network Peering Policy, specified by the  resource group, Managed Network name, and peering policy name"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `managed_network_name`: The name of the Managed Network."]
+        #[doc = "* `managed_network_peering_policy_name`: The name of the Managed Network Peering Policy."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1224,6 +1335,12 @@ pub mod managed_network_peering_policies {
                 managed_network_peering_policy_name: managed_network_peering_policy_name.into(),
             }
         }
+        #[doc = "The ListByManagedNetwork PeeringPolicies operation retrieves all the Managed Network Peering Policies in a specified Managed Network, in a paginated format."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `managed_network_name`: The name of the Managed Network."]
         pub fn list_by_managed_network(
             &self,
             subscription_id: impl Into<String>,
@@ -1410,10 +1527,12 @@ pub mod managed_network_peering_policies {
             pub(crate) skiptoken: Option<String>,
         }
         impl Builder {
+            #[doc = "May be used to limit the number of results in a page for list queries."]
             pub fn top(mut self, top: i64) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Skiptoken is only used if a previous operation returned a partial result. If a previous response contains a nextLink element, the value of the nextLink element will include a skiptoken parameter that specifies a starting point to use for subsequent calls."]
             pub fn skiptoken(mut self, skiptoken: impl Into<String>) -> Self {
                 self.skiptoken = Some(skiptoken.into());
                 self
@@ -1490,6 +1609,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all of the available MNC operations."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }

@@ -88,6 +88,12 @@ pub mod capacities {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets details about the specified dedicated capacity."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the Azure Resource group of which a given PowerBIDedicated capacity is part. This name must be at least 1 character in length, and no more than 90."]
+        #[doc = "* `dedicated_capacity_name`: The name of the dedicated capacity. It must be a minimum of 3 characters, and a maximum of 63."]
+        #[doc = "* `subscription_id`: A unique identifier for a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get_details(
             &self,
             resource_group_name: impl Into<String>,
@@ -101,6 +107,13 @@ pub mod capacities {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Provisions the specified Dedicated capacity based on the configuration specified in the request."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the Azure Resource group of which a given PowerBIDedicated capacity is part. This name must be at least 1 character in length, and no more than 90."]
+        #[doc = "* `dedicated_capacity_name`: The name of the Dedicated capacity. It must be a minimum of 3 characters, and a maximum of 63."]
+        #[doc = "* `capacity_parameters`: Contains the information used to provision the Dedicated capacity."]
+        #[doc = "* `subscription_id`: A unique identifier for a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create(
             &self,
             resource_group_name: impl Into<String>,
@@ -116,6 +129,13 @@ pub mod capacities {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Updates the current state of the specified Dedicated capacity."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the Azure Resource group of which a given PowerBIDedicated capacity is part. This name must be at least 1 character in length, and no more than 90."]
+        #[doc = "* `dedicated_capacity_name`: The name of the Dedicated capacity. It must be at least 3 characters in length, and no more than 63."]
+        #[doc = "* `capacity_update_parameters`: Request object that contains the updated information for the capacity."]
+        #[doc = "* `subscription_id`: A unique identifier for a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -131,6 +151,12 @@ pub mod capacities {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes the specified Dedicated capacity."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the Azure Resource group of which a given PowerBIDedicated capacity is part. This name must be at least 1 character in length, and no more than 90."]
+        #[doc = "* `dedicated_capacity_name`: The name of the Dedicated capacity. It must be at least 3 characters in length, and no more than 63."]
+        #[doc = "* `subscription_id`: A unique identifier for a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -144,6 +170,12 @@ pub mod capacities {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Suspends operation of the specified dedicated capacity instance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the Azure Resource group of which a given PowerBIDedicated capacity is part. This name must be at least 1 character in length, and no more than 90."]
+        #[doc = "* `dedicated_capacity_name`: The name of the Dedicated capacity. It must be at least 3 characters in length, and no more than 63."]
+        #[doc = "* `subscription_id`: A unique identifier for a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn suspend(
             &self,
             resource_group_name: impl Into<String>,
@@ -157,6 +189,12 @@ pub mod capacities {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Resumes operation of the specified Dedicated capacity instance."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the Azure Resource group of which a given PowerBIDedicated capacity is part. This name must be at least 1 character in length, and no more than 90."]
+        #[doc = "* `dedicated_capacity_name`: The name of the Dedicated capacity. It must be at least 3 characters in length, and no more than 63."]
+        #[doc = "* `subscription_id`: A unique identifier for a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn resume(
             &self,
             resource_group_name: impl Into<String>,
@@ -170,6 +208,11 @@ pub mod capacities {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets all the Dedicated capacities for the given resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the Azure Resource group of which a given PowerBIDedicated capacity is part. This name must be at least 1 character in length, and no more than 90."]
+        #[doc = "* `subscription_id`: A unique identifier for a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_resource_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -181,18 +224,32 @@ pub mod capacities {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists all the Dedicated capacities for the given subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: A unique identifier for a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists eligible SKUs for PowerBI Dedicated resource provider."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: A unique identifier for a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_skus(&self, subscription_id: impl Into<String>) -> list_skus::Builder {
             list_skus::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists eligible SKUs for a PowerBI Dedicated resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the Azure Resource group of which a given PowerBIDedicated capacity is part. This name must be at least 1 character in length, and no more than 90."]
+        #[doc = "* `dedicated_capacity_name`: The name of the Dedicated capacity. It must be at least 3 characters in length, and no more than 63."]
+        #[doc = "* `subscription_id`: A unique identifier for a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_skus_for_capacity(
             &self,
             resource_group_name: impl Into<String>,
@@ -206,6 +263,12 @@ pub mod capacities {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Check the name availability in the target location."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `location`: The region name which the operation will lookup into."]
+        #[doc = "* `capacity_parameters`: The name of the capacity."]
+        #[doc = "* `subscription_id`: A unique identifier for a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn check_name_availability(
             &self,
             location: impl Into<String>,
@@ -823,6 +886,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all of the available PowerBIDedicated REST API operations."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -904,6 +968,12 @@ pub mod auto_scale_v_cores {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets details about the specified auto scale v-core."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: A unique identifier for a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the Azure Resource group of which a given PowerBIDedicated capacity is part. This name must be at least 1 character in length, and no more than 90."]
+        #[doc = "* `vcore_name`: The name of the auto scale v-core. It must be a minimum of 3 characters, and a maximum of 63."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -917,6 +987,13 @@ pub mod auto_scale_v_cores {
                 vcore_name: vcore_name.into(),
             }
         }
+        #[doc = "Provisions the specified auto scale v-core based on the configuration specified in the request."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: A unique identifier for a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the Azure Resource group of which a given PowerBIDedicated capacity is part. This name must be at least 1 character in length, and no more than 90."]
+        #[doc = "* `vcore_name`: The name of the auto scale v-core. It must be a minimum of 3 characters, and a maximum of 63."]
+        #[doc = "* `v_core_parameters`: Contains the information used to provision the auto scale v-core."]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -932,6 +1009,13 @@ pub mod auto_scale_v_cores {
                 v_core_parameters: v_core_parameters.into(),
             }
         }
+        #[doc = "Updates the current state of the specified auto scale v-core."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: A unique identifier for a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the Azure Resource group of which a given PowerBIDedicated capacity is part. This name must be at least 1 character in length, and no more than 90."]
+        #[doc = "* `vcore_name`: The name of the auto scale v-core. It must be a minimum of 3 characters, and a maximum of 63."]
+        #[doc = "* `v_core_update_parameters`: Request object that contains the updated information for the auto scale v-core."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -947,6 +1031,12 @@ pub mod auto_scale_v_cores {
                 v_core_update_parameters: v_core_update_parameters.into(),
             }
         }
+        #[doc = "Deletes the specified auto scale v-core."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: A unique identifier for a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the Azure Resource group of which a given PowerBIDedicated capacity is part. This name must be at least 1 character in length, and no more than 90."]
+        #[doc = "* `vcore_name`: The name of the auto scale v-core. It must be a minimum of 3 characters, and a maximum of 63."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -960,6 +1050,11 @@ pub mod auto_scale_v_cores {
                 vcore_name: vcore_name.into(),
             }
         }
+        #[doc = "Gets all the auto scale v-cores for the given resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: A unique identifier for a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the Azure Resource group of which a given PowerBIDedicated capacity is part. This name must be at least 1 character in length, and no more than 90."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -971,6 +1066,10 @@ pub mod auto_scale_v_cores {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Lists all the auto scale v-cores for the given subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: A unique identifier for a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),

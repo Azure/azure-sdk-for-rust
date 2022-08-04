@@ -85,6 +85,12 @@ pub mod private_link_for_azure_ad {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets a private link policy with a given name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure subscription ID."]
+        #[doc = "* `resource_group_name`: Name of an Azure resource group."]
+        #[doc = "* `policy_name`: The name of the private link policy in Azure AD."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -98,6 +104,13 @@ pub mod private_link_for_azure_ad {
                 policy_name: policy_name.into(),
             }
         }
+        #[doc = "Creates a private link policy."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure subscription ID."]
+        #[doc = "* `resource_group_name`: Name of an Azure resource group."]
+        #[doc = "* `policy_name`: The name of the private link policy in Azure AD."]
+        #[doc = "* `private_link_policy`: private link Policy supplied to the operation."]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -113,6 +126,12 @@ pub mod private_link_for_azure_ad {
                 private_link_policy: private_link_policy.into(),
             }
         }
+        #[doc = "Updates private link policy tags with specified values."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure subscription ID."]
+        #[doc = "* `resource_group_name`: Name of an Azure resource group."]
+        #[doc = "* `policy_name`: The name of the private link policy in Azure AD."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -127,6 +146,12 @@ pub mod private_link_for_azure_ad {
                 private_link_policy: None,
             }
         }
+        #[doc = "Deletes a private link policy. When operation completes, status code 200 returned without content."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure subscription ID."]
+        #[doc = "* `resource_group_name`: Name of an Azure resource group."]
+        #[doc = "* `policy_name`: The name of the private link policy in Azure AD."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -140,12 +165,21 @@ pub mod private_link_for_azure_ad {
                 policy_name: policy_name.into(),
             }
         }
+        #[doc = "Lists all  Private Link Policies For AzureAD in the given subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure subscription ID."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Operation to return the list of Private Link Policies For AzureAD scoped to the resourceGroup."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure subscription ID."]
+        #[doc = "* `resource_group_name`: Name of an Azure resource group."]
         pub fn list(&self, subscription_id: impl Into<String>, resource_group_name: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -282,6 +316,7 @@ pub mod private_link_for_azure_ad {
             pub(crate) private_link_policy: Option<models::PrivateLinkPolicyUpdateParameter>,
         }
         impl Builder {
+            #[doc = "Private Link Policy resource with the tags to be updated."]
             pub fn private_link_policy(mut self, private_link_policy: impl Into<models::PrivateLinkPolicyUpdateParameter>) -> Self {
                 self.private_link_policy = Some(private_link_policy.into());
                 self
@@ -540,6 +575,12 @@ pub mod private_link_resources {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the private link resources that need to be created for a policy of AzureAD."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure subscription ID."]
+        #[doc = "* `resource_group_name`: Name of an Azure resource group."]
+        #[doc = "* `policy_name`: The name of the private link policy in Azure AD."]
         pub fn list_by_private_link_policy(
             &self,
             subscription_id: impl Into<String>,
@@ -553,6 +594,13 @@ pub mod private_link_resources {
                 policy_name: policy_name.into(),
             }
         }
+        #[doc = "Gets the private link resources that need to be created for a policy of AzureAD."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Azure subscription ID."]
+        #[doc = "* `resource_group_name`: Name of an Azure resource group."]
+        #[doc = "* `policy_name`: The name of the private link policy in Azure AD."]
+        #[doc = "* `group_name`: The name of the private link resource."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,

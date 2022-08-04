@@ -103,6 +103,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all of the available REST API operations of the Microsoft.SignalRService provider."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -182,6 +183,12 @@ pub mod signal_r {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Checks that the resource name is valid and is not already in use."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `location`: the region"]
+        #[doc = "* `parameters`: Parameters supplied to the operation."]
+        #[doc = "* `subscription_id`: Gets subscription Id which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn check_name_availability(
             &self,
             location: impl Into<String>,
@@ -195,12 +202,21 @@ pub mod signal_r {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Handles requests to list all resources in a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription Id which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Handles requests to list all resources in a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription Id which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -212,6 +228,12 @@ pub mod signal_r {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Get the resource and its properties."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription Id which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `resource_name`: The name of the resource."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -225,6 +247,13 @@ pub mod signal_r {
                 resource_name: resource_name.into(),
             }
         }
+        #[doc = "Create or update a resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `parameters`: Parameters for the create or update operation"]
+        #[doc = "* `subscription_id`: Gets subscription Id which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `resource_name`: The name of the resource."]
         pub fn create_or_update(
             &self,
             parameters: impl Into<models::SignalRResource>,
@@ -240,6 +269,13 @@ pub mod signal_r {
                 resource_name: resource_name.into(),
             }
         }
+        #[doc = "Operation to update an exiting resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `parameters`: Parameters for the update operation"]
+        #[doc = "* `subscription_id`: Gets subscription Id which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `resource_name`: The name of the resource."]
         pub fn update(
             &self,
             parameters: impl Into<models::SignalRResource>,
@@ -255,6 +291,12 @@ pub mod signal_r {
                 resource_name: resource_name.into(),
             }
         }
+        #[doc = "Operation to delete a resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription Id which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `resource_name`: The name of the resource."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -268,6 +310,12 @@ pub mod signal_r {
                 resource_name: resource_name.into(),
             }
         }
+        #[doc = "Get the access keys of the resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription Id which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `resource_name`: The name of the resource."]
         pub fn list_keys(
             &self,
             subscription_id: impl Into<String>,
@@ -281,6 +329,13 @@ pub mod signal_r {
                 resource_name: resource_name.into(),
             }
         }
+        #[doc = "Regenerate the access key for the resource. PrimaryKey and SecondaryKey cannot be regenerated at the same time."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `parameters`: Parameter that describes the Regenerate Key Operation."]
+        #[doc = "* `subscription_id`: Gets subscription Id which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `resource_name`: The name of the resource."]
         pub fn regenerate_key(
             &self,
             parameters: impl Into<models::RegenerateKeyParameters>,
@@ -296,6 +351,12 @@ pub mod signal_r {
                 resource_name: resource_name.into(),
             }
         }
+        #[doc = "Operation to restart a resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription Id which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `resource_name`: The name of the resource."]
         pub fn restart(
             &self,
             subscription_id: impl Into<String>,
@@ -309,6 +370,12 @@ pub mod signal_r {
                 resource_name: resource_name.into(),
             }
         }
+        #[doc = "List all available skus of the resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription Id which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `resource_name`: The name of the resource."]
         pub fn list_skus(
             &self,
             subscription_id: impl Into<String>,
@@ -979,6 +1046,11 @@ pub mod usages {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List resource usage quotas by location."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `location`: the location like \"eastus\""]
+        #[doc = "* `subscription_id`: Gets subscription Id which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list(&self, location: impl Into<String>, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -1068,6 +1140,12 @@ pub mod signal_r_custom_certificates {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List all custom certificates."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription Id which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `resource_name`: The name of the resource."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -1081,6 +1159,13 @@ pub mod signal_r_custom_certificates {
                 resource_name: resource_name.into(),
             }
         }
+        #[doc = "Get a custom certificate."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription Id which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `resource_name`: The name of the resource."]
+        #[doc = "* `certificate_name`: Custom certificate name"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1096,6 +1181,13 @@ pub mod signal_r_custom_certificates {
                 certificate_name: certificate_name.into(),
             }
         }
+        #[doc = "Create or update a custom certificate."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription Id which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `resource_name`: The name of the resource."]
+        #[doc = "* `certificate_name`: Custom certificate name"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -1113,6 +1205,13 @@ pub mod signal_r_custom_certificates {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Delete a custom certificate."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription Id which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `resource_name`: The name of the resource."]
+        #[doc = "* `certificate_name`: Custom certificate name"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1387,6 +1486,12 @@ pub mod signal_r_custom_domains {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List all custom domains."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription Id which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `resource_name`: The name of the resource."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -1400,6 +1505,13 @@ pub mod signal_r_custom_domains {
                 resource_name: resource_name.into(),
             }
         }
+        #[doc = "Get a custom domain."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription Id which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `resource_name`: The name of the resource."]
+        #[doc = "* `name`: Custom domain name."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1415,6 +1527,13 @@ pub mod signal_r_custom_domains {
                 name: name.into(),
             }
         }
+        #[doc = "Create or update a custom domain."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription Id which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `resource_name`: The name of the resource."]
+        #[doc = "* `name`: Custom domain name."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -1432,6 +1551,13 @@ pub mod signal_r_custom_domains {
                 parameters: parameters.into(),
             }
         }
+        #[doc = "Delete a custom domain."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription Id which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `resource_name`: The name of the resource."]
+        #[doc = "* `name`: Custom domain name."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1700,6 +1826,12 @@ pub mod signal_r_private_endpoint_connections {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List private endpoint connections"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription Id which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `resource_name`: The name of the resource."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -1713,6 +1845,13 @@ pub mod signal_r_private_endpoint_connections {
                 resource_name: resource_name.into(),
             }
         }
+        #[doc = "Get the specified private endpoint connection"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `private_endpoint_connection_name`: The name of the private endpoint connection"]
+        #[doc = "* `subscription_id`: Gets subscription Id which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `resource_name`: The name of the resource."]
         pub fn get(
             &self,
             private_endpoint_connection_name: impl Into<String>,
@@ -1728,6 +1867,14 @@ pub mod signal_r_private_endpoint_connections {
                 resource_name: resource_name.into(),
             }
         }
+        #[doc = "Update the state of specified private endpoint connection"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `private_endpoint_connection_name`: The name of the private endpoint connection"]
+        #[doc = "* `parameters`: The resource of private endpoint and its properties"]
+        #[doc = "* `subscription_id`: Gets subscription Id which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `resource_name`: The name of the resource."]
         pub fn update(
             &self,
             private_endpoint_connection_name: impl Into<String>,
@@ -1745,6 +1892,13 @@ pub mod signal_r_private_endpoint_connections {
                 resource_name: resource_name.into(),
             }
         }
+        #[doc = "Delete the specified private endpoint connection"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `private_endpoint_connection_name`: The name of the private endpoint connection"]
+        #[doc = "* `subscription_id`: Gets subscription Id which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `resource_name`: The name of the resource."]
         pub fn delete(
             &self,
             private_endpoint_connection_name: impl Into<String>,
@@ -1985,6 +2139,12 @@ pub mod signal_r_private_link_resources {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get the private link resources that need to be created for a resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription Id which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `resource_name`: The name of the resource."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -2082,6 +2242,12 @@ pub mod signal_r_shared_private_link_resources {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List shared private link resources"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Gets subscription Id which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `resource_name`: The name of the resource."]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -2095,6 +2261,13 @@ pub mod signal_r_shared_private_link_resources {
                 resource_name: resource_name.into(),
             }
         }
+        #[doc = "Get the specified shared private link resource"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `shared_private_link_resource_name`: The name of the shared private link resource"]
+        #[doc = "* `subscription_id`: Gets subscription Id which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `resource_name`: The name of the resource."]
         pub fn get(
             &self,
             shared_private_link_resource_name: impl Into<String>,
@@ -2110,6 +2283,14 @@ pub mod signal_r_shared_private_link_resources {
                 resource_name: resource_name.into(),
             }
         }
+        #[doc = "Create or update a shared private link resource"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `shared_private_link_resource_name`: The name of the shared private link resource"]
+        #[doc = "* `parameters`: The shared private link resource"]
+        #[doc = "* `subscription_id`: Gets subscription Id which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `resource_name`: The name of the resource."]
         pub fn create_or_update(
             &self,
             shared_private_link_resource_name: impl Into<String>,
@@ -2127,6 +2308,13 @@ pub mod signal_r_shared_private_link_resources {
                 resource_name: resource_name.into(),
             }
         }
+        #[doc = "Delete the specified shared private link resource"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `shared_private_link_resource_name`: The name of the shared private link resource"]
+        #[doc = "* `subscription_id`: Gets subscription Id which uniquely identify the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `resource_name`: The name of the resource."]
         pub fn delete(
             &self,
             shared_private_link_resource_name: impl Into<String>,

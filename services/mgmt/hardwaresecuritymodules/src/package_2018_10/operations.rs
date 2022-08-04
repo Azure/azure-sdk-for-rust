@@ -85,6 +85,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get a list of Dedicated HSM operations."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -141,6 +142,12 @@ pub mod dedicated_hsm {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the specified Azure dedicated HSM."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the Resource Group to which the dedicated hsm belongs."]
+        #[doc = "* `name`: The name of the dedicated HSM."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -154,6 +161,13 @@ pub mod dedicated_hsm {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Create or Update a dedicated HSM in the specified subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the Resource Group to which the resource belongs."]
+        #[doc = "* `name`: Name of the dedicated Hsm"]
+        #[doc = "* `parameters`: Parameters to create or update the dedicated hsm"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -169,6 +183,13 @@ pub mod dedicated_hsm {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Update a dedicated HSM in the specified subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the Resource Group to which the server belongs."]
+        #[doc = "* `name`: Name of the dedicated HSM"]
+        #[doc = "* `parameters`: Parameters to patch the dedicated HSM"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -184,6 +205,12 @@ pub mod dedicated_hsm {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes the specified Azure Dedicated HSM."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the Resource Group to which the dedicated HSM belongs."]
+        #[doc = "* `name`: The name of the dedicated HSM to delete"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -197,6 +224,11 @@ pub mod dedicated_hsm {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "The List operation gets information about the dedicated hsms associated with the subscription and within the specified resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the Resource Group to which the dedicated HSM belongs."]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_resource_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -209,6 +241,10 @@ pub mod dedicated_hsm {
                 top: None,
             }
         }
+        #[doc = "The List operation gets information about the dedicated HSMs associated with the subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
@@ -455,6 +491,7 @@ pub mod dedicated_hsm {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "Maximum number of results to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -538,6 +575,7 @@ pub mod dedicated_hsm {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "Maximum number of results to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self

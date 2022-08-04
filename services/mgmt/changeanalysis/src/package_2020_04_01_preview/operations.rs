@@ -86,6 +86,10 @@ pub mod configuration_profile {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets the configuration profile for the Microsoft.ChangeAnalysis resource provider. The profile name should be always set to 'default'."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `profile_name`: The name of the configuration profile. The profile name should be set to 'default', all other names will be overwritten."]
         pub fn get(&self, subscription_id: impl Into<String>, profile_name: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -94,6 +98,10 @@ pub mod configuration_profile {
             }
         }
         #[doc = "Updates configuration profile for for the Microsoft.ChangeAnalysis resource provider. The profile name should be always set to 'default'."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `profile_name`: The name of the configuration profile. The profile name should be set to 'default', all other names will be overwritten."]
         pub fn create(&self, subscription_id: impl Into<String>, profile_name: impl Into<String>) -> create::Builder {
             create::Builder {
                 client: self.0.clone(),
@@ -103,6 +111,10 @@ pub mod configuration_profile {
             }
         }
         #[doc = "Updates a configuration profile with the specified parameters. The profile name should be always set to 'default'"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `profile_name`: The name of the configuration profile. The profile name should be set to 'default', all other names will be overwritten."]
         pub fn update(&self, subscription_id: impl Into<String>, profile_name: impl Into<String>) -> update::Builder {
             update::Builder {
                 client: self.0.clone(),
@@ -112,6 +124,10 @@ pub mod configuration_profile {
             }
         }
         #[doc = "Deletes existing configuration profile. The profile name should be always set to 'default'"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `profile_name`: The name of the configuration profile. The profile name should be set to 'default', all other names will be overwritten."]
         pub fn delete(&self, subscription_id: impl Into<String>, profile_name: impl Into<String>) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),
@@ -181,6 +197,7 @@ pub mod configuration_profile {
             pub(crate) body: Option<models::ConfigurationProfileResource>,
         }
         impl Builder {
+            #[doc = "Request body containing new configuration profile."]
             pub fn body(mut self, body: impl Into<models::ConfigurationProfileResource>) -> Self {
                 self.body = Some(body.into());
                 self
@@ -241,6 +258,7 @@ pub mod configuration_profile {
             pub(crate) body: Option<models::ConfigurationProfileResource>,
         }
         impl Builder {
+            #[doc = "The parameters for updating a configuration store."]
             pub fn body(mut self, body: impl Into<models::ConfigurationProfileResource>) -> Self {
                 self.body = Some(body.into());
                 self
@@ -363,6 +381,7 @@ pub mod operations {
             pub(crate) skip_token: Option<String>,
         }
         impl Builder {
+            #[doc = "A skip token is used to continue retrieving items after an operation returns a partial result. If a previous response contains a nextLink element, the value of the nextLink element will include a skipToken parameter that specifies a starting point to use for subsequent calls."]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());
                 self

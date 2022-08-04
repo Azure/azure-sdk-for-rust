@@ -91,6 +91,7 @@ pub mod digital_twin_models {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieves model metadata and, optionally, model definitions.\nStatus codes:\n200 (OK): Success.\n400 (Bad Request): The request is invalid."]
         pub fn list(&self) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -99,12 +100,17 @@ pub mod digital_twin_models {
                 x_ms_max_item_count: None,
             }
         }
+        #[doc = "Uploads one or more models. When any error occurs, no models are uploaded.\nStatus codes:\n200 (OK): Success.\n400 (Bad Request): The request is invalid.\n409 (Conflict): One or more of the provided models already exist."]
         pub fn add(&self) -> add::Builder {
             add::Builder {
                 client: self.0.clone(),
                 models: Vec::new(),
             }
         }
+        #[doc = "Retrieves model metadata and optionally the model definition.\nStatus codes:\n200 (OK): Success.\n404 (Not Found): There is no model with the provided id."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `id`: The id for the model. The id is globally unique and case sensitive."]
         pub fn get_by_id(&self, id: impl Into<String>) -> get_by_id::Builder {
             get_by_id::Builder {
                 client: self.0.clone(),
@@ -112,6 +118,11 @@ pub mod digital_twin_models {
                 include_model_definition: None,
             }
         }
+        #[doc = "Updates the metadata for a model.\nStatus codes:\n200 (OK): Success.\n400 (Bad Request): The request is invalid.\n404 (Not Found): There is no model with the provided id."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `id`: The id for the model. The id is globally unique and case sensitive."]
+        #[doc = "* `update_model`: An update specification described by JSON Patch. Only the decommissioned property can be replaced."]
         pub fn update(&self, id: impl Into<String>, update_model: Vec<serde_json::Value>) -> update::Builder {
             update::Builder {
                 client: self.0.clone(),
@@ -119,6 +130,10 @@ pub mod digital_twin_models {
                 update_model,
             }
         }
+        #[doc = "Deletes a model. A model can only be deleted if no other models reference it.\nStatus codes:\n204 (No Content): Success.\n400 (Bad Request): The request is invalid.\n404 (Not Found): There is no model with the provided id.\n409 (Conflict): There are dependencies on the model that prevent it from being deleted."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `id`: The id for the model. The id is globally unique and case sensitive."]
         pub fn delete(&self, id: impl Into<String>) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),
@@ -137,14 +152,17 @@ pub mod digital_twin_models {
             pub(crate) x_ms_max_item_count: Option<i64>,
         }
         impl Builder {
+            #[doc = "The set of the models which will have their dependencies retrieved. If omitted, all models are retrieved."]
             pub fn dependencies_for(mut self, dependencies_for: Vec<String>) -> Self {
                 self.dependencies_for = dependencies_for;
                 self
             }
+            #[doc = "When true the model definition will be returned as part of the result."]
             pub fn include_model_definition(mut self, include_model_definition: bool) -> Self {
                 self.include_model_definition = Some(include_model_definition);
                 self
             }
+            #[doc = "The maximum number of items to retrieve per request. The server may choose to return less than the requested max."]
             pub fn x_ms_max_item_count(mut self, x_ms_max_item_count: i64) -> Self {
                 self.x_ms_max_item_count = Some(x_ms_max_item_count);
                 self
@@ -231,6 +249,7 @@ pub mod digital_twin_models {
             pub(crate) models: Vec<serde_json::Value>,
         }
         impl Builder {
+            #[doc = "An array of models to add."]
             pub fn models(mut self, models: Vec<serde_json::Value>) -> Self {
                 self.models = models;
                 self
@@ -281,6 +300,7 @@ pub mod digital_twin_models {
             pub(crate) include_model_definition: Option<bool>,
         }
         impl Builder {
+            #[doc = "When true the model definition will be returned as part of the result."]
             pub fn include_model_definition(mut self, include_model_definition: bool) -> Self {
                 self.include_model_definition = Some(include_model_definition);
                 self
@@ -412,6 +432,10 @@ pub mod query {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Executes a query that allows traversing relationships and filtering by property values.\nStatus codes:\n200 (OK): Success.\n400 (Bad Request): The request is invalid."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `query_specification`: The query specification to execute."]
         pub fn query_twins(&self, query_specification: impl Into<models::QuerySpecification>) -> query_twins::Builder {
             query_twins::Builder {
                 client: self.0.clone(),
@@ -469,12 +493,21 @@ pub mod digital_twins {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieves a digital twin.\nStatus codes:\n200 (OK): Success.\n404 (Not Found): There is no digital twin with the provided id."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `id`: The id of the digital twin. The id is unique within the service and case sensitive."]
         pub fn get_by_id(&self, id: impl Into<String>) -> get_by_id::Builder {
             get_by_id::Builder {
                 client: self.0.clone(),
                 id: id.into(),
             }
         }
+        #[doc = "Adds or replaces a digital twin.\nStatus codes:\n200 (OK): Success.\n400 (Bad Request): The request is invalid.\n412 (Precondition Failed): The model is decommissioned or the digital twin already exists (when using If-None-Match: *)."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `id`: The id of the digital twin. The id is unique within the service and case sensitive."]
+        #[doc = "* `twin`: The digital twin instance being added. If provided, the $dtId property is ignored."]
         pub fn add(&self, id: impl Into<String>, twin: impl Into<serde_json::Value>) -> add::Builder {
             add::Builder {
                 client: self.0.clone(),
@@ -483,6 +516,11 @@ pub mod digital_twins {
                 if_none_match: None,
             }
         }
+        #[doc = "Updates a digital twin.\nStatus codes:\n200 (OK): Success.\n400 (Bad Request): The request is invalid.\n404 (Not Found): There is no digital twin with the provided id."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `id`: The id of the digital twin. The id is unique within the service and case sensitive."]
+        #[doc = "* `patch_document`: An update specification described by JSON Patch. Updates to property values and $model elements may happen in the same request. Operations are limited to add, replace and remove."]
         pub fn update(&self, id: impl Into<String>, patch_document: Vec<serde_json::Value>) -> update::Builder {
             update::Builder {
                 client: self.0.clone(),
@@ -491,6 +529,10 @@ pub mod digital_twins {
                 if_match: None,
             }
         }
+        #[doc = "Deletes a digital twin. All relationships referencing the digital twin must already be deleted.\nStatus codes:\n200 (OK): Success.\n400 (Bad Request): The request is invalid.\n404 (Not Found): There is no digital twin with the provided id."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `id`: The id of the digital twin. The id is unique within the service and case sensitive."]
         pub fn delete(&self, id: impl Into<String>) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),
@@ -498,6 +540,11 @@ pub mod digital_twins {
                 if_match: None,
             }
         }
+        #[doc = "Retrieves a relationship between two digital twins.\nStatus codes:\n200 (OK): Success.\n404 (Not Found): There is either no digital twin or relationship with the provided id."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `id`: The id of the digital twin. The id is unique within the service and case sensitive."]
+        #[doc = "* `relationship_id`: The id of the relationship. The id is unique within the digital twin and case sensitive."]
         pub fn get_relationship_by_id(&self, id: impl Into<String>, relationship_id: impl Into<String>) -> get_relationship_by_id::Builder {
             get_relationship_by_id::Builder {
                 client: self.0.clone(),
@@ -505,6 +552,11 @@ pub mod digital_twins {
                 relationship_id: relationship_id.into(),
             }
         }
+        #[doc = "Adds a relationship between two digital twins.\nStatus codes:\n200 (OK): Success.\n400 (Bad Request): The request is invalid.\n404 (Not Found): There is either no digital twin, target digital twin, or relationship with the provided id.\n409 (Conflict): A relationship with the provided id already exists."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `id`: The id of the digital twin. The id is unique within the service and case sensitive."]
+        #[doc = "* `relationship_id`: The id of the relationship. The id is unique within the digital twin and case sensitive."]
         pub fn add_relationship(&self, id: impl Into<String>, relationship_id: impl Into<String>) -> add_relationship::Builder {
             add_relationship::Builder {
                 client: self.0.clone(),
@@ -514,6 +566,11 @@ pub mod digital_twins {
                 if_none_match: None,
             }
         }
+        #[doc = "Updates the properties on a relationship between two digital twins.\nStatus codes:\n200 (OK): Success.\n400 (Bad Request): The request is invalid.\n404 (Not Found): There is either no digital twin or relationship with the provided id."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `id`: The id of the digital twin. The id is unique within the service and case sensitive."]
+        #[doc = "* `relationship_id`: The id of the relationship. The id is unique within the digital twin and case sensitive."]
         pub fn update_relationship(&self, id: impl Into<String>, relationship_id: impl Into<String>) -> update_relationship::Builder {
             update_relationship::Builder {
                 client: self.0.clone(),
@@ -523,6 +580,11 @@ pub mod digital_twins {
                 if_match: None,
             }
         }
+        #[doc = "Deletes a relationship between two digital twins.\nStatus codes:\n200 (OK): Success.\n404 (Not Found): There is either no digital twin or relationship with the provided id."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `id`: The id of the digital twin. The id is unique within the service and case sensitive."]
+        #[doc = "* `relationship_id`: The id of the relationship. The id is unique within the digital twin and case sensitive."]
         pub fn delete_relationship(&self, id: impl Into<String>, relationship_id: impl Into<String>) -> delete_relationship::Builder {
             delete_relationship::Builder {
                 client: self.0.clone(),
@@ -531,6 +593,10 @@ pub mod digital_twins {
                 if_match: None,
             }
         }
+        #[doc = "Retrieves the relationships from a digital twin.\nStatus codes:\n200 (OK): Success.\n400 (Bad Request): The request is invalid.\n404 (Not Found): There is no digital twin with the provided id."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `id`: The id of the digital twin. The id is unique within the service and case sensitive."]
         pub fn list_relationships(&self, id: impl Into<String>) -> list_relationships::Builder {
             list_relationships::Builder {
                 client: self.0.clone(),
@@ -538,12 +604,22 @@ pub mod digital_twins {
                 relationship_name: None,
             }
         }
+        #[doc = "Retrieves all incoming relationship for a digital twin.\nStatus codes:\n200 (OK): Success.\n400 (Bad Request): The request is invalid.\n404 (Not Found): There is no digital twin with the provided id."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `id`: The id of the digital twin. The id is unique within the service and case sensitive."]
         pub fn list_incoming_relationships(&self, id: impl Into<String>) -> list_incoming_relationships::Builder {
             list_incoming_relationships::Builder {
                 client: self.0.clone(),
                 id: id.into(),
             }
         }
+        #[doc = "Sends telemetry on behalf of a digital twin.\nStatus codes:\n200 (OK): Success.\n400 (Bad Request): The request is invalid.\n404 (Not Found): There is no digital twin with the provided id."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `id`: The id of the digital twin. The id is unique within the service and case sensitive."]
+        #[doc = "* `telemetry`: The telemetry measurements to send from the digital twin."]
+        #[doc = "* `dt_id`: A unique message identifier (in the scope of the digital twin id) that is commonly used for de-duplicating messages."]
         pub fn send_telemetry(
             &self,
             id: impl Into<String>,
@@ -558,6 +634,13 @@ pub mod digital_twins {
                 dt_timestamp: None,
             }
         }
+        #[doc = "Sends telemetry on behalf of a component in a digital twin.\nStatus codes:\n200 (OK): Success.\n400 (Bad Request): The request is invalid.\n404 (Not Found): There is either no digital twin with the provided id or the component path is invalid."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `id`: The id of the digital twin. The id is unique within the service and case sensitive."]
+        #[doc = "* `component_path`: The name of the DTDL component."]
+        #[doc = "* `telemetry`: The telemetry measurements to send from the digital twin's component."]
+        #[doc = "* `dt_id`: A unique message identifier (in the scope of the digital twin id) that is commonly used for de-duplicating messages."]
         pub fn send_component_telemetry(
             &self,
             id: impl Into<String>,
@@ -574,6 +657,11 @@ pub mod digital_twins {
                 dt_timestamp: None,
             }
         }
+        #[doc = "Retrieves a component from a digital twin.\nStatus codes:\n200 (OK): Success.\n404 (Not Found): There is either no digital twin with the provided id or the component path is invalid."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `id`: The id of the digital twin. The id is unique within the service and case sensitive."]
+        #[doc = "* `component_path`: The name of the DTDL component."]
         pub fn get_component(&self, id: impl Into<String>, component_path: impl Into<String>) -> get_component::Builder {
             get_component::Builder {
                 client: self.0.clone(),
@@ -581,6 +669,11 @@ pub mod digital_twins {
                 component_path: component_path.into(),
             }
         }
+        #[doc = "Updates a component on a digital twin.\nStatus codes:\n200 (OK): Success.\n400 (Bad Request): The request is invalid.\n404 (Not Found): There is either no digital twin with the provided id or the component path is invalid."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `id`: The id of the digital twin. The id is unique within the service and case sensitive."]
+        #[doc = "* `component_path`: The name of the DTDL component."]
         pub fn update_component(&self, id: impl Into<String>, component_path: impl Into<String>) -> update_component::Builder {
             update_component::Builder {
                 client: self.0.clone(),
@@ -650,6 +743,7 @@ pub mod digital_twins {
             pub(crate) if_none_match: Option<String>,
         }
         impl Builder {
+            #[doc = "Only perform the operation if the entity does not already exist."]
             pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
                 self.if_none_match = Some(if_none_match.into());
                 self
@@ -709,6 +803,7 @@ pub mod digital_twins {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "Only perform the operation if the entity's etag matches one of the etags provided or * is provided."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -759,6 +854,7 @@ pub mod digital_twins {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "Only perform the operation if the entity's etag matches one of the etags provided or * is provided."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -859,10 +955,12 @@ pub mod digital_twins {
             pub(crate) if_none_match: Option<String>,
         }
         impl Builder {
+            #[doc = "The data for the relationship."]
             pub fn relationship(mut self, relationship: impl Into<serde_json::Value>) -> Self {
                 self.relationship = Some(relationship.into());
                 self
             }
+            #[doc = "Only perform the operation if the entity does not already exist."]
             pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
                 self.if_none_match = Some(if_none_match.into());
                 self
@@ -927,10 +1025,12 @@ pub mod digital_twins {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "JSON Patch description of the update to the relationship properties."]
             pub fn patch_document(mut self, patch_document: Vec<serde_json::Value>) -> Self {
                 self.patch_document = patch_document;
                 self
             }
+            #[doc = "Only perform the operation if the entity's etag matches one of the etags provided or * is provided."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -986,6 +1086,7 @@ pub mod digital_twins {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "Only perform the operation if the entity's etag matches one of the etags provided or * is provided."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -1039,6 +1140,7 @@ pub mod digital_twins {
             pub(crate) relationship_name: Option<String>,
         }
         impl Builder {
+            #[doc = "The name of the relationship."]
             pub fn relationship_name(mut self, relationship_name: impl Into<String>) -> Self {
                 self.relationship_name = Some(relationship_name.into());
                 self
@@ -1194,6 +1296,7 @@ pub mod digital_twins {
             pub(crate) dt_timestamp: Option<String>,
         }
         impl Builder {
+            #[doc = "An RFC 3339 timestamp that identifies the time the telemetry was measured."]
             pub fn dt_timestamp(mut self, dt_timestamp: impl Into<String>) -> Self {
                 self.dt_timestamp = Some(dt_timestamp.into());
                 self
@@ -1247,6 +1350,7 @@ pub mod digital_twins {
             pub(crate) dt_timestamp: Option<String>,
         }
         impl Builder {
+            #[doc = "An RFC 3339 timestamp that identifies the time the telemetry was measured."]
             pub fn dt_timestamp(mut self, dt_timestamp: impl Into<String>) -> Self {
                 self.dt_timestamp = Some(dt_timestamp.into());
                 self
@@ -1358,10 +1462,12 @@ pub mod digital_twins {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "An update specification described by JSON Patch. Updates to property values and $model elements may happen in the same request. Operations are limited to add, replace and remove."]
             pub fn patch_document(mut self, patch_document: Vec<serde_json::Value>) -> Self {
                 self.patch_document = patch_document;
                 self
             }
+            #[doc = "Only perform the operation if the entity's etag matches one of the etags provided or * is provided."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -1412,18 +1518,27 @@ pub mod event_routes {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Retrieves all event routes.\nStatus codes:\n200 (OK): Success.\n400 (Bad Request): The request is invalid."]
         pub fn list(&self) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
                 x_ms_max_item_count: None,
             }
         }
+        #[doc = "Retrieves an event route.\nStatus codes:\n200 (OK): Success.\n404 (Not Found): There is no event route with the provided id."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `id`: The id for an event route. The id is unique within event routes and case sensitive."]
         pub fn get_by_id(&self, id: impl Into<String>) -> get_by_id::Builder {
             get_by_id::Builder {
                 client: self.0.clone(),
                 id: id.into(),
             }
         }
+        #[doc = "Adds or replaces an event route.\nStatus codes:\n200 (OK): Success.\n400 (Bad Request): The request is invalid."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `id`: The id for an event route. The id is unique within event routes and case sensitive."]
         pub fn add(&self, id: impl Into<String>) -> add::Builder {
             add::Builder {
                 client: self.0.clone(),
@@ -1431,6 +1546,10 @@ pub mod event_routes {
                 event_route: None,
             }
         }
+        #[doc = "Deletes an event route.\nStatus codes:\n200 (OK): Success.\n404 (Not Found): There is no event route with the provided id."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `id`: The id for an event route. The id is unique within event routes and case sensitive."]
         pub fn delete(&self, id: impl Into<String>) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),
@@ -1447,6 +1566,7 @@ pub mod event_routes {
             pub(crate) x_ms_max_item_count: Option<i64>,
         }
         impl Builder {
+            #[doc = "The maximum number of items to retrieve per request. The server may choose to return less than the requested max."]
             pub fn x_ms_max_item_count(mut self, x_ms_max_item_count: i64) -> Self {
                 self.x_ms_max_item_count = Some(x_ms_max_item_count);
                 self
@@ -1569,6 +1689,7 @@ pub mod event_routes {
             pub(crate) event_route: Option<models::EventRoute>,
         }
         impl Builder {
+            #[doc = "The event route data"]
             pub fn event_route(mut self, event_route: impl Into<models::EventRoute>) -> Self {
                 self.event_route = Some(event_route.into());
                 self

@@ -110,6 +110,12 @@ pub mod images {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets all images."]
+        #[doc = "Gets all images from galleries attached to a lab plan."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `lab_plan_name`: The name of the lab plan that uniquely identifies it within containing resource group. Used in resource URIs and in UI."]
         pub fn list_by_lab_plan(
             &self,
             subscription_id: impl Into<String>,
@@ -125,6 +131,13 @@ pub mod images {
             }
         }
         #[doc = "Gets an image."]
+        #[doc = "Gets an image resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `lab_plan_name`: The name of the lab plan that uniquely identifies it within containing resource group. Used in resource URIs and in UI."]
+        #[doc = "* `image_name`: The image name."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -141,6 +154,14 @@ pub mod images {
             }
         }
         #[doc = "Updates an image via PUT."]
+        #[doc = "Updates an image resource via PUT. Creating new resources via PUT will not function."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `lab_plan_name`: The name of the lab plan that uniquely identifies it within containing resource group. Used in resource URIs and in UI."]
+        #[doc = "* `image_name`: The image name."]
+        #[doc = "* `body`: The request body."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -159,6 +180,14 @@ pub mod images {
             }
         }
         #[doc = "Updates an image."]
+        #[doc = "Updates an image resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `lab_plan_name`: The name of the lab plan that uniquely identifies it within containing resource group. Used in resource URIs and in UI."]
+        #[doc = "* `image_name`: The image name."]
+        #[doc = "* `body`: The request body."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -189,6 +218,7 @@ pub mod images {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply to the operation."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -435,6 +465,10 @@ pub mod lab_plans {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get all lab plans for a subscription."]
+        #[doc = "Returns a list of all lab plans within a subscription"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
@@ -443,6 +477,11 @@ pub mod lab_plans {
             }
         }
         #[doc = "Get all lab plans for a subscription and resource group."]
+        #[doc = "Returns a list of all lab plans for a subscription and resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -455,6 +494,12 @@ pub mod lab_plans {
             }
         }
         #[doc = "Retrieves a Lab Plan resource."]
+        #[doc = "Retrieves the properties of a Lab Plan."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `lab_plan_name`: The name of the lab plan that uniquely identifies it within containing resource group. Used in resource URIs and in UI."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -469,6 +514,13 @@ pub mod lab_plans {
             }
         }
         #[doc = "Updates or creates a Lab Plan resource."]
+        #[doc = "Operation to create or update a Lab Plan resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `lab_plan_name`: The name of the lab plan that uniquely identifies it within containing resource group. Used in resource URIs and in UI."]
+        #[doc = "* `body`: The request body."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -485,6 +537,13 @@ pub mod lab_plans {
             }
         }
         #[doc = "Updates a Lab Plan resource."]
+        #[doc = "Operation to update a Lab Plan resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `lab_plan_name`: The name of the lab plan that uniquely identifies it within containing resource group. Used in resource URIs and in UI."]
+        #[doc = "* `body`: The request body."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -501,6 +560,12 @@ pub mod lab_plans {
             }
         }
         #[doc = "Deletes a Lab Plan resource."]
+        #[doc = "Operation to delete a Lab Plan resource. Deleting a lab plan does not delete labs associated with a lab plan, nor does it delete shared images added to a gallery via the lab plan permission container."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `lab_plan_name`: The name of the lab plan that uniquely identifies it within containing resource group. Used in resource URIs and in UI."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -515,6 +580,13 @@ pub mod lab_plans {
             }
         }
         #[doc = "Save an image from a lab VM to the attached shared image gallery."]
+        #[doc = "Saves an image from a lab VM to the attached shared image gallery."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `lab_plan_name`: The name of the lab plan that uniquely identifies it within containing resource group. Used in resource URIs and in UI."]
+        #[doc = "* `body`: The request body."]
         pub fn save_image(
             &self,
             subscription_id: impl Into<String>,
@@ -541,6 +613,7 @@ pub mod lab_plans {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply to the operation."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -993,6 +1066,7 @@ pub mod operations {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get all operations"]
+        #[doc = "Returns a list of all operations."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -1073,6 +1147,10 @@ pub mod labs {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get all labs for a subscription."]
+        #[doc = "Returns a list of all labs for a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
@@ -1081,6 +1159,11 @@ pub mod labs {
             }
         }
         #[doc = "Get all labs for a subscription and resource group."]
+        #[doc = "Returns a list of all labs in a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -1093,6 +1176,12 @@ pub mod labs {
             }
         }
         #[doc = "Get a lab resource."]
+        #[doc = "Returns the properties of a lab resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `lab_name`: The name of the lab that uniquely identifies it within containing lab account. Used in resource URIs."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1107,6 +1196,13 @@ pub mod labs {
             }
         }
         #[doc = "Create or update a lab resource."]
+        #[doc = "Operation to create or update a lab resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `lab_name`: The name of the lab that uniquely identifies it within containing lab account. Used in resource URIs."]
+        #[doc = "* `body`: The request body."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -1123,6 +1219,13 @@ pub mod labs {
             }
         }
         #[doc = "Update a lab resource."]
+        #[doc = "Operation to update a lab resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `lab_name`: The name of the lab that uniquely identifies it within containing lab account. Used in resource URIs."]
+        #[doc = "* `body`: The request body."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -1139,6 +1242,12 @@ pub mod labs {
             }
         }
         #[doc = "Deletes a lab resource."]
+        #[doc = "Operation to delete a lab resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `lab_name`: The name of the lab that uniquely identifies it within containing lab account. Used in resource URIs."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1153,6 +1262,12 @@ pub mod labs {
             }
         }
         #[doc = "Publish or re-publish a lab."]
+        #[doc = "Publish or re-publish a lab. This will create or update all lab resources, such as virtual machines."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `lab_name`: The name of the lab that uniquely identifies it within containing lab account. Used in resource URIs."]
         pub fn publish(
             &self,
             subscription_id: impl Into<String>,
@@ -1167,6 +1282,12 @@ pub mod labs {
             }
         }
         #[doc = "Manually sync the lab group."]
+        #[doc = "Action used to manually kick off an AAD group sync job."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `lab_name`: The name of the lab that uniquely identifies it within containing lab account. Used in resource URIs."]
         pub fn sync_group(
             &self,
             subscription_id: impl Into<String>,
@@ -1191,6 +1312,7 @@ pub mod labs {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply to the operation."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -1697,6 +1819,11 @@ pub mod operation_results {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get an azure operation result."]
+        #[doc = "Returns an azure operation result."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `operation_result_id`: The operation result ID / name."]
         pub fn get(&self, subscription_id: impl Into<String>, operation_result_id: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -1766,6 +1893,12 @@ pub mod schedules {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get all schedules for a lab."]
+        #[doc = "Returns a list of all schedules for a lab."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `lab_name`: The name of the lab that uniquely identifies it within containing lab account. Used in resource URIs."]
         pub fn list_by_lab(
             &self,
             subscription_id: impl Into<String>,
@@ -1781,6 +1914,13 @@ pub mod schedules {
             }
         }
         #[doc = "Get a lab Schedule."]
+        #[doc = "Returns the properties of a lab Schedule."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `lab_name`: The name of the lab that uniquely identifies it within containing lab account. Used in resource URIs."]
+        #[doc = "* `schedule_name`: The name of the schedule that uniquely identifies it within containing lab. Used in resource URIs."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1797,6 +1937,14 @@ pub mod schedules {
             }
         }
         #[doc = "Create or update a lab schedule."]
+        #[doc = "Operation to create or update a lab schedule."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `lab_name`: The name of the lab that uniquely identifies it within containing lab account. Used in resource URIs."]
+        #[doc = "* `schedule_name`: The name of the schedule that uniquely identifies it within containing lab. Used in resource URIs."]
+        #[doc = "* `body`: The request body."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -1815,6 +1963,14 @@ pub mod schedules {
             }
         }
         #[doc = "Update a lab schedule."]
+        #[doc = "Operation to update a lab schedule."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `lab_name`: The name of the lab that uniquely identifies it within containing lab account. Used in resource URIs."]
+        #[doc = "* `schedule_name`: The name of the schedule that uniquely identifies it within containing lab. Used in resource URIs."]
+        #[doc = "* `body`: The request body."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -1833,6 +1989,13 @@ pub mod schedules {
             }
         }
         #[doc = "Deletes a schedule resource."]
+        #[doc = "Operation to delete a schedule resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `lab_name`: The name of the lab that uniquely identifies it within containing lab account. Used in resource URIs."]
+        #[doc = "* `schedule_name`: The name of the schedule that uniquely identifies it within containing lab. Used in resource URIs."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -1861,6 +2024,7 @@ pub mod schedules {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply to the operation."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -2174,6 +2338,12 @@ pub mod users {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get all users for a lab."]
+        #[doc = "Returns a list of all users for a lab."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `lab_name`: The name of the lab that uniquely identifies it within containing lab account. Used in resource URIs."]
         pub fn list_by_lab(
             &self,
             subscription_id: impl Into<String>,
@@ -2189,6 +2359,13 @@ pub mod users {
             }
         }
         #[doc = "Get a lab user."]
+        #[doc = "Returns the properties of a lab user."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `lab_name`: The name of the lab that uniquely identifies it within containing lab account. Used in resource URIs."]
+        #[doc = "* `user_name`: The name of the user that uniquely identifies it within containing lab. Used in resource URIs."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -2205,6 +2382,14 @@ pub mod users {
             }
         }
         #[doc = "Create or update a lab user."]
+        #[doc = "Operation to create or update a lab user."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `lab_name`: The name of the lab that uniquely identifies it within containing lab account. Used in resource URIs."]
+        #[doc = "* `user_name`: The name of the user that uniquely identifies it within containing lab. Used in resource URIs."]
+        #[doc = "* `body`: The request body."]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -2223,6 +2408,14 @@ pub mod users {
             }
         }
         #[doc = "Update a lab user."]
+        #[doc = "Operation to update a lab user."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `lab_name`: The name of the lab that uniquely identifies it within containing lab account. Used in resource URIs."]
+        #[doc = "* `user_name`: The name of the user that uniquely identifies it within containing lab. Used in resource URIs."]
+        #[doc = "* `body`: The request body."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -2241,6 +2434,13 @@ pub mod users {
             }
         }
         #[doc = "Deletes a user resource."]
+        #[doc = "Operation to delete a user resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `lab_name`: The name of the lab that uniquely identifies it within containing lab account. Used in resource URIs."]
+        #[doc = "* `user_name`: The name of the user that uniquely identifies it within containing lab. Used in resource URIs."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -2257,6 +2457,14 @@ pub mod users {
             }
         }
         #[doc = "Invite a user to a lab."]
+        #[doc = "Operation to invite a user to a lab."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `lab_name`: The name of the lab that uniquely identifies it within containing lab account. Used in resource URIs."]
+        #[doc = "* `user_name`: The name of the user that uniquely identifies it within containing lab. Used in resource URIs."]
+        #[doc = "* `body`: The request body."]
         pub fn invite(
             &self,
             subscription_id: impl Into<String>,
@@ -2287,6 +2495,7 @@ pub mod users {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply to the operation."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -2675,6 +2884,12 @@ pub mod virtual_machines {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get all virtual machines for a lab."]
+        #[doc = "Returns a list of all virtual machines for a lab."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `lab_name`: The name of the lab that uniquely identifies it within containing lab account. Used in resource URIs."]
         pub fn list_by_lab(
             &self,
             subscription_id: impl Into<String>,
@@ -2690,6 +2905,13 @@ pub mod virtual_machines {
             }
         }
         #[doc = "Get a lab virtual machine."]
+        #[doc = "Returns the properties for a lab virtual machine."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `lab_name`: The name of the lab that uniquely identifies it within containing lab account. Used in resource URIs."]
+        #[doc = "* `virtual_machine_name`: The ID of the virtual machine that uniquely identifies it within the containing lab. Used in resource URIs."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -2706,6 +2928,13 @@ pub mod virtual_machines {
             }
         }
         #[doc = "Start a lab virtual machine."]
+        #[doc = "Action to start a lab virtual machine."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `lab_name`: The name of the lab that uniquely identifies it within containing lab account. Used in resource URIs."]
+        #[doc = "* `virtual_machine_name`: The ID of the virtual machine that uniquely identifies it within the containing lab. Used in resource URIs."]
         pub fn start(
             &self,
             subscription_id: impl Into<String>,
@@ -2722,6 +2951,13 @@ pub mod virtual_machines {
             }
         }
         #[doc = "Stop a lab virtual machine."]
+        #[doc = "Action to stop a lab virtual machine."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `lab_name`: The name of the lab that uniquely identifies it within containing lab account. Used in resource URIs."]
+        #[doc = "* `virtual_machine_name`: The ID of the virtual machine that uniquely identifies it within the containing lab. Used in resource URIs."]
         pub fn stop(
             &self,
             subscription_id: impl Into<String>,
@@ -2738,6 +2974,13 @@ pub mod virtual_machines {
             }
         }
         #[doc = "Re-image a lab virtual machine."]
+        #[doc = "Re-image a lab virtual machine. The virtual machine will be deleted and recreated using the latest published snapshot of the reference environment of the lab."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `lab_name`: The name of the lab that uniquely identifies it within containing lab account. Used in resource URIs."]
+        #[doc = "* `virtual_machine_name`: The ID of the virtual machine that uniquely identifies it within the containing lab. Used in resource URIs."]
         pub fn reimage(
             &self,
             subscription_id: impl Into<String>,
@@ -2754,6 +2997,13 @@ pub mod virtual_machines {
             }
         }
         #[doc = "Redeploy a lab virtual machine to a different compute node. For troubleshooting connectivity."]
+        #[doc = "Action to redeploy a lab virtual machine to a different compute node. For troubleshooting connectivity."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `lab_name`: The name of the lab that uniquely identifies it within containing lab account. Used in resource URIs."]
+        #[doc = "* `virtual_machine_name`: The ID of the virtual machine that uniquely identifies it within the containing lab. Used in resource URIs."]
         pub fn redeploy(
             &self,
             subscription_id: impl Into<String>,
@@ -2770,6 +3020,14 @@ pub mod virtual_machines {
             }
         }
         #[doc = "Reset a lab virtual machine password."]
+        #[doc = "Resets a lab virtual machine password."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `lab_name`: The name of the lab that uniquely identifies it within containing lab account. Used in resource URIs."]
+        #[doc = "* `virtual_machine_name`: The ID of the virtual machine that uniquely identifies it within the containing lab. Used in resource URIs."]
+        #[doc = "* `body`: The request body."]
         pub fn reset_password(
             &self,
             subscription_id: impl Into<String>,
@@ -2800,6 +3058,7 @@ pub mod virtual_machines {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply to the operation."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -3213,6 +3472,11 @@ pub mod usages {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets the list of usages."]
+        #[doc = "Returns list of usage per SKU family for the specified subscription in the specified region."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `location`: The location name."]
         pub fn list_by_location(&self, subscription_id: impl Into<String>, location: impl Into<String>) -> list_by_location::Builder {
             list_by_location::Builder {
                 client: self.0.clone(),
@@ -3233,6 +3497,7 @@ pub mod usages {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply to the operation."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -3312,6 +3577,10 @@ pub mod skus {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets all the Azure Lab Services resource SKUs."]
+        #[doc = "Returns a list of all the Azure Lab Services resource SKUs."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -3330,6 +3599,7 @@ pub mod skus {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply to the operation."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self

@@ -88,6 +88,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all of the available Azure attestation operations."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -141,6 +142,12 @@ pub mod attestation_providers {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get the status of Attestation Provider."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `provider_name`: Name of the attestation provider."]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -154,6 +161,13 @@ pub mod attestation_providers {
                 provider_name: provider_name.into(),
             }
         }
+        #[doc = "Creates a new Attestation Provider."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `provider_name`: Name of the attestation provider."]
+        #[doc = "* `creation_params`: Client supplied parameters."]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -169,6 +183,13 @@ pub mod attestation_providers {
                 creation_params: creation_params.into(),
             }
         }
+        #[doc = "Updates the Attestation Provider."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `provider_name`: Name of the attestation provider."]
+        #[doc = "* `update_params`: Client supplied parameters."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -184,6 +205,12 @@ pub mod attestation_providers {
                 update_params: update_params.into(),
             }
         }
+        #[doc = "Delete Attestation Service."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `provider_name`: Name of the attestation service"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -197,12 +224,21 @@ pub mod attestation_providers {
                 provider_name: provider_name.into(),
             }
         }
+        #[doc = "Returns a list of attestation providers in a subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Returns attestation providers list in a resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_by_resource_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -214,12 +250,21 @@ pub mod attestation_providers {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get the default provider"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_default(&self, subscription_id: impl Into<String>) -> list_default::Builder {
             list_default::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Get the default provider by location."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `location`: The location of the default provider."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn get_default_by_location(
             &self,
             location: impl Into<String>,
@@ -657,6 +702,12 @@ pub mod private_endpoint_connections {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "List all the private endpoint connections associated with the attestation provider."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `provider_name`: The name of the attestation provider."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list(
             &self,
             resource_group_name: impl Into<String>,
@@ -670,6 +721,13 @@ pub mod private_endpoint_connections {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets the specified private endpoint connection associated with the attestation provider."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `provider_name`: The name of the attestation provider."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `private_endpoint_connection_name`: The name of the private endpoint connection associated with the Azure resource"]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -685,6 +743,14 @@ pub mod private_endpoint_connections {
                 private_endpoint_connection_name: private_endpoint_connection_name.into(),
             }
         }
+        #[doc = "Update the state of specified private endpoint connection associated with the attestation provider."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `provider_name`: The name of the attestation provider."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `private_endpoint_connection_name`: The name of the private endpoint connection associated with the Azure resource"]
+        #[doc = "* `properties`: The private endpoint connection properties."]
         pub fn create(
             &self,
             resource_group_name: impl Into<String>,
@@ -702,6 +768,13 @@ pub mod private_endpoint_connections {
                 properties: properties.into(),
             }
         }
+        #[doc = "Deletes the specified private endpoint connection associated with the attestation provider."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `provider_name`: The name of the attestation provider."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `private_endpoint_connection_name`: The name of the private endpoint connection associated with the Azure resource"]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,

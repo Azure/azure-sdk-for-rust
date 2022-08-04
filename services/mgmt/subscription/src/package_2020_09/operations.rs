@@ -95,18 +95,27 @@ pub mod subscriptions {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets all available geo-locations."]
+        #[doc = "This operation provides all the locations that are available for resource providers; however, each resource provider may support a subset of this list."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_locations(&self, subscription_id: impl Into<String>) -> list_locations::Builder {
             list_locations::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets details about a specified subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn get(&self, subscription_id: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Gets all subscriptions for a tenant."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -278,6 +287,7 @@ pub mod tenants {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets the tenants for your account."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -356,12 +366,21 @@ pub mod subscription {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "The operation to cancel a subscription"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription Id."]
         pub fn cancel(&self, subscription_id: impl Into<String>) -> cancel::Builder {
             cancel::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "The operation to rename a subscription"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription Id."]
+        #[doc = "* `body`: Subscription Name"]
         pub fn rename(&self, subscription_id: impl Into<String>, body: impl Into<models::SubscriptionName>) -> rename::Builder {
             rename::Builder {
                 client: self.0.clone(),
@@ -369,6 +388,10 @@ pub mod subscription {
                 body: body.into(),
             }
         }
+        #[doc = "The operation to enable a subscription"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Subscription Id."]
         pub fn enable(&self, subscription_id: impl Into<String>) -> enable::Builder {
             enable::Builder {
                 client: self.0.clone(),
@@ -529,6 +552,7 @@ pub mod operations {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all of the available Microsoft.Subscription API operations."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -582,12 +606,20 @@ pub mod alias {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Get Alias Subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `alias_name`: Name for this subscription creation request also known as alias. Note that this is not the same as subscription name and this doesn’t have any other lifecycle need beyond the request for subscription creation."]
         pub fn get(&self, alias_name: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
                 alias_name: alias_name.into(),
             }
         }
+        #[doc = "Create Alias Subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `alias_name`: Name for this subscription creation request also known as alias. Note that this is not the same as subscription name and this doesn’t have any other lifecycle need beyond the request for subscription creation."]
         pub fn create(&self, alias_name: impl Into<String>, body: impl Into<models::PutAliasRequest>) -> create::Builder {
             create::Builder {
                 client: self.0.clone(),
@@ -595,12 +627,17 @@ pub mod alias {
                 body: body.into(),
             }
         }
+        #[doc = "Delete Alias."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `alias_name`: Name for this subscription creation request also known as alias. Note that this is not the same as subscription name and this doesn’t have any other lifecycle need beyond the request for subscription creation."]
         pub fn delete(&self, alias_name: impl Into<String>) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),
                 alias_name: alias_name.into(),
             }
         }
+        #[doc = "Get Alias Subscription."]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }

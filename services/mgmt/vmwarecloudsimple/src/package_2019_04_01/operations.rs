@@ -113,10 +113,18 @@ pub mod operations {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Implements list of available operations"]
+        #[doc = "Return list of operations"]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
         #[doc = "Implements get of async operation"]
+        #[doc = "Return an async operation"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `region_id`: The region Id (westus, eastus)"]
+        #[doc = "* `referer`: referer url"]
+        #[doc = "* `operation_id`: operation id"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -272,6 +280,10 @@ pub mod dedicated_cloud_nodes {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Implements list of dedicated cloud nodes within subscription method"]
+        #[doc = "Returns list of dedicate cloud nodes within subscription"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
@@ -282,6 +294,11 @@ pub mod dedicated_cloud_nodes {
             }
         }
         #[doc = "Implements list of dedicated cloud nodes within RG method"]
+        #[doc = "Returns list of dedicate cloud nodes within resource group"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group"]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -297,6 +314,12 @@ pub mod dedicated_cloud_nodes {
             }
         }
         #[doc = "Implements dedicated cloud node GET method"]
+        #[doc = "Returns dedicated cloud node"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group"]
+        #[doc = "* `dedicated_cloud_node_name`: dedicated cloud node name"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -311,6 +334,14 @@ pub mod dedicated_cloud_nodes {
             }
         }
         #[doc = "Implements dedicated cloud node PUT method"]
+        #[doc = "Returns dedicated cloud node by its name"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group"]
+        #[doc = "* `referer`: referer url"]
+        #[doc = "* `dedicated_cloud_node_name`: dedicated cloud node name"]
+        #[doc = "* `dedicated_cloud_node_request`: Create Dedicated Cloud Node request"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -329,6 +360,13 @@ pub mod dedicated_cloud_nodes {
             }
         }
         #[doc = "Implements dedicated cloud node PATCH method"]
+        #[doc = "Patches dedicated node properties"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group"]
+        #[doc = "* `dedicated_cloud_node_name`: dedicated cloud node name"]
+        #[doc = "* `dedicated_cloud_node_request`: Patch Dedicated Cloud Node request"]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -345,6 +383,12 @@ pub mod dedicated_cloud_nodes {
             }
         }
         #[doc = "Implements dedicated cloud node DELETE method"]
+        #[doc = "Delete dedicated cloud node"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group"]
+        #[doc = "* `dedicated_cloud_node_name`: dedicated cloud node name"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -371,14 +415,17 @@ pub mod dedicated_cloud_nodes {
             pub(crate) skip_token: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the list operation"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "The maximum number of record sets to return"]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "to be used by nextLink implementation"]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());
                 self
@@ -470,14 +517,17 @@ pub mod dedicated_cloud_nodes {
             pub(crate) skip_token: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the list operation"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "The maximum number of record sets to return"]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "to be used by nextLink implementation"]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());
                 self
@@ -774,6 +824,10 @@ pub mod dedicated_cloud_services {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Implements list of dedicatedCloudService objects within subscription method"]
+        #[doc = "Returns list of dedicated cloud services within a subscription"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
@@ -784,6 +838,11 @@ pub mod dedicated_cloud_services {
             }
         }
         #[doc = "Implements list of dedicatedCloudService objects within RG method"]
+        #[doc = "Returns list of dedicated cloud services within a resource group"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group"]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -799,6 +858,12 @@ pub mod dedicated_cloud_services {
             }
         }
         #[doc = "Implements dedicatedCloudService GET method"]
+        #[doc = "Returns Dedicate Cloud Service"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group"]
+        #[doc = "* `dedicated_cloud_service_name`: dedicated cloud Service name"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -813,6 +878,13 @@ pub mod dedicated_cloud_services {
             }
         }
         #[doc = "Implements dedicated cloud service PUT method"]
+        #[doc = "Create dedicate cloud service"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group"]
+        #[doc = "* `dedicated_cloud_service_name`: dedicated cloud Service name"]
+        #[doc = "* `dedicated_cloud_service_request`: Create Dedicated Cloud Service request"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -829,6 +901,13 @@ pub mod dedicated_cloud_services {
             }
         }
         #[doc = "Implements dedicatedCloudService PATCH method"]
+        #[doc = "Patch dedicated cloud service's properties"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group"]
+        #[doc = "* `dedicated_cloud_service_name`: dedicated cloud service name"]
+        #[doc = "* `dedicated_cloud_service_request`: Patch Dedicated Cloud Service request"]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -845,6 +924,12 @@ pub mod dedicated_cloud_services {
             }
         }
         #[doc = "Implements dedicatedCloudService DELETE method"]
+        #[doc = "Delete dedicate cloud service"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group"]
+        #[doc = "* `dedicated_cloud_service_name`: dedicated cloud service name"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -871,14 +956,17 @@ pub mod dedicated_cloud_services {
             pub(crate) skip_token: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the list operation"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "The maximum number of record sets to return"]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "to be used by nextLink implementation"]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());
                 self
@@ -970,14 +1058,17 @@ pub mod dedicated_cloud_services {
             pub(crate) skip_token: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the list operation"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "The maximum number of record sets to return"]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "to be used by nextLink implementation"]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());
                 self
@@ -1272,6 +1363,11 @@ pub mod skus_availability {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Implements SkuAvailability List method"]
+        #[doc = "Returns list of available resources in region"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `region_id`: The region Id (westus, eastus)"]
         pub fn list(&self, subscription_id: impl Into<String>, region_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -1292,6 +1388,7 @@ pub mod skus_availability {
             pub(crate) sku_id: Option<String>,
         }
         impl Builder {
+            #[doc = "sku id, if no sku is passed availability for all skus will be returned"]
             pub fn sku_id(mut self, sku_id: impl Into<String>) -> Self {
                 self.sku_id = Some(sku_id.into());
                 self
@@ -1371,6 +1468,11 @@ pub mod private_clouds {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Implements private cloud list GET method"]
+        #[doc = "Returns list of private clouds in particular region"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `region_id`: The region Id (westus, eastus)"]
         pub fn list(&self, subscription_id: impl Into<String>, region_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -1379,6 +1481,12 @@ pub mod private_clouds {
             }
         }
         #[doc = "Implements private cloud GET method"]
+        #[doc = "Returns private cloud by its name"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `pc_name`: The private cloud name"]
+        #[doc = "* `region_id`: The region Id (westus, eastus)"]
         pub fn get(&self, subscription_id: impl Into<String>, pc_name: impl Into<String>, region_id: impl Into<String>) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
@@ -1522,6 +1630,12 @@ pub mod customization_policies {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Implements get of customization policies list"]
+        #[doc = "Returns list of customization policies in region for private cloud"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `region_id`: The region Id (westus, eastus)"]
+        #[doc = "* `pc_name`: The private cloud name"]
         pub fn list(&self, subscription_id: impl Into<String>, region_id: impl Into<String>, pc_name: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -1532,6 +1646,13 @@ pub mod customization_policies {
             }
         }
         #[doc = "Implements get of customization policy"]
+        #[doc = "Returns customization policy by its name"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `region_id`: The region Id (westus, eastus)"]
+        #[doc = "* `pc_name`: The private cloud name"]
+        #[doc = "* `customization_policy_name`: customization policy name"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1560,6 +1681,7 @@ pub mod customization_policies {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the list operation. only type is allowed here as a filter e.g. $filter=type eq 'xxxx'"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -1687,6 +1809,12 @@ pub mod resource_pools {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Implements get of resource pools list"]
+        #[doc = "Returns list of resource pools in region for private cloud"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `region_id`: The region Id (westus, eastus)"]
+        #[doc = "* `pc_name`: The private cloud name"]
         pub fn list(&self, subscription_id: impl Into<String>, region_id: impl Into<String>, pc_name: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -1696,6 +1824,13 @@ pub mod resource_pools {
             }
         }
         #[doc = "Implements get of resource pool"]
+        #[doc = "Returns resource pool templates by its name"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `region_id`: The region Id (westus, eastus)"]
+        #[doc = "* `pc_name`: The private cloud name"]
+        #[doc = "* `resource_pool_name`: resource pool id (vsphereId)"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1850,6 +1985,13 @@ pub mod virtual_machine_templates {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Implements list of available VM templates"]
+        #[doc = "Returns list of virtual machine templates in region for private cloud"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `pc_name`: The private cloud name"]
+        #[doc = "* `region_id`: The region Id (westus, eastus)"]
+        #[doc = "* `resource_pool_name`: Resource pool used to derive vSphere cluster which contains VM templates"]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -1866,6 +2008,13 @@ pub mod virtual_machine_templates {
             }
         }
         #[doc = "Implements virtual machine template GET method"]
+        #[doc = "Returns virtual machine templates by its name"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `region_id`: The region Id (westus, eastus)"]
+        #[doc = "* `pc_name`: The private cloud name"]
+        #[doc = "* `virtual_machine_template_name`: virtual machine template id (vsphereId)"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -2010,6 +2159,13 @@ pub mod virtual_networks {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Implements list available virtual networks within a subscription method"]
+        #[doc = "Return list of virtual networks in location for private cloud"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `region_id`: The region Id (westus, eastus)"]
+        #[doc = "* `pc_name`: The private cloud name"]
+        #[doc = "* `resource_pool_name`: Resource pool used to derive vSphere cluster which contains virtual networks"]
         pub fn list(
             &self,
             subscription_id: impl Into<String>,
@@ -2026,6 +2182,13 @@ pub mod virtual_networks {
             }
         }
         #[doc = "Implements virtual network GET method"]
+        #[doc = "Return virtual network by its name"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `region_id`: The region Id (westus, eastus)"]
+        #[doc = "* `pc_name`: The private cloud name"]
+        #[doc = "* `virtual_network_name`: virtual network id (vsphereId)"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -2183,6 +2346,11 @@ pub mod usages {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Implements Usages List method"]
+        #[doc = "Returns list of usage in region"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `region_id`: The region Id (westus, eastus)"]
         pub fn list(&self, subscription_id: impl Into<String>, region_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -2203,6 +2371,7 @@ pub mod usages {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the list operation. only name.value is allowed here as a filter e.g. $filter=name.value eq 'xxxx'"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -2282,6 +2451,10 @@ pub mod virtual_machines {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Implements list virtual machine within subscription method"]
+        #[doc = "Returns list virtual machine within subscription"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
@@ -2292,6 +2465,11 @@ pub mod virtual_machines {
             }
         }
         #[doc = "Implements list virtual machine within RG method"]
+        #[doc = "Returns list of virtual machine within resource group"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group"]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -2307,6 +2485,12 @@ pub mod virtual_machines {
             }
         }
         #[doc = "Implements virtual machine GET method"]
+        #[doc = "Get virtual machine"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group"]
+        #[doc = "* `virtual_machine_name`: virtual machine name"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -2321,6 +2505,14 @@ pub mod virtual_machines {
             }
         }
         #[doc = "Implements virtual machine PUT method"]
+        #[doc = "Create Or Update Virtual Machine"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group"]
+        #[doc = "* `referer`: referer url"]
+        #[doc = "* `virtual_machine_name`: virtual machine name"]
+        #[doc = "* `virtual_machine_request`: Create or Update Virtual Machine request"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -2339,6 +2531,13 @@ pub mod virtual_machines {
             }
         }
         #[doc = "Implements virtual machine PATCH method"]
+        #[doc = "Patch virtual machine properties"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group"]
+        #[doc = "* `virtual_machine_name`: virtual machine name"]
+        #[doc = "* `virtual_machine_request`: Patch virtual machine request"]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -2355,6 +2554,13 @@ pub mod virtual_machines {
             }
         }
         #[doc = "Implements virtual machine DELETE method"]
+        #[doc = "Delete virtual machine"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group"]
+        #[doc = "* `referer`: referer url"]
+        #[doc = "* `virtual_machine_name`: virtual machine name"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -2371,6 +2577,13 @@ pub mod virtual_machines {
             }
         }
         #[doc = "Implements a start method for a virtual machine"]
+        #[doc = "Power on virtual machine"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group"]
+        #[doc = "* `referer`: referer url"]
+        #[doc = "* `virtual_machine_name`: virtual machine name"]
         pub fn start(
             &self,
             subscription_id: impl Into<String>,
@@ -2387,6 +2600,13 @@ pub mod virtual_machines {
             }
         }
         #[doc = "Implements shutdown, poweroff, and suspend method for a virtual machine"]
+        #[doc = "Power off virtual machine, options: shutdown, poweroff, and suspend"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription ID."]
+        #[doc = "* `resource_group_name`: The name of the resource group"]
+        #[doc = "* `referer`: referer url"]
+        #[doc = "* `virtual_machine_name`: virtual machine name"]
         pub fn stop(
             &self,
             subscription_id: impl Into<String>,
@@ -2417,14 +2637,17 @@ pub mod virtual_machines {
             pub(crate) skip_token: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the list operation"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "The maximum number of record sets to return"]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "to be used by nextLink implementation"]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());
                 self
@@ -2516,14 +2739,17 @@ pub mod virtual_machines {
             pub(crate) skip_token: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the list operation"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "The maximum number of record sets to return"]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "to be used by nextLink implementation"]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());
                 self
@@ -2907,10 +3133,12 @@ pub mod virtual_machines {
             pub(crate) mode: Option<String>,
         }
         impl Builder {
+            #[doc = "body stop mode parameter (reboot, shutdown, etc...)"]
             pub fn m(mut self, m: impl Into<models::VirtualMachineStopMode>) -> Self {
                 self.m = Some(m.into());
                 self
             }
+            #[doc = "query stop mode parameter (reboot, shutdown, etc...)"]
             pub fn mode(mut self, mode: impl Into<String>) -> Self {
                 self.mode = Some(mode.into());
                 self

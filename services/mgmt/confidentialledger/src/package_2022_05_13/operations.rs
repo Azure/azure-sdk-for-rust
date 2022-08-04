@@ -86,6 +86,7 @@ pub mod operations {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Retrieves a list of available API operations under this Resource Provider."]
+        #[doc = "Retrieves a list of available API operations"]
         pub fn list(&self) -> list::Builder {
             list::Builder { client: self.0.clone() }
         }
@@ -164,6 +165,11 @@ pub mod operations {
     }
 }
 impl Client {
+    #[doc = "To check whether a resource name is available."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)"]
+    #[doc = "* `name_availability_request`: Name availability request payload."]
     pub fn check_name_availability(
         &self,
         subscription_id: impl Into<String>,
@@ -231,6 +237,12 @@ pub mod ledger {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Retrieves information about a Confidential Ledger resource."]
+        #[doc = "Retrieves the properties of a Confidential Ledger."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `ledger_name`: Name of the Confidential Ledger"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -245,6 +257,13 @@ pub mod ledger {
             }
         }
         #[doc = "Creates a  Confidential Ledger."]
+        #[doc = "Creates a  Confidential Ledger with the specified ledger parameters."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `ledger_name`: Name of the Confidential Ledger"]
+        #[doc = "* `confidential_ledger`: Confidential Ledger Create Request Body"]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -261,6 +280,13 @@ pub mod ledger {
             }
         }
         #[doc = "Update Confidential Ledger properties"]
+        #[doc = "Updates properties of Confidential Ledger"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `ledger_name`: Name of the Confidential Ledger"]
+        #[doc = "* `confidential_ledger`: Confidential Ledger request body for Updating Ledger"]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -277,6 +303,12 @@ pub mod ledger {
             }
         }
         #[doc = "Deletes a Confidential Ledger resource."]
+        #[doc = "Deletes an existing Confidential Ledger."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
+        #[doc = "* `ledger_name`: Name of the Confidential Ledger"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -291,6 +323,11 @@ pub mod ledger {
             }
         }
         #[doc = "Retrieves information about all Confidential Ledger resources under the given subscription and resource group"]
+        #[doc = "Retrieves the properties of all Confidential Ledgers."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)"]
+        #[doc = "* `resource_group_name`: The name of the resource group."]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -304,6 +341,10 @@ pub mod ledger {
             }
         }
         #[doc = "Retrieves information about all Confidential Ledger resources under the given subscription"]
+        #[doc = "Retrieves the properties of all Confidential Ledgers."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)"]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
             list_by_subscription::Builder {
                 client: self.0.clone(),
@@ -551,6 +592,7 @@ pub mod ledger {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the list operation. eg. $filter=ledgerType eq 'Public'"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -634,6 +676,7 @@ pub mod ledger {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the list operation. eg. $filter=ledgerType eq 'Public'"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self

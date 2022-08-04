@@ -183,12 +183,21 @@ pub mod data_managers {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Lists all the data manager resources available under the subscription."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Subscription Id"]
         pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Lists all the data manager resources available under the given resource group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Subscription Id"]
+        #[doc = "* `resource_group_name`: The Resource Group Name"]
         pub fn list_by_resource_group(
             &self,
             subscription_id: impl Into<String>,
@@ -200,6 +209,12 @@ pub mod data_managers {
                 resource_group_name: resource_group_name.into(),
             }
         }
+        #[doc = "Gets information about the specified data manager resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Subscription Id"]
+        #[doc = "* `resource_group_name`: The Resource Group Name"]
+        #[doc = "* `data_manager_name`: The name of the DataManager Resource within the specified resource group. DataManager names must be between 3 and 24 characters in length and use any alphanumeric and underscore only"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -213,6 +228,13 @@ pub mod data_managers {
                 data_manager_name: data_manager_name.into(),
             }
         }
+        #[doc = "Creates a new data manager resource with the specified parameters. Existing resources cannot be updated with this API\r\nand should instead be updated with the Update data manager resource API."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Subscription Id"]
+        #[doc = "* `resource_group_name`: The Resource Group Name"]
+        #[doc = "* `data_manager_name`: The name of the DataManager Resource within the specified resource group. DataManager names must be between 3 and 24 characters in length and use any alphanumeric and underscore only"]
+        #[doc = "* `data_manager`: Data manager resource details from request body."]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -228,6 +250,13 @@ pub mod data_managers {
                 data_manager: data_manager.into(),
             }
         }
+        #[doc = "Updates the properties of an existing data manager resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Subscription Id"]
+        #[doc = "* `resource_group_name`: The Resource Group Name"]
+        #[doc = "* `data_manager_name`: The name of the DataManager Resource within the specified resource group. DataManager names must be between 3 and 24 characters in length and use any alphanumeric and underscore only"]
+        #[doc = "* `data_manager_update_parameter`: Data manager resource details from request body."]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -244,6 +273,12 @@ pub mod data_managers {
                 if_match: None,
             }
         }
+        #[doc = "Deletes a data manager resource in Microsoft Azure."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Subscription Id"]
+        #[doc = "* `resource_group_name`: The Resource Group Name"]
+        #[doc = "* `data_manager_name`: The name of the DataManager Resource within the specified resource group. DataManager names must be between 3 and 24 characters in length and use any alphanumeric and underscore only"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -487,6 +522,7 @@ pub mod data_managers {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "Defines the If-Match condition. The patch will be performed only if the ETag of the data manager resource on the server matches this value."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -597,6 +633,12 @@ pub mod data_services {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "This method gets all the data services."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Subscription Id"]
+        #[doc = "* `resource_group_name`: The Resource Group Name"]
+        #[doc = "* `data_manager_name`: The name of the DataManager Resource within the specified resource group. DataManager names must be between 3 and 24 characters in length and use any alphanumeric and underscore only"]
         pub fn list_by_data_manager(
             &self,
             subscription_id: impl Into<String>,
@@ -610,6 +652,13 @@ pub mod data_services {
                 data_manager_name: data_manager_name.into(),
             }
         }
+        #[doc = "Gets the data service that match the data service name given."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `data_service_name`: The name of the data service that is being queried."]
+        #[doc = "* `subscription_id`: The Subscription Id"]
+        #[doc = "* `resource_group_name`: The Resource Group Name"]
+        #[doc = "* `data_manager_name`: The name of the DataManager Resource within the specified resource group. DataManager names must be between 3 and 24 characters in length and use any alphanumeric and underscore only"]
         pub fn get(
             &self,
             data_service_name: impl Into<String>,
@@ -763,6 +812,13 @@ pub mod job_definitions {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "This method gets all the job definitions of the given data service name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `data_service_name`: The data service type of interest."]
+        #[doc = "* `subscription_id`: The Subscription Id"]
+        #[doc = "* `resource_group_name`: The Resource Group Name"]
+        #[doc = "* `data_manager_name`: The name of the DataManager Resource within the specified resource group. DataManager names must be between 3 and 24 characters in length and use any alphanumeric and underscore only"]
         pub fn list_by_data_service(
             &self,
             data_service_name: impl Into<String>,
@@ -779,6 +835,14 @@ pub mod job_definitions {
                 filter: None,
             }
         }
+        #[doc = "This method gets job definition object by name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `data_service_name`: The data service name of the job definition"]
+        #[doc = "* `job_definition_name`: The job definition name that is being queried."]
+        #[doc = "* `subscription_id`: The Subscription Id"]
+        #[doc = "* `resource_group_name`: The Resource Group Name"]
+        #[doc = "* `data_manager_name`: The name of the DataManager Resource within the specified resource group. DataManager names must be between 3 and 24 characters in length and use any alphanumeric and underscore only"]
         pub fn get(
             &self,
             data_service_name: impl Into<String>,
@@ -796,6 +860,15 @@ pub mod job_definitions {
                 data_manager_name: data_manager_name.into(),
             }
         }
+        #[doc = "Creates or updates a job definition."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `data_service_name`: The data service type of the job definition."]
+        #[doc = "* `job_definition_name`: The job definition name to be created or updated."]
+        #[doc = "* `job_definition`: Job Definition object to be created or updated."]
+        #[doc = "* `subscription_id`: The Subscription Id"]
+        #[doc = "* `resource_group_name`: The Resource Group Name"]
+        #[doc = "* `data_manager_name`: The name of the DataManager Resource within the specified resource group. DataManager names must be between 3 and 24 characters in length and use any alphanumeric and underscore only"]
         pub fn create_or_update(
             &self,
             data_service_name: impl Into<String>,
@@ -815,6 +888,14 @@ pub mod job_definitions {
                 data_manager_name: data_manager_name.into(),
             }
         }
+        #[doc = "This method deletes the given job definition."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `data_service_name`: The data service type of the job definition."]
+        #[doc = "* `job_definition_name`: The job definition name to be deleted."]
+        #[doc = "* `subscription_id`: The Subscription Id"]
+        #[doc = "* `resource_group_name`: The Resource Group Name"]
+        #[doc = "* `data_manager_name`: The name of the DataManager Resource within the specified resource group. DataManager names must be between 3 and 24 characters in length and use any alphanumeric and underscore only"]
         pub fn delete(
             &self,
             data_service_name: impl Into<String>,
@@ -832,6 +913,15 @@ pub mod job_definitions {
                 data_manager_name: data_manager_name.into(),
             }
         }
+        #[doc = "This method runs a job instance of the given job definition."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `data_service_name`: The data service type of the job definition."]
+        #[doc = "* `job_definition_name`: Name of the job definition."]
+        #[doc = "* `run_parameters`: Run time parameters for the job definition."]
+        #[doc = "* `subscription_id`: The Subscription Id"]
+        #[doc = "* `resource_group_name`: The Resource Group Name"]
+        #[doc = "* `data_manager_name`: The name of the DataManager Resource within the specified resource group. DataManager names must be between 3 and 24 characters in length and use any alphanumeric and underscore only"]
         pub fn run(
             &self,
             data_service_name: impl Into<String>,
@@ -851,6 +941,12 @@ pub mod job_definitions {
                 data_manager_name: data_manager_name.into(),
             }
         }
+        #[doc = "This method gets all the job definitions of the given data manager resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Subscription Id"]
+        #[doc = "* `resource_group_name`: The Resource Group Name"]
+        #[doc = "* `data_manager_name`: The name of the DataManager Resource within the specified resource group. DataManager names must be between 3 and 24 characters in length and use any alphanumeric and underscore only"]
         pub fn list_by_data_manager(
             &self,
             subscription_id: impl Into<String>,
@@ -879,6 +975,7 @@ pub mod job_definitions {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "OData Filter options"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -1165,6 +1262,7 @@ pub mod job_definitions {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "OData Filter options"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -1244,6 +1342,14 @@ pub mod jobs {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "This method gets all the jobs of a given job definition."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `data_service_name`: The name of the data service of the job definition."]
+        #[doc = "* `job_definition_name`: The name of the job definition for which jobs are needed."]
+        #[doc = "* `subscription_id`: The Subscription Id"]
+        #[doc = "* `resource_group_name`: The Resource Group Name"]
+        #[doc = "* `data_manager_name`: The name of the DataManager Resource within the specified resource group. DataManager names must be between 3 and 24 characters in length and use any alphanumeric and underscore only"]
         pub fn list_by_job_definition(
             &self,
             data_service_name: impl Into<String>,
@@ -1262,6 +1368,15 @@ pub mod jobs {
                 filter: None,
             }
         }
+        #[doc = "This method gets a data manager job given the jobId."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `data_service_name`: The name of the data service of the job definition."]
+        #[doc = "* `job_definition_name`: The name of the job definition of the job."]
+        #[doc = "* `job_id`: The job id of the job queried."]
+        #[doc = "* `subscription_id`: The Subscription Id"]
+        #[doc = "* `resource_group_name`: The Resource Group Name"]
+        #[doc = "* `data_manager_name`: The name of the DataManager Resource within the specified resource group. DataManager names must be between 3 and 24 characters in length and use any alphanumeric and underscore only"]
         pub fn get(
             &self,
             data_service_name: impl Into<String>,
@@ -1282,6 +1397,15 @@ pub mod jobs {
                 expand: None,
             }
         }
+        #[doc = "Cancels the given job."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `data_service_name`: The name of the data service of the job definition."]
+        #[doc = "* `job_definition_name`: The name of the job definition of the job."]
+        #[doc = "* `job_id`: The job id of the job queried."]
+        #[doc = "* `subscription_id`: The Subscription Id"]
+        #[doc = "* `resource_group_name`: The Resource Group Name"]
+        #[doc = "* `data_manager_name`: The name of the DataManager Resource within the specified resource group. DataManager names must be between 3 and 24 characters in length and use any alphanumeric and underscore only"]
         pub fn cancel(
             &self,
             data_service_name: impl Into<String>,
@@ -1301,6 +1425,15 @@ pub mod jobs {
                 data_manager_name: data_manager_name.into(),
             }
         }
+        #[doc = "Resumes the given job."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `data_service_name`: The name of the data service of the job definition."]
+        #[doc = "* `job_definition_name`: The name of the job definition of the job."]
+        #[doc = "* `job_id`: The job id of the job queried."]
+        #[doc = "* `subscription_id`: The Subscription Id"]
+        #[doc = "* `resource_group_name`: The Resource Group Name"]
+        #[doc = "* `data_manager_name`: The name of the DataManager Resource within the specified resource group. DataManager names must be between 3 and 24 characters in length and use any alphanumeric and underscore only"]
         pub fn resume(
             &self,
             data_service_name: impl Into<String>,
@@ -1320,6 +1453,13 @@ pub mod jobs {
                 data_manager_name: data_manager_name.into(),
             }
         }
+        #[doc = "This method gets all the jobs of a data service type in a given resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `data_service_name`: The name of the data service of interest."]
+        #[doc = "* `subscription_id`: The Subscription Id"]
+        #[doc = "* `resource_group_name`: The Resource Group Name"]
+        #[doc = "* `data_manager_name`: The name of the DataManager Resource within the specified resource group. DataManager names must be between 3 and 24 characters in length and use any alphanumeric and underscore only"]
         pub fn list_by_data_service(
             &self,
             data_service_name: impl Into<String>,
@@ -1336,6 +1476,12 @@ pub mod jobs {
                 filter: None,
             }
         }
+        #[doc = "This method gets all the jobs at the data manager resource level."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Subscription Id"]
+        #[doc = "* `resource_group_name`: The Resource Group Name"]
+        #[doc = "* `data_manager_name`: The name of the DataManager Resource within the specified resource group. DataManager names must be between 3 and 24 characters in length and use any alphanumeric and underscore only"]
         pub fn list_by_data_manager(
             &self,
             subscription_id: impl Into<String>,
@@ -1365,6 +1511,7 @@ pub mod jobs {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "OData Filter options"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -1448,6 +1595,7 @@ pub mod jobs {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "$expand is supported on details parameter for job, which provides details on the job stages."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -1607,6 +1755,7 @@ pub mod jobs {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "OData Filter options"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -1694,6 +1843,7 @@ pub mod jobs {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "OData Filter options"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -1773,6 +1923,12 @@ pub mod data_stores {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets all the data stores/repositories in the given resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Subscription Id"]
+        #[doc = "* `resource_group_name`: The Resource Group Name"]
+        #[doc = "* `data_manager_name`: The name of the DataManager Resource within the specified resource group. DataManager names must be between 3 and 24 characters in length and use any alphanumeric and underscore only"]
         pub fn list_by_data_manager(
             &self,
             subscription_id: impl Into<String>,
@@ -1787,6 +1943,13 @@ pub mod data_stores {
                 filter: None,
             }
         }
+        #[doc = "This method gets the data store/repository by name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `data_store_name`: The data store/repository name queried."]
+        #[doc = "* `subscription_id`: The Subscription Id"]
+        #[doc = "* `resource_group_name`: The Resource Group Name"]
+        #[doc = "* `data_manager_name`: The name of the DataManager Resource within the specified resource group. DataManager names must be between 3 and 24 characters in length and use any alphanumeric and underscore only"]
         pub fn get(
             &self,
             data_store_name: impl Into<String>,
@@ -1802,6 +1965,14 @@ pub mod data_stores {
                 data_manager_name: data_manager_name.into(),
             }
         }
+        #[doc = "Creates or updates the data store/repository in the data manager."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `data_store_name`: The data store/repository name to be created or updated."]
+        #[doc = "* `data_store`: The data store/repository object to be created or updated."]
+        #[doc = "* `subscription_id`: The Subscription Id"]
+        #[doc = "* `resource_group_name`: The Resource Group Name"]
+        #[doc = "* `data_manager_name`: The name of the DataManager Resource within the specified resource group. DataManager names must be between 3 and 24 characters in length and use any alphanumeric and underscore only"]
         pub fn create_or_update(
             &self,
             data_store_name: impl Into<String>,
@@ -1819,6 +1990,13 @@ pub mod data_stores {
                 data_manager_name: data_manager_name.into(),
             }
         }
+        #[doc = "This method deletes the given data store/repository."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `data_store_name`: The data store/repository name to be deleted."]
+        #[doc = "* `subscription_id`: The Subscription Id"]
+        #[doc = "* `resource_group_name`: The Resource Group Name"]
+        #[doc = "* `data_manager_name`: The name of the DataManager Resource within the specified resource group. DataManager names must be between 3 and 24 characters in length and use any alphanumeric and underscore only"]
         pub fn delete(
             &self,
             data_store_name: impl Into<String>,
@@ -1847,6 +2025,7 @@ pub mod data_stores {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "OData Filter options"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -2098,6 +2277,12 @@ pub mod data_store_types {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Gets all the data store/repository types that the resource supports."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Subscription Id"]
+        #[doc = "* `resource_group_name`: The Resource Group Name"]
+        #[doc = "* `data_manager_name`: The name of the DataManager Resource within the specified resource group. DataManager names must be between 3 and 24 characters in length and use any alphanumeric and underscore only"]
         pub fn list_by_data_manager(
             &self,
             subscription_id: impl Into<String>,
@@ -2111,6 +2296,13 @@ pub mod data_store_types {
                 data_manager_name: data_manager_name.into(),
             }
         }
+        #[doc = "Gets the data store/repository type given its name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `data_store_type_name`: The data store/repository type name for which details are needed."]
+        #[doc = "* `subscription_id`: The Subscription Id"]
+        #[doc = "* `resource_group_name`: The Resource Group Name"]
+        #[doc = "* `data_manager_name`: The name of the DataManager Resource within the specified resource group. DataManager names must be between 3 and 24 characters in length and use any alphanumeric and underscore only"]
         pub fn get(
             &self,
             data_store_type_name: impl Into<String>,
@@ -2264,6 +2456,12 @@ pub mod public_keys {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "This method gets the list view of public keys, however it will only have one element."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The Subscription Id"]
+        #[doc = "* `resource_group_name`: The Resource Group Name"]
+        #[doc = "* `data_manager_name`: The name of the DataManager Resource within the specified resource group. DataManager names must be between 3 and 24 characters in length and use any alphanumeric and underscore only"]
         pub fn list_by_data_manager(
             &self,
             subscription_id: impl Into<String>,
@@ -2277,6 +2475,13 @@ pub mod public_keys {
                 data_manager_name: data_manager_name.into(),
             }
         }
+        #[doc = "This method gets the public keys."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `public_key_name`: Name of the public key."]
+        #[doc = "* `subscription_id`: The Subscription Id"]
+        #[doc = "* `resource_group_name`: The Resource Group Name"]
+        #[doc = "* `data_manager_name`: The name of the DataManager Resource within the specified resource group. DataManager names must be between 3 and 24 characters in length and use any alphanumeric and underscore only"]
         pub fn get(
             &self,
             public_key_name: impl Into<String>,

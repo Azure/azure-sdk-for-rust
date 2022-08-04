@@ -85,6 +85,9 @@ pub mod notifications {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription`: user's subscription id"]
+        #[doc = "* `principal_id`: user's principal id"]
         pub fn list(&self, subscription: impl Into<String>, principal_id: impl Into<String>) -> list::Builder {
             list::Builder {
                 client: self.0.clone(),
@@ -175,6 +178,10 @@ pub mod notification {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription`: user's subscription id"]
+        #[doc = "* `notification`: the notification id"]
+        #[doc = "* `principal_id`: user's principal id"]
         pub fn get(
             &self,
             subscription: impl Into<String>,
