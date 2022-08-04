@@ -306,6 +306,7 @@ pub mod deployments {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "Restricts the set of deployments returned. You can filter on update Provider, Name and Version property."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -565,6 +566,7 @@ pub mod deployments {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "Restricts the set of deployment device states returned. You can filter on deviceId and/or deviceState."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -868,6 +870,7 @@ pub mod updates {
             pub(crate) if_none_match: Option<String>,
         }
         impl Builder {
+            #[doc = "Defines the If-None-Match condition. The operation will be performed only if the ETag on the server does not match this value."]
             pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
                 self.if_none_match = Some(if_none_match.into());
                 self
@@ -1243,6 +1246,7 @@ pub mod updates {
             pub(crate) if_none_match: Option<String>,
         }
         impl Builder {
+            #[doc = "Defines the If-None-Match condition. The operation will be performed only if the ETag on the server does not match this value."]
             pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
                 self.if_none_match = Some(if_none_match.into());
                 self
@@ -1301,10 +1305,12 @@ pub mod updates {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "Restricts the set of operations returned. Only one specific filter is supported: \"status eq 'NotStarted' or status eq 'Running'\""]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Specifies a non-negative integer n that limits the number of items returned from a collection. The service returns the number of available items up to but not greater than the specified value n."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -1381,6 +1387,7 @@ pub mod updates {
             pub(crate) if_none_match: Option<String>,
         }
         impl Builder {
+            #[doc = "Defines the If-None-Match condition. The operation will be performed only if the ETag on the server does not match this value."]
             pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
                 self.if_none_match = Some(if_none_match.into());
                 self
@@ -1879,6 +1886,7 @@ pub mod devices {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "Restricts the set of devices returned. You can only filter on device GroupId."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -2410,6 +2418,7 @@ pub mod devices {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "Restricts the set of bestUpdates returned. You can filter on update Provider, Name and Version property."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self

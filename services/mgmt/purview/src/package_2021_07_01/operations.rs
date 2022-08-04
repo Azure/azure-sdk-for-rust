@@ -282,6 +282,7 @@ pub mod accounts {
             pub(crate) skip_token: Option<String>,
         }
         impl Builder {
+            #[doc = "The skip token."]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());
                 self
@@ -365,6 +366,7 @@ pub mod accounts {
             pub(crate) skip_token: Option<String>,
         }
         impl Builder {
+            #[doc = "The skip token."]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());
                 self
@@ -882,6 +884,7 @@ pub mod default_accounts {
             pub(crate) scope: Option<String>,
         }
         impl Builder {
+            #[doc = "The Id of the scope object, for example if the scope is \"Subscription\" then it is the ID of that subscription."]
             pub fn scope(mut self, scope: impl Into<String>) -> Self {
                 self.scope = Some(scope.into());
                 self
@@ -990,6 +993,7 @@ pub mod default_accounts {
             pub(crate) scope: Option<String>,
         }
         impl Builder {
+            #[doc = "The Id of the scope object, for example if the scope is \"Subscription\" then it is the ID of that subscription."]
             pub fn scope(mut self, scope: impl Into<String>) -> Self {
                 self.scope = Some(scope.into());
                 self
@@ -1229,6 +1233,7 @@ pub mod private_endpoint_connections {
             pub(crate) skip_token: Option<String>,
         }
         impl Builder {
+            #[doc = "The skip token."]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());
                 self

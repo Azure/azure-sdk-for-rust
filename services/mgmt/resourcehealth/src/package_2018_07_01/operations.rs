@@ -132,14 +132,17 @@ pub mod events {
             pub(crate) view: Option<String>,
         }
         impl Builder {
+            #[doc = "A valid odata query to limit the events returned. The logical operators and, or, equal, not equal, and top are supported. For example, $filter=Properties/EventType eq 'ServiceIssue' or Properties/EventType eq 'PlannedMaintenance' OR %24filter=Properties%2FEventType%20eq%20%27ServiceIssue%27%20or%20Properties%2FEventType%20eq%20%27PlannedMaintenance%27"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Specifies from when to return events, based on the lastUpdateTime property. For example, queryStartTime = 7/24/2020 OR queryStartTime=7%2F24%2F2020"]
             pub fn query_start_time(mut self, query_start_time: impl Into<String>) -> Self {
                 self.query_start_time = Some(query_start_time.into());
                 self
             }
+            #[doc = "setting view=full expands the article parameters"]
             pub fn view(mut self, view: impl Into<String>) -> Self {
                 self.view = Some(view.into());
                 self
@@ -229,10 +232,12 @@ pub mod events {
             pub(crate) view: Option<String>,
         }
         impl Builder {
+            #[doc = "A valid odata query to limit the events returned. The logical operators and, or, equal, not equal, and top are supported. For example, $filter=Properties/EventType eq 'ServiceIssue' or Properties/EventType eq 'PlannedMaintenance' OR %24filter=Properties%2FEventType%20eq%20%27ServiceIssue%27%20or%20Properties%2FEventType%20eq%20%27PlannedMaintenance%27"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "setting view=full expands the article parameters"]
             pub fn view(mut self, view: impl Into<String>) -> Self {
                 self.view = Some(view.into());
                 self
@@ -379,10 +384,12 @@ pub mod availability_statuses {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "A valid odata query to limit the events returned. The logical operators and, or, equal, not equal, and top are supported. For example, $filter=Properties/EventType eq 'ServiceIssue' or Properties/EventType eq 'PlannedMaintenance' OR %24filter=Properties%2FEventType%20eq%20%27ServiceIssue%27%20or%20Properties%2FEventType%20eq%20%27PlannedMaintenance%27"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Setting $expand=recommendedactions in url query expands the recommendedactions in the response."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -470,10 +477,12 @@ pub mod availability_statuses {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "A valid odata query to limit the events returned. The logical operators and, or, equal, not equal, and top are supported. For example, $filter=Properties/EventType eq 'ServiceIssue' or Properties/EventType eq 'PlannedMaintenance' OR %24filter=Properties%2FEventType%20eq%20%27ServiceIssue%27%20or%20Properties%2FEventType%20eq%20%27PlannedMaintenance%27"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Setting $expand=recommendedactions in url query expands the recommendedactions in the response."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -561,10 +570,12 @@ pub mod availability_statuses {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "A valid odata query to limit the events returned. The logical operators and, or, equal, not equal, and top are supported. For example, $filter=Properties/EventType eq 'ServiceIssue' or Properties/EventType eq 'PlannedMaintenance' OR %24filter=Properties%2FEventType%20eq%20%27ServiceIssue%27%20or%20Properties%2FEventType%20eq%20%27PlannedMaintenance%27"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Setting $expand=recommendedactions in url query expands the recommendedactions in the response."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -625,10 +636,12 @@ pub mod availability_statuses {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "A valid odata query to limit the events returned. The logical operators and, or, equal, not equal, and top are supported. For example, $filter=Properties/EventType eq 'ServiceIssue' or Properties/EventType eq 'PlannedMaintenance' OR %24filter=Properties%2FEventType%20eq%20%27ServiceIssue%27%20or%20Properties%2FEventType%20eq%20%27PlannedMaintenance%27"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Setting $expand=recommendedactions in url query expands the recommendedactions in the response."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self

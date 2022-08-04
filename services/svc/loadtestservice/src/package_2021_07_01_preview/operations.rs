@@ -288,10 +288,12 @@ pub mod app_component {
             pub(crate) test_run_id: Option<String>,
         }
         impl Builder {
+            #[doc = "Required testId, if testRunId name is not provided"]
             pub fn test_id(mut self, test_id: impl Into<String>) -> Self {
                 self.test_id = Some(test_id.into());
                 self
             }
+            #[doc = "Required testRunId, if testId is not provided"]
             pub fn test_run_id(mut self, test_run_id: impl Into<String>) -> Self {
                 self.test_run_id = Some(test_run_id.into());
                 self
@@ -609,10 +611,12 @@ pub mod server_metrics {
             pub(crate) test_run_id: Option<String>,
         }
         impl Builder {
+            #[doc = "Required testId, if testRunId name is not provided"]
             pub fn test_id(mut self, test_id: impl Into<String>) -> Self {
                 self.test_id = Some(test_id.into());
                 self
             }
+            #[doc = "Required testRunId, if testId is not provided"]
             pub fn test_run_id(mut self, test_run_id: impl Into<String>) -> Self {
                 self.test_run_id = Some(test_run_id.into());
                 self
@@ -1005,26 +1009,32 @@ pub mod test {
             pub(crate) max_page_size: Option<i32>,
         }
         impl Builder {
+            #[doc = "Sort on one of the field - lastModifiedDateTime, displayName, createdBy in (field asc/desc) format. eg: displayName asc"]
             pub fn order_by(mut self, order_by: impl Into<String>) -> Self {
                 self.order_by = Some(order_by.into());
                 self
             }
+            #[doc = "Filter search based on searchable fields- testId, createdBy."]
             pub fn search(mut self, search: impl Into<String>) -> Self {
                 self.search = Some(search.into());
                 self
             }
+            #[doc = "Start DateTime(Iso8601Literal format) of the last updated time range to filter tests."]
             pub fn last_updated_start_time(mut self, last_updated_start_time: impl Into<String>) -> Self {
                 self.last_updated_start_time = Some(last_updated_start_time.into());
                 self
             }
+            #[doc = "End DateTime(Iso8601Literal format) of the last updated time range to filter tests."]
             pub fn last_updated_end_time(mut self, last_updated_end_time: impl Into<String>) -> Self {
                 self.last_updated_end_time = Some(last_updated_end_time.into());
                 self
             }
+            #[doc = "NextLink Token to get next page of response"]
             pub fn next_link(mut self, next_link: impl Into<String>) -> Self {
                 self.next_link = Some(next_link.into());
                 self
             }
+            #[doc = "No of results in response"]
             pub fn max_page_size(mut self, max_page_size: i32) -> Self {
                 self.max_page_size = Some(max_page_size);
                 self
@@ -1436,6 +1446,7 @@ pub mod test_run {
             pub(crate) old_test_run_id: Option<String>,
         }
         impl Builder {
+            #[doc = "Existing testRunId to re run new test"]
             pub fn old_test_run_id(mut self, old_test_run_id: impl Into<String>) -> Self {
                 self.old_test_run_id = Some(old_test_run_id.into());
                 self
@@ -1585,34 +1596,42 @@ pub mod test_run {
             pub(crate) max_page_size: Option<i32>,
         }
         impl Builder {
+            #[doc = "Sort on one of the field - status, displayName, executedDateTime in (field asc/desc) format. eg: displayName asc"]
             pub fn order_by(mut self, order_by: impl Into<String>) -> Self {
                 self.order_by = Some(order_by.into());
                 self
             }
+            #[doc = "NextLink Token to get next page of response"]
             pub fn next_link(mut self, next_link: impl Into<String>) -> Self {
                 self.next_link = Some(next_link.into());
                 self
             }
+            #[doc = "Filter search based on searchable fields - description, executedUser."]
             pub fn search(mut self, search: impl Into<String>) -> Self {
                 self.search = Some(search.into());
                 self
             }
+            #[doc = "Unique identifier for load test name, must be a valid URL character ^[a-z0-9_-]*$"]
             pub fn test_id(mut self, test_id: impl Into<String>) -> Self {
                 self.test_id = Some(test_id.into());
                 self
             }
+            #[doc = "The end DateTime(Iso8601Literal format) of test-run execution time filter range."]
             pub fn execution_from(mut self, execution_from: impl Into<String>) -> Self {
                 self.execution_from = Some(execution_from.into());
                 self
             }
+            #[doc = "The start DateTime(Iso8601Literal format) of test-run execution time filter range."]
             pub fn execution_to(mut self, execution_to: impl Into<String>) -> Self {
                 self.execution_to = Some(execution_to.into());
                 self
             }
+            #[doc = "Comma separated list of test run status, value can be -  \"ACCEPTED\", \"NOTSTARTED\",\"PROVISIONING\",\"PROVISIONED\",\"CONFIGURING\",\n\"CONFIGURED\",\"EXECUTING\",\"EXECUTED\",\"DEPROVISIONING\",\"DEPROVISIONED\",\"DONE\",\"CANCELLED\",\"FAILED\""]
             pub fn status(mut self, status: impl Into<String>) -> Self {
                 self.status = Some(status.into());
                 self
             }
+            #[doc = "No of results in response"]
             pub fn max_page_size(mut self, max_page_size: i32) -> Self {
                 self.max_page_size = Some(max_page_size);
                 self
@@ -1734,10 +1753,12 @@ pub mod test_run {
             pub(crate) group_by_interval: Option<String>,
         }
         impl Builder {
+            #[doc = "Filter to be used in metrics queries, filters can be applied on following fields : request, error, percentile( possible values : 90, 99, 95) or time (can be between start and end time). Request and error filter values can be get from /clientMetricsFilter API. Example of filter : (request eq 'HTTP Request1' or request eq 'total-4bec6d5b-c3c3-4f5f-be09-5c4abb28aedd') and (error eq 'Non HTTP response code: org.apache.http.conn.ConnectTimeoutException' or error eq 'total-4bec6d5b-c3c3-4f5f-be09-5c4abb28aedd') and (percentile eq 90) and (time ge 1626346535054 and time le 1626346924744)"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Group by time interval, in which interval metrics needs to be retrieved, values can be 10s,20s,30s,1m,2m,5m,1h"]
             pub fn group_by_interval(mut self, group_by_interval: impl Into<String>) -> Self {
                 self.group_by_interval = Some(group_by_interval.into());
                 self

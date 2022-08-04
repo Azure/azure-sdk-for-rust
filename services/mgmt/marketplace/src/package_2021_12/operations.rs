@@ -386,6 +386,7 @@ pub mod private_store {
             pub(crate) use_cache: Option<String>,
         }
         impl Builder {
+            #[doc = "Determines if to use cache or DB for serving this request"]
             pub fn use_cache(mut self, use_cache: impl Into<String>) -> Self {
                 self.use_cache = Some(use_cache.into());
                 self
@@ -1428,6 +1429,7 @@ pub mod private_store {
             pub(crate) next_page_token: Option<String>,
         }
         impl Builder {
+            #[doc = "The skip token to get the next page."]
             pub fn next_page_token(mut self, next_page_token: impl Into<String>) -> Self {
                 self.next_page_token = Some(next_page_token.into());
                 self

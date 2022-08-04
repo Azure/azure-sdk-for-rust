@@ -1138,6 +1138,7 @@ pub mod steps {
             pub(crate) step_info: Option<models::StepResource>,
         }
         impl Builder {
+            #[doc = "The step object."]
             pub fn step_info(mut self, step_info: impl Into<models::StepResource>) -> Self {
                 self.step_info = Some(step_info.into());
                 self
@@ -1423,6 +1424,7 @@ pub mod rollouts {
             pub(crate) retry_attempt: Option<i64>,
         }
         impl Builder {
+            #[doc = "Rollout retry attempt ordinal to get the result of. If not specified, result of the latest attempt will be returned."]
             pub fn retry_attempt(mut self, retry_attempt: i64) -> Self {
                 self.retry_attempt = Some(retry_attempt);
                 self
@@ -1485,6 +1487,7 @@ pub mod rollouts {
             pub(crate) rollout_request: Option<models::RolloutRequest>,
         }
         impl Builder {
+            #[doc = "Source rollout request object that defines the rollout."]
             pub fn rollout_request(mut self, rollout_request: impl Into<models::RolloutRequest>) -> Self {
                 self.rollout_request = Some(rollout_request.into());
                 self
@@ -1654,6 +1657,7 @@ pub mod rollouts {
             pub(crate) skip_succeeded: Option<bool>,
         }
         impl Builder {
+            #[doc = "If true, will skip all succeeded steps so far in the rollout. If false, will execute the entire rollout again regardless of the current state of individual resources. Defaults to false if not specified."]
             pub fn skip_succeeded(mut self, skip_succeeded: bool) -> Self {
                 self.skip_succeeded = Some(skip_succeeded);
                 self
@@ -1896,6 +1900,7 @@ pub mod artifact_sources {
             pub(crate) artifact_source_info: Option<models::ArtifactSource>,
         }
         impl Builder {
+            #[doc = "Source object that defines the resource."]
             pub fn artifact_source_info(mut self, artifact_source_info: impl Into<models::ArtifactSource>) -> Self {
                 self.artifact_source_info = Some(artifact_source_info.into());
                 self

@@ -1391,6 +1391,7 @@ pub mod database_accounts {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "An OData filter expression that describes a subset of usages to return. The supported parameter is name.value (name of the metric, can have an or of multiple names)."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -1720,6 +1721,7 @@ pub mod database {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "An OData filter expression that describes a subset of usages to return. The supported parameter is name.value (name of the metric, can have an or of multiple names)."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -1969,6 +1971,7 @@ pub mod collection {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "An OData filter expression that describes a subset of usages to return. The supported parameter is name.value (name of the metric, can have an or of multiple names)."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -2708,6 +2711,7 @@ pub mod collection_partition {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "An OData filter expression that describes a subset of usages to return. The supported parameter is name.value (name of the metric, can have an or of multiple names)."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -15049,14 +15053,17 @@ pub mod restorable_sql_containers {
             pub(crate) end_time: Option<String>,
         }
         impl Builder {
+            #[doc = "The resource ID of the SQL database."]
             pub fn restorable_sql_database_rid(mut self, restorable_sql_database_rid: impl Into<String>) -> Self {
                 self.restorable_sql_database_rid = Some(restorable_sql_database_rid.into());
                 self
             }
+            #[doc = "Restorable Sql containers event feed start time."]
             pub fn start_time(mut self, start_time: impl Into<String>) -> Self {
                 self.start_time = Some(start_time.into());
                 self
             }
+            #[doc = "Restorable Sql containers event feed end time."]
             pub fn end_time(mut self, end_time: impl Into<String>) -> Self {
                 self.end_time = Some(end_time.into());
                 self
@@ -15148,10 +15155,12 @@ pub mod restorable_sql_resources {
             pub(crate) restore_timestamp_in_utc: Option<String>,
         }
         impl Builder {
+            #[doc = "The location where the restorable resources are located."]
             pub fn restore_location(mut self, restore_location: impl Into<String>) -> Self {
                 self.restore_location = Some(restore_location.into());
                 self
             }
+            #[doc = "The timestamp when the restorable resources existed."]
             pub fn restore_timestamp_in_utc(mut self, restore_timestamp_in_utc: impl Into<String>) -> Self {
                 self.restore_timestamp_in_utc = Some(restore_timestamp_in_utc.into());
                 self
@@ -15314,14 +15323,17 @@ pub mod restorable_mongodb_collections {
             pub(crate) end_time: Option<String>,
         }
         impl Builder {
+            #[doc = "The resource ID of the MongoDB database."]
             pub fn restorable_mongodb_database_rid(mut self, restorable_mongodb_database_rid: impl Into<String>) -> Self {
                 self.restorable_mongodb_database_rid = Some(restorable_mongodb_database_rid.into());
                 self
             }
+            #[doc = "Restorable MongoDB collections event feed start time."]
             pub fn start_time(mut self, start_time: impl Into<String>) -> Self {
                 self.start_time = Some(start_time.into());
                 self
             }
+            #[doc = "Restorable MongoDB collections event feed end time."]
             pub fn end_time(mut self, end_time: impl Into<String>) -> Self {
                 self.end_time = Some(end_time.into());
                 self
@@ -15413,10 +15425,12 @@ pub mod restorable_mongodb_resources {
             pub(crate) restore_timestamp_in_utc: Option<String>,
         }
         impl Builder {
+            #[doc = "The location where the restorable resources are located."]
             pub fn restore_location(mut self, restore_location: impl Into<String>) -> Self {
                 self.restore_location = Some(restore_location.into());
                 self
             }
+            #[doc = "The timestamp when the restorable resources existed."]
             pub fn restore_timestamp_in_utc(mut self, restore_timestamp_in_utc: impl Into<String>) -> Self {
                 self.restore_timestamp_in_utc = Some(restore_timestamp_in_utc.into());
                 self
@@ -15579,14 +15593,17 @@ pub mod restorable_gremlin_graphs {
             pub(crate) end_time: Option<String>,
         }
         impl Builder {
+            #[doc = "The resource ID of the Gremlin database."]
             pub fn restorable_gremlin_database_rid(mut self, restorable_gremlin_database_rid: impl Into<String>) -> Self {
                 self.restorable_gremlin_database_rid = Some(restorable_gremlin_database_rid.into());
                 self
             }
+            #[doc = "Restorable Gremlin graphs event feed start time."]
             pub fn start_time(mut self, start_time: impl Into<String>) -> Self {
                 self.start_time = Some(start_time.into());
                 self
             }
+            #[doc = "Restorable Gremlin graphs event feed end time."]
             pub fn end_time(mut self, end_time: impl Into<String>) -> Self {
                 self.end_time = Some(end_time.into());
                 self
@@ -15678,10 +15695,12 @@ pub mod restorable_gremlin_resources {
             pub(crate) restore_timestamp_in_utc: Option<String>,
         }
         impl Builder {
+            #[doc = "The location where the restorable resources are located."]
             pub fn restore_location(mut self, restore_location: impl Into<String>) -> Self {
                 self.restore_location = Some(restore_location.into());
                 self
             }
+            #[doc = "The timestamp when the restorable resources existed."]
             pub fn restore_timestamp_in_utc(mut self, restore_timestamp_in_utc: impl Into<String>) -> Self {
                 self.restore_timestamp_in_utc = Some(restore_timestamp_in_utc.into());
                 self
@@ -15770,10 +15789,12 @@ pub mod restorable_tables {
             pub(crate) end_time: Option<String>,
         }
         impl Builder {
+            #[doc = "Restorable Tables event feed start time."]
             pub fn start_time(mut self, start_time: impl Into<String>) -> Self {
                 self.start_time = Some(start_time.into());
                 self
             }
+            #[doc = "Restorable Tables event feed end time."]
             pub fn end_time(mut self, end_time: impl Into<String>) -> Self {
                 self.end_time = Some(end_time.into());
                 self
@@ -15860,10 +15881,12 @@ pub mod restorable_table_resources {
             pub(crate) restore_timestamp_in_utc: Option<String>,
         }
         impl Builder {
+            #[doc = "The location where the restorable resources are located."]
             pub fn restore_location(mut self, restore_location: impl Into<String>) -> Self {
                 self.restore_location = Some(restore_location.into());
                 self
             }
+            #[doc = "The timestamp when the restorable resources existed."]
             pub fn restore_timestamp_in_utc(mut self, restore_timestamp_in_utc: impl Into<String>) -> Self {
                 self.restore_timestamp_in_utc = Some(restore_timestamp_in_utc.into());
                 self

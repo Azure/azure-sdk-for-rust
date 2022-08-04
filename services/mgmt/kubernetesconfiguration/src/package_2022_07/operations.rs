@@ -433,6 +433,7 @@ pub mod extensions {
             pub(crate) force_delete: Option<bool>,
         }
         impl Builder {
+            #[doc = "Delete the extension resource in Azure - not the normal asynchronous delete."]
             pub fn force_delete(mut self, force_delete: bool) -> Self {
                 self.force_delete = Some(force_delete);
                 self
@@ -1077,6 +1078,7 @@ pub mod flux_configurations {
             pub(crate) force_delete: Option<bool>,
         }
         impl Builder {
+            #[doc = "Delete the extension resource in Azure - not the normal asynchronous delete."]
             pub fn force_delete(mut self, force_delete: bool) -> Self {
                 self.force_delete = Some(force_delete);
                 self

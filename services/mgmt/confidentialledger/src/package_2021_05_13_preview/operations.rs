@@ -592,6 +592,7 @@ pub mod ledger {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the list operation. eg. $filter=ledgerType eq 'Public'"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -675,6 +676,7 @@ pub mod ledger {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the list operation. eg. $filter=ledgerType eq 'Public'"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self

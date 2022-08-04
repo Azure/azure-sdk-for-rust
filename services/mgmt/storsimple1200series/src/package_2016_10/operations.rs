@@ -1101,6 +1101,7 @@ pub mod managers {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "OData Filter options"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -1687,6 +1688,7 @@ pub mod alerts {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "OData Filter options"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -1974,6 +1976,7 @@ pub mod backups {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "OData Filter options"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -2062,10 +2065,12 @@ pub mod backups {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "Set to true if you need backups which can be used for failover."]
             pub fn for_failover(mut self, for_failover: bool) -> Self {
                 self.for_failover = Some(for_failover);
                 self
             }
+            #[doc = "OData Filter options"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -2684,6 +2689,7 @@ pub mod devices {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "Specify $expand=details to populate additional fields related to the device."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -2746,6 +2752,7 @@ pub mod devices {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "Specify $expand=details to populate additional fields related to the device."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -3200,6 +3207,7 @@ pub mod devices {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "Specify $expand=details to populate additional fields related to the device."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -3320,6 +3328,7 @@ pub mod devices {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "OData Filter options"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -4787,6 +4796,7 @@ pub mod iscsi_disks {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "OData Filter options"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -5379,6 +5389,7 @@ pub mod file_servers {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "OData Filter options"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -5942,6 +5953,7 @@ pub mod file_shares {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "OData Filter options"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -6589,6 +6601,7 @@ pub mod iscsi_servers {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "OData Filter options"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -6821,6 +6834,7 @@ pub mod jobs {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "OData Filter options"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -6964,6 +6978,7 @@ pub mod jobs {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "OData Filter options"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self

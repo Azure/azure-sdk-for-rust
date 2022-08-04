@@ -2435,18 +2435,22 @@ pub mod favorites {
             pub(crate) tags: Vec<String>,
         }
         impl Builder {
+            #[doc = "The type of favorite. Value can be either shared or user."]
             pub fn favorite_type(mut self, favorite_type: impl Into<String>) -> Self {
                 self.favorite_type = Some(favorite_type.into());
                 self
             }
+            #[doc = "Source type of favorite to return. When left out, the source type defaults to 'other' (not present in this enum)."]
             pub fn source_type(mut self, source_type: impl Into<String>) -> Self {
                 self.source_type = Some(source_type.into());
                 self
             }
+            #[doc = "Flag indicating whether or not to return the full content for each applicable favorite. If false, only return summary content for favorites."]
             pub fn can_fetch_content(mut self, can_fetch_content: bool) -> Self {
                 self.can_fetch_content = Some(can_fetch_content);
                 self
             }
+            #[doc = "Tags that must be present on each favorite returned."]
             pub fn tags(mut self, tags: Vec<String>) -> Self {
                 self.tags = tags;
                 self
@@ -3491,14 +3495,17 @@ pub mod analytics_items {
             pub(crate) include_content: Option<bool>,
         }
         impl Builder {
+            #[doc = "Enum indicating if this item definition is owned by a specific user or is shared between all users with access to the Application Insights component."]
             pub fn scope(mut self, scope: impl Into<String>) -> Self {
                 self.scope = Some(scope.into());
                 self
             }
+            #[doc = "Enum indicating the type of the Analytics item."]
             pub fn type_(mut self, type_: impl Into<String>) -> Self {
                 self.type_ = Some(type_.into());
                 self
             }
+            #[doc = "Flag indicating whether or not to return the content of each applicable item. If false, only return the item information."]
             pub fn include_content(mut self, include_content: bool) -> Self {
                 self.include_content = Some(include_content);
                 self
@@ -3570,10 +3577,12 @@ pub mod analytics_items {
             pub(crate) name: Option<String>,
         }
         impl Builder {
+            #[doc = "The Id of a specific item defined in the Application Insights component"]
             pub fn id(mut self, id: impl Into<String>) -> Self {
                 self.id = Some(id.into());
                 self
             }
+            #[doc = "The name of a specific item defined in the Application Insights component"]
             pub fn name(mut self, name: impl Into<String>) -> Self {
                 self.name = Some(name.into());
                 self
@@ -3640,6 +3649,7 @@ pub mod analytics_items {
             pub(crate) override_item: Option<bool>,
         }
         impl Builder {
+            #[doc = "Flag indicating whether or not to force save an item. This allows overriding an item if it already exists."]
             pub fn override_item(mut self, override_item: bool) -> Self {
                 self.override_item = Some(override_item);
                 self
@@ -3706,10 +3716,12 @@ pub mod analytics_items {
             pub(crate) name: Option<String>,
         }
         impl Builder {
+            #[doc = "The Id of a specific item defined in the Application Insights component"]
             pub fn id(mut self, id: impl Into<String>) -> Self {
                 self.id = Some(id.into());
                 self
             }
+            #[doc = "The name of a specific item defined in the Application Insights component"]
             pub fn name(mut self, name: impl Into<String>) -> Self {
                 self.name = Some(name.into());
                 self
@@ -4038,6 +4050,7 @@ pub mod workbook_templates {
             pub(crate) workbook_template_update_parameters: Option<models::WorkbookTemplateUpdateParameters>,
         }
         impl Builder {
+            #[doc = "Properties that need to be specified to patch a workbook template."]
             pub fn workbook_template_update_parameters(
                 mut self,
                 workbook_template_update_parameters: impl Into<models::WorkbookTemplateUpdateParameters>,
@@ -4288,14 +4301,17 @@ pub mod my_workbooks {
             pub(crate) can_fetch_content: Option<bool>,
         }
         impl Builder {
+            #[doc = "Tags presents on each workbook returned."]
             pub fn tags(mut self, tags: Vec<String>) -> Self {
                 self.tags = tags;
                 self
             }
+            #[doc = "Azure Resource Id that will fetch all linked workbooks."]
             pub fn source_id(mut self, source_id: impl Into<String>) -> Self {
                 self.source_id = Some(source_id.into());
                 self
             }
+            #[doc = "Flag indicating whether or not to return the full content for each applicable workbook. If false, only return summary content for workbooks."]
             pub fn can_fetch_content(mut self, can_fetch_content: bool) -> Self {
                 self.can_fetch_content = Some(can_fetch_content);
                 self
@@ -4388,10 +4404,12 @@ pub mod my_workbooks {
             pub(crate) can_fetch_content: Option<bool>,
         }
         impl Builder {
+            #[doc = "Tags presents on each workbook returned."]
             pub fn tags(mut self, tags: Vec<String>) -> Self {
                 self.tags = tags;
                 self
             }
+            #[doc = "Flag indicating whether or not to return the full content for each applicable workbook. If false, only return summary content for workbooks."]
             pub fn can_fetch_content(mut self, can_fetch_content: bool) -> Self {
                 self.can_fetch_content = Some(can_fetch_content);
                 self
@@ -4537,6 +4555,7 @@ pub mod my_workbooks {
             pub(crate) source_id: Option<String>,
         }
         impl Builder {
+            #[doc = "Azure Resource Id that will fetch all linked workbooks."]
             pub fn source_id(mut self, source_id: impl Into<String>) -> Self {
                 self.source_id = Some(source_id.into());
                 self
@@ -4604,6 +4623,7 @@ pub mod my_workbooks {
             pub(crate) source_id: Option<String>,
         }
         impl Builder {
+            #[doc = "Azure Resource Id that will fetch all linked workbooks."]
             pub fn source_id(mut self, source_id: impl Into<String>) -> Self {
                 self.source_id = Some(source_id.into());
                 self
@@ -4888,10 +4908,12 @@ pub mod workbooks {
             pub(crate) can_fetch_content: Option<bool>,
         }
         impl Builder {
+            #[doc = "Tags presents on each workbook returned."]
             pub fn tags(mut self, tags: Vec<String>) -> Self {
                 self.tags = tags;
                 self
             }
+            #[doc = "Flag indicating whether or not to return the full content for each applicable workbook. If false, only return summary content for workbooks."]
             pub fn can_fetch_content(mut self, can_fetch_content: bool) -> Self {
                 self.can_fetch_content = Some(can_fetch_content);
                 self
@@ -4982,14 +5004,17 @@ pub mod workbooks {
             pub(crate) can_fetch_content: Option<bool>,
         }
         impl Builder {
+            #[doc = "Tags presents on each workbook returned."]
             pub fn tags(mut self, tags: Vec<String>) -> Self {
                 self.tags = tags;
                 self
             }
+            #[doc = "Azure Resource Id that will fetch all linked workbooks."]
             pub fn source_id(mut self, source_id: impl Into<String>) -> Self {
                 self.source_id = Some(source_id.into());
                 self
             }
+            #[doc = "Flag indicating whether or not to return the full content for each applicable workbook. If false, only return summary content for workbooks."]
             pub fn can_fetch_content(mut self, can_fetch_content: bool) -> Self {
                 self.can_fetch_content = Some(can_fetch_content);
                 self
@@ -5082,6 +5107,7 @@ pub mod workbooks {
             pub(crate) can_fetch_content: Option<bool>,
         }
         impl Builder {
+            #[doc = "Flag indicating whether or not to return the full content for each applicable workbook. If false, only return summary content for workbooks."]
             pub fn can_fetch_content(mut self, can_fetch_content: bool) -> Self {
                 self.can_fetch_content = Some(can_fetch_content);
                 self
@@ -5149,6 +5175,7 @@ pub mod workbooks {
             pub(crate) source_id: Option<String>,
         }
         impl Builder {
+            #[doc = "Azure Resource Id that will fetch all linked workbooks."]
             pub fn source_id(mut self, source_id: impl Into<String>) -> Self {
                 self.source_id = Some(source_id.into());
                 self
@@ -5216,10 +5243,12 @@ pub mod workbooks {
             pub(crate) workbook_update_parameters: Option<models::WorkbookUpdateParameters>,
         }
         impl Builder {
+            #[doc = "Azure Resource Id that will fetch all linked workbooks."]
             pub fn source_id(mut self, source_id: impl Into<String>) -> Self {
                 self.source_id = Some(source_id.into());
                 self
             }
+            #[doc = "Properties that need to be specified to create a new workbook."]
             pub fn workbook_update_parameters(mut self, workbook_update_parameters: impl Into<models::WorkbookUpdateParameters>) -> Self {
                 self.workbook_update_parameters = Some(workbook_update_parameters.into());
                 self

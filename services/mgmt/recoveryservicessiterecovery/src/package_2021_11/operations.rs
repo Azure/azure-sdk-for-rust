@@ -541,6 +541,7 @@ pub mod replication_appliances {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "OData filter options."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -815,6 +816,7 @@ pub mod replication_events {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "OData filter options."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -1254,6 +1256,7 @@ pub mod replication_fabrics {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "OData filter options."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -3592,14 +3595,17 @@ pub mod replication_migration_items {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "The pagination token."]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());
                 self
             }
+            #[doc = "The page size."]
             pub fn take_token(mut self, take_token: impl Into<String>) -> Self {
                 self.take_token = Some(take_token.into());
                 self
             }
+            #[doc = "OData filter options."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -3856,6 +3862,7 @@ pub mod replication_migration_items {
             pub(crate) delete_option: Option<String>,
         }
         impl Builder {
+            #[doc = "The delete option."]
             pub fn delete_option(mut self, delete_option: impl Into<String>) -> Self {
                 self.delete_option = Some(delete_option.into());
                 self
@@ -4138,14 +4145,17 @@ pub mod replication_migration_items {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "The pagination token."]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());
                 self
             }
+            #[doc = "The page size."]
             pub fn take_token(mut self, take_token: impl Into<String>) -> Self {
                 self.take_token = Some(take_token.into());
                 self
             }
+            #[doc = "OData filter options."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -4490,14 +4500,17 @@ pub mod replication_protectable_items {
             pub(crate) skip_token: Option<String>,
         }
         impl Builder {
+            #[doc = "OData filter options."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "take OData query parameter."]
             pub fn take(mut self, take: impl Into<String>) -> Self {
                 self.take = Some(take.into());
                 self
             }
+            #[doc = "skipToken OData query parameter."]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());
                 self
@@ -6506,10 +6519,12 @@ pub mod replication_protected_items {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "The pagination token. Possible values: \"FabricId\" or \"FabricId_CloudId\" or null."]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());
                 self
             }
+            #[doc = "OData filter options."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -9479,6 +9494,7 @@ pub mod replication_jobs {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "OData filter options."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -10356,10 +10372,12 @@ pub mod replication_protection_intents {
             pub(crate) take_token: Option<String>,
         }
         impl Builder {
+            #[doc = "The pagination token."]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());
                 self
             }
+            #[doc = "The page size."]
             pub fn take_token(mut self, take_token: impl Into<String>) -> Self {
                 self.take_token = Some(take_token.into());
                 self
@@ -11528,6 +11546,7 @@ pub mod supported_operating_systems {
             pub(crate) instance_type: Option<String>,
         }
         impl Builder {
+            #[doc = "The instance type."]
             pub fn instance_type(mut self, instance_type: impl Into<String>) -> Self {
                 self.instance_type = Some(instance_type.into());
                 self

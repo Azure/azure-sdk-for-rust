@@ -556,6 +556,7 @@ pub mod php_workloads {
             pub(crate) delete_infra: Option<String>,
         }
         impl Builder {
+            #[doc = "Whether to delete infra along with workload resource."]
             pub fn delete_infra(mut self, delete_infra: impl Into<String>) -> Self {
                 self.delete_infra = Some(delete_infra.into());
                 self
@@ -995,6 +996,7 @@ pub mod sap_sizing_recommendations {
         pub(crate) sap_sizing_recommendation: Option<models::SapSizingRecommendationRequest>,
     }
     impl Builder {
+        #[doc = "SAP Sizing Recommendation Request body"]
         pub fn sap_sizing_recommendation(mut self, sap_sizing_recommendation: impl Into<models::SapSizingRecommendationRequest>) -> Self {
             self.sap_sizing_recommendation = Some(sap_sizing_recommendation.into());
             self
@@ -1050,6 +1052,7 @@ pub mod sap_supported_sku {
         pub(crate) sap_supported_sku: Option<models::SapSupportedSkusRequest>,
     }
     impl Builder {
+        #[doc = "SAP Supported SKU Request body"]
         pub fn sap_supported_sku(mut self, sap_supported_sku: impl Into<models::SapSupportedSkusRequest>) -> Self {
             self.sap_supported_sku = Some(sap_supported_sku.into());
             self
@@ -1105,6 +1108,7 @@ pub mod sap_disk_configurations {
         pub(crate) sap_disk_configurations: Option<models::SapDiskConfigurationsRequest>,
     }
     impl Builder {
+        #[doc = "SAP Disk Configurations Request body"]
         pub fn sap_disk_configurations(mut self, sap_disk_configurations: impl Into<models::SapDiskConfigurationsRequest>) -> Self {
             self.sap_disk_configurations = Some(sap_disk_configurations.into());
             self
@@ -1160,6 +1164,7 @@ pub mod sap_availability_zone_details {
         pub(crate) sap_availability_zone_details: Option<models::SapAvailabilityZoneDetailsRequest>,
     }
     impl Builder {
+        #[doc = "SAP Availability Zone Details Request body"]
         pub fn sap_availability_zone_details(
             mut self,
             sap_availability_zone_details: impl Into<models::SapAvailabilityZoneDetailsRequest>,
@@ -1423,6 +1428,7 @@ pub mod sap_virtual_instances {
             pub(crate) body: Option<models::SapVirtualInstance>,
         }
         impl Builder {
+            #[doc = "The Virtual Instance for SAP request body."]
             pub fn body(mut self, body: impl Into<models::SapVirtualInstance>) -> Self {
                 self.body = Some(body.into());
                 self
@@ -1491,6 +1497,7 @@ pub mod sap_virtual_instances {
             pub(crate) body: Option<models::UpdateSapVirtualInstanceRequest>,
         }
         impl Builder {
+            #[doc = "The Update Virtual Instance for SAP request body."]
             pub fn body(mut self, body: impl Into<models::UpdateSapVirtualInstanceRequest>) -> Self {
                 self.body = Some(body.into());
                 self
@@ -1826,6 +1833,7 @@ pub mod sap_virtual_instances {
             pub(crate) body: Option<models::StopRequest>,
         }
         impl Builder {
+            #[doc = "The Virtual Instances for SAP stop request body."]
             pub fn body(mut self, body: impl Into<models::StopRequest>) -> Self {
                 self.body = Some(body.into());
                 self
@@ -2057,6 +2065,7 @@ pub mod sap_central_instances {
             pub(crate) body: Option<models::SapCentralServerInstance>,
         }
         impl Builder {
+            #[doc = "The SAP Central Server instance request body."]
             pub fn body(mut self, body: impl Into<models::SapCentralServerInstance>) -> Self {
                 self.body = Some(body.into());
                 self
@@ -2124,6 +2133,7 @@ pub mod sap_central_instances {
             pub(crate) body: Option<models::UpdateSapCentralInstanceRequest>,
         }
         impl Builder {
+            #[doc = "The SAP Central Server instance request body."]
             pub fn body(mut self, body: impl Into<models::UpdateSapCentralInstanceRequest>) -> Self {
                 self.body = Some(body.into());
                 self
@@ -2486,6 +2496,7 @@ pub mod sap_database_instances {
             pub(crate) body: Option<models::SapDatabaseInstance>,
         }
         impl Builder {
+            #[doc = "The SAP Database Server instance request body."]
             pub fn body(mut self, body: impl Into<models::SapDatabaseInstance>) -> Self {
                 self.body = Some(body.into());
                 self
@@ -2553,6 +2564,7 @@ pub mod sap_database_instances {
             pub(crate) body: Option<models::UpdateSapDatabaseInstanceRequest>,
         }
         impl Builder {
+            #[doc = "The SAP Database Server instance request body."]
             pub fn body(mut self, body: impl Into<models::UpdateSapDatabaseInstanceRequest>) -> Self {
                 self.body = Some(body.into());
                 self
@@ -2915,6 +2927,7 @@ pub mod sap_application_server_instances {
             pub(crate) body: Option<models::SapApplicationServerInstance>,
         }
         impl Builder {
+            #[doc = "The SAP Application Server instance request body."]
             pub fn body(mut self, body: impl Into<models::SapApplicationServerInstance>) -> Self {
                 self.body = Some(body.into());
                 self
@@ -2982,6 +2995,7 @@ pub mod sap_application_server_instances {
             pub(crate) body: Option<models::UpdateSapApplicationInstanceRequest>,
         }
         impl Builder {
+            #[doc = "The SAP Application Server instance request body."]
             pub fn body(mut self, body: impl Into<models::UpdateSapApplicationInstanceRequest>) -> Self {
                 self.body = Some(body.into());
                 self

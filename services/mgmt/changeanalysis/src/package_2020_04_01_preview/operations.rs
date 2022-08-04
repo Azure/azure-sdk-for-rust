@@ -197,6 +197,7 @@ pub mod configuration_profile {
             pub(crate) body: Option<models::ConfigurationProfileResource>,
         }
         impl Builder {
+            #[doc = "Request body containing new configuration profile."]
             pub fn body(mut self, body: impl Into<models::ConfigurationProfileResource>) -> Self {
                 self.body = Some(body.into());
                 self
@@ -257,6 +258,7 @@ pub mod configuration_profile {
             pub(crate) body: Option<models::ConfigurationProfileResource>,
         }
         impl Builder {
+            #[doc = "The parameters for updating a configuration store."]
             pub fn body(mut self, body: impl Into<models::ConfigurationProfileResource>) -> Self {
                 self.body = Some(body.into());
                 self
@@ -379,6 +381,7 @@ pub mod operations {
             pub(crate) skip_token: Option<String>,
         }
         impl Builder {
+            #[doc = "A skip token is used to continue retrieving items after an operation returns a partial result. If a previous response contains a nextLink element, the value of the nextLink element will include a skipToken parameter that specifies a starting point to use for subsequent calls."]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());
                 self

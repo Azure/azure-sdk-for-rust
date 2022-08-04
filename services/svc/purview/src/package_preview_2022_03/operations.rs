@@ -584,14 +584,17 @@ pub mod entity {
             pub(crate) exclude_relationship_types: Vec<String>,
         }
         impl Builder {
+            #[doc = "Whether to return minimal information for referred entities."]
             pub fn min_ext_info(mut self, min_ext_info: bool) -> Self {
                 self.min_ext_info = Some(min_ext_info);
                 self
             }
+            #[doc = "Whether to ignore relationship attributes."]
             pub fn ignore_relationships(mut self, ignore_relationships: bool) -> Self {
                 self.ignore_relationships = Some(ignore_relationships);
                 self
             }
+            #[doc = "An array of the relationship types need to be excluded from the response."]
             pub fn exclude_relationship_types(mut self, exclude_relationship_types: Vec<String>) -> Self {
                 self.exclude_relationship_types = exclude_relationship_types;
                 self
@@ -780,10 +783,12 @@ pub mod entity {
             pub(crate) ignore_relationships: Option<bool>,
         }
         impl Builder {
+            #[doc = "Whether to return minimal information for referred entities."]
             pub fn min_ext_info(mut self, min_ext_info: bool) -> Self {
                 self.min_ext_info = Some(min_ext_info);
                 self
             }
+            #[doc = "Whether to ignore relationship attributes."]
             pub fn ignore_relationships(mut self, ignore_relationships: bool) -> Self {
                 self.ignore_relationships = Some(ignore_relationships);
                 self
@@ -1148,14 +1153,17 @@ pub mod entity {
             pub(crate) attr_qualified_name: Option<String>,
         }
         impl Builder {
+            #[doc = "Whether to return minimal information for referred entities."]
             pub fn min_ext_info(mut self, min_ext_info: bool) -> Self {
                 self.min_ext_info = Some(min_ext_info);
                 self
             }
+            #[doc = "Whether to ignore relationship attributes."]
             pub fn ignore_relationships(mut self, ignore_relationships: bool) -> Self {
                 self.ignore_relationships = Some(ignore_relationships);
                 self
             }
+            #[doc = "The qualified name of the entity."]
             pub fn attr_qualified_name(mut self, attr_qualified_name: impl Into<String>) -> Self {
                 self.attr_qualified_name = Some(attr_qualified_name.into());
                 self
@@ -1220,6 +1228,7 @@ pub mod entity {
             pub(crate) attr_qualified_name: Option<String>,
         }
         impl Builder {
+            #[doc = "The qualified name of the entity."]
             pub fn attr_qualified_name(mut self, attr_qualified_name: impl Into<String>) -> Self {
                 self.attr_qualified_name = Some(attr_qualified_name.into());
                 self
@@ -1276,6 +1285,7 @@ pub mod entity {
             pub(crate) attr_qualified_name: Option<String>,
         }
         impl Builder {
+            #[doc = "The qualified name of the entity."]
             pub fn attr_qualified_name(mut self, attr_qualified_name: impl Into<String>) -> Self {
                 self.attr_qualified_name = Some(attr_qualified_name.into());
                 self
@@ -1332,6 +1342,7 @@ pub mod entity {
             pub(crate) attr_qualified_name: Option<String>,
         }
         impl Builder {
+            #[doc = "The qualified name of the entity."]
             pub fn attr_qualified_name(mut self, attr_qualified_name: impl Into<String>) -> Self {
                 self.attr_qualified_name = Some(attr_qualified_name.into());
                 self
@@ -1385,6 +1396,7 @@ pub mod entity {
             pub(crate) attr_qualified_name: Option<String>,
         }
         impl Builder {
+            #[doc = "The qualified name of the entity."]
             pub fn attr_qualified_name(mut self, attr_qualified_name: impl Into<String>) -> Self {
                 self.attr_qualified_name = Some(attr_qualified_name.into());
                 self
@@ -1438,6 +1450,7 @@ pub mod entity {
             pub(crate) attr_qualified_name: Option<String>,
         }
         impl Builder {
+            #[doc = "The qualified name of the entity."]
             pub fn attr_qualified_name(mut self, attr_qualified_name: impl Into<String>) -> Self {
                 self.attr_qualified_name = Some(attr_qualified_name.into());
                 self
@@ -1534,14 +1547,17 @@ pub mod entity {
             pub(crate) attr_n_qualified_name: Option<String>,
         }
         impl Builder {
+            #[doc = "Whether to return minimal information for referred entities."]
             pub fn min_ext_info(mut self, min_ext_info: bool) -> Self {
                 self.min_ext_info = Some(min_ext_info);
                 self
             }
+            #[doc = "Whether to ignore relationship attributes."]
             pub fn ignore_relationships(mut self, ignore_relationships: bool) -> Self {
                 self.ignore_relationships = Some(ignore_relationships);
                 self
             }
+            #[doc = "Qualified name of an entity. E.g. to find 2 entities you can set attrs_0:qualifiedName=db1@cl1&attrs_2:qualifiedName=db2@cl1"]
             pub fn attr_n_qualified_name(mut self, attr_n_qualified_name: impl Into<String>) -> Self {
                 self.attr_n_qualified_name = Some(attr_n_qualified_name.into());
                 self
@@ -1648,10 +1664,12 @@ pub mod entity {
             pub(crate) body: Option<serde_json::Value>,
         }
         impl Builder {
+            #[doc = "Whether to overwrite the existing business metadata on the entity or not, default is false."]
             pub fn is_overwrite(mut self, is_overwrite: bool) -> Self {
                 self.is_overwrite = Some(is_overwrite);
                 self
             }
+            #[doc = "Business Metadata"]
             pub fn body(mut self, body: impl Into<serde_json::Value>) -> Self {
                 self.body = Some(body.into());
                 self
@@ -1708,6 +1726,7 @@ pub mod entity {
             pub(crate) body: Option<serde_json::Value>,
         }
         impl Builder {
+            #[doc = "BusinessMetadata"]
             pub fn body(mut self, body: impl Into<serde_json::Value>) -> Self {
                 self.body = Some(body.into());
                 self
@@ -1760,6 +1779,7 @@ pub mod entity {
             pub(crate) body: Option<serde_json::Value>,
         }
         impl Builder {
+            #[doc = "BusinessMetadataAttributes"]
             pub fn body(mut self, body: impl Into<serde_json::Value>) -> Self {
                 self.body = Some(body.into());
                 self
@@ -1813,6 +1833,7 @@ pub mod entity {
             pub(crate) body: Option<serde_json::Value>,
         }
         impl Builder {
+            #[doc = "BusinessMetadataAttributes"]
             pub fn body(mut self, body: impl Into<serde_json::Value>) -> Self {
                 self.body = Some(body.into());
                 self
@@ -1907,6 +1928,7 @@ pub mod entity {
             pub(crate) uploaded_input_stream: Option<bytes::Bytes>,
         }
         impl Builder {
+            #[doc = "InputStream of file"]
             pub fn uploaded_input_stream(mut self, uploaded_input_stream: impl Into<bytes::Bytes>) -> Self {
                 self.uploaded_input_stream = Some(uploaded_input_stream.into());
                 self
@@ -1955,6 +1977,7 @@ pub mod entity {
             pub(crate) body: Vec<String>,
         }
         impl Builder {
+            #[doc = "set of labels to be set to the entity"]
             pub fn body(mut self, body: Vec<String>) -> Self {
                 self.body = body;
                 self
@@ -1999,6 +2022,7 @@ pub mod entity {
             pub(crate) body: Vec<String>,
         }
         impl Builder {
+            #[doc = "set of labels to be added"]
             pub fn body(mut self, body: Vec<String>) -> Self {
                 self.body = body;
                 self
@@ -2043,6 +2067,7 @@ pub mod entity {
             pub(crate) body: Vec<String>,
         }
         impl Builder {
+            #[doc = "set of labels to be deleted"]
             pub fn body(mut self, body: Vec<String>) -> Self {
                 self.body = body;
                 self
@@ -2088,10 +2113,12 @@ pub mod entity {
             pub(crate) body: Vec<String>,
         }
         impl Builder {
+            #[doc = "The qualified name of the entity"]
             pub fn attr_qualified_name(mut self, attr_qualified_name: impl Into<String>) -> Self {
                 self.attr_qualified_name = Some(attr_qualified_name.into());
                 self
             }
+            #[doc = "set of labels to be set"]
             pub fn body(mut self, body: Vec<String>) -> Self {
                 self.body = body;
                 self
@@ -2145,10 +2172,12 @@ pub mod entity {
             pub(crate) body: Vec<String>,
         }
         impl Builder {
+            #[doc = "The qualified name of the entity"]
             pub fn attr_qualified_name(mut self, attr_qualified_name: impl Into<String>) -> Self {
                 self.attr_qualified_name = Some(attr_qualified_name.into());
                 self
             }
+            #[doc = "set of labels to be added"]
             pub fn body(mut self, body: Vec<String>) -> Self {
                 self.body = body;
                 self
@@ -2202,10 +2231,12 @@ pub mod entity {
             pub(crate) body: Vec<String>,
         }
         impl Builder {
+            #[doc = "The qualified name of the entity"]
             pub fn attr_qualified_name(mut self, attr_qualified_name: impl Into<String>) -> Self {
                 self.attr_qualified_name = Some(attr_qualified_name.into());
                 self
             }
+            #[doc = "set of labels to be deleted"]
             pub fn body(mut self, body: Vec<String>) -> Self {
                 self.body = body;
                 self
@@ -2733,18 +2764,22 @@ pub mod glossary {
             pub(crate) ignore_terms_and_categories: Option<bool>,
         }
         impl Builder {
+            #[doc = "The page size - by default there is no paging."]
             pub fn limit(mut self, limit: i32) -> Self {
                 self.limit = Some(limit);
                 self
             }
+            #[doc = "The offset for pagination purpose."]
             pub fn offset(mut self, offset: i32) -> Self {
                 self.offset = Some(offset);
                 self
             }
+            #[doc = "The sort order, ASC (default) or DESC."]
             pub fn sort(mut self, sort: impl Into<String>) -> Self {
                 self.sort = Some(sort.into());
                 self
             }
+            #[doc = "Whether ignore terms and categories"]
             pub fn ignore_terms_and_categories(mut self, ignore_terms_and_categories: bool) -> Self {
                 self.ignore_terms_and_categories = Some(ignore_terms_and_categories);
                 self
@@ -3113,14 +3148,17 @@ pub mod glossary {
             pub(crate) sort: Option<String>,
         }
         impl Builder {
+            #[doc = "The page size - by default there is no paging."]
             pub fn limit(mut self, limit: i32) -> Self {
                 self.limit = Some(limit);
                 self
             }
+            #[doc = "The offset for pagination purpose."]
             pub fn offset(mut self, offset: i32) -> Self {
                 self.offset = Some(offset);
                 self
             }
+            #[doc = "The sort order, ASC (default) or DESC."]
             pub fn sort(mut self, sort: impl Into<String>) -> Self {
                 self.sort = Some(sort.into());
                 self
@@ -3182,14 +3220,17 @@ pub mod glossary {
             pub(crate) sort: Option<String>,
         }
         impl Builder {
+            #[doc = "The page size - by default there is no paging."]
             pub fn limit(mut self, limit: i32) -> Self {
                 self.limit = Some(limit);
                 self
             }
+            #[doc = "The offset for pagination purpose."]
             pub fn offset(mut self, offset: i32) -> Self {
                 self.offset = Some(offset);
                 self
             }
+            #[doc = "The sort order, ASC (default) or DESC."]
             pub fn sort(mut self, sort: impl Into<String>) -> Self {
                 self.sort = Some(sort.into());
                 self
@@ -3249,6 +3290,7 @@ pub mod glossary {
             pub(crate) include_term_hierarchy: Option<bool>,
         }
         impl Builder {
+            #[doc = "Whether include term hierarchy"]
             pub fn include_term_hierarchy(mut self, include_term_hierarchy: bool) -> Self {
                 self.include_term_hierarchy = Some(include_term_hierarchy);
                 self
@@ -3302,10 +3344,12 @@ pub mod glossary {
             pub(crate) exclude_relationship_types: Vec<String>,
         }
         impl Builder {
+            #[doc = "Whether include term hierarchy"]
             pub fn include_term_hierarchy(mut self, include_term_hierarchy: bool) -> Self {
                 self.include_term_hierarchy = Some(include_term_hierarchy);
                 self
             }
+            #[doc = "An array of relationship types which need to be excluded."]
             pub fn exclude_relationship_types(mut self, exclude_relationship_types: Vec<String>) -> Self {
                 self.exclude_relationship_types = exclude_relationship_types;
                 self
@@ -3363,6 +3407,7 @@ pub mod glossary {
             pub(crate) include_term_hierarchy: Option<bool>,
         }
         impl Builder {
+            #[doc = "Whether include term hierarchy"]
             pub fn include_term_hierarchy(mut self, include_term_hierarchy: bool) -> Self {
                 self.include_term_hierarchy = Some(include_term_hierarchy);
                 self
@@ -3455,6 +3500,7 @@ pub mod glossary {
             pub(crate) include_term_hierarchy: Option<bool>,
         }
         impl Builder {
+            #[doc = "Whether include term hierarchy"]
             pub fn include_term_hierarchy(mut self, include_term_hierarchy: bool) -> Self {
                 self.include_term_hierarchy = Some(include_term_hierarchy);
                 self
@@ -3511,6 +3557,7 @@ pub mod glossary {
             pub(crate) include_term_hierarchy: Option<bool>,
         }
         impl Builder {
+            #[doc = "Whether include term hierarchy"]
             pub fn include_term_hierarchy(mut self, include_term_hierarchy: bool) -> Self {
                 self.include_term_hierarchy = Some(include_term_hierarchy);
                 self
@@ -3565,14 +3612,17 @@ pub mod glossary {
             pub(crate) sort: Option<String>,
         }
         impl Builder {
+            #[doc = "The page size - by default there is no paging."]
             pub fn limit(mut self, limit: i32) -> Self {
                 self.limit = Some(limit);
                 self
             }
+            #[doc = "The offset for pagination purpose."]
             pub fn offset(mut self, offset: i32) -> Self {
                 self.offset = Some(offset);
                 self
             }
+            #[doc = "The sort order, ASC (default) or DESC."]
             pub fn sort(mut self, sort: impl Into<String>) -> Self {
                 self.sort = Some(sort.into());
                 self
@@ -3763,14 +3813,17 @@ pub mod glossary {
             pub(crate) sort: Option<String>,
         }
         impl Builder {
+            #[doc = "The page size - by default there is no paging."]
             pub fn limit(mut self, limit: i32) -> Self {
                 self.limit = Some(limit);
                 self
             }
+            #[doc = "The offset for pagination purpose."]
             pub fn offset(mut self, offset: i32) -> Self {
                 self.offset = Some(offset);
                 self
             }
+            #[doc = "The sort order, ASC (default) or DESC."]
             pub fn sort(mut self, sort: impl Into<String>) -> Self {
                 self.sort = Some(sort.into());
                 self
@@ -3953,14 +4006,17 @@ pub mod glossary {
             pub(crate) sort: Option<String>,
         }
         impl Builder {
+            #[doc = "The page size - by default there is no paging."]
             pub fn limit(mut self, limit: i32) -> Self {
                 self.limit = Some(limit);
                 self
             }
+            #[doc = "The offset for pagination purpose."]
             pub fn offset(mut self, offset: i32) -> Self {
                 self.offset = Some(offset);
                 self
             }
+            #[doc = "The sort order, ASC (default) or DESC."]
             pub fn sort(mut self, sort: impl Into<String>) -> Self {
                 self.sort = Some(sort.into());
                 self
@@ -4022,14 +4078,17 @@ pub mod glossary {
             pub(crate) sort: Option<String>,
         }
         impl Builder {
+            #[doc = "The page size - by default there is no paging."]
             pub fn limit(mut self, limit: i32) -> Self {
                 self.limit = Some(limit);
                 self
             }
+            #[doc = "The offset for pagination purpose."]
             pub fn offset(mut self, offset: i32) -> Self {
                 self.offset = Some(offset);
                 self
             }
+            #[doc = "The sort order, ASC (default) or DESC."]
             pub fn sort(mut self, sort: impl Into<String>) -> Self {
                 self.sort = Some(sort.into());
                 self
@@ -4089,6 +4148,7 @@ pub mod glossary {
             pub(crate) include_term_hierarchy: Option<bool>,
         }
         impl Builder {
+            #[doc = "Whether include term hierarchy"]
             pub fn include_term_hierarchy(mut self, include_term_hierarchy: bool) -> Self {
                 self.include_term_hierarchy = Some(include_term_hierarchy);
                 self
@@ -4145,6 +4205,7 @@ pub mod glossary {
             pub(crate) include_term_hierarchy: Option<bool>,
         }
         impl Builder {
+            #[doc = "Whether include term hierarchy"]
             pub fn include_term_hierarchy(mut self, include_term_hierarchy: bool) -> Self {
                 self.include_term_hierarchy = Some(include_term_hierarchy);
                 self
@@ -4204,18 +4265,22 @@ pub mod glossary {
             pub(crate) sort: Option<String>,
         }
         impl Builder {
+            #[doc = "Whether include term hierarchy"]
             pub fn include_term_hierarchy(mut self, include_term_hierarchy: bool) -> Self {
                 self.include_term_hierarchy = Some(include_term_hierarchy);
                 self
             }
+            #[doc = "The page size - by default there is no paging."]
             pub fn limit(mut self, limit: i32) -> Self {
                 self.limit = Some(limit);
                 self
             }
+            #[doc = "The offset for pagination purpose."]
             pub fn offset(mut self, offset: i32) -> Self {
                 self.offset = Some(offset);
                 self
             }
+            #[doc = "The sort order, ASC (default) or DESC."]
             pub fn sort(mut self, sort: impl Into<String>) -> Self {
                 self.sort = Some(sort.into());
                 self
@@ -4282,14 +4347,17 @@ pub mod glossary {
             pub(crate) sort: Option<String>,
         }
         impl Builder {
+            #[doc = "The page size - by default there is no paging."]
             pub fn limit(mut self, limit: i32) -> Self {
                 self.limit = Some(limit);
                 self
             }
+            #[doc = "The offset for pagination purpose."]
             pub fn offset(mut self, offset: i32) -> Self {
                 self.offset = Some(offset);
                 self
             }
+            #[doc = "The sort order, ASC (default) or DESC."]
             pub fn sort(mut self, sort: impl Into<String>) -> Self {
                 self.sort = Some(sort.into());
                 self
@@ -4350,6 +4418,7 @@ pub mod glossary {
             pub(crate) include_term_hierarchy: Option<bool>,
         }
         impl Builder {
+            #[doc = "Whether include term hierarchy"]
             pub fn include_term_hierarchy(mut self, include_term_hierarchy: bool) -> Self {
                 self.include_term_hierarchy = Some(include_term_hierarchy);
                 self
@@ -4409,6 +4478,7 @@ pub mod glossary {
             pub(crate) include_term_hierarchy: Option<bool>,
         }
         impl Builder {
+            #[doc = "Whether include term hierarchy"]
             pub fn include_term_hierarchy(mut self, include_term_hierarchy: bool) -> Self {
                 self.include_term_hierarchy = Some(include_term_hierarchy);
                 self
@@ -4519,6 +4589,7 @@ pub mod glossary {
             pub(crate) include_term_hierarchy: Option<bool>,
         }
         impl Builder {
+            #[doc = "Whether include term hierarchy"]
             pub fn include_term_hierarchy(mut self, include_term_hierarchy: bool) -> Self {
                 self.include_term_hierarchy = Some(include_term_hierarchy);
                 self
@@ -4577,14 +4648,17 @@ pub mod glossary {
             pub(crate) include_term_hierarchy: Option<bool>,
         }
         impl Builder {
+            #[doc = "The page size - by default there is no paging."]
             pub fn limit(mut self, limit: i32) -> Self {
                 self.limit = Some(limit);
                 self
             }
+            #[doc = "The offset for pagination purpose."]
             pub fn offset(mut self, offset: i32) -> Self {
                 self.offset = Some(offset);
                 self
             }
+            #[doc = "Whether include term hierarchy"]
             pub fn include_term_hierarchy(mut self, include_term_hierarchy: bool) -> Self {
                 self.include_term_hierarchy = Some(include_term_hierarchy);
                 self
@@ -4933,18 +5007,22 @@ pub mod lineage {
             pub(crate) get_derived_lineage: Option<bool>,
         }
         impl Builder {
+            #[doc = "The number of hops for lineage."]
             pub fn depth(mut self, depth: i32) -> Self {
                 self.depth = Some(depth);
                 self
             }
+            #[doc = "The number of max expanding width in lineage."]
             pub fn width(mut self, width: i32) -> Self {
                 self.width = Some(width);
                 self
             }
+            #[doc = "True to include the parent chain in the response."]
             pub fn include_parent(mut self, include_parent: bool) -> Self {
                 self.include_parent = Some(include_parent);
                 self
             }
+            #[doc = "True to include derived lineage in the response"]
             pub fn get_derived_lineage(mut self, get_derived_lineage: bool) -> Self {
                 self.get_derived_lineage = Some(get_derived_lineage);
                 self
@@ -5012,14 +5090,17 @@ pub mod lineage {
             pub(crate) limit: Option<i32>,
         }
         impl Builder {
+            #[doc = "True to include derived lineage in the response"]
             pub fn get_derived_lineage(mut self, get_derived_lineage: bool) -> Self {
                 self.get_derived_lineage = Some(get_derived_lineage);
                 self
             }
+            #[doc = "The offset for pagination purpose."]
             pub fn offset(mut self, offset: i32) -> Self {
                 self.offset = Some(offset);
                 self
             }
+            #[doc = "The page size - by default there is no paging."]
             pub fn limit(mut self, limit: i32) -> Self {
                 self.limit = Some(limit);
                 self
@@ -5086,18 +5167,22 @@ pub mod lineage {
             pub(crate) get_derived_lineage: Option<bool>,
         }
         impl Builder {
+            #[doc = "The number of hops for lineage."]
             pub fn depth(mut self, depth: i32) -> Self {
                 self.depth = Some(depth);
                 self
             }
+            #[doc = "The number of max expanding width in lineage."]
             pub fn width(mut self, width: i32) -> Self {
                 self.width = Some(width);
                 self
             }
+            #[doc = "True to include the parent chain in the response."]
             pub fn include_parent(mut self, include_parent: bool) -> Self {
                 self.include_parent = Some(include_parent);
                 self
             }
+            #[doc = "True to include derived lineage in the response"]
             pub fn get_derived_lineage(mut self, get_derived_lineage: bool) -> Self {
                 self.get_derived_lineage = Some(get_derived_lineage);
                 self
@@ -5297,6 +5382,7 @@ pub mod relationship {
             pub(crate) extended_info: Option<bool>,
         }
         impl Builder {
+            #[doc = "Limits whether includes extended information."]
             pub fn extended_info(mut self, extended_info: bool) -> Self {
                 self.extended_info = Some(extended_info);
                 self
@@ -6251,10 +6337,12 @@ pub mod types {
             pub(crate) type_: Option<String>,
         }
         impl Builder {
+            #[doc = "Whether include termtemplatedef when return all typedefs.\nThis is always true when search filter type=term_template"]
             pub fn include_term_template(mut self, include_term_template: bool) -> Self {
                 self.include_term_template = Some(include_term_template);
                 self
             }
+            #[doc = "Typedef name as search filter when get typedefs."]
             pub fn type_(mut self, type_: impl Into<String>) -> Self {
                 self.type_ = Some(type_.into());
                 self
@@ -6431,10 +6519,12 @@ pub mod types {
             pub(crate) type_: Option<String>,
         }
         impl Builder {
+            #[doc = "Whether include termtemplatedef when return all typedefs.\nThis is always true when search filter type=term_template"]
             pub fn include_term_template(mut self, include_term_template: bool) -> Self {
                 self.include_term_template = Some(include_term_template);
                 self
             }
+            #[doc = "Typedef name as search filter when get typedefs."]
             pub fn type_(mut self, type_: impl Into<String>) -> Self {
                 self.type_ = Some(type_.into());
                 self

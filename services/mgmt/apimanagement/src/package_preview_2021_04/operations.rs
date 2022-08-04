@@ -580,22 +580,27 @@ pub mod api {
             pub(crate) expand_api_version_set: Option<bool>,
         }
         impl Builder {
+            #[doc = "|     Field     |     Usage     |     Supported operators     |     Supported functions     |</br>|-------------|-------------|-------------|-------------|</br>| name | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>| displayName | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>| description | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>| serviceUrl | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>| path | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>| isCurrent | filter | eq, ne |  |</br>"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Number of records to skip."]
             pub fn skip(mut self, skip: i32) -> Self {
                 self.skip = Some(skip);
                 self
             }
+            #[doc = "Include tags in the response."]
             pub fn tags(mut self, tags: impl Into<String>) -> Self {
                 self.tags = Some(tags.into());
                 self
             }
+            #[doc = "Include full ApiVersionSet resource in response"]
             pub fn expand_api_version_set(mut self, expand_api_version_set: bool) -> Self {
                 self.expand_api_version_set = Some(expand_api_version_set);
                 self
@@ -757,6 +762,7 @@ pub mod api {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "ETag of the Entity. Not required when creating an entity, but required when updating an entity."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -890,6 +896,7 @@ pub mod api {
             pub(crate) delete_revisions: Option<bool>,
         }
         impl Builder {
+            #[doc = "Delete all revisions of the Api."]
             pub fn delete_revisions(mut self, delete_revisions: bool) -> Self {
                 self.delete_revisions = Some(delete_revisions);
                 self
@@ -1004,18 +1011,22 @@ pub mod api {
             pub(crate) include_not_tagged_apis: Option<bool>,
         }
         impl Builder {
+            #[doc = "|     Field     |     Usage     |     Supported operators     |     Supported functions     |</br>|-------------|-------------|-------------|-------------|</br>| name | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>| displayName | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>| apiRevision | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>| path | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>| description | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>| serviceUrl | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>| isCurrent | filter | eq |     |</br>"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Number of records to skip."]
             pub fn skip(mut self, skip: i32) -> Self {
                 self.skip = Some(skip);
                 self
             }
+            #[doc = "Include not tagged APIs."]
             pub fn include_not_tagged_apis(mut self, include_not_tagged_apis: bool) -> Self {
                 self.include_not_tagged_apis = Some(include_not_tagged_apis);
                 self
@@ -1147,14 +1158,17 @@ pub mod api_revision {
             pub(crate) skip: Option<i32>,
         }
         impl Builder {
+            #[doc = "|     Field     |     Usage     |     Supported operators     |     Supported functions     |</br>|-------------|-------------|-------------|-------------|</br>| apiRevision | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Number of records to skip."]
             pub fn skip(mut self, skip: i32) -> Self {
                 self.skip = Some(skip);
                 self
@@ -1420,14 +1434,17 @@ pub mod api_release {
             pub(crate) skip: Option<i32>,
         }
         impl Builder {
+            #[doc = "|     Field     |     Usage     |     Supported operators     |     Supported functions     |</br>|-------------|-------------|-------------|-------------|</br>| notes | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Number of records to skip."]
             pub fn skip(mut self, skip: i32) -> Self {
                 self.skip = Some(skip);
                 self
@@ -1584,6 +1601,7 @@ pub mod api_release {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "ETag of the Entity. Not required when creating an entity, but required when updating an entity."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -1997,18 +2015,22 @@ pub mod api_operation {
             pub(crate) tags: Option<String>,
         }
         impl Builder {
+            #[doc = "|     Field     |     Usage     |     Supported operators     |     Supported functions     |</br>|-------------|-------------|-------------|-------------|</br>| name | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>| displayName | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>| method | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>| description | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>| urlTemplate | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Number of records to skip."]
             pub fn skip(mut self, skip: i32) -> Self {
                 self.skip = Some(skip);
                 self
             }
+            #[doc = "Include tags in the response."]
             pub fn tags(mut self, tags: impl Into<String>) -> Self {
                 self.tags = Some(tags.into());
                 self
@@ -2168,6 +2190,7 @@ pub mod api_operation {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "ETag of the Entity. Not required when creating an entity, but required when updating an entity."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -2609,6 +2632,7 @@ pub mod api_operation_policy {
             pub(crate) format: Option<String>,
         }
         impl Builder {
+            #[doc = "Policy Export Format."]
             pub fn format(mut self, format: impl Into<String>) -> Self {
                 self.format = Some(format.into());
                 self
@@ -2671,6 +2695,7 @@ pub mod api_operation_policy {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "ETag of the Entity. Not required when creating an entity, but required when updating an entity."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -3374,14 +3399,17 @@ pub mod tag {
             pub(crate) skip: Option<i32>,
         }
         impl Builder {
+            #[doc = "|     Field     |     Usage     |     Supported operators     |     Supported functions     |</br>|-------------|-------------|-------------|-------------|</br>| displayName | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>| name | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Number of records to skip."]
             pub fn skip(mut self, skip: i32) -> Self {
                 self.skip = Some(skip);
                 self
@@ -3681,14 +3709,17 @@ pub mod tag {
             pub(crate) skip: Option<i32>,
         }
         impl Builder {
+            #[doc = "|     Field     |     Usage     |     Supported operators     |     Supported functions     |</br>|-------------|-------------|-------------|-------------|</br>| displayName | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>| name | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Number of records to skip."]
             pub fn skip(mut self, skip: i32) -> Self {
                 self.skip = Some(skip);
                 self
@@ -4015,14 +4046,17 @@ pub mod tag {
             pub(crate) skip: Option<i32>,
         }
         impl Builder {
+            #[doc = "|     Field     |     Usage     |     Supported operators     |     Supported functions     |</br>|-------------|-------------|-------------|-------------|</br>| displayName | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>| name | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Number of records to skip."]
             pub fn skip(mut self, skip: i32) -> Self {
                 self.skip = Some(skip);
                 self
@@ -4349,18 +4383,22 @@ pub mod tag {
             pub(crate) scope: Option<String>,
         }
         impl Builder {
+            #[doc = "|     Field     |     Usage     |     Supported operators     |     Supported functions     |</br>|-------------|-------------|-------------|-------------|</br>| name | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>| displayName | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Number of records to skip."]
             pub fn skip(mut self, skip: i32) -> Self {
                 self.skip = Some(skip);
                 self
             }
+            #[doc = "Scope like 'apis', 'products' or 'apis/{apiId}"]
             pub fn scope(mut self, scope: impl Into<String>) -> Self {
                 self.scope = Some(scope.into());
                 self
@@ -4516,6 +4554,7 @@ pub mod tag {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "ETag of the Entity. Not required when creating an entity, but required when updating an entity."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -4782,14 +4821,17 @@ pub mod api_product {
             pub(crate) skip: Option<i32>,
         }
         impl Builder {
+            #[doc = "|     Field     |     Usage     |     Supported operators     |     Supported functions     |</br>|-------------|-------------|-------------|-------------|</br>| displayName | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Number of records to skip."]
             pub fn skip(mut self, skip: i32) -> Self {
                 self.skip = Some(skip);
                 self
@@ -5075,6 +5117,7 @@ pub mod api_policy {
             pub(crate) format: Option<String>,
         }
         impl Builder {
+            #[doc = "Policy Export Format."]
             pub fn format(mut self, format: impl Into<String>) -> Self {
                 self.format = Some(format.into());
                 self
@@ -5144,6 +5187,7 @@ pub mod api_policy {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "ETag of the Entity. Not required when creating an entity, but required when updating an entity."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -5465,14 +5509,17 @@ pub mod api_schema {
             pub(crate) skip: Option<i32>,
         }
         impl Builder {
+            #[doc = "|     Field     |     Usage     |     Supported operators     |     Supported functions     |</br>|-------------|-------------|-------------|-------------|</br>| contentType | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Number of records to skip."]
             pub fn skip(mut self, skip: i32) -> Self {
                 self.skip = Some(skip);
                 self
@@ -5630,6 +5677,7 @@ pub mod api_schema {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "ETag of the Entity. Not required when creating an entity, but required when updating an entity."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -5707,6 +5755,7 @@ pub mod api_schema {
             pub(crate) force: Option<bool>,
         }
         impl Builder {
+            #[doc = "If true removes all references to the schema before deleting it."]
             pub fn force(mut self, force: bool) -> Self {
                 self.force = Some(force);
                 self
@@ -5991,14 +6040,17 @@ pub mod api_diagnostic {
             pub(crate) skip: Option<i32>,
         }
         impl Builder {
+            #[doc = "|     Field     |     Usage     |     Supported operators     |     Supported functions     |</br>|-------------|-------------|-------------|-------------|</br>| name | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Number of records to skip."]
             pub fn skip(mut self, skip: i32) -> Self {
                 self.skip = Some(skip);
                 self
@@ -6155,6 +6207,7 @@ pub mod api_diagnostic {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "ETag of the Entity. Not required when creating an entity, but required when updating an entity."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -6569,18 +6622,22 @@ pub mod api_issue {
             pub(crate) skip: Option<i32>,
         }
         impl Builder {
+            #[doc = "|     Field     |     Usage     |     Supported operators     |     Supported functions     |</br>|-------------|-------------|-------------|-------------|</br>| name | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>| userId | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>| state | filter | eq |     |</br>"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Expand the comment attachments. "]
             pub fn expand_comments_attachments(mut self, expand_comments_attachments: bool) -> Self {
                 self.expand_comments_attachments = Some(expand_comments_attachments);
                 self
             }
+            #[doc = "Number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Number of records to skip."]
             pub fn skip(mut self, skip: i32) -> Self {
                 self.skip = Some(skip);
                 self
@@ -6681,6 +6738,7 @@ pub mod api_issue {
             pub(crate) expand_comments_attachments: Option<bool>,
         }
         impl Builder {
+            #[doc = "Expand the comment attachments. "]
             pub fn expand_comments_attachments(mut self, expand_comments_attachments: bool) -> Self {
                 self.expand_comments_attachments = Some(expand_comments_attachments);
                 self
@@ -6752,6 +6810,7 @@ pub mod api_issue {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "ETag of the Entity. Not required when creating an entity, but required when updating an entity."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -7148,14 +7207,17 @@ pub mod api_issue_comment {
             pub(crate) skip: Option<i32>,
         }
         impl Builder {
+            #[doc = "|     Field     |     Usage     |     Supported operators     |     Supported functions     |</br>|-------------|-------------|-------------|-------------|</br>| name | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>| userId | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Number of records to skip."]
             pub fn skip(mut self, skip: i32) -> Self {
                 self.skip = Some(skip);
                 self
@@ -7307,6 +7369,7 @@ pub mod api_issue_comment {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "ETag of the Entity. Not required when creating an entity, but required when updating an entity."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -7621,14 +7684,17 @@ pub mod api_issue_attachment {
             pub(crate) skip: Option<i32>,
         }
         impl Builder {
+            #[doc = "|     Field     |     Usage     |     Supported operators     |     Supported functions     |</br>|-------------|-------------|-------------|-------------|</br>| name | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>| userId | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Number of records to skip."]
             pub fn skip(mut self, skip: i32) -> Self {
                 self.skip = Some(skip);
                 self
@@ -7772,6 +7838,7 @@ pub mod api_issue_attachment {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "ETag of the Entity. Not required when creating an entity, but required when updating an entity."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -8070,14 +8137,17 @@ pub mod api_tag_description {
             pub(crate) skip: Option<i32>,
         }
         impl Builder {
+            #[doc = "|     Field     |     Usage     |     Supported operators     |     Supported functions     |</br>|-------------|-------------|-------------|-------------|</br>| displayName | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>| name | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Number of records to skip."]
             pub fn skip(mut self, skip: i32) -> Self {
                 self.skip = Some(skip);
                 self
@@ -8234,6 +8304,7 @@ pub mod api_tag_description {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "ETag of the Entity. Not required when creating an entity, but required when updating an entity."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -8449,18 +8520,22 @@ pub mod operation {
             pub(crate) include_not_tagged_operations: Option<bool>,
         }
         impl Builder {
+            #[doc = "|     Field     |     Usage     |     Supported operators     |     Supported functions     |</br>|-------------|-------------|-------------|-------------|</br>| name | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>| displayName | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>| apiName | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>| description | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>| method | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>| urlTemplate | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Number of records to skip."]
             pub fn skip(mut self, skip: i32) -> Self {
                 self.skip = Some(skip);
                 self
             }
+            #[doc = "Include not tagged Operations."]
             pub fn include_not_tagged_operations(mut self, include_not_tagged_operations: bool) -> Self {
                 self.include_not_tagged_operations = Some(include_not_tagged_operations);
                 self
@@ -8712,14 +8787,17 @@ pub mod api_version_set {
             pub(crate) skip: Option<i32>,
         }
         impl Builder {
+            #[doc = "|     Field     |     Usage     |     Supported operators     |     Supported functions     |</br>|-------------|-------------|-------------|-------------|</br>"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Number of records to skip."]
             pub fn skip(mut self, skip: i32) -> Self {
                 self.skip = Some(skip);
                 self
@@ -8872,6 +8950,7 @@ pub mod api_version_set {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "ETag of the Entity. Not required when creating an entity, but required when updating an entity."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -9279,14 +9358,17 @@ pub mod authorization_server {
             pub(crate) skip: Option<i32>,
         }
         impl Builder {
+            #[doc = "|     Field     |     Usage     |     Supported operators     |     Supported functions     |</br>|-------------|-------------|-------------|-------------|</br>| name | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>| displayName | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Number of records to skip."]
             pub fn skip(mut self, skip: i32) -> Self {
                 self.skip = Some(skip);
                 self
@@ -9439,6 +9521,7 @@ pub mod authorization_server {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "ETag of the Entity. Not required when creating an entity, but required when updating an entity."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -9895,14 +9978,17 @@ pub mod backend {
             pub(crate) skip: Option<i32>,
         }
         impl Builder {
+            #[doc = "|     Field     |     Usage     |     Supported operators     |     Supported functions     |</br>|-------------|-------------|-------------|-------------|</br>| name | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>| title | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>| url | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Number of records to skip."]
             pub fn skip(mut self, skip: i32) -> Self {
                 self.skip = Some(skip);
                 self
@@ -10055,6 +10141,7 @@ pub mod backend {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "ETag of the Entity. Not required when creating an entity, but required when updating an entity."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -10288,6 +10375,7 @@ pub mod backend {
             pub(crate) parameters: Option<models::BackendReconnectContract>,
         }
         impl Builder {
+            #[doc = "Reconnect request parameters."]
             pub fn parameters(mut self, parameters: impl Into<models::BackendReconnectContract>) -> Self {
                 self.parameters = Some(parameters.into());
                 self
@@ -10498,10 +10586,12 @@ pub mod cache {
             pub(crate) skip: Option<i32>,
         }
         impl Builder {
+            #[doc = "Number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Number of records to skip."]
             pub fn skip(mut self, skip: i32) -> Self {
                 self.skip = Some(skip);
                 self
@@ -10651,6 +10741,7 @@ pub mod cache {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "ETag of the Entity. Not required when creating an entity, but required when updating an entity."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -11032,18 +11123,22 @@ pub mod certificate {
             pub(crate) is_key_vault_refresh_failed: Option<bool>,
         }
         impl Builder {
+            #[doc = "|     Field     |     Usage     |     Supported operators     |     Supported functions     |</br>|-------------|-------------|-------------|-------------|</br>| name | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>| subject | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>| thumbprint | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>| expirationDate | filter | ge, le, eq, ne, gt, lt |     |</br>"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Number of records to skip."]
             pub fn skip(mut self, skip: i32) -> Self {
                 self.skip = Some(skip);
                 self
             }
+            #[doc = "When set to true, the response contains only certificates entities which failed refresh."]
             pub fn is_key_vault_refresh_failed(mut self, is_key_vault_refresh_failed: bool) -> Self {
                 self.is_key_vault_refresh_failed = Some(is_key_vault_refresh_failed);
                 self
@@ -11201,6 +11296,7 @@ pub mod certificate {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "ETag of the Entity. Not required when creating an entity, but required when updating an entity."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -11655,6 +11751,7 @@ pub mod content_type {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "ETag of the Entity. Not required when creating an entity, but required when updating an entity."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -12037,6 +12134,7 @@ pub mod content_item {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "ETag of the Entity. Not required when creating an entity, but required when updating an entity."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -13503,6 +13601,7 @@ pub mod api_management_service {
             pub(crate) parameters: Option<models::ApiManagementServiceApplyNetworkConfigurationParameters>,
         }
         impl Builder {
+            #[doc = "Parameters supplied to the Apply Network Configuration operation. If the parameters are empty, all the regions in which the Api Management service is deployed will be updated sequentially without incurring downtime in the region."]
             pub fn parameters(mut self, parameters: impl Into<models::ApiManagementServiceApplyNetworkConfigurationParameters>) -> Self {
                 self.parameters = Some(parameters.into());
                 self
@@ -13714,14 +13813,17 @@ pub mod diagnostic {
             pub(crate) skip: Option<i32>,
         }
         impl Builder {
+            #[doc = "|     Field     |     Usage     |     Supported operators     |     Supported functions     |</br>|-------------|-------------|-------------|-------------|</br>| name | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Number of records to skip."]
             pub fn skip(mut self, skip: i32) -> Self {
                 self.skip = Some(skip);
                 self
@@ -13874,6 +13976,7 @@ pub mod diagnostic {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "ETag of the Entity. Not required when creating an entity, but required when updating an entity."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -14259,14 +14362,17 @@ pub mod email_template {
             pub(crate) skip: Option<i32>,
         }
         impl Builder {
+            #[doc = "|     Field     |     Usage     |     Supported operators     |     Supported functions     |</br>|-------------|-------------|-------------|-------------|</br>| name | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Number of records to skip."]
             pub fn skip(mut self, skip: i32) -> Self {
                 self.skip = Some(skip);
                 self
@@ -14419,6 +14525,7 @@ pub mod email_template {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "ETag of the Entity. Not required when creating an entity, but required when updating an entity."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -14872,14 +14979,17 @@ pub mod gateway {
             pub(crate) skip: Option<i32>,
         }
         impl Builder {
+            #[doc = "|     Field     |     Usage     |     Supported operators     |     Supported functions     |</br>|-------------|-------------|-------------|-------------|</br>| name | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>| region | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>| description | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Number of records to skip."]
             pub fn skip(mut self, skip: i32) -> Self {
                 self.skip = Some(skip);
                 self
@@ -15032,6 +15142,7 @@ pub mod gateway {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "ETag of the Entity. Not required when creating an entity, but required when updating an entity."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -15567,14 +15678,17 @@ pub mod gateway_hostname_configuration {
             pub(crate) skip: Option<i32>,
         }
         impl Builder {
+            #[doc = "|     Field     |     Usage     |     Supported operators     |     Supported functions     |</br>|-------------|-------------|-------------|-------------|</br>| name | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>| hostname | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Number of records to skip."]
             pub fn skip(mut self, skip: i32) -> Self {
                 self.skip = Some(skip);
                 self
@@ -15716,6 +15830,7 @@ pub mod gateway_hostname_configuration {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "ETag of the Entity. Not required when creating an entity, but required when updating an entity."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -15981,14 +16096,17 @@ pub mod gateway_api {
             pub(crate) skip: Option<i32>,
         }
         impl Builder {
+            #[doc = "|     Field     |     Usage     |     Supported operators     |     Supported functions     |</br>|-------------|-------------|-------------|-------------|</br>| name | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Number of records to skip."]
             pub fn skip(mut self, skip: i32) -> Self {
                 self.skip = Some(skip);
                 self
@@ -16406,14 +16524,17 @@ pub mod gateway_certificate_authority {
             pub(crate) skip: Option<i32>,
         }
         impl Builder {
+            #[doc = "|     Field     |     Usage     |     Supported operators     |     Supported functions     |</br>|-------------|-------------|-------------|-------------|</br>| name | filter | eq, ne |  |</br>"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Number of records to skip."]
             pub fn skip(mut self, skip: i32) -> Self {
                 self.skip = Some(skip);
                 self
@@ -16555,6 +16676,7 @@ pub mod gateway_certificate_authority {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "ETag of the Entity. Not required when creating an entity, but required when updating an entity."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -16863,14 +16985,17 @@ pub mod group {
             pub(crate) skip: Option<i32>,
         }
         impl Builder {
+            #[doc = "|     Field     |     Usage     |     Supported operators     |     Supported functions     |</br>|-------------|-------------|-------------|-------------|</br>| name | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>| displayName | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>| description | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>| externalId | filter | eq |     |</br>"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Number of records to skip."]
             pub fn skip(mut self, skip: i32) -> Self {
                 self.skip = Some(skip);
                 self
@@ -17023,6 +17148,7 @@ pub mod group {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "ETag of the Entity. Not required when creating an entity, but required when updating an entity."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -17364,14 +17490,17 @@ pub mod group_user {
             pub(crate) skip: Option<i32>,
         }
         impl Builder {
+            #[doc = "|     Field     |     Usage     |     Supported operators     |     Supported functions     |</br>|-------------|-------------|-------------|-------------|</br>| name | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>| firstName | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>| lastName | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>| email | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>| registrationDate | filter | ge, le, eq, ne, gt, lt |     |</br>| note | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Number of records to skip."]
             pub fn skip(mut self, skip: i32) -> Self {
                 self.skip = Some(skip);
                 self
@@ -17947,6 +18076,7 @@ pub mod identity_provider {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "ETag of the Entity. Not required when creating an entity, but required when updating an entity."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -18279,14 +18409,17 @@ pub mod issue {
             pub(crate) skip: Option<i32>,
         }
         impl Builder {
+            #[doc = "|     Field     |     Usage     |     Supported operators     |     Supported functions     |</br>|-------------|-------------|-------------|-------------|</br>| name | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>| apiId | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>| title | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>| description | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>| authorName | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>| state | filter | eq |     |</br>"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Number of records to skip."]
             pub fn skip(mut self, skip: i32) -> Self {
                 self.skip = Some(skip);
                 self
@@ -18586,14 +18719,17 @@ pub mod logger {
             pub(crate) skip: Option<i32>,
         }
         impl Builder {
+            #[doc = "|     Field     |     Usage     |     Supported operators     |     Supported functions     |</br>|-------------|-------------|-------------|-------------|</br>| name | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>| description | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>| loggerType | filter | eq |     |</br>| resourceId | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Number of records to skip."]
             pub fn skip(mut self, skip: i32) -> Self {
                 self.skip = Some(skip);
                 self
@@ -18746,6 +18882,7 @@ pub mod logger {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "ETag of the Entity. Not required when creating an entity, but required when updating an entity."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -19177,18 +19314,22 @@ pub mod named_value {
             pub(crate) is_key_vault_refresh_failed: Option<bool>,
         }
         impl Builder {
+            #[doc = "|     Field     |     Usage     |     Supported operators     |     Supported functions     |</br>|-------------|-------------|-------------|-------------|</br>| tags | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith, any, all |</br>| displayName | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Number of records to skip."]
             pub fn skip(mut self, skip: i32) -> Self {
                 self.skip = Some(skip);
                 self
             }
+            #[doc = "When set to true, the response contains only named value entities which failed refresh."]
             pub fn is_key_vault_refresh_failed(mut self, is_key_vault_refresh_failed: bool) -> Self {
                 self.is_key_vault_refresh_failed = Some(is_key_vault_refresh_failed);
                 self
@@ -19347,6 +19488,7 @@ pub mod named_value {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "ETag of the Entity. Not required when creating an entity, but required when updating an entity."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -19922,10 +20064,12 @@ pub mod notification {
             pub(crate) skip: Option<i32>,
         }
         impl Builder {
+            #[doc = "Number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Number of records to skip."]
             pub fn skip(mut self, skip: i32) -> Self {
                 self.skip = Some(skip);
                 self
@@ -20070,6 +20214,7 @@ pub mod notification {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "ETag of the Entity. Not required when creating an entity, but required when updating an entity."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -20906,14 +21051,17 @@ pub mod open_id_connect_provider {
             pub(crate) skip: Option<i32>,
         }
         impl Builder {
+            #[doc = "|     Field     |     Usage     |     Supported operators     |     Supported functions     |</br>|-------------|-------------|-------------|-------------|</br>| name | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>| displayName | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Number of records to skip."]
             pub fn skip(mut self, skip: i32) -> Self {
                 self.skip = Some(skip);
                 self
@@ -21066,6 +21214,7 @@ pub mod open_id_connect_provider {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "ETag of the Entity. Not required when creating an entity, but required when updating an entity."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -21591,6 +21740,7 @@ pub mod policy {
             pub(crate) format: Option<String>,
         }
         impl Builder {
+            #[doc = "Policy Export Format."]
             pub fn format(mut self, format: impl Into<String>) -> Self {
                 self.format = Some(format.into());
                 self
@@ -21658,6 +21808,7 @@ pub mod policy {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "ETag of the Entity. Not required when creating an entity, but required when updating an entity."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -21858,6 +22009,7 @@ pub mod policy_description {
             pub(crate) scope: Option<String>,
         }
         impl Builder {
+            #[doc = "Policy scope."]
             pub fn scope(mut self, scope: impl Into<String>) -> Self {
                 self.scope = Some(scope.into());
                 self
@@ -22043,14 +22195,17 @@ pub mod portal_revision {
             pub(crate) skip: Option<i32>,
         }
         impl Builder {
+            #[doc = "| Field       | Supported operators    | Supported functions               |\n|-------------|------------------------|-----------------------------------|\n\r\n|name | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith|\n|description | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith|\n|isCurrent | eq, ne |    |\n"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Number of records to skip."]
             pub fn skip(mut self, skip: i32) -> Self {
                 self.skip = Some(skip);
                 self
@@ -22595,6 +22750,7 @@ pub mod sign_in_settings {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "ETag of the Entity. Not required when creating an entity, but required when updating an entity."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -22901,6 +23057,7 @@ pub mod sign_up_settings {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "ETag of the Entity. Not required when creating an entity, but required when updating an entity."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -23226,6 +23383,7 @@ pub mod delegation_settings {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "ETag of the Entity. Not required when creating an entity, but required when updating an entity."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -24061,22 +24219,27 @@ pub mod product {
             pub(crate) tags: Option<String>,
         }
         impl Builder {
+            #[doc = "|     Field     |     Usage     |     Supported operators     |     Supported functions     |</br>|-------------|-------------|-------------|-------------|</br>| name | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>| displayName | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>| description | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>| terms | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>| state | filter | eq |     |</br>| groups | expand |     |     |</br>"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Number of records to skip."]
             pub fn skip(mut self, skip: i32) -> Self {
                 self.skip = Some(skip);
                 self
             }
+            #[doc = "When set to true, the response contains an array of groups that have visibility to the product. The default is false."]
             pub fn expand_groups(mut self, expand_groups: bool) -> Self {
                 self.expand_groups = Some(expand_groups);
                 self
             }
+            #[doc = "Products which are part of a specific tag."]
             pub fn tags(mut self, tags: impl Into<String>) -> Self {
                 self.tags = Some(tags.into());
                 self
@@ -24237,6 +24400,7 @@ pub mod product {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "ETag of the Entity. Not required when creating an entity, but required when updating an entity."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -24368,6 +24532,7 @@ pub mod product {
             pub(crate) delete_subscriptions: Option<bool>,
         }
         impl Builder {
+            #[doc = "Delete existing subscriptions associated with the product or not."]
             pub fn delete_subscriptions(mut self, delete_subscriptions: bool) -> Self {
                 self.delete_subscriptions = Some(delete_subscriptions);
                 self
@@ -24482,18 +24647,22 @@ pub mod product {
             pub(crate) include_not_tagged_products: Option<bool>,
         }
         impl Builder {
+            #[doc = "|     Field     |     Usage     |     Supported operators     |     Supported functions     |</br>|-------------|-------------|-------------|-------------|</br>| name | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>| displayName | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>| description | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>| terms | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>| state | filter | eq | substringof, contains, startswith, endswith |</br>"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Number of records to skip."]
             pub fn skip(mut self, skip: i32) -> Self {
                 self.skip = Some(skip);
                 self
             }
+            #[doc = "Include not tagged Products."]
             pub fn include_not_tagged_products(mut self, include_not_tagged_products: bool) -> Self {
                 self.include_not_tagged_products = Some(include_not_tagged_products);
                 self
@@ -24700,14 +24869,17 @@ pub mod product_api {
             pub(crate) skip: Option<i32>,
         }
         impl Builder {
+            #[doc = "|     Field     |     Usage     |     Supported operators     |     Supported functions     |</br>|-------------|-------------|-------------|-------------|</br>| name | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>| displayName | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>| description | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>| serviceUrl | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>| path | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Number of records to skip."]
             pub fn skip(mut self, skip: i32) -> Self {
                 self.skip = Some(skip);
                 self
@@ -25084,14 +25256,17 @@ pub mod product_group {
             pub(crate) skip: Option<i32>,
         }
         impl Builder {
+            #[doc = "|     Field     |     Usage     |     Supported operators     |     Supported functions     |</br>|-------------|-------------|-------------|-------------|</br>| name | filter | ge, le, eq, ne, gt, lt |     |</br>| displayName | filter | eq, ne |     |</br>| description | filter | eq, ne |     |</br>"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Number of records to skip."]
             pub fn skip(mut self, skip: i32) -> Self {
                 self.skip = Some(skip);
                 self
@@ -25393,14 +25568,17 @@ pub mod product_subscriptions {
             pub(crate) skip: Option<i32>,
         }
         impl Builder {
+            #[doc = "|     Field     |     Usage     |     Supported operators     |     Supported functions     |</br>|-------------|-------------|-------------|-------------|</br>| name | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>| displayName | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>| stateComment | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>| ownerId | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>| scope | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>| userId | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>| productId | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>| state | filter | eq |     |</br>| user | expand |     |     |</br>"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Number of records to skip."]
             pub fn skip(mut self, skip: i32) -> Self {
                 self.skip = Some(skip);
                 self
@@ -25686,6 +25864,7 @@ pub mod product_policy {
             pub(crate) format: Option<String>,
         }
         impl Builder {
+            #[doc = "Policy Export Format."]
             pub fn format(mut self, format: impl Into<String>) -> Self {
                 self.format = Some(format.into());
                 self
@@ -25755,6 +25934,7 @@ pub mod product_policy {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "ETag of the Entity. Not required when creating an entity, but required when updating an entity."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -26583,14 +26763,17 @@ pub mod reports {
             pub(crate) orderby: Option<String>,
         }
         impl Builder {
+            #[doc = "Number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Number of records to skip."]
             pub fn skip(mut self, skip: i32) -> Self {
                 self.skip = Some(skip);
                 self
             }
+            #[doc = "OData order by query option."]
             pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
                 self.orderby = Some(orderby.into());
                 self
@@ -26688,14 +26871,17 @@ pub mod reports {
             pub(crate) orderby: Option<String>,
         }
         impl Builder {
+            #[doc = "Number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Number of records to skip."]
             pub fn skip(mut self, skip: i32) -> Self {
                 self.skip = Some(skip);
                 self
             }
+            #[doc = "OData order by query option."]
             pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
                 self.orderby = Some(orderby.into());
                 self
@@ -26793,14 +26979,17 @@ pub mod reports {
             pub(crate) orderby: Option<String>,
         }
         impl Builder {
+            #[doc = "Number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Number of records to skip."]
             pub fn skip(mut self, skip: i32) -> Self {
                 self.skip = Some(skip);
                 self
             }
+            #[doc = "OData order by query option."]
             pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
                 self.orderby = Some(orderby.into());
                 self
@@ -26898,14 +27087,17 @@ pub mod reports {
             pub(crate) orderby: Option<String>,
         }
         impl Builder {
+            #[doc = "Number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Number of records to skip."]
             pub fn skip(mut self, skip: i32) -> Self {
                 self.skip = Some(skip);
                 self
             }
+            #[doc = "OData order by query option."]
             pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
                 self.orderby = Some(orderby.into());
                 self
@@ -27002,10 +27194,12 @@ pub mod reports {
             pub(crate) skip: Option<i32>,
         }
         impl Builder {
+            #[doc = "Number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Number of records to skip."]
             pub fn skip(mut self, skip: i32) -> Self {
                 self.skip = Some(skip);
                 self
@@ -27100,14 +27294,17 @@ pub mod reports {
             pub(crate) orderby: Option<String>,
         }
         impl Builder {
+            #[doc = "Number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Number of records to skip."]
             pub fn skip(mut self, skip: i32) -> Self {
                 self.skip = Some(skip);
                 self
             }
+            #[doc = "OData order by query option."]
             pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
                 self.orderby = Some(orderby.into());
                 self
@@ -27206,14 +27403,17 @@ pub mod reports {
             pub(crate) orderby: Option<String>,
         }
         impl Builder {
+            #[doc = "Number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Number of records to skip."]
             pub fn skip(mut self, skip: i32) -> Self {
                 self.skip = Some(skip);
                 self
             }
+            #[doc = "OData order by query option."]
             pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
                 self.orderby = Some(orderby.into());
                 self
@@ -27312,10 +27512,12 @@ pub mod reports {
             pub(crate) skip: Option<i32>,
         }
         impl Builder {
+            #[doc = "Number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Number of records to skip."]
             pub fn skip(mut self, skip: i32) -> Self {
                 self.skip = Some(skip);
                 self
@@ -27507,14 +27709,17 @@ pub mod schema {
             pub(crate) skip: Option<i32>,
         }
         impl Builder {
+            #[doc = "|     Field     |     Usage     |     Supported operators     |     Supported functions     |</br>|-------------|-------------|-------------|-------------|</br>| name | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Number of records to skip."]
             pub fn skip(mut self, skip: i32) -> Self {
                 self.skip = Some(skip);
                 self
@@ -27668,6 +27873,7 @@ pub mod schema {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "ETag of the Entity. Not required when creating an entity, but required when updating an entity."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -27892,6 +28098,7 @@ pub mod tenant_settings {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "Not used"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -28345,14 +28552,17 @@ pub mod subscription {
             pub(crate) skip: Option<i32>,
         }
         impl Builder {
+            #[doc = "|     Field     |     Usage     |     Supported operators     |     Supported functions     |</br>|-------------|-------------|-------------|-------------|</br>| name | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>| displayName | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>| stateComment | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>| ownerId | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>| scope | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>| userId | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>| productId | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>| state | filter | eq |     |</br>| user | expand |     |     |</br>"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Number of records to skip."]
             pub fn skip(mut self, skip: i32) -> Self {
                 self.skip = Some(skip);
                 self
@@ -28507,14 +28717,17 @@ pub mod subscription {
             pub(crate) app_type: Option<String>,
         }
         impl Builder {
+            #[doc = "Notify change in Subscription State. \n - If false, do not send any email notification for change of state of subscription \n - If true, send email notification of change of state of subscription "]
             pub fn notify(mut self, notify: bool) -> Self {
                 self.notify = Some(notify);
                 self
             }
+            #[doc = "ETag of the Entity. Not required when creating an entity, but required when updating an entity."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
             }
+            #[doc = "Determines the type of application which send the create user request. Default is legacy publisher portal."]
             pub fn app_type(mut self, app_type: impl Into<String>) -> Self {
                 self.app_type = Some(app_type.into());
                 self
@@ -28592,10 +28805,12 @@ pub mod subscription {
             pub(crate) app_type: Option<String>,
         }
         impl Builder {
+            #[doc = "Notify change in Subscription State. \n - If false, do not send any email notification for change of state of subscription \n - If true, send email notification of change of state of subscription "]
             pub fn notify(mut self, notify: bool) -> Self {
                 self.notify = Some(notify);
                 self
             }
+            #[doc = "Determines the type of application which send the create user request. Default is legacy publisher portal."]
             pub fn app_type(mut self, app_type: impl Into<String>) -> Self {
                 self.app_type = Some(app_type.into());
                 self
@@ -28935,14 +29150,17 @@ pub mod tag_resource {
             pub(crate) skip: Option<i32>,
         }
         impl Builder {
+            #[doc = "|     Field     |     Usage     |     Supported operators     |     Supported functions     |</br>|-------------|-------------|-------------|-------------|</br>| aid | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>| name | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>| displayName | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>| apiName | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>| apiRevision | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>| path | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>| description | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>| serviceUrl | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>| method | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>| urlTemplate | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>| terms | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>| state | filter | eq |     |</br>| isCurrent | filter | eq |     |</br>"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Number of records to skip."]
             pub fn skip(mut self, skip: i32) -> Self {
                 self.skip = Some(skip);
                 self
@@ -29227,6 +29445,7 @@ pub mod tenant_access {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "Not used"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -30363,18 +30582,22 @@ pub mod user {
             pub(crate) expand_groups: Option<bool>,
         }
         impl Builder {
+            #[doc = "|     Field     |     Usage     |     Supported operators     |     Supported functions     |</br>|-------------|-------------|-------------|-------------|</br>| name | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>| firstName | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>| lastName | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>| email | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>| state | filter | eq |     |</br>| registrationDate | filter | ge, le, eq, ne, gt, lt |     |</br>| note | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>| groups | expand |     |     |</br>"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Number of records to skip."]
             pub fn skip(mut self, skip: i32) -> Self {
                 self.skip = Some(skip);
                 self
             }
+            #[doc = "Detailed Group in response."]
             pub fn expand_groups(mut self, expand_groups: bool) -> Self {
                 self.expand_groups = Some(expand_groups);
                 self
@@ -30533,10 +30756,12 @@ pub mod user {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "Send an Email notification to the User."]
             pub fn notify(mut self, notify: bool) -> Self {
                 self.notify = Some(notify);
                 self
             }
+            #[doc = "ETag of the Entity. Not required when creating an entity, but required when updating an entity."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -30673,14 +30898,17 @@ pub mod user {
             pub(crate) app_type: Option<String>,
         }
         impl Builder {
+            #[doc = "Whether to delete user's subscription or not."]
             pub fn delete_subscriptions(mut self, delete_subscriptions: bool) -> Self {
                 self.delete_subscriptions = Some(delete_subscriptions);
                 self
             }
+            #[doc = "Send an Account Closed Email notification to the User."]
             pub fn notify(mut self, notify: bool) -> Self {
                 self.notify = Some(notify);
                 self
             }
+            #[doc = "Determines the type of application which send the create user request. Default is legacy publisher portal."]
             pub fn app_type(mut self, app_type: impl Into<String>) -> Self {
                 self.app_type = Some(app_type.into());
                 self
@@ -30943,14 +31171,17 @@ pub mod user_group {
             pub(crate) skip: Option<i32>,
         }
         impl Builder {
+            #[doc = "|     Field     |     Usage     |     Supported operators     |     Supported functions     |</br>|-------------|------------------------|-----------------------------------|</br>| name | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>| displayName | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>| description | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Number of records to skip."]
             pub fn skip(mut self, skip: i32) -> Self {
                 self.skip = Some(skip);
                 self
@@ -31103,14 +31334,17 @@ pub mod user_subscription {
             pub(crate) skip: Option<i32>,
         }
         impl Builder {
+            #[doc = "| Field     |     Usage     |     Supported operators    | Supported functions               |</br>|-------------|------------------------|-----------------------------------|</br>|name | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>|displayName | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>|stateComment | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>|ownerId | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>|scope | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>|userId | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>|productId | filter | ge, le, eq, ne, gt, lt | substringof, contains, startswith, endswith |</br>"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Number of records to skip."]
             pub fn skip(mut self, skip: i32) -> Self {
                 self.skip = Some(skip);
                 self
@@ -31398,6 +31632,7 @@ pub mod user_confirmation_password {
             pub(crate) app_type: Option<String>,
         }
         impl Builder {
+            #[doc = "Determines the type of application which send the create user request. Default is legacy publisher portal."]
             pub fn app_type(mut self, app_type: impl Into<String>) -> Self {
                 self.app_type = Some(app_type.into());
                 self

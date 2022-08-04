@@ -184,10 +184,12 @@ pub mod management_groups {
             pub(crate) skiptoken: Option<String>,
         }
         impl Builder {
+            #[doc = "Indicates whether the request should utilize any caches. Populate the header with 'no-cache' value to bypass existing caches."]
             pub fn cache_control(mut self, cache_control: impl Into<String>) -> Self {
                 self.cache_control = Some(cache_control.into());
                 self
             }
+            #[doc = "Page continuation token is only used if a previous operation returned a partial result. \nIf a previous response contains a nextLink element, the value of the nextLink element will include a token parameter that specifies a starting point to use for subsequent calls.\n"]
             pub fn skiptoken(mut self, skiptoken: impl Into<String>) -> Self {
                 self.skiptoken = Some(skiptoken.into());
                 self
@@ -275,18 +277,22 @@ pub mod management_groups {
             pub(crate) cache_control: Option<String>,
         }
         impl Builder {
+            #[doc = "The $expand=children query string parameter allows clients to request inclusion of children in the response payload.  $expand=path includes the path from the root group to the current group.  $expand=ancestors includes the ancestor Ids of the current group."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
             }
+            #[doc = "The $recurse=true query string parameter allows clients to request inclusion of entire hierarchy in the response payload. Note that  $expand=children must be passed up if $recurse is set to true."]
             pub fn recurse(mut self, recurse: bool) -> Self {
                 self.recurse = Some(recurse);
                 self
             }
+            #[doc = "A filter which allows the exclusion of subscriptions from results (i.e. '$filter=children.childType ne Subscription')"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Indicates whether the request should utilize any caches. Populate the header with 'no-cache' value to bypass existing caches."]
             pub fn cache_control(mut self, cache_control: impl Into<String>) -> Self {
                 self.cache_control = Some(cache_control.into());
                 self
@@ -357,6 +363,7 @@ pub mod management_groups {
             pub(crate) cache_control: Option<String>,
         }
         impl Builder {
+            #[doc = "Indicates whether the request should utilize any caches. Populate the header with 'no-cache' value to bypass existing caches."]
             pub fn cache_control(mut self, cache_control: impl Into<String>) -> Self {
                 self.cache_control = Some(cache_control.into());
                 self
@@ -421,6 +428,7 @@ pub mod management_groups {
             pub(crate) cache_control: Option<String>,
         }
         impl Builder {
+            #[doc = "Indicates whether the request should utilize any caches. Populate the header with 'no-cache' value to bypass existing caches."]
             pub fn cache_control(mut self, cache_control: impl Into<String>) -> Self {
                 self.cache_control = Some(cache_control.into());
                 self
@@ -482,6 +490,7 @@ pub mod management_groups {
             pub(crate) cache_control: Option<String>,
         }
         impl Builder {
+            #[doc = "Indicates whether the request should utilize any caches. Populate the header with 'no-cache' value to bypass existing caches."]
             pub fn cache_control(mut self, cache_control: impl Into<String>) -> Self {
                 self.cache_control = Some(cache_control.into());
                 self
@@ -541,10 +550,12 @@ pub mod management_groups {
             pub(crate) top: Option<i64>,
         }
         impl Builder {
+            #[doc = "Page continuation token is only used if a previous operation returned a partial result. \nIf a previous response contains a nextLink element, the value of the nextLink element will include a token parameter that specifies a starting point to use for subsequent calls.\n"]
             pub fn skiptoken(mut self, skiptoken: impl Into<String>) -> Self {
                 self.skiptoken = Some(skiptoken.into());
                 self
             }
+            #[doc = "Number of elements to return when retrieving results. Passing this in will override $skipToken."]
             pub fn top(mut self, top: i64) -> Self {
                 self.top = Some(top);
                 self
@@ -690,6 +701,7 @@ pub mod management_group_subscriptions {
             pub(crate) cache_control: Option<String>,
         }
         impl Builder {
+            #[doc = "Indicates whether the request should utilize any caches. Populate the header with 'no-cache' value to bypass existing caches."]
             pub fn cache_control(mut self, cache_control: impl Into<String>) -> Self {
                 self.cache_control = Some(cache_control.into());
                 self
@@ -748,6 +760,7 @@ pub mod management_group_subscriptions {
             pub(crate) cache_control: Option<String>,
         }
         impl Builder {
+            #[doc = "Indicates whether the request should utilize any caches. Populate the header with 'no-cache' value to bypass existing caches."]
             pub fn cache_control(mut self, cache_control: impl Into<String>) -> Self {
                 self.cache_control = Some(cache_control.into());
                 self
@@ -810,6 +823,7 @@ pub mod management_group_subscriptions {
             pub(crate) cache_control: Option<String>,
         }
         impl Builder {
+            #[doc = "Indicates whether the request should utilize any caches. Populate the header with 'no-cache' value to bypass existing caches."]
             pub fn cache_control(mut self, cache_control: impl Into<String>) -> Self {
                 self.cache_control = Some(cache_control.into());
                 self
@@ -864,6 +878,7 @@ pub mod management_group_subscriptions {
             pub(crate) skiptoken: Option<String>,
         }
         impl Builder {
+            #[doc = "Page continuation token is only used if a previous operation returned a partial result. \nIf a previous response contains a nextLink element, the value of the nextLink element will include a token parameter that specifies a starting point to use for subsequent calls.\n"]
             pub fn skiptoken(mut self, skiptoken: impl Into<String>) -> Self {
                 self.skiptoken = Some(skiptoken.into());
                 self
@@ -1527,38 +1542,47 @@ pub mod entities {
             pub(crate) cache_control: Option<String>,
         }
         impl Builder {
+            #[doc = "Page continuation token is only used if a previous operation returned a partial result. \nIf a previous response contains a nextLink element, the value of the nextLink element will include a token parameter that specifies a starting point to use for subsequent calls.\n"]
             pub fn skiptoken(mut self, skiptoken: impl Into<String>) -> Self {
                 self.skiptoken = Some(skiptoken.into());
                 self
             }
+            #[doc = "Number of entities to skip over when retrieving results. Passing this in will override $skipToken."]
             pub fn skip(mut self, skip: i64) -> Self {
                 self.skip = Some(skip);
                 self
             }
+            #[doc = "Number of elements to return when retrieving results. Passing this in will override $skipToken."]
             pub fn top(mut self, top: i64) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "This parameter specifies the fields to include in the response. Can include any combination of Name,DisplayName,Type,ParentDisplayNameChain,ParentChain, e.g. '$select=Name,DisplayName,Type,ParentDisplayNameChain,ParentNameChain'. When specified the $select parameter can override select in $skipToken."]
             pub fn select(mut self, select: impl Into<String>) -> Self {
                 self.select = Some(select.into());
                 self
             }
+            #[doc = "The $search parameter is used in conjunction with the $filter parameter to return three different outputs depending on the parameter passed in. \nWith $search=AllowedParents the API will return the entity info of all groups that the requested entity will be able to reparent to as determined by the user's permissions.\nWith $search=AllowedChildren the API will return the entity info of all entities that can be added as children of the requested entity.\nWith $search=ParentAndFirstLevelChildren the API will return the parent and  first level of children that the user has either direct access to or indirect access via one of their descendants.\nWith $search=ParentOnly the API will return only the group if the user has access to at least one of the descendants of the group.\nWith $search=ChildrenOnly the API will return only the first level of children of the group entity info specified in $filter.  The user must have direct access to the children entities or one of it's descendants for it to show up in the results."]
             pub fn search(mut self, search: impl Into<String>) -> Self {
                 self.search = Some(search.into());
                 self
             }
+            #[doc = "The filter parameter allows you to filter on the the name or display name fields. You can check for equality on the name field (e.g. name eq '{entityName}')  and you can check for substrings on either the name or display name fields(e.g. contains(name, '{substringToSearch}'), contains(displayName, '{substringToSearch')). Note that the '{entityName}' and '{substringToSearch}' fields are checked case insensitively."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "The view parameter allows clients to filter the type of data that is returned by the getEntities call."]
             pub fn view(mut self, view: impl Into<String>) -> Self {
                 self.view = Some(view.into());
                 self
             }
+            #[doc = "A filter which allows the get entities call to focus on a particular group (i.e. \"$filter=name eq 'groupName'\")"]
             pub fn group_name(mut self, group_name: impl Into<String>) -> Self {
                 self.group_name = Some(group_name.into());
                 self
             }
+            #[doc = "Indicates whether the request should utilize any caches. Populate the header with 'no-cache' value to bypass existing caches."]
             pub fn cache_control(mut self, cache_control: impl Into<String>) -> Self {
                 self.cache_control = Some(cache_control.into());
                 self

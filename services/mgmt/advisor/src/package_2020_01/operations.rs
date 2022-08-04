@@ -697,14 +697,17 @@ pub mod recommendations {
             pub(crate) skip_token: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply to the recommendations.<br>Filter can be applied to properties ['ResourceId', 'ResourceGroup', 'RecommendationTypeGuid', '[Category](#category)'] with operators ['eq', 'and', 'or'].<br>Example:<br>- $filter=Category eq 'Cost' and ResourceGroup eq 'MyResourceGroup'"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "The number of recommendations per page if a paged version of this API is being used."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "The page-continuation token to use with a paged version of this API."]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());
                 self
@@ -1151,10 +1154,12 @@ pub mod suppressions {
             pub(crate) skip_token: Option<String>,
         }
         impl Builder {
+            #[doc = "The number of suppressions per page if a paged version of this API is being used."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "The page-continuation token to use with a paged version of this API."]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());
                 self

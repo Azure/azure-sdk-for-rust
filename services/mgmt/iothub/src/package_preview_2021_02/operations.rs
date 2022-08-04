@@ -742,6 +742,7 @@ pub mod iot_hub_resource {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "ETag of the IoT Hub. Do not specify for creating a brand new IoT Hub. Required to update an existing IoT Hub."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -2446,6 +2447,7 @@ pub mod certificates {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "ETag of the Certificate. Do not specify for creating a brand new certificate. Required to update an existing certificate."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self

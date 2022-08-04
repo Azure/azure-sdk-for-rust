@@ -349,6 +349,7 @@ pub mod global_users {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "Specify the $expand query. Example: 'properties($expand=environment)'"]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -1024,18 +1025,22 @@ pub mod lab_accounts {
             pub(crate) orderby: Option<String>,
         }
         impl Builder {
+            #[doc = "Specify the $expand query. Example: 'properties($expand=sizeConfiguration)'"]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
             }
+            #[doc = "The filter to apply to the operation."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "The maximum number of resources to return from the operation."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "The ordering expression for the results, using OData notation."]
             pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
                 self.orderby = Some(orderby.into());
                 self
@@ -1131,18 +1136,22 @@ pub mod lab_accounts {
             pub(crate) orderby: Option<String>,
         }
         impl Builder {
+            #[doc = "Specify the $expand query. Example: 'properties($expand=sizeConfiguration)'"]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
             }
+            #[doc = "The filter to apply to the operation."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "The maximum number of resources to return from the operation."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "The ordering expression for the results, using OData notation."]
             pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
                 self.orderby = Some(orderby.into());
                 self
@@ -1237,6 +1246,7 @@ pub mod lab_accounts {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "Specify the $expand query. Example: 'properties($expand=sizeConfiguration)'"]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -1775,18 +1785,22 @@ pub mod gallery_images {
             pub(crate) orderby: Option<String>,
         }
         impl Builder {
+            #[doc = "Specify the $expand query. Example: 'properties($select=author)'"]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
             }
+            #[doc = "The filter to apply to the operation."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "The maximum number of resources to return from the operation."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "The ordering expression for the results, using OData notation."]
             pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
                 self.orderby = Some(orderby.into());
                 self
@@ -1883,6 +1897,7 @@ pub mod gallery_images {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "Specify the $expand query. Example: 'properties($select=author)'"]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -2294,18 +2309,22 @@ pub mod labs {
             pub(crate) orderby: Option<String>,
         }
         impl Builder {
+            #[doc = "Specify the $expand query. Example: 'properties($select=maxUsersInLab)'"]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
             }
+            #[doc = "The filter to apply to the operation."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "The maximum number of resources to return from the operation."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "The ordering expression for the results, using OData notation."]
             pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
                 self.orderby = Some(orderby.into());
                 self
@@ -2402,6 +2421,7 @@ pub mod labs {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "Specify the $expand query. Example: 'properties($select=maxUsersInLab)'"]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -2989,18 +3009,22 @@ pub mod environment_settings {
             pub(crate) orderby: Option<String>,
         }
         impl Builder {
+            #[doc = "Specify the $expand query. Example: 'properties($select=publishingState)'"]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
             }
+            #[doc = "The filter to apply to the operation."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "The maximum number of resources to return from the operation."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "The ordering expression for the results, using OData notation."]
             pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
                 self.orderby = Some(orderby.into());
                 self
@@ -3092,6 +3116,7 @@ pub mod environment_settings {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "Specify the $expand query. Example: 'properties($select=publishingState)'"]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -3773,18 +3798,22 @@ pub mod environments {
             pub(crate) orderby: Option<String>,
         }
         impl Builder {
+            #[doc = "Specify the $expand query. Example: 'properties($expand=networkInterface)'"]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
             }
+            #[doc = "The filter to apply to the operation."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "The maximum number of resources to return from the operation."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "The ordering expression for the results, using OData notation."]
             pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
                 self.orderby = Some(orderby.into());
                 self
@@ -3877,6 +3906,7 @@ pub mod environments {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "Specify the $expand query. Example: 'properties($expand=networkInterface)'"]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -4439,18 +4469,22 @@ pub mod users {
             pub(crate) orderby: Option<String>,
         }
         impl Builder {
+            #[doc = "Specify the $expand query. Example: 'properties($select=email)'"]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
             }
+            #[doc = "The filter to apply to the operation."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "The maximum number of resources to return from the operation."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "The ordering expression for the results, using OData notation."]
             pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
                 self.orderby = Some(orderby.into());
                 self
@@ -4549,6 +4583,7 @@ pub mod users {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "Specify the $expand query. Example: 'properties($select=email)'"]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self

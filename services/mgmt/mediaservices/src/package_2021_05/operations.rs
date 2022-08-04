@@ -2003,14 +2003,17 @@ pub mod assets {
             pub(crate) orderby: Option<String>,
         }
         impl Builder {
+            #[doc = "Restricts the set of items returned."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Specifies a non-negative integer n that limits the number of items returned from a collection. The service returns the number of available items up to but not greater than the specified value n."]
             pub fn top(mut self, top: i64) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Specifies the key by which the result collection should be ordered."]
             pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
                 self.orderby = Some(orderby.into());
                 self
@@ -3101,14 +3104,17 @@ pub mod content_key_policies {
             pub(crate) orderby: Option<String>,
         }
         impl Builder {
+            #[doc = "Restricts the set of items returned."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Specifies a non-negative integer n that limits the number of items returned from a collection. The service returns the number of available items up to but not greater than the specified value n."]
             pub fn top(mut self, top: i64) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Specifies the key by which the result collection should be ordered."]
             pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
                 self.orderby = Some(orderby.into());
                 self
@@ -3606,10 +3612,12 @@ pub mod transforms {
             pub(crate) orderby: Option<String>,
         }
         impl Builder {
+            #[doc = "Restricts the set of items returned."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Specifies the key by which the result collection should be ordered."]
             pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
                 self.orderby = Some(orderby.into());
                 self
@@ -4098,10 +4106,12 @@ pub mod jobs {
             pub(crate) orderby: Option<String>,
         }
         impl Builder {
+            #[doc = "Restricts the set of items returned."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Specifies the key by which the result collection should be ordered."]
             pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
                 self.orderby = Some(orderby.into());
                 self
@@ -4569,14 +4579,17 @@ pub mod streaming_policies {
             pub(crate) orderby: Option<String>,
         }
         impl Builder {
+            #[doc = "Restricts the set of items returned."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Specifies a non-negative integer n that limits the number of items returned from a collection. The service returns the number of available items up to but not greater than the specified value n."]
             pub fn top(mut self, top: i64) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Specifies the key by which the result collection should be ordered."]
             pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
                 self.orderby = Some(orderby.into());
                 self
@@ -4983,14 +4996,17 @@ pub mod streaming_locators {
             pub(crate) orderby: Option<String>,
         }
         impl Builder {
+            #[doc = "Restricts the set of items returned."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Specifies a non-negative integer n that limits the number of items returned from a collection. The service returns the number of available items up to but not greater than the specified value n."]
             pub fn top(mut self, top: i64) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Specifies the key by which the result collection should be ordered."]
             pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
                 self.orderby = Some(orderby.into());
                 self
@@ -5701,6 +5717,7 @@ pub mod live_events {
             pub(crate) auto_start: Option<bool>,
         }
         impl Builder {
+            #[doc = "The flag indicates if the resource should be automatically started on creation."]
             pub fn auto_start(mut self, auto_start: bool) -> Self {
                 self.auto_start = Some(auto_start);
                 self
@@ -6831,6 +6848,7 @@ pub mod streaming_endpoints {
             pub(crate) auto_start: Option<bool>,
         }
         impl Builder {
+            #[doc = "The flag indicates if the resource should be automatically started on creation."]
             pub fn auto_start(mut self, auto_start: bool) -> Self {
                 self.auto_start = Some(auto_start);
                 self

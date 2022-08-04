@@ -621,6 +621,7 @@ pub mod vaults {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "Maximum number of results to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -704,6 +705,7 @@ pub mod vaults {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "Maximum number of results to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -968,6 +970,7 @@ pub mod vaults {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "Maximum number of results to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -1936,6 +1939,7 @@ pub mod managed_hsms {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "Maximum number of results to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -2019,6 +2023,7 @@ pub mod managed_hsms {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "Maximum number of results to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self

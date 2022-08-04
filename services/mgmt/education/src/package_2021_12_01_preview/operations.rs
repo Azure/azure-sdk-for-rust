@@ -193,6 +193,7 @@ pub mod grants {
             pub(crate) include_allocated_budget: Option<bool>,
         }
         impl Builder {
+            #[doc = "May be used to include information about budget that has been allocated."]
             pub fn include_allocated_budget(mut self, include_allocated_budget: bool) -> Self {
                 self.include_allocated_budget = Some(include_allocated_budget);
                 self
@@ -274,6 +275,7 @@ pub mod grants {
             pub(crate) include_allocated_budget: Option<bool>,
         }
         impl Builder {
+            #[doc = "May be used to include information about budget that has been allocated."]
             pub fn include_allocated_budget(mut self, include_allocated_budget: bool) -> Self {
                 self.include_allocated_budget = Some(include_allocated_budget);
                 self
@@ -360,6 +362,7 @@ pub mod grants {
             pub(crate) include_allocated_budget: Option<bool>,
         }
         impl Builder {
+            #[doc = "May be used to include information about budget that has been allocated."]
             pub fn include_allocated_budget(mut self, include_allocated_budget: bool) -> Self {
                 self.include_allocated_budget = Some(include_allocated_budget);
                 self
@@ -540,10 +543,12 @@ pub mod labs {
             pub(crate) include_deleted: Option<bool>,
         }
         impl Builder {
+            #[doc = "May be used to include budget information."]
             pub fn include_budget(mut self, include_budget: bool) -> Self {
                 self.include_budget = Some(include_budget);
                 self
             }
+            #[doc = "May be used to show deleted items."]
             pub fn include_deleted(mut self, include_deleted: bool) -> Self {
                 self.include_deleted = Some(include_deleted);
                 self
@@ -636,6 +641,7 @@ pub mod labs {
             pub(crate) include_budget: Option<bool>,
         }
         impl Builder {
+            #[doc = "May be used to include budget information."]
             pub fn include_budget(mut self, include_budget: bool) -> Self {
                 self.include_budget = Some(include_budget);
                 self
@@ -718,6 +724,7 @@ pub mod labs {
             pub(crate) include_budget: Option<bool>,
         }
         impl Builder {
+            #[doc = "May be used to include budget information."]
             pub fn include_budget(mut self, include_budget: bool) -> Self {
                 self.include_budget = Some(include_budget);
                 self
@@ -879,6 +886,7 @@ pub mod labs {
             pub(crate) only_update_student_count_parameter: Option<bool>,
         }
         impl Builder {
+            #[doc = "set this flag to true if you want to update student count without generating a new invite code"]
             pub fn only_update_student_count_parameter(mut self, only_update_student_count_parameter: bool) -> Self {
                 self.only_update_student_count_parameter = Some(only_update_student_count_parameter);
                 self
@@ -1028,6 +1036,7 @@ pub mod join_requests {
             pub(crate) include_denied: Option<bool>,
         }
         impl Builder {
+            #[doc = "Include denied"]
             pub fn include_denied(mut self, include_denied: bool) -> Self {
                 self.include_denied = Some(include_denied);
                 self
@@ -1396,6 +1405,7 @@ pub mod students {
             pub(crate) include_deleted: Option<bool>,
         }
         impl Builder {
+            #[doc = "May be used to show deleted items."]
             pub fn include_deleted(mut self, include_deleted: bool) -> Self {
                 self.include_deleted = Some(include_deleted);
                 self

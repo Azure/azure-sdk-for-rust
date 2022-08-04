@@ -223,10 +223,12 @@ pub mod database_migrations_sql_db {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "Optional migration operation ID. If this is provided, then details of migration operation for that ID are retrieved. If not provided (default), then details related to most recent or current operation are retrieved."]
             pub fn migration_operation_id(mut self, migration_operation_id: impl Into<String>) -> Self {
                 self.migration_operation_id = Some(migration_operation_id.into());
                 self
             }
+            #[doc = "Complete migration details be included in the response."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -351,6 +353,7 @@ pub mod database_migrations_sql_db {
             pub(crate) force: Option<bool>,
         }
         impl Builder {
+            #[doc = "Optional force delete boolean. If this is provided as true, migration will be deleted even if active."]
             pub fn force(mut self, force: bool) -> Self {
                 self.force = Some(force);
                 self
@@ -558,10 +561,12 @@ pub mod database_migrations_sql_mi {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "Optional migration operation ID. If this is provided, then details of migration operation for that ID are retrieved. If not provided (default), then details related to most recent or current operation are retrieved."]
             pub fn migration_operation_id(mut self, migration_operation_id: impl Into<String>) -> Self {
                 self.migration_operation_id = Some(migration_operation_id.into());
                 self
             }
+            #[doc = "Complete migration details be included in the response."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -883,10 +888,12 @@ pub mod database_migrations_sql_vm {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "Optional migration operation ID. If this is provided, then details of migration operation for that ID are retrieved. If not provided (default), then details related to most recent or current operation are retrieved."]
             pub fn migration_operation_id(mut self, migration_operation_id: impl Into<String>) -> Self {
                 self.migration_operation_id = Some(migration_operation_id.into());
                 self
             }
+            #[doc = "Complete migration details be included in the response."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -2580,6 +2587,7 @@ pub mod services {
             pub(crate) delete_running_tasks: Option<bool>,
         }
         impl Builder {
+            #[doc = "Delete the resource even if it contains running tasks"]
             pub fn delete_running_tasks(mut self, delete_running_tasks: bool) -> Self {
                 self.delete_running_tasks = Some(delete_running_tasks);
                 self
@@ -3336,6 +3344,7 @@ pub mod tasks {
             pub(crate) task_type: Option<String>,
         }
         impl Builder {
+            #[doc = "Filter tasks by task type"]
             pub fn task_type(mut self, task_type: impl Into<String>) -> Self {
                 self.task_type = Some(task_type.into());
                 self
@@ -3425,6 +3434,7 @@ pub mod tasks {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "Expand the response"]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -3618,6 +3628,7 @@ pub mod tasks {
             pub(crate) delete_running_tasks: Option<bool>,
         }
         impl Builder {
+            #[doc = "Delete the resource even if it contains running tasks"]
             pub fn delete_running_tasks(mut self, delete_running_tasks: bool) -> Self {
                 self.delete_running_tasks = Some(delete_running_tasks);
                 self
@@ -3928,6 +3939,7 @@ pub mod service_tasks {
             pub(crate) task_type: Option<String>,
         }
         impl Builder {
+            #[doc = "Filter tasks by task type"]
             pub fn task_type(mut self, task_type: impl Into<String>) -> Self {
                 self.task_type = Some(task_type.into());
                 self
@@ -4015,6 +4027,7 @@ pub mod service_tasks {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "Expand the response"]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -4202,6 +4215,7 @@ pub mod service_tasks {
             pub(crate) delete_running_tasks: Option<bool>,
         }
         impl Builder {
+            #[doc = "Delete the resource even if it contains running tasks"]
             pub fn delete_running_tasks(mut self, delete_running_tasks: bool) -> Self {
                 self.delete_running_tasks = Some(delete_running_tasks);
                 self
@@ -4700,6 +4714,7 @@ pub mod projects {
             pub(crate) delete_running_tasks: Option<bool>,
         }
         impl Builder {
+            #[doc = "Delete the resource even if it contains running tasks"]
             pub fn delete_running_tasks(mut self, delete_running_tasks: bool) -> Self {
                 self.delete_running_tasks = Some(delete_running_tasks);
                 self

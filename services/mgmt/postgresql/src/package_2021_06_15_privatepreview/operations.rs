@@ -460,6 +460,7 @@ pub mod migrations {
             pub(crate) migration_list_filter: Option<String>,
         }
         impl Builder {
+            #[doc = "Migration list filter. Retrieves either active migrations or all migrations."]
             pub fn migration_list_filter(mut self, migration_list_filter: impl Into<String>) -> Self {
                 self.migration_list_filter = Some(migration_list_filter.into());
                 self
@@ -1181,6 +1182,7 @@ pub mod servers {
             pub(crate) parameters: Option<models::RestartParameter>,
         }
         impl Builder {
+            #[doc = "The parameters for restarting a server."]
             pub fn parameters(mut self, parameters: impl Into<models::RestartParameter>) -> Self {
                 self.parameters = Some(parameters.into());
                 self

@@ -119,10 +119,12 @@ pub mod pipeline {
             pub(crate) end_date_time: Option<String>,
         }
         impl Builder {
+            #[doc = "The start date for when to get the list of pipelines. The startDateTime and endDateTime can be no more than 30 days apart."]
             pub fn start_date_time(mut self, start_date_time: impl Into<String>) -> Self {
                 self.start_date_time = Some(start_date_time.into());
                 self
             }
+            #[doc = "The end date for when to get the list of pipelines. The startDateTime and endDateTime can be no more than 30 days apart."]
             pub fn end_date_time(mut self, end_date_time: impl Into<String>) -> Self {
                 self.end_date_time = Some(end_date_time.into());
                 self
@@ -205,10 +207,12 @@ pub mod pipeline {
             pub(crate) end_date_time: Option<String>,
         }
         impl Builder {
+            #[doc = "The start date for when to get the pipeline and aggregate its data. The startDateTime and endDateTime can be no more than 30 days apart."]
             pub fn start_date_time(mut self, start_date_time: impl Into<String>) -> Self {
                 self.start_date_time = Some(start_date_time.into());
                 self
             }
+            #[doc = "The end date for when to get the pipeline and aggregate its data. The startDateTime and endDateTime can be no more than 30 days apart."]
             pub fn end_date_time(mut self, end_date_time: impl Into<String>) -> Self {
                 self.end_date_time = Some(end_date_time.into());
                 self
@@ -290,10 +294,12 @@ pub mod recurrence {
             pub(crate) end_date_time: Option<String>,
         }
         impl Builder {
+            #[doc = "The start date for when to get the list of recurrences. The startDateTime and endDateTime can be no more than 30 days apart."]
             pub fn start_date_time(mut self, start_date_time: impl Into<String>) -> Self {
                 self.start_date_time = Some(start_date_time.into());
                 self
             }
+            #[doc = "The end date for when to get the list of recurrences. The startDateTime and endDateTime can be no more than 30 days apart."]
             pub fn end_date_time(mut self, end_date_time: impl Into<String>) -> Self {
                 self.end_date_time = Some(end_date_time.into());
                 self
@@ -376,10 +382,12 @@ pub mod recurrence {
             pub(crate) end_date_time: Option<String>,
         }
         impl Builder {
+            #[doc = "The start date for when to get the recurrence and aggregate its data. The startDateTime and endDateTime can be no more than 30 days apart."]
             pub fn start_date_time(mut self, start_date_time: impl Into<String>) -> Self {
                 self.start_date_time = Some(start_date_time.into());
                 self
             }
+            #[doc = "The end date for when to get recurrence and aggregate its data. The startDateTime and endDateTime can be no more than 30 days apart."]
             pub fn end_date_time(mut self, end_date_time: impl Into<String>) -> Self {
                 self.end_date_time = Some(end_date_time.into());
                 self
@@ -784,26 +792,32 @@ pub mod job {
             pub(crate) count: Option<bool>,
         }
         impl Builder {
+            #[doc = "OData filter. Optional."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "The number of items to return. Optional."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "The number of items to skip over before returning elements. Optional."]
             pub fn skip(mut self, skip: i32) -> Self {
                 self.skip = Some(skip);
                 self
             }
+            #[doc = "OData Select statement. Limits the properties on each entry to just those requested, e.g. Categories?$select=CategoryName,Description. Optional."]
             pub fn select(mut self, select: impl Into<String>) -> Self {
                 self.select = Some(select.into());
                 self
             }
+            #[doc = "OrderBy clause. One or more comma-separated expressions with an optional \"asc\" (the default) or \"desc\" depending on the order you'd like the values sorted, e.g. Categories?$orderby=CategoryName desc. Optional."]
             pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
                 self.orderby = Some(orderby.into());
                 self
             }
+            #[doc = "The Boolean value of true or false to request a count of the matching resources included with the resources in the response, e.g. Categories?$count=true. Optional."]
             pub fn count(mut self, count: bool) -> Self {
                 self.count = Some(count);
                 self

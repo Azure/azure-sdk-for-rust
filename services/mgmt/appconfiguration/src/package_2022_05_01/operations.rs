@@ -305,6 +305,7 @@ pub mod configuration_stores {
             pub(crate) skip_token: Option<String>,
         }
         impl Builder {
+            #[doc = "A skip token is used to continue retrieving items after an operation returns a partial result. If a previous response contains a nextLink element, the value of the nextLink element will include a skipToken parameter that specifies a starting point to use for subsequent calls."]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());
                 self
@@ -388,6 +389,7 @@ pub mod configuration_stores {
             pub(crate) skip_token: Option<String>,
         }
         impl Builder {
+            #[doc = "A skip token is used to continue retrieving items after an operation returns a partial result. If a previous response contains a nextLink element, the value of the nextLink element will include a skipToken parameter that specifies a starting point to use for subsequent calls."]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());
                 self
@@ -709,6 +711,7 @@ pub mod configuration_stores {
             pub(crate) skip_token: Option<String>,
         }
         impl Builder {
+            #[doc = "A skip token is used to continue retrieving items after an operation returns a partial result. If a previous response contains a nextLink element, the value of the nextLink element will include a skipToken parameter that specifies a starting point to use for subsequent calls."]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());
                 self
@@ -1122,6 +1125,7 @@ pub mod operations {
             pub(crate) skip_token: Option<String>,
         }
         impl Builder {
+            #[doc = "A skip token is used to continue retrieving items after an operation returns a partial result. If a previous response contains a nextLink element, the value of the nextLink element will include a skipToken parameter that specifies a starting point to use for subsequent calls."]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());
                 self
@@ -1839,6 +1843,7 @@ pub mod key_values {
             pub(crate) skip_token: Option<String>,
         }
         impl Builder {
+            #[doc = "A skip token is used to continue retrieving items after an operation returns a partial result. If a previous response contains a nextLink element, the value of the nextLink element will include a skipToken parameter that specifies a starting point to use for subsequent calls."]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());
                 self
@@ -1973,6 +1978,7 @@ pub mod key_values {
             pub(crate) key_value_parameters: Option<models::KeyValue>,
         }
         impl Builder {
+            #[doc = "The parameters for creating a key-value."]
             pub fn key_value_parameters(mut self, key_value_parameters: impl Into<models::KeyValue>) -> Self {
                 self.key_value_parameters = Some(key_value_parameters.into());
                 self

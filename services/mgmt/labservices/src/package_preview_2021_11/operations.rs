@@ -218,6 +218,7 @@ pub mod images {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply to the operation."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -612,6 +613,7 @@ pub mod lab_plans {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply to the operation."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -1310,6 +1312,7 @@ pub mod labs {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply to the operation."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -2021,6 +2024,7 @@ pub mod schedules {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply to the operation."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -2491,6 +2495,7 @@ pub mod users {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply to the operation."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -3053,6 +3058,7 @@ pub mod virtual_machines {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply to the operation."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -3491,6 +3497,7 @@ pub mod usages {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply to the operation."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -3592,6 +3599,7 @@ pub mod skus {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply to the operation."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self

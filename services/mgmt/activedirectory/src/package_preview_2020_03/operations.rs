@@ -316,6 +316,7 @@ pub mod private_link_for_azure_ad {
             pub(crate) private_link_policy: Option<models::PrivateLinkPolicyUpdateParameter>,
         }
         impl Builder {
+            #[doc = "Private Link Policy resource with the tags to be updated."]
             pub fn private_link_policy(mut self, private_link_policy: impl Into<models::PrivateLinkPolicyUpdateParameter>) -> Self {
                 self.private_link_policy = Some(private_link_policy.into());
                 self

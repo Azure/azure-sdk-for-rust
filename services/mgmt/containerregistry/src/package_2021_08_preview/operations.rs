@@ -273,6 +273,7 @@ pub mod connected_registries {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "An OData filter expression that describes a subset of connectedRegistries to return. The parameters that can be filtered are parent.id (the resource id of the connectedRegistry parent), mode, and connectionState. The supported operator is eq."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -5895,10 +5896,12 @@ pub mod runs {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The runs filter to apply on the operation. Arithmetic operators are not supported. The allowed string function is 'contains'. All logical operators except 'Not', 'Has', 'All' are allowed."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "$top is supported for get list of runs, which limits the maximum number of runs to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self

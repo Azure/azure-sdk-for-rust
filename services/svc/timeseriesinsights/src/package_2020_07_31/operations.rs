@@ -142,14 +142,17 @@ pub mod query {
             pub(crate) x_ms_client_session_id: Option<String>,
         }
         impl Builder {
+            #[doc = "For the environments with warm store enabled, the query can be executed either on the 'WarmStore' or 'ColdStore'. This parameter in the query defines which store the query should be executed on. If not defined, the query will be executed on the cold store."]
             pub fn store_type(mut self, store_type: impl Into<String>) -> Self {
                 self.store_type = Some(store_type.into());
                 self
             }
+            #[doc = "Optional client request ID. Service records this value. Allows the service to trace operation across services, and allows the customer to contact support regarding a particular request."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
             }
+            #[doc = "Optional client session ID. Service records this value. Allows the service to trace a group of related operations across services, and allows the customer to contact support regarding a particular group of requests."]
             pub fn x_ms_client_session_id(mut self, x_ms_client_session_id: impl Into<String>) -> Self {
                 self.x_ms_client_session_id = Some(x_ms_client_session_id.into());
                 self
@@ -210,14 +213,17 @@ pub mod query {
             pub(crate) x_ms_client_session_id: Option<String>,
         }
         impl Builder {
+            #[doc = "For the environments with warm store enabled, the query can be executed either on the 'WarmStore' or 'ColdStore'. This parameter in the query defines which store the query should be executed on. If not defined, the query will be executed on the cold store."]
             pub fn store_type(mut self, store_type: impl Into<String>) -> Self {
                 self.store_type = Some(store_type.into());
                 self
             }
+            #[doc = "Optional client request ID. Service records this value. Allows the service to trace operation across services, and allows the customer to contact support regarding a particular request."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
             }
+            #[doc = "Optional client session ID. Service records this value. Allows the service to trace a group of related operations across services, and allows the customer to contact support regarding a particular group of requests."]
             pub fn x_ms_client_session_id(mut self, x_ms_client_session_id: impl Into<String>) -> Self {
                 self.x_ms_client_session_id = Some(x_ms_client_session_id.into());
                 self
@@ -280,18 +286,22 @@ pub mod query {
             pub(crate) x_ms_client_session_id: Option<String>,
         }
         impl Builder {
+            #[doc = "For the environments with warm store enabled, the query can be executed either on the 'WarmStore' or 'ColdStore'. This parameter in the query defines which store the query should be executed on. If not defined, the query will be executed on the cold store."]
             pub fn store_type(mut self, store_type: impl Into<String>) -> Self {
                 self.store_type = Some(store_type.into());
                 self
             }
+            #[doc = "Continuation token from previous page of results to retrieve the next page of the results in calls that support pagination. To get the first page results, specify null continuation token as parameter value. Returned continuation token is null if all results have been returned, and there is no next page of results."]
             pub fn x_ms_continuation(mut self, x_ms_continuation: impl Into<String>) -> Self {
                 self.x_ms_continuation = Some(x_ms_continuation.into());
                 self
             }
+            #[doc = "Optional client request ID. Service records this value. Allows the service to trace operation across services, and allows the customer to contact support regarding a particular request."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
             }
+            #[doc = "Optional client session ID. Service records this value. Allows the service to trace a group of related operations across services, and allows the customer to contact support regarding a particular group of requests."]
             pub fn x_ms_client_session_id(mut self, x_ms_client_session_id: impl Into<String>) -> Self {
                 self.x_ms_client_session_id = Some(x_ms_client_session_id.into());
                 self
@@ -380,10 +390,12 @@ pub mod model_settings {
             pub(crate) x_ms_client_session_id: Option<String>,
         }
         impl Builder {
+            #[doc = "Optional client request ID. Service records this value. Allows the service to trace operation across services, and allows the customer to contact support regarding a particular request."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
             }
+            #[doc = "Optional client session ID. Service records this value. Allows the service to trace a group of related operations across services, and allows the customer to contact support regarding a particular group of requests."]
             pub fn x_ms_client_session_id(mut self, x_ms_client_session_id: impl Into<String>) -> Self {
                 self.x_ms_client_session_id = Some(x_ms_client_session_id.into());
                 self
@@ -440,10 +452,12 @@ pub mod model_settings {
             pub(crate) x_ms_client_session_id: Option<String>,
         }
         impl Builder {
+            #[doc = "Optional client request ID. Service records this value. Allows the service to trace operation across services, and allows the customer to contact support regarding a particular request."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
             }
+            #[doc = "Optional client session ID. Service records this value. Allows the service to trace a group of related operations across services, and allows the customer to contact support regarding a particular group of requests."]
             pub fn x_ms_client_session_id(mut self, x_ms_client_session_id: impl Into<String>) -> Self {
                 self.x_ms_client_session_id = Some(x_ms_client_session_id.into());
                 self
@@ -553,14 +567,17 @@ pub mod time_series_instances {
             pub(crate) x_ms_client_session_id: Option<String>,
         }
         impl Builder {
+            #[doc = "Continuation token from previous page of results to retrieve the next page of the results in calls that support pagination. To get the first page results, specify null continuation token as parameter value. Returned continuation token is null if all results have been returned, and there is no next page of results."]
             pub fn x_ms_continuation(mut self, x_ms_continuation: impl Into<String>) -> Self {
                 self.x_ms_continuation = Some(x_ms_continuation.into());
                 self
             }
+            #[doc = "Optional client request ID. Service records this value. Allows the service to trace operation across services, and allows the customer to contact support regarding a particular request."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
             }
+            #[doc = "Optional client session ID. Service records this value. Allows the service to trace a group of related operations across services, and allows the customer to contact support regarding a particular group of requests."]
             pub fn x_ms_client_session_id(mut self, x_ms_client_session_id: impl Into<String>) -> Self {
                 self.x_ms_client_session_id = Some(x_ms_client_session_id.into());
                 self
@@ -620,10 +637,12 @@ pub mod time_series_instances {
             pub(crate) x_ms_client_session_id: Option<String>,
         }
         impl Builder {
+            #[doc = "Optional client request ID. Service records this value. Allows the service to trace operation across services, and allows the customer to contact support regarding a particular request."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
             }
+            #[doc = "Optional client session ID. Service records this value. Allows the service to trace a group of related operations across services, and allows the customer to contact support regarding a particular group of requests."]
             pub fn x_ms_client_session_id(mut self, x_ms_client_session_id: impl Into<String>) -> Self {
                 self.x_ms_client_session_id = Some(x_ms_client_session_id.into());
                 self
@@ -681,10 +700,12 @@ pub mod time_series_instances {
             pub(crate) x_ms_client_session_id: Option<String>,
         }
         impl Builder {
+            #[doc = "Optional client request ID. Service records this value. Allows the service to trace operation across services, and allows the customer to contact support regarding a particular request."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
             }
+            #[doc = "Optional client session ID. Service records this value. Allows the service to trace a group of related operations across services, and allows the customer to contact support regarding a particular group of requests."]
             pub fn x_ms_client_session_id(mut self, x_ms_client_session_id: impl Into<String>) -> Self {
                 self.x_ms_client_session_id = Some(x_ms_client_session_id.into());
                 self
@@ -743,14 +764,17 @@ pub mod time_series_instances {
             pub(crate) x_ms_client_session_id: Option<String>,
         }
         impl Builder {
+            #[doc = "Continuation token from previous page of results to retrieve the next page of the results in calls that support pagination. To get the first page results, specify null continuation token as parameter value. Returned continuation token is null if all results have been returned, and there is no next page of results."]
             pub fn x_ms_continuation(mut self, x_ms_continuation: impl Into<String>) -> Self {
                 self.x_ms_continuation = Some(x_ms_continuation.into());
                 self
             }
+            #[doc = "Optional client request ID. Service records this value. Allows the service to trace operation across services, and allows the customer to contact support regarding a particular request."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
             }
+            #[doc = "Optional client session ID. Service records this value. Allows the service to trace a group of related operations across services, and allows the customer to contact support regarding a particular group of requests."]
             pub fn x_ms_client_session_id(mut self, x_ms_client_session_id: impl Into<String>) -> Self {
                 self.x_ms_client_session_id = Some(x_ms_client_session_id.into());
                 self
@@ -838,14 +862,17 @@ pub mod time_series_types {
             pub(crate) x_ms_client_session_id: Option<String>,
         }
         impl Builder {
+            #[doc = "Continuation token from previous page of results to retrieve the next page of the results in calls that support pagination. To get the first page results, specify null continuation token as parameter value. Returned continuation token is null if all results have been returned, and there is no next page of results."]
             pub fn x_ms_continuation(mut self, x_ms_continuation: impl Into<String>) -> Self {
                 self.x_ms_continuation = Some(x_ms_continuation.into());
                 self
             }
+            #[doc = "Optional client request ID. Service records this value. Allows the service to trace operation across services, and allows the customer to contact support regarding a particular request."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
             }
+            #[doc = "Optional client session ID. Service records this value. Allows the service to trace a group of related operations across services, and allows the customer to contact support regarding a particular group of requests."]
             pub fn x_ms_client_session_id(mut self, x_ms_client_session_id: impl Into<String>) -> Self {
                 self.x_ms_client_session_id = Some(x_ms_client_session_id.into());
                 self
@@ -905,10 +932,12 @@ pub mod time_series_types {
             pub(crate) x_ms_client_session_id: Option<String>,
         }
         impl Builder {
+            #[doc = "Optional client request ID. Service records this value. Allows the service to trace operation across services, and allows the customer to contact support regarding a particular request."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
             }
+            #[doc = "Optional client session ID. Service records this value. Allows the service to trace a group of related operations across services, and allows the customer to contact support regarding a particular group of requests."]
             pub fn x_ms_client_session_id(mut self, x_ms_client_session_id: impl Into<String>) -> Self {
                 self.x_ms_client_session_id = Some(x_ms_client_session_id.into());
                 self
@@ -993,14 +1022,17 @@ pub mod time_series_hierarchies {
             pub(crate) x_ms_client_session_id: Option<String>,
         }
         impl Builder {
+            #[doc = "Continuation token from previous page of results to retrieve the next page of the results in calls that support pagination. To get the first page results, specify null continuation token as parameter value. Returned continuation token is null if all results have been returned, and there is no next page of results."]
             pub fn x_ms_continuation(mut self, x_ms_continuation: impl Into<String>) -> Self {
                 self.x_ms_continuation = Some(x_ms_continuation.into());
                 self
             }
+            #[doc = "Optional client request ID. Service records this value. Allows the service to trace operation across services, and allows the customer to contact support regarding a particular request."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
             }
+            #[doc = "Optional client session ID. Service records this value. Allows the service to trace a group of related operations across services, and allows the customer to contact support regarding a particular group of requests."]
             pub fn x_ms_client_session_id(mut self, x_ms_client_session_id: impl Into<String>) -> Self {
                 self.x_ms_client_session_id = Some(x_ms_client_session_id.into());
                 self
@@ -1060,10 +1092,12 @@ pub mod time_series_hierarchies {
             pub(crate) x_ms_client_session_id: Option<String>,
         }
         impl Builder {
+            #[doc = "Optional client request ID. Service records this value. Allows the service to trace operation across services, and allows the customer to contact support regarding a particular request."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
             }
+            #[doc = "Optional client session ID. Service records this value. Allows the service to trace a group of related operations across services, and allows the customer to contact support regarding a particular group of requests."]
             pub fn x_ms_client_session_id(mut self, x_ms_client_session_id: impl Into<String>) -> Self {
                 self.x_ms_client_session_id = Some(x_ms_client_session_id.into());
                 self

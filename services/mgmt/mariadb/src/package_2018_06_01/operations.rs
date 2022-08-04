@@ -3503,6 +3503,7 @@ pub mod recommended_actions {
             pub(crate) session_id: Option<String>,
         }
         impl Builder {
+            #[doc = "The recommendation action session identifier."]
             pub fn session_id(mut self, session_id: impl Into<String>) -> Self {
                 self.session_id = Some(session_id.into());
                 self

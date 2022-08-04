@@ -355,6 +355,7 @@ pub mod get_apps {
         pub(crate) select: Option<String>,
     }
     impl Builder {
+        #[doc = "The filter to apply on the operation."]
         pub fn filter(mut self, filter: impl Into<String>) -> Self {
             self.filter = Some(filter.into());
             self
@@ -363,6 +364,7 @@ pub mod get_apps {
             self.top = Some(top);
             self
         }
+        #[doc = "select specific fields in entity."]
         pub fn select(mut self, select: impl Into<String>) -> Self {
             self.select = Some(select.into());
             self
@@ -454,6 +456,7 @@ pub mod get_mam_user_devices {
         pub(crate) select: Option<String>,
     }
     impl Builder {
+        #[doc = "The filter to apply on the operation."]
         pub fn filter(mut self, filter: impl Into<String>) -> Self {
             self.filter = Some(filter.into());
             self
@@ -462,6 +465,7 @@ pub mod get_mam_user_devices {
             self.top = Some(top);
             self
         }
+        #[doc = "select specific fields in entity."]
         pub fn select(mut self, select: impl Into<String>) -> Self {
             self.select = Some(select.into());
             self
@@ -553,6 +557,7 @@ pub mod get_mam_user_device_by_device_name {
         pub(crate) select: Option<String>,
     }
     impl Builder {
+        #[doc = "select specific fields in entity."]
         pub fn select(mut self, select: impl Into<String>) -> Self {
             self.select = Some(select.into());
             self
@@ -666,6 +671,7 @@ pub mod get_operation_results {
         pub(crate) select: Option<String>,
     }
     impl Builder {
+        #[doc = "The filter to apply on the operation."]
         pub fn filter(mut self, filter: impl Into<String>) -> Self {
             self.filter = Some(filter.into());
             self
@@ -674,6 +680,7 @@ pub mod get_operation_results {
             self.top = Some(top);
             self
         }
+        #[doc = "select specific fields in entity."]
         pub fn select(mut self, select: impl Into<String>) -> Self {
             self.select = Some(select.into());
             self
@@ -838,6 +845,7 @@ pub mod get_mam_flagged_users {
         pub(crate) select: Option<String>,
     }
     impl Builder {
+        #[doc = "The filter to apply on the operation."]
         pub fn filter(mut self, filter: impl Into<String>) -> Self {
             self.filter = Some(filter.into());
             self
@@ -846,6 +854,7 @@ pub mod get_mam_flagged_users {
             self.top = Some(top);
             self
         }
+        #[doc = "select specific fields in entity."]
         pub fn select(mut self, select: impl Into<String>) -> Self {
             self.select = Some(select.into());
             self
@@ -935,6 +944,7 @@ pub mod get_mam_flagged_user_by_name {
         pub(crate) select: Option<String>,
     }
     impl Builder {
+        #[doc = "select specific fields in entity."]
         pub fn select(mut self, select: impl Into<String>) -> Self {
             self.select = Some(select.into());
             self
@@ -995,6 +1005,7 @@ pub mod get_mam_user_flagged_enrolled_apps {
         pub(crate) select: Option<String>,
     }
     impl Builder {
+        #[doc = "The filter to apply on the operation."]
         pub fn filter(mut self, filter: impl Into<String>) -> Self {
             self.filter = Some(filter.into());
             self
@@ -1003,6 +1014,7 @@ pub mod get_mam_user_flagged_enrolled_apps {
             self.top = Some(top);
             self
         }
+        #[doc = "select specific fields in entity."]
         pub fn select(mut self, select: impl Into<String>) -> Self {
             self.select = Some(select.into());
             self
@@ -1296,6 +1308,7 @@ pub mod ios {
             pub(crate) select: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the operation."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -1304,6 +1317,7 @@ pub mod ios {
                 self.top = Some(top);
                 self
             }
+            #[doc = "select specific fields in entity."]
             pub fn select(mut self, select: impl Into<String>) -> Self {
                 self.select = Some(select.into());
                 self
@@ -1393,6 +1407,7 @@ pub mod ios {
             pub(crate) select: Option<String>,
         }
         impl Builder {
+            #[doc = "select specific fields in entity."]
             pub fn select(mut self, select: impl Into<String>) -> Self {
                 self.select = Some(select.into());
                 self
@@ -1608,6 +1623,7 @@ pub mod ios {
             pub(crate) select: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the operation."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -1616,6 +1632,7 @@ pub mod ios {
                 self.top = Some(top);
                 self
             }
+            #[doc = "select specific fields in entity."]
             pub fn select(mut self, select: impl Into<String>) -> Self {
                 self.select = Some(select.into());
                 self
@@ -2202,6 +2219,7 @@ pub mod android {
             pub(crate) select: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the operation."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -2210,6 +2228,7 @@ pub mod android {
                 self.top = Some(top);
                 self
             }
+            #[doc = "select specific fields in entity."]
             pub fn select(mut self, select: impl Into<String>) -> Self {
                 self.select = Some(select.into());
                 self
@@ -2299,6 +2318,7 @@ pub mod android {
             pub(crate) select: Option<String>,
         }
         impl Builder {
+            #[doc = "select specific fields in entity."]
             pub fn select(mut self, select: impl Into<String>) -> Self {
                 self.select = Some(select.into());
                 self
@@ -2514,6 +2534,7 @@ pub mod android {
             pub(crate) select: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the operation."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -2522,6 +2543,7 @@ pub mod android {
                 self.top = Some(top);
                 self
             }
+            #[doc = "select specific fields in entity."]
             pub fn select(mut self, select: impl Into<String>) -> Self {
                 self.select = Some(select.into());
                 self

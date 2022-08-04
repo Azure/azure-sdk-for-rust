@@ -239,6 +239,7 @@ pub mod o_auth2_permission_grant {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "This is the Service Principal ObjectId associated with the app"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -318,6 +319,7 @@ pub mod o_auth2_permission_grant {
             pub(crate) body: Option<models::OAuth2PermissionGrant>,
         }
         impl Builder {
+            #[doc = "The relevant app Service Principal Object Id and the Service Principal Object Id you want to grant."]
             pub fn body(mut self, body: impl Into<models::OAuth2PermissionGrant>) -> Self {
                 self.body = Some(body.into());
                 self
@@ -1162,6 +1164,7 @@ pub mod groups {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply to the operation."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -1980,6 +1983,7 @@ pub mod applications {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "The filters to apply to the operation."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -2848,6 +2852,7 @@ pub mod deleted_applications {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply to the operation."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -3286,6 +3291,7 @@ pub mod service_principals {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply to the operation."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -4259,14 +4265,17 @@ pub mod users {
             pub(crate) top: Option<i64>,
         }
         impl Builder {
+            #[doc = "The filter to apply to the operation."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "The expand value for the operation result."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
             }
+            #[doc = "(Optional) Set the maximum number of results per response."]
             pub fn top(mut self, top: i64) -> Self {
                 self.top = Some(top);
                 self
@@ -4811,6 +4820,7 @@ pub mod domains {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply to the operation."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self

@@ -953,10 +953,12 @@ pub mod hyper_v_machines {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Optional parameter for continuation token."]
             pub fn continuation_token(mut self, continuation_token: impl Into<String>) -> Self {
                 self.continuation_token = Some(continuation_token.into());
                 self
             }
+            #[doc = "Total count of machines in the given site."]
             pub fn total_record_count(mut self, total_record_count: i32) -> Self {
                 self.total_record_count = Some(total_record_count);
                 self
@@ -2211,10 +2213,12 @@ pub mod machines {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Optional parameter for continuation token."]
             pub fn continuation_token(mut self, continuation_token: impl Into<String>) -> Self {
                 self.continuation_token = Some(continuation_token.into());
                 self
             }
+            #[doc = "Total count of machines in the given site."]
             pub fn total_record_count(mut self, total_record_count: i32) -> Self {
                 self.total_record_count = Some(total_record_count);
                 self

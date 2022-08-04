@@ -1274,6 +1274,7 @@ pub mod sql_virtual_machines {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "The child resources to include in the response."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self

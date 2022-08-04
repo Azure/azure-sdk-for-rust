@@ -623,6 +623,7 @@ pub mod devices {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "Specify $expand=details to populate additional fields related to the resource or Specify $skipToken=<token> to populate the next page in the list."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -706,6 +707,7 @@ pub mod devices {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "Specify $expand=details to populate additional fields related to the resource or Specify $skipToken=<token> to populate the next page in the list."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -5248,6 +5250,7 @@ pub mod triggers {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "Specify $filter='CustomContextTag eq <tag>' to filter on custom context tag property"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -5603,6 +5606,7 @@ pub mod users {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "Specify $filter='Type eq <type>' to filter on user type property."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self

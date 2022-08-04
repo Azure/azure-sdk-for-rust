@@ -285,10 +285,12 @@ pub mod app_component {
             pub(crate) test_id: Option<String>,
         }
         impl Builder {
+            #[doc = "[Required, if testId is not provided] Test run Id."]
             pub fn test_run_id(mut self, test_run_id: impl Into<String>) -> Self {
                 self.test_run_id = Some(test_run_id.into());
                 self
             }
+            #[doc = "Unique name for load test, must be a valid URL character ^[a-z0-9_-]*$."]
             pub fn test_id(mut self, test_id: impl Into<String>) -> Self {
                 self.test_id = Some(test_id.into());
                 self
@@ -541,10 +543,12 @@ pub mod server_metrics {
             pub(crate) test_id: Option<String>,
         }
         impl Builder {
+            #[doc = "[Required, if testId is not provided] Test run Id."]
             pub fn test_run_id(mut self, test_run_id: impl Into<String>) -> Self {
                 self.test_run_id = Some(test_run_id.into());
                 self
             }
+            #[doc = "Unique name for load test, must be a valid URL character ^[a-z0-9_-]*$."]
             pub fn test_id(mut self, test_id: impl Into<String>) -> Self {
                 self.test_id = Some(test_id.into());
                 self
@@ -939,26 +943,32 @@ pub mod test {
             pub(crate) max_page_size: Option<i32>,
         }
         impl Builder {
+            #[doc = "Sort on one of the field - lastModifiedDateTime, displayName, createdBy in (field asc/desc) format. eg: displayName asc."]
             pub fn order_by(mut self, order_by: impl Into<String>) -> Self {
                 self.order_by = Some(order_by.into());
                 self
             }
+            #[doc = "Filter search based on searchable fields - testId, createdBy."]
             pub fn search(mut self, search: impl Into<String>) -> Self {
                 self.search = Some(search.into());
                 self
             }
+            #[doc = "Start DateTime(ISO 8601 literal format) of the last updated time range to filter tests."]
             pub fn last_updated_start_time(mut self, last_updated_start_time: impl Into<String>) -> Self {
                 self.last_updated_start_time = Some(last_updated_start_time.into());
                 self
             }
+            #[doc = "End DateTime(ISO 8601 literal format) of the last updated time range to filter tests."]
             pub fn last_updated_end_time(mut self, last_updated_end_time: impl Into<String>) -> Self {
                 self.last_updated_end_time = Some(last_updated_end_time.into());
                 self
             }
+            #[doc = "Continuation token to get the next page of response."]
             pub fn continuation_token(mut self, continuation_token: impl Into<String>) -> Self {
                 self.continuation_token = Some(continuation_token.into());
                 self
             }
+            #[doc = "Number of results in response."]
             pub fn max_page_size(mut self, max_page_size: i32) -> Self {
                 self.max_page_size = Some(max_page_size);
                 self
@@ -1084,6 +1094,7 @@ pub mod test {
             pub(crate) file_type: Option<i32>,
         }
         impl Builder {
+            #[doc = "Integer representation of the file type (0 = JMX_FILE, 1 = USER_PROPERTIES, 2 = ADDITIONAL_ARTIFACTS)."]
             pub fn file_type(mut self, file_type: i32) -> Self {
                 self.file_type = Some(file_type);
                 self
@@ -1188,6 +1199,7 @@ pub mod test {
             pub(crate) continuation_token: Option<String>,
         }
         impl Builder {
+            #[doc = "Continuation token to get the next page of response."]
             pub fn continuation_token(mut self, continuation_token: impl Into<String>) -> Self {
                 self.continuation_token = Some(continuation_token.into());
                 self
@@ -1390,6 +1402,7 @@ pub mod test_run {
             pub(crate) old_test_run_id: Option<String>,
         }
         impl Builder {
+            #[doc = "Existing test run Id that should be rerun."]
             pub fn old_test_run_id(mut self, old_test_run_id: impl Into<String>) -> Self {
                 self.old_test_run_id = Some(old_test_run_id.into());
                 self
@@ -1539,34 +1552,42 @@ pub mod test_run {
             pub(crate) test_id: Option<String>,
         }
         impl Builder {
+            #[doc = "Sort on one of the field - status, displayName, executedDateTime in (field asc/desc) format. eg: displayName asc."]
             pub fn order_by(mut self, order_by: impl Into<String>) -> Self {
                 self.order_by = Some(order_by.into());
                 self
             }
+            #[doc = "Continuation token to get the next page of response."]
             pub fn continuation_token(mut self, continuation_token: impl Into<String>) -> Self {
                 self.continuation_token = Some(continuation_token.into());
                 self
             }
+            #[doc = "Filter search based on searchable fields - description, executedUser."]
             pub fn search(mut self, search: impl Into<String>) -> Self {
                 self.search = Some(search.into());
                 self
             }
+            #[doc = "The end DateTime(ISO 8601 literal format) of test-run execution time filter range."]
             pub fn execution_from(mut self, execution_from: impl Into<String>) -> Self {
                 self.execution_from = Some(execution_from.into());
                 self
             }
+            #[doc = "The start DateTime(ISO 8601 literal format) of test-run execution time filter range."]
             pub fn execution_to(mut self, execution_to: impl Into<String>) -> Self {
                 self.execution_to = Some(execution_to.into());
                 self
             }
+            #[doc = "Comma separated list of test run status, value can be -  \"ACCEPTED\", \"NOTSTARTED\",\"PROVISIONING\",\"PROVISIONED\",\"CONFIGURING\",\n\"CONFIGURED\",\"EXECUTING\",\"EXECUTED\",\"DEPROVISIONING\",\"DEPROVISIONED\",\"DONE\",\"CANCELLED\",\"FAILED\"."]
             pub fn status(mut self, status: impl Into<String>) -> Self {
                 self.status = Some(status.into());
                 self
             }
+            #[doc = "Number of results in response."]
             pub fn max_page_size(mut self, max_page_size: i32) -> Self {
                 self.max_page_size = Some(max_page_size);
                 self
             }
+            #[doc = "Unique name for load test, must be a valid URL character ^[a-z0-9_-]*$."]
             pub fn test_id(mut self, test_id: impl Into<String>) -> Self {
                 self.test_id = Some(test_id.into());
                 self

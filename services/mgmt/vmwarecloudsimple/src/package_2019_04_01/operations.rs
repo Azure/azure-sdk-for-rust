@@ -415,14 +415,17 @@ pub mod dedicated_cloud_nodes {
             pub(crate) skip_token: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the list operation"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "The maximum number of record sets to return"]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "to be used by nextLink implementation"]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());
                 self
@@ -514,14 +517,17 @@ pub mod dedicated_cloud_nodes {
             pub(crate) skip_token: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the list operation"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "The maximum number of record sets to return"]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "to be used by nextLink implementation"]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());
                 self
@@ -950,14 +956,17 @@ pub mod dedicated_cloud_services {
             pub(crate) skip_token: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the list operation"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "The maximum number of record sets to return"]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "to be used by nextLink implementation"]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());
                 self
@@ -1049,14 +1058,17 @@ pub mod dedicated_cloud_services {
             pub(crate) skip_token: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the list operation"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "The maximum number of record sets to return"]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "to be used by nextLink implementation"]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());
                 self
@@ -1376,6 +1388,7 @@ pub mod skus_availability {
             pub(crate) sku_id: Option<String>,
         }
         impl Builder {
+            #[doc = "sku id, if no sku is passed availability for all skus will be returned"]
             pub fn sku_id(mut self, sku_id: impl Into<String>) -> Self {
                 self.sku_id = Some(sku_id.into());
                 self
@@ -1668,6 +1681,7 @@ pub mod customization_policies {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the list operation. only type is allowed here as a filter e.g. $filter=type eq 'xxxx'"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -2357,6 +2371,7 @@ pub mod usages {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the list operation. only name.value is allowed here as a filter e.g. $filter=name.value eq 'xxxx'"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -2622,14 +2637,17 @@ pub mod virtual_machines {
             pub(crate) skip_token: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the list operation"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "The maximum number of record sets to return"]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "to be used by nextLink implementation"]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());
                 self
@@ -2721,14 +2739,17 @@ pub mod virtual_machines {
             pub(crate) skip_token: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the list operation"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "The maximum number of record sets to return"]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "to be used by nextLink implementation"]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());
                 self
@@ -3112,10 +3133,12 @@ pub mod virtual_machines {
             pub(crate) mode: Option<String>,
         }
         impl Builder {
+            #[doc = "body stop mode parameter (reboot, shutdown, etc...)"]
             pub fn m(mut self, m: impl Into<models::VirtualMachineStopMode>) -> Self {
                 self.m = Some(m.into());
                 self
             }
+            #[doc = "query stop mode parameter (reboot, shutdown, etc...)"]
             pub fn mode(mut self, mode: impl Into<String>) -> Self {
                 self.mode = Some(mode.into());
                 self

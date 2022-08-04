@@ -422,6 +422,7 @@ pub mod operationalization_clusters {
             pub(crate) delete_all: Option<bool>,
         }
         impl Builder {
+            #[doc = "If true, deletes all resources associated with this cluster."]
             pub fn delete_all(mut self, delete_all: bool) -> Self {
                 self.delete_all = Some(delete_all);
                 self
@@ -620,6 +621,7 @@ pub mod operationalization_clusters {
             pub(crate) skiptoken: Option<String>,
         }
         impl Builder {
+            #[doc = "Continuation token for pagination."]
             pub fn skiptoken(mut self, skiptoken: impl Into<String>) -> Self {
                 self.skiptoken = Some(skiptoken.into());
                 self
@@ -703,6 +705,7 @@ pub mod operationalization_clusters {
             pub(crate) skiptoken: Option<String>,
         }
         impl Builder {
+            #[doc = "Continuation token for pagination."]
             pub fn skiptoken(mut self, skiptoken: impl Into<String>) -> Self {
                 self.skiptoken = Some(skiptoken.into());
                 self

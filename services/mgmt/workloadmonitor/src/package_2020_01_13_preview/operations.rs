@@ -303,10 +303,12 @@ pub mod health_monitors {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "Optionally filter by monitor name. Example: $filter=monitorName eq 'logical-disks|C:|disk-free-space-mb.'"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Optionally expand the monitor’s evidence and/or configuration. Example: $expand=evidence,configuration."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -401,6 +403,7 @@ pub mod health_monitors {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "Optionally expand the monitor’s evidence and/or configuration. Example: $expand=evidence,configuration."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -470,18 +473,22 @@ pub mod health_monitors {
             pub(crate) end_timestamp_utc: Option<String>,
         }
         impl Builder {
+            #[doc = "Optionally filter by heartbeat condition. Example: $filter=isHeartbeat eq false."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Optionally expand the monitor’s evidence and/or configuration. Example: $expand=evidence,configuration."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
             }
+            #[doc = "The start of the time window."]
             pub fn start_timestamp_utc(mut self, start_timestamp_utc: impl Into<String>) -> Self {
                 self.start_timestamp_utc = Some(start_timestamp_utc.into());
                 self
             }
+            #[doc = "The end of the time window."]
             pub fn end_timestamp_utc(mut self, end_timestamp_utc: impl Into<String>) -> Self {
                 self.end_timestamp_utc = Some(end_timestamp_utc.into());
                 self
@@ -577,6 +584,7 @@ pub mod health_monitors {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "Optionally expand the monitor’s evidence and/or configuration. Example: $expand=evidence,configuration."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self

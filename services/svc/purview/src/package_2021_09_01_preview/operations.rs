@@ -179,14 +179,17 @@ pub mod assets {
             pub(crate) orderby: Option<String>,
         }
         impl Builder {
+            #[doc = "The continuation token to list the next page"]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());
                 self
             }
+            #[doc = "Filters the results using OData syntax"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Sorts the results using OData syntax"]
             pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
                 self.orderby = Some(orderby.into());
                 self
@@ -490,14 +493,17 @@ pub mod asset_mappings {
             pub(crate) orderby: Option<String>,
         }
         impl Builder {
+            #[doc = "The continuation token to list the next page"]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());
                 self
             }
+            #[doc = "Filters the results using OData syntax"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Sorts the results using OData syntax"]
             pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
                 self.orderby = Some(orderby.into());
                 self
@@ -791,14 +797,17 @@ pub mod received_invitations {
             pub(crate) orderby: Option<String>,
         }
         impl Builder {
+            #[doc = "The continuation token to list the next page"]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());
                 self
             }
+            #[doc = "Filters the results using OData syntax"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Sorts the results using OData syntax"]
             pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
                 self.orderby = Some(orderby.into());
                 self
@@ -932,6 +941,7 @@ pub mod received_invitations {
             pub(crate) repeatability_request_id: Option<String>,
         }
         impl Builder {
+            #[doc = "If specified, the client directs that the request is repeatable; that is, that the client can make the request multiple times with the same Repeatability-Request-Id and get back an appropriate response without the server executing the request multiple times. The value of the Repeatability-Request-Id is an opaque string representing a client-generated, globally unique for all time, identifier for the request. It is recommended to use version 4 (random) UUIDs."]
             pub fn repeatability_request_id(mut self, repeatability_request_id: impl Into<String>) -> Self {
                 self.repeatability_request_id = Some(repeatability_request_id.into());
                 self
@@ -1041,14 +1051,17 @@ pub mod received_shares {
             pub(crate) orderby: Option<String>,
         }
         impl Builder {
+            #[doc = "The continuation token to list the next page"]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());
                 self
             }
+            #[doc = "Filters the results using OData syntax"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Sorts the results using OData syntax"]
             pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
                 self.orderby = Some(orderby.into());
                 self
@@ -1285,6 +1298,7 @@ pub mod received_assets {
             pub(crate) skip_token: Option<String>,
         }
         impl Builder {
+            #[doc = "The continuation token to list the next page"]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());
                 self
@@ -1423,14 +1437,17 @@ pub mod sent_shares {
             pub(crate) orderby: Option<String>,
         }
         impl Builder {
+            #[doc = "The continuation token to list the next page"]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());
                 self
             }
+            #[doc = "Filters the results using OData syntax"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Sorts the results using OData syntax"]
             pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
                 self.orderby = Some(orderby.into());
                 self
@@ -1742,6 +1759,7 @@ pub mod accepted_sent_shares {
             pub(crate) skip_token: Option<String>,
         }
         impl Builder {
+            #[doc = "The continuation token to list the next page"]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());
                 self
@@ -1876,6 +1894,7 @@ pub mod accepted_sent_shares {
             pub(crate) repeatability_request_id: Option<String>,
         }
         impl Builder {
+            #[doc = "If specified, the client directs that the request is repeatable; that is, that the client can make the request multiple times with the same Repeatability-Request-Id and get back an appropriate response without the server executing the request multiple times. The value of the Repeatability-Request-Id is an opaque string representing a client-generated, globally unique for all time, identifier for the request. It is recommended to use version 4 (random) UUIDs."]
             pub fn repeatability_request_id(mut self, repeatability_request_id: impl Into<String>) -> Self {
                 self.repeatability_request_id = Some(repeatability_request_id.into());
                 self
@@ -1936,6 +1955,7 @@ pub mod accepted_sent_shares {
             pub(crate) repeatability_request_id: Option<String>,
         }
         impl Builder {
+            #[doc = "If specified, the client directs that the request is repeatable; that is, that the client can make the request multiple times with the same Repeatability-Request-Id and get back an appropriate response without the server executing the request multiple times. The value of the Repeatability-Request-Id is an opaque string representing a client-generated, globally unique for all time, identifier for the request. It is recommended to use version 4 (random) UUIDs."]
             pub fn repeatability_request_id(mut self, repeatability_request_id: impl Into<String>) -> Self {
                 self.repeatability_request_id = Some(repeatability_request_id.into());
                 self
@@ -1997,6 +2017,7 @@ pub mod accepted_sent_shares {
             pub(crate) repeatability_request_id: Option<String>,
         }
         impl Builder {
+            #[doc = "If specified, the client directs that the request is repeatable; that is, that the client can make the request multiple times with the same Repeatability-Request-Id and get back an appropriate response without the server executing the request multiple times. The value of the Repeatability-Request-Id is an opaque string representing a client-generated, globally unique for all time, identifier for the request. It is recommended to use version 4 (random) UUIDs."]
             pub fn repeatability_request_id(mut self, repeatability_request_id: impl Into<String>) -> Self {
                 self.repeatability_request_id = Some(repeatability_request_id.into());
                 self
@@ -2124,14 +2145,17 @@ pub mod sent_share_invitations {
             pub(crate) orderby: Option<String>,
         }
         impl Builder {
+            #[doc = "The continuation token to list the next page"]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());
                 self
             }
+            #[doc = "Filters the results using OData syntax"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Sorts the results using OData syntax"]
             pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
                 self.orderby = Some(orderby.into());
                 self
@@ -2403,6 +2427,7 @@ pub mod email_registration {
             pub(crate) repeatability_request_id: Option<String>,
         }
         impl Builder {
+            #[doc = "If specified, the client directs that the request is repeatable; that is, that the client can make the request multiple times with the same Repeatability-Request-Id and get back an appropriate response without the server executing the request multiple times. The value of the Repeatability-Request-Id is an opaque string representing a client-generated, globally unique for all time, identifier for the request. It is recommended to use version 4 (random) UUIDs."]
             pub fn repeatability_request_id(mut self, repeatability_request_id: impl Into<String>) -> Self {
                 self.repeatability_request_id = Some(repeatability_request_id.into());
                 self
@@ -2455,6 +2480,7 @@ pub mod email_registration {
             pub(crate) repeatability_request_id: Option<String>,
         }
         impl Builder {
+            #[doc = "If specified, the client directs that the request is repeatable; that is, that the client can make the request multiple times with the same Repeatability-Request-Id and get back an appropriate response without the server executing the request multiple times. The value of the Repeatability-Request-Id is an opaque string representing a client-generated, globally unique for all time, identifier for the request. It is recommended to use version 4 (random) UUIDs."]
             pub fn repeatability_request_id(mut self, repeatability_request_id: impl Into<String>) -> Self {
                 self.repeatability_request_id = Some(repeatability_request_id.into());
                 self

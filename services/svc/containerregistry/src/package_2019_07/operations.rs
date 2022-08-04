@@ -424,6 +424,7 @@ pub mod get_manifest {
         pub(crate) accept: Option<String>,
     }
     impl Builder {
+        #[doc = "Accept header string delimited by comma. For example, application/vnd.docker.distribution.manifest.v2+json"]
         pub fn accept(mut self, accept: impl Into<String>) -> Self {
             self.accept = Some(accept.into());
             self
@@ -570,10 +571,12 @@ pub mod get_repositories {
         pub(crate) n: Option<i64>,
     }
     impl Builder {
+        #[doc = "Query parameter for the last item in previous query. Result set will include values lexically after last."]
         pub fn last(mut self, last: impl Into<String>) -> Self {
             self.last = Some(last.into());
             self
         }
+        #[doc = "query parameter for max number of items"]
         pub fn n(mut self, n: i64) -> Self {
             self.n = Some(n);
             self
@@ -626,10 +629,12 @@ pub mod get_acr_repositories {
         pub(crate) n: Option<i64>,
     }
     impl Builder {
+        #[doc = "Query parameter for the last item in previous query. Result set will include values lexically after last."]
         pub fn last(mut self, last: impl Into<String>) -> Self {
             self.last = Some(last.into());
             self
         }
+        #[doc = "query parameter for max number of items"]
         pub fn n(mut self, n: i64) -> Self {
             self.n = Some(n);
             self
@@ -723,6 +728,7 @@ pub mod update_acr_repository_attributes {
         pub(crate) value: Option<models::ChangeableAttributes>,
     }
     impl Builder {
+        #[doc = "Repository attribute value"]
         pub fn value(mut self, value: impl Into<models::ChangeableAttributes>) -> Self {
             self.value = Some(value.into());
             self
@@ -814,18 +820,22 @@ pub mod get_acr_tags {
         pub(crate) digest: Option<String>,
     }
     impl Builder {
+        #[doc = "Query parameter for the last item in previous query. Result set will include values lexically after last."]
         pub fn last(mut self, last: impl Into<String>) -> Self {
             self.last = Some(last.into());
             self
         }
+        #[doc = "query parameter for max number of items"]
         pub fn n(mut self, n: i64) -> Self {
             self.n = Some(n);
             self
         }
+        #[doc = "orderby query parameter"]
         pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
             self.orderby = Some(orderby.into());
             self
         }
+        #[doc = "filter by digest"]
         pub fn digest(mut self, digest: impl Into<String>) -> Self {
             self.digest = Some(digest.into());
             self
@@ -932,6 +942,7 @@ pub mod update_acr_tag_attributes {
         pub(crate) value: Option<models::ChangeableAttributes>,
     }
     impl Builder {
+        #[doc = "Repository attribute value"]
         pub fn value(mut self, value: impl Into<models::ChangeableAttributes>) -> Self {
             self.value = Some(value.into());
             self
@@ -1029,14 +1040,17 @@ pub mod get_acr_manifests {
         pub(crate) orderby: Option<String>,
     }
     impl Builder {
+        #[doc = "Query parameter for the last item in previous query. Result set will include values lexically after last."]
         pub fn last(mut self, last: impl Into<String>) -> Self {
             self.last = Some(last.into());
             self
         }
+        #[doc = "query parameter for max number of items"]
         pub fn n(mut self, n: i64) -> Self {
             self.n = Some(n);
             self
         }
+        #[doc = "orderby query parameter"]
         pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
             self.orderby = Some(orderby.into());
             self
@@ -1140,6 +1154,7 @@ pub mod update_acr_manifest_attributes {
         pub(crate) value: Option<models::ChangeableAttributes>,
     }
     impl Builder {
+        #[doc = "Repository attribute value"]
         pub fn value(mut self, value: impl Into<models::ChangeableAttributes>) -> Self {
             self.value = Some(value.into());
             self
@@ -1195,14 +1210,17 @@ pub mod get_acr_refresh_token_from_exchange {
         pub(crate) access_token: Option<String>,
     }
     impl Builder {
+        #[doc = "AAD tenant associated to the AAD credentials."]
         pub fn tenant(mut self, tenant: impl Into<String>) -> Self {
             self.tenant = Some(tenant.into());
             self
         }
+        #[doc = "AAD refresh token, mandatory when grant_type is access_token_refresh_token or refresh_token"]
         pub fn refresh_token(mut self, refresh_token: impl Into<String>) -> Self {
             self.refresh_token = Some(refresh_token.into());
             self
         }
+        #[doc = "AAD access token, mandatory when grant_type is access_token_refresh_token or access_token."]
         pub fn access_token(mut self, access_token: impl Into<String>) -> Self {
             self.access_token = Some(access_token.into());
             self

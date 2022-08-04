@@ -461,10 +461,12 @@ pub mod connected_cluster {
             pub(crate) client_authentication_details: Option<models::AuthenticationDetails>,
         }
         impl Builder {
+            #[doc = "Parameter to indicate whether the request is for client side proxy or not"]
             pub fn client_proxy(mut self, client_proxy: bool) -> Self {
                 self.client_proxy = Some(client_proxy);
                 self
             }
+            #[doc = "Authentication parameters supplied by the user to fetch credentials for accessing the cluster."]
             pub fn client_authentication_details(
                 mut self,
                 client_authentication_details: impl Into<models::AuthenticationDetails>,

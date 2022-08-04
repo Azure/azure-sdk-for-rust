@@ -839,6 +839,7 @@ pub mod published_blueprints {
             pub(crate) published_blueprint: Option<models::PublishedBlueprint>,
         }
         impl Builder {
+            #[doc = "Published Blueprint to create or update."]
             pub fn published_blueprint(mut self, published_blueprint: impl Into<models::PublishedBlueprint>) -> Self {
                 self.published_blueprint = Some(published_blueprint.into());
                 self
@@ -1390,6 +1391,7 @@ pub mod assignments {
             pub(crate) delete_behavior: Option<String>,
         }
         impl Builder {
+            #[doc = "When deleteBehavior=all, the resources that were created by the blueprint assignment will be deleted."]
             pub fn delete_behavior(mut self, delete_behavior: impl Into<String>) -> Self {
                 self.delete_behavior = Some(delete_behavior.into());
                 self

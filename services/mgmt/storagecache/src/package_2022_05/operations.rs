@@ -1053,6 +1053,7 @@ pub mod caches {
             pub(crate) cache: Option<models::Cache>,
         }
         impl Builder {
+            #[doc = "Object containing the user-selectable properties of the new Cache. If read-only properties are included, they must match the existing values of those properties."]
             pub fn cache(mut self, cache: impl Into<models::Cache>) -> Self {
                 self.cache = Some(cache.into());
                 self
@@ -1122,6 +1123,7 @@ pub mod caches {
             pub(crate) cache: Option<models::Cache>,
         }
         impl Builder {
+            #[doc = "Object containing the user-selectable properties of the Cache. If read-only properties are included, they must match the existing values of those properties."]
             pub fn cache(mut self, cache: impl Into<models::Cache>) -> Self {
                 self.cache = Some(cache.into());
                 self
@@ -1468,6 +1470,7 @@ pub mod caches {
             pub(crate) primingjob: Option<models::PrimingJob>,
         }
         impl Builder {
+            #[doc = "Object containing the definition of a priming job."]
             pub fn primingjob(mut self, primingjob: impl Into<models::PrimingJob>) -> Self {
                 self.primingjob = Some(primingjob.into());
                 self
@@ -1531,6 +1534,7 @@ pub mod caches {
             pub(crate) priming_job_id: Option<models::PrimingJobIdParameter>,
         }
         impl Builder {
+            #[doc = "Object containing the priming job ID."]
             pub fn priming_job_id(mut self, priming_job_id: impl Into<models::PrimingJobIdParameter>) -> Self {
                 self.priming_job_id = Some(priming_job_id.into());
                 self
@@ -1595,6 +1599,7 @@ pub mod caches {
             pub(crate) priming_job_id: Option<models::PrimingJobIdParameter>,
         }
         impl Builder {
+            #[doc = "Object containing the priming job ID."]
             pub fn priming_job_id(mut self, priming_job_id: impl Into<models::PrimingJobIdParameter>) -> Self {
                 self.priming_job_id = Some(priming_job_id.into());
                 self
@@ -1659,6 +1664,7 @@ pub mod caches {
             pub(crate) priming_job_id: Option<models::PrimingJobIdParameter>,
         }
         impl Builder {
+            #[doc = "Object containing the priming job ID."]
             pub fn priming_job_id(mut self, priming_job_id: impl Into<models::PrimingJobIdParameter>) -> Self {
                 self.priming_job_id = Some(priming_job_id.into());
                 self
@@ -1776,6 +1782,7 @@ pub mod caches {
             pub(crate) space_allocation: Option<models::SpaceAllocationParameter>,
         }
         impl Builder {
+            #[doc = "List containing storage target cache space percentage allocations."]
             pub fn space_allocation(mut self, space_allocation: impl Into<models::SpaceAllocationParameter>) -> Self {
                 self.space_allocation = Some(space_allocation.into());
                 self
@@ -2145,6 +2152,7 @@ pub mod storage_targets {
             pub(crate) storagetarget: Option<models::StorageTarget>,
         }
         impl Builder {
+            #[doc = "Object containing the definition of a Storage Target."]
             pub fn storagetarget(mut self, storagetarget: impl Into<models::StorageTarget>) -> Self {
                 self.storagetarget = Some(storagetarget.into());
                 self
@@ -2221,6 +2229,7 @@ pub mod storage_targets {
             pub(crate) force: Option<String>,
         }
         impl Builder {
+            #[doc = "Boolean value requesting the force delete operation for a storage target. Force delete discards unwritten-data in the cache instead of flushing it to back-end storage."]
             pub fn force(mut self, force: impl Into<String>) -> Self {
                 self.force = Some(force.into());
                 self

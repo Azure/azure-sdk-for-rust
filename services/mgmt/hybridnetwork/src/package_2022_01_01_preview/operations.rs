@@ -1713,6 +1713,7 @@ pub mod vendors {
             pub(crate) parameters: Option<models::Vendor>,
         }
         impl Builder {
+            #[doc = "Parameters supplied to the create vendor operation."]
             pub fn parameters(mut self, parameters: impl Into<models::Vendor>) -> Self {
                 self.parameters = Some(parameters.into());
                 self
@@ -2844,6 +2845,7 @@ pub mod vendor_network_functions {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the operation. The properties you can use for eq (equals) are: skuType, skuName and vendorProvisioningState."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self

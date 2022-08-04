@@ -1687,6 +1687,7 @@ pub mod notification_hubs {
             pub(crate) parameters: Option<models::NotificationHubPatchParameters>,
         }
         impl Builder {
+            #[doc = "Parameters supplied to patch a NotificationHub Resource."]
             pub fn parameters(mut self, parameters: impl Into<models::NotificationHubPatchParameters>) -> Self {
                 self.parameters = Some(parameters.into());
                 self
@@ -1801,6 +1802,7 @@ pub mod notification_hubs {
             pub(crate) parameters: Option<models::DebugSendParameters>,
         }
         impl Builder {
+            #[doc = "Debug send parameters"]
             pub fn parameters(mut self, parameters: impl Into<models::DebugSendParameters>) -> Self {
                 self.parameters = Some(parameters.into());
                 self

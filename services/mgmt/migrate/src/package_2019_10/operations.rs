@@ -483,6 +483,7 @@ pub mod projects {
             pub(crate) project: Option<models::Project>,
         }
         impl Builder {
+            #[doc = "New or Updated project object."]
             pub fn project(mut self, project: impl Into<models::Project>) -> Self {
                 self.project = Some(project.into());
                 self
@@ -550,6 +551,7 @@ pub mod projects {
             pub(crate) project: Option<models::Project>,
         }
         impl Builder {
+            #[doc = "Updated project object."]
             pub fn project(mut self, project: impl Into<models::Project>) -> Self {
                 self.project = Some(project.into());
                 self
@@ -1185,6 +1187,7 @@ pub mod groups {
             pub(crate) group: Option<models::Group>,
         }
         impl Builder {
+            #[doc = "New or Updated Group object."]
             pub fn group(mut self, group: impl Into<models::Group>) -> Self {
                 self.group = Some(group.into());
                 self
@@ -1309,6 +1312,7 @@ pub mod groups {
             pub(crate) group_update_properties: Option<models::UpdateGroupBody>,
         }
         impl Builder {
+            #[doc = "Machines list to be added or removed from group."]
             pub fn group_update_properties(mut self, group_update_properties: impl Into<models::UpdateGroupBody>) -> Self {
                 self.group_update_properties = Some(group_update_properties.into());
                 self
@@ -1681,6 +1685,7 @@ pub mod assessments {
             pub(crate) assessment: Option<models::Assessment>,
         }
         impl Builder {
+            #[doc = "New or Updated Assessment object."]
             pub fn assessment(mut self, assessment: impl Into<models::Assessment>) -> Self {
                 self.assessment = Some(assessment.into());
                 self
@@ -2232,6 +2237,7 @@ pub mod hyper_v_collectors {
             pub(crate) collector_body: Option<models::HyperVCollector>,
         }
         impl Builder {
+            #[doc = "New or Updated Hyper-V collector."]
             pub fn collector_body(mut self, collector_body: impl Into<models::HyperVCollector>) -> Self {
                 self.collector_body = Some(collector_body.into());
                 self
@@ -2563,6 +2569,7 @@ pub mod server_collectors {
             pub(crate) collector_body: Option<models::ServerCollector>,
         }
         impl Builder {
+            #[doc = "New or Updated Server collector."]
             pub fn collector_body(mut self, collector_body: impl Into<models::ServerCollector>) -> Self {
                 self.collector_body = Some(collector_body.into());
                 self
@@ -2894,6 +2901,7 @@ pub mod v_mware_collectors {
             pub(crate) collector_body: Option<models::VMwareCollector>,
         }
         impl Builder {
+            #[doc = "New or Updated VMware collector."]
             pub fn collector_body(mut self, collector_body: impl Into<models::VMwareCollector>) -> Self {
                 self.collector_body = Some(collector_body.into());
                 self
@@ -3225,6 +3233,7 @@ pub mod import_collectors {
             pub(crate) collector_body: Option<models::ImportCollector>,
         }
         impl Builder {
+            #[doc = "New or Updated Import collector."]
             pub fn collector_body(mut self, collector_body: impl Into<models::ImportCollector>) -> Self {
                 self.collector_body = Some(collector_body.into());
                 self
@@ -3542,6 +3551,7 @@ pub mod private_endpoint_connection {
             pub(crate) private_endpoint_connection_body: Option<models::PrivateEndpointConnection>,
         }
         impl Builder {
+            #[doc = "New or Updated Private Endpoint Connection object."]
             pub fn private_endpoint_connection_body(
                 mut self,
                 private_endpoint_connection_body: impl Into<models::PrivateEndpointConnection>,

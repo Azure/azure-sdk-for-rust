@@ -307,6 +307,7 @@ pub mod web_services {
             pub(crate) region: Option<String>,
         }
         impl Builder {
+            #[doc = "The region for which encrypted credential parameters are valid."]
             pub fn region(mut self, region: impl Into<String>) -> Self {
                 self.region = Some(region.into());
                 self
@@ -653,6 +654,7 @@ pub mod web_services {
             pub(crate) skiptoken: Option<String>,
         }
         impl Builder {
+            #[doc = "Continuation token for pagination."]
             pub fn skiptoken(mut self, skiptoken: impl Into<String>) -> Self {
                 self.skiptoken = Some(skiptoken.into());
                 self
@@ -736,6 +738,7 @@ pub mod web_services {
             pub(crate) skiptoken: Option<String>,
         }
         impl Builder {
+            #[doc = "Continuation token for pagination."]
             pub fn skiptoken(mut self, skiptoken: impl Into<String>) -> Self {
                 self.skiptoken = Some(skiptoken.into());
                 self

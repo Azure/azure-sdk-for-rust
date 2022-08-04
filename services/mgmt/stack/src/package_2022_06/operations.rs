@@ -249,6 +249,7 @@ pub mod cloud_manifest_file {
             pub(crate) version_creation_date: Option<String>,
         }
         impl Builder {
+            #[doc = "Signing verification key version creation date."]
             pub fn version_creation_date(mut self, version_creation_date: impl Into<String>) -> Self {
                 self.version_creation_date = Some(version_creation_date.into());
                 self
@@ -1046,6 +1047,7 @@ pub mod products {
             pub(crate) device_configuration: Option<models::DeviceConfiguration>,
         }
         impl Builder {
+            #[doc = "Device configuration."]
             pub fn device_configuration(mut self, device_configuration: impl Into<models::DeviceConfiguration>) -> Self {
                 self.device_configuration = Some(device_configuration.into());
                 self
@@ -1103,6 +1105,7 @@ pub mod products {
             pub(crate) device_configuration: Option<models::DeviceConfiguration>,
         }
         impl Builder {
+            #[doc = "Device configuration."]
             pub fn device_configuration(mut self, device_configuration: impl Into<models::DeviceConfiguration>) -> Self {
                 self.device_configuration = Some(device_configuration.into());
                 self
@@ -1167,6 +1170,7 @@ pub mod products {
             pub(crate) device_configuration: Option<models::DeviceConfiguration>,
         }
         impl Builder {
+            #[doc = "Device configuration."]
             pub fn device_configuration(mut self, device_configuration: impl Into<models::DeviceConfiguration>) -> Self {
                 self.device_configuration = Some(device_configuration.into());
                 self
@@ -1231,6 +1235,7 @@ pub mod products {
             pub(crate) marketplace_product_log_update: Option<models::MarketplaceProductLogUpdate>,
         }
         impl Builder {
+            #[doc = "Update details for product log."]
             pub fn marketplace_product_log_update(
                 mut self,
                 marketplace_product_log_update: impl Into<models::MarketplaceProductLogUpdate>,

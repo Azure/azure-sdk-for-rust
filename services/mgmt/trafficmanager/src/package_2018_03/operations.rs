@@ -1041,10 +1041,12 @@ pub mod heat_map {
             pub(crate) bot_right: Vec<f64>,
         }
         impl Builder {
+            #[doc = "The top left latitude,longitude pair of the rectangular viewport to query for."]
             pub fn top_left(mut self, top_left: Vec<f64>) -> Self {
                 self.top_left = top_left;
                 self
             }
+            #[doc = "The bottom right latitude,longitude pair of the rectangular viewport to query for."]
             pub fn bot_right(mut self, bot_right: Vec<f64>) -> Self {
                 self.bot_right = bot_right;
                 self

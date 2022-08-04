@@ -343,6 +343,7 @@ pub mod commitment_associations {
             pub(crate) skip_token: Option<String>,
         }
         impl Builder {
+            #[doc = "Continuation token for pagination."]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());
                 self
@@ -803,6 +804,7 @@ pub mod commitment_plans {
             pub(crate) skip_token: Option<String>,
         }
         impl Builder {
+            #[doc = "Continuation token for pagination."]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());
                 self
@@ -886,6 +888,7 @@ pub mod commitment_plans {
             pub(crate) skip_token: Option<String>,
         }
         impl Builder {
+            #[doc = "Continuation token for pagination."]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());
                 self
@@ -997,6 +1000,7 @@ pub mod usage_history {
             pub(crate) skip_token: Option<String>,
         }
         impl Builder {
+            #[doc = "Continuation token for pagination."]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());
                 self

@@ -648,6 +648,7 @@ pub mod container_apps {
             pub(crate) custom_hostname: Option<String>,
         }
         impl Builder {
+            #[doc = "Custom hostname."]
             pub fn custom_hostname(mut self, custom_hostname: impl Into<String>) -> Self {
                 self.custom_hostname = Some(custom_hostname.into());
                 self
@@ -2070,6 +2071,7 @@ pub mod certificates {
             pub(crate) certificate_envelope: Option<models::Certificate>,
         }
         impl Builder {
+            #[doc = "Certificate to be created or updated"]
             pub fn certificate_envelope(mut self, certificate_envelope: impl Into<models::Certificate>) -> Self {
                 self.certificate_envelope = Some(certificate_envelope.into());
                 self

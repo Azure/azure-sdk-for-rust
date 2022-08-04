@@ -152,14 +152,17 @@ pub mod digital_twin_models {
             pub(crate) x_ms_max_item_count: Option<i64>,
         }
         impl Builder {
+            #[doc = "The set of the models which will have their dependencies retrieved. If omitted, all models are retrieved."]
             pub fn dependencies_for(mut self, dependencies_for: Vec<String>) -> Self {
                 self.dependencies_for = dependencies_for;
                 self
             }
+            #[doc = "When true the model definition will be returned as part of the result."]
             pub fn include_model_definition(mut self, include_model_definition: bool) -> Self {
                 self.include_model_definition = Some(include_model_definition);
                 self
             }
+            #[doc = "The maximum number of items to retrieve per request. The server may choose to return less than the requested max."]
             pub fn x_ms_max_item_count(mut self, x_ms_max_item_count: i64) -> Self {
                 self.x_ms_max_item_count = Some(x_ms_max_item_count);
                 self
@@ -246,6 +249,7 @@ pub mod digital_twin_models {
             pub(crate) models: Vec<serde_json::Value>,
         }
         impl Builder {
+            #[doc = "An array of models to add."]
             pub fn models(mut self, models: Vec<serde_json::Value>) -> Self {
                 self.models = models;
                 self
@@ -296,6 +300,7 @@ pub mod digital_twin_models {
             pub(crate) include_model_definition: Option<bool>,
         }
         impl Builder {
+            #[doc = "When true the model definition will be returned as part of the result."]
             pub fn include_model_definition(mut self, include_model_definition: bool) -> Self {
                 self.include_model_definition = Some(include_model_definition);
                 self
@@ -738,6 +743,7 @@ pub mod digital_twins {
             pub(crate) if_none_match: Option<String>,
         }
         impl Builder {
+            #[doc = "Only perform the operation if the entity does not already exist."]
             pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
                 self.if_none_match = Some(if_none_match.into());
                 self
@@ -797,6 +803,7 @@ pub mod digital_twins {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "Only perform the operation if the entity's etag matches one of the etags provided or * is provided."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -847,6 +854,7 @@ pub mod digital_twins {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "Only perform the operation if the entity's etag matches one of the etags provided or * is provided."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -947,10 +955,12 @@ pub mod digital_twins {
             pub(crate) if_none_match: Option<String>,
         }
         impl Builder {
+            #[doc = "The data for the relationship."]
             pub fn relationship(mut self, relationship: impl Into<serde_json::Value>) -> Self {
                 self.relationship = Some(relationship.into());
                 self
             }
+            #[doc = "Only perform the operation if the entity does not already exist."]
             pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
                 self.if_none_match = Some(if_none_match.into());
                 self
@@ -1015,10 +1025,12 @@ pub mod digital_twins {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "JSON Patch description of the update to the relationship properties."]
             pub fn patch_document(mut self, patch_document: Vec<serde_json::Value>) -> Self {
                 self.patch_document = patch_document;
                 self
             }
+            #[doc = "Only perform the operation if the entity's etag matches one of the etags provided or * is provided."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -1074,6 +1086,7 @@ pub mod digital_twins {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "Only perform the operation if the entity's etag matches one of the etags provided or * is provided."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -1127,6 +1140,7 @@ pub mod digital_twins {
             pub(crate) relationship_name: Option<String>,
         }
         impl Builder {
+            #[doc = "The name of the relationship."]
             pub fn relationship_name(mut self, relationship_name: impl Into<String>) -> Self {
                 self.relationship_name = Some(relationship_name.into());
                 self
@@ -1282,6 +1296,7 @@ pub mod digital_twins {
             pub(crate) dt_timestamp: Option<String>,
         }
         impl Builder {
+            #[doc = "An RFC 3339 timestamp that identifies the time the telemetry was measured."]
             pub fn dt_timestamp(mut self, dt_timestamp: impl Into<String>) -> Self {
                 self.dt_timestamp = Some(dt_timestamp.into());
                 self
@@ -1335,6 +1350,7 @@ pub mod digital_twins {
             pub(crate) dt_timestamp: Option<String>,
         }
         impl Builder {
+            #[doc = "An RFC 3339 timestamp that identifies the time the telemetry was measured."]
             pub fn dt_timestamp(mut self, dt_timestamp: impl Into<String>) -> Self {
                 self.dt_timestamp = Some(dt_timestamp.into());
                 self
@@ -1446,10 +1462,12 @@ pub mod digital_twins {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "An update specification described by JSON Patch. Updates to property values and $model elements may happen in the same request. Operations are limited to add, replace and remove."]
             pub fn patch_document(mut self, patch_document: Vec<serde_json::Value>) -> Self {
                 self.patch_document = patch_document;
                 self
             }
+            #[doc = "Only perform the operation if the entity's etag matches one of the etags provided or * is provided."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -1548,6 +1566,7 @@ pub mod event_routes {
             pub(crate) x_ms_max_item_count: Option<i64>,
         }
         impl Builder {
+            #[doc = "The maximum number of items to retrieve per request. The server may choose to return less than the requested max."]
             pub fn x_ms_max_item_count(mut self, x_ms_max_item_count: i64) -> Self {
                 self.x_ms_max_item_count = Some(x_ms_max_item_count);
                 self
@@ -1670,6 +1689,7 @@ pub mod event_routes {
             pub(crate) event_route: Option<models::EventRoute>,
         }
         impl Builder {
+            #[doc = "The event route data"]
             pub fn event_route(mut self, event_route: impl Into<models::EventRoute>) -> Self {
                 self.event_route = Some(event_route.into());
                 self

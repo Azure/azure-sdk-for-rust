@@ -235,10 +235,12 @@ pub mod service {
             pub(crate) x_ms_client_request_id: Option<String>,
         }
         impl Builder {
+            #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\">Setting Timeouts for Blob Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "Provides a client-generated, opaque value with a 1 KB character limit that is recorded in the analytics logs when storage analytics logging is enabled."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
@@ -294,10 +296,12 @@ pub mod service {
             pub(crate) x_ms_client_request_id: Option<String>,
         }
         impl Builder {
+            #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\">Setting Timeouts for Blob Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "Provides a client-generated, opaque value with a 1 KB character limit that is recorded in the analytics logs when storage analytics logging is enabled."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
@@ -349,10 +353,12 @@ pub mod service {
             pub(crate) x_ms_client_request_id: Option<String>,
         }
         impl Builder {
+            #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\">Setting Timeouts for Blob Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "Provides a client-generated, opaque value with a 1 KB character limit that is recorded in the analytics logs when storage analytics logging is enabled."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
@@ -411,26 +417,32 @@ pub mod service {
             pub(crate) x_ms_client_request_id: Option<String>,
         }
         impl Builder {
+            #[doc = "Filters the results to return only containers whose name begins with the specified prefix."]
             pub fn prefix(mut self, prefix: impl Into<String>) -> Self {
                 self.prefix = Some(prefix.into());
                 self
             }
+            #[doc = "A string value that identifies the portion of the list of containers to be returned with the next listing operation. The operation returns the NextMarker value within the response body if the listing operation did not return all containers remaining to be listed with the current page. The NextMarker value can be used as the value for the marker parameter in a subsequent call to request the next page of list items. The marker value is opaque to the client."]
             pub fn marker(mut self, marker: impl Into<String>) -> Self {
                 self.marker = Some(marker.into());
                 self
             }
+            #[doc = "Specifies the maximum number of containers to return. If the request does not specify maxresults, or specifies a value greater than 5000, the server will return up to 5000 items. Note that if the listing operation crosses a partition boundary, then the service will return a continuation token for retrieving the remainder of the results. For this reason, it is possible that the service will return fewer results than specified by maxresults, or than the default of 5000."]
             pub fn maxresults(mut self, maxresults: i64) -> Self {
                 self.maxresults = Some(maxresults);
                 self
             }
+            #[doc = "Include this parameter to specify that the container's metadata be returned as part of the response body."]
             pub fn include(mut self, include: Vec<String>) -> Self {
                 self.include = include;
                 self
             }
+            #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\">Setting Timeouts for Blob Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "Provides a client-generated, opaque value with a 1 KB character limit that is recorded in the analytics logs when storage analytics logging is enabled."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
@@ -514,10 +526,12 @@ pub mod service {
             pub(crate) x_ms_client_request_id: Option<String>,
         }
         impl Builder {
+            #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\">Setting Timeouts for Blob Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "Provides a client-generated, opaque value with a 1 KB character limit that is recorded in the analytics logs when storage analytics logging is enabled."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
@@ -614,10 +628,12 @@ pub mod service {
             pub(crate) x_ms_client_request_id: Option<String>,
         }
         impl Builder {
+            #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\">Setting Timeouts for Blob Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "Provides a client-generated, opaque value with a 1 KB character limit that is recorded in the analytics logs when storage analytics logging is enabled."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
@@ -678,26 +694,32 @@ pub mod service {
             pub(crate) include: Vec<String>,
         }
         impl Builder {
+            #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\">Setting Timeouts for Blob Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "Provides a client-generated, opaque value with a 1 KB character limit that is recorded in the analytics logs when storage analytics logging is enabled."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
             }
+            #[doc = "Filters the results to return only to return only blobs whose tags match the specified expression."]
             pub fn where_(mut self, where_: impl Into<String>) -> Self {
                 self.where_ = Some(where_.into());
                 self
             }
+            #[doc = "A string value that identifies the portion of the list of containers to be returned with the next listing operation. The operation returns the NextMarker value within the response body if the listing operation did not return all containers remaining to be listed with the current page. The NextMarker value can be used as the value for the marker parameter in a subsequent call to request the next page of list items. The marker value is opaque to the client."]
             pub fn marker(mut self, marker: impl Into<String>) -> Self {
                 self.marker = Some(marker.into());
                 self
             }
+            #[doc = "Specifies the maximum number of containers to return. If the request does not specify maxresults, or specifies a value greater than 5000, the server will return up to 5000 items. Note that if the listing operation crosses a partition boundary, then the service will return a continuation token for retrieving the remainder of the results. For this reason, it is possible that the service will return fewer results than specified by maxresults, or than the default of 5000."]
             pub fn maxresults(mut self, maxresults: i64) -> Self {
                 self.maxresults = Some(maxresults);
                 self
             }
+            #[doc = "Include this parameter to specify one or more datasets to include in the response."]
             pub fn include(mut self, include: Vec<String>) -> Self {
                 self.include = include;
                 self
@@ -1142,14 +1164,17 @@ pub mod container {
             pub(crate) x_ms_client_request_id: Option<String>,
         }
         impl Builder {
+            #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\">Setting Timeouts for Blob Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "If specified, the operation only succeeds if the resource's lease is active and matches this ID."]
             pub fn x_ms_lease_id(mut self, x_ms_lease_id: impl Into<String>) -> Self {
                 self.x_ms_lease_id = Some(x_ms_lease_id.into());
                 self
             }
+            #[doc = "Provides a client-generated, opaque value with a 1 KB character limit that is recorded in the analytics logs when storage analytics logging is enabled."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
@@ -1209,26 +1234,32 @@ pub mod container {
             pub(crate) x_ms_deny_encryption_scope_override: Option<bool>,
         }
         impl Builder {
+            #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\">Setting Timeouts for Blob Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "Optional. Specifies a user-defined name-value pair associated with the blob. If no name-value pairs are specified, the operation will copy the metadata from the source blob or file to the destination blob. If one or more name-value pairs are specified, the destination blob is created with the specified metadata, and metadata is not copied from the source blob or file. Note that beginning with version 2009-09-19, metadata names must adhere to the naming rules for C# identifiers. See Naming and Referencing Containers, Blobs, and Metadata for more information."]
             pub fn x_ms_meta(mut self, x_ms_meta: impl Into<String>) -> Self {
                 self.x_ms_meta = Some(x_ms_meta.into());
                 self
             }
+            #[doc = "Specifies whether data in the container may be accessed publicly and the level of access"]
             pub fn x_ms_blob_public_access(mut self, x_ms_blob_public_access: impl Into<String>) -> Self {
                 self.x_ms_blob_public_access = Some(x_ms_blob_public_access.into());
                 self
             }
+            #[doc = "Provides a client-generated, opaque value with a 1 KB character limit that is recorded in the analytics logs when storage analytics logging is enabled."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
             }
+            #[doc = "Optional.  Version 2019-07-07 and later.  Specifies the default encryption scope to set on the container and use for all future writes."]
             pub fn x_ms_default_encryption_scope(mut self, x_ms_default_encryption_scope: impl Into<String>) -> Self {
                 self.x_ms_default_encryption_scope = Some(x_ms_default_encryption_scope.into());
                 self
             }
+            #[doc = "Optional.  Version 2019-07-07 and newer.  If true, prevents any request from specifying a different encryption scope than the scope set on the container."]
             pub fn x_ms_deny_encryption_scope_override(mut self, x_ms_deny_encryption_scope_override: bool) -> Self {
                 self.x_ms_deny_encryption_scope_override = Some(x_ms_deny_encryption_scope_override);
                 self
@@ -1299,22 +1330,27 @@ pub mod container {
             pub(crate) x_ms_client_request_id: Option<String>,
         }
         impl Builder {
+            #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\">Setting Timeouts for Blob Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "If specified, the operation only succeeds if the resource's lease is active and matches this ID."]
             pub fn x_ms_lease_id(mut self, x_ms_lease_id: impl Into<String>) -> Self {
                 self.x_ms_lease_id = Some(x_ms_lease_id.into());
                 self
             }
+            #[doc = "Specify this header value to operate only on a blob if it has been modified since the specified date/time."]
             pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
+            #[doc = "Specify this header value to operate only on a blob if it has not been modified since the specified date/time."]
             pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
+            #[doc = "Provides a client-generated, opaque value with a 1 KB character limit that is recorded in the analytics logs when storage analytics logging is enabled."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
@@ -1379,22 +1415,27 @@ pub mod container {
             pub(crate) x_ms_client_request_id: Option<String>,
         }
         impl Builder {
+            #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\">Setting Timeouts for Blob Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "If specified, the operation only succeeds if the resource's lease is active and matches this ID."]
             pub fn x_ms_lease_id(mut self, x_ms_lease_id: impl Into<String>) -> Self {
                 self.x_ms_lease_id = Some(x_ms_lease_id.into());
                 self
             }
+            #[doc = "Optional. Specifies a user-defined name-value pair associated with the blob. If no name-value pairs are specified, the operation will copy the metadata from the source blob or file to the destination blob. If one or more name-value pairs are specified, the destination blob is created with the specified metadata, and metadata is not copied from the source blob or file. Note that beginning with version 2009-09-19, metadata names must adhere to the naming rules for C# identifiers. See Naming and Referencing Containers, Blobs, and Metadata for more information."]
             pub fn x_ms_meta(mut self, x_ms_meta: impl Into<String>) -> Self {
                 self.x_ms_meta = Some(x_ms_meta.into());
                 self
             }
+            #[doc = "Specify this header value to operate only on a blob if it has been modified since the specified date/time."]
             pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
+            #[doc = "Provides a client-generated, opaque value with a 1 KB character limit that is recorded in the analytics logs when storage analytics logging is enabled."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
@@ -1460,14 +1501,17 @@ pub mod container {
             pub(crate) x_ms_client_request_id: Option<String>,
         }
         impl Builder {
+            #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\">Setting Timeouts for Blob Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "If specified, the operation only succeeds if the resource's lease is active and matches this ID."]
             pub fn x_ms_lease_id(mut self, x_ms_lease_id: impl Into<String>) -> Self {
                 self.x_ms_lease_id = Some(x_ms_lease_id.into());
                 self
             }
+            #[doc = "Provides a client-generated, opaque value with a 1 KB character limit that is recorded in the analytics logs when storage analytics logging is enabled."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
@@ -1535,30 +1579,37 @@ pub mod container {
             pub(crate) x_ms_client_request_id: Option<String>,
         }
         impl Builder {
+            #[doc = "the acls for the container"]
             pub fn container_acl(mut self, container_acl: impl Into<models::SignedIdentifiers>) -> Self {
                 self.container_acl = Some(container_acl.into());
                 self
             }
+            #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\">Setting Timeouts for Blob Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "If specified, the operation only succeeds if the resource's lease is active and matches this ID."]
             pub fn x_ms_lease_id(mut self, x_ms_lease_id: impl Into<String>) -> Self {
                 self.x_ms_lease_id = Some(x_ms_lease_id.into());
                 self
             }
+            #[doc = "Specifies whether data in the container may be accessed publicly and the level of access"]
             pub fn x_ms_blob_public_access(mut self, x_ms_blob_public_access: impl Into<String>) -> Self {
                 self.x_ms_blob_public_access = Some(x_ms_blob_public_access.into());
                 self
             }
+            #[doc = "Specify this header value to operate only on a blob if it has been modified since the specified date/time."]
             pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
+            #[doc = "Specify this header value to operate only on a blob if it has not been modified since the specified date/time."]
             pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
+            #[doc = "Provides a client-generated, opaque value with a 1 KB character limit that is recorded in the analytics logs when storage analytics logging is enabled."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
@@ -1633,18 +1684,22 @@ pub mod container {
             pub(crate) x_ms_deleted_container_version: Option<String>,
         }
         impl Builder {
+            #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\">Setting Timeouts for Blob Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "Provides a client-generated, opaque value with a 1 KB character limit that is recorded in the analytics logs when storage analytics logging is enabled."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
             }
+            #[doc = "Optional.  Version 2019-12-12 and later.  Specifies the name of the deleted container to restore."]
             pub fn x_ms_deleted_container_name(mut self, x_ms_deleted_container_name: impl Into<String>) -> Self {
                 self.x_ms_deleted_container_name = Some(x_ms_deleted_container_name.into());
                 self
             }
+            #[doc = "Optional.  Version 2019-12-12 and later.  Specifies the version of the deleted container to restore."]
             pub fn x_ms_deleted_container_version(mut self, x_ms_deleted_container_version: impl Into<String>) -> Self {
                 self.x_ms_deleted_container_version = Some(x_ms_deleted_container_version.into());
                 self
@@ -1708,14 +1763,17 @@ pub mod container {
             pub(crate) x_ms_source_lease_id: Option<String>,
         }
         impl Builder {
+            #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\">Setting Timeouts for Blob Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "Provides a client-generated, opaque value with a 1 KB character limit that is recorded in the analytics logs when storage analytics logging is enabled."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
             }
+            #[doc = "A lease ID for the source path. If specified, the source path must have an active lease and the lease ID must match."]
             pub fn x_ms_source_lease_id(mut self, x_ms_source_lease_id: impl Into<String>) -> Self {
                 self.x_ms_source_lease_id = Some(x_ms_source_lease_id.into());
                 self
@@ -1778,10 +1836,12 @@ pub mod container {
             pub(crate) x_ms_client_request_id: Option<String>,
         }
         impl Builder {
+            #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\">Setting Timeouts for Blob Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "Provides a client-generated, opaque value with a 1 KB character limit that is recorded in the analytics logs when storage analytics logging is enabled."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
@@ -1847,26 +1907,32 @@ pub mod container {
             pub(crate) include: Vec<String>,
         }
         impl Builder {
+            #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\">Setting Timeouts for Blob Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "Provides a client-generated, opaque value with a 1 KB character limit that is recorded in the analytics logs when storage analytics logging is enabled."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
             }
+            #[doc = "Filters the results to return only to return only blobs whose tags match the specified expression."]
             pub fn where_(mut self, where_: impl Into<String>) -> Self {
                 self.where_ = Some(where_.into());
                 self
             }
+            #[doc = "A string value that identifies the portion of the list of containers to be returned with the next listing operation. The operation returns the NextMarker value within the response body if the listing operation did not return all containers remaining to be listed with the current page. The NextMarker value can be used as the value for the marker parameter in a subsequent call to request the next page of list items. The marker value is opaque to the client."]
             pub fn marker(mut self, marker: impl Into<String>) -> Self {
                 self.marker = Some(marker.into());
                 self
             }
+            #[doc = "Specifies the maximum number of containers to return. If the request does not specify maxresults, or specifies a value greater than 5000, the server will return up to 5000 items. Note that if the listing operation crosses a partition boundary, then the service will return a continuation token for retrieving the remainder of the results. For this reason, it is possible that the service will return fewer results than specified by maxresults, or than the default of 5000."]
             pub fn maxresults(mut self, maxresults: i64) -> Self {
                 self.maxresults = Some(maxresults);
                 self
             }
+            #[doc = "Include this parameter to specify one or more datasets to include in the response."]
             pub fn include(mut self, include: Vec<String>) -> Self {
                 self.include = include;
                 self
@@ -1940,26 +2006,32 @@ pub mod container {
             pub(crate) x_ms_client_request_id: Option<String>,
         }
         impl Builder {
+            #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\">Setting Timeouts for Blob Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "Specifies the duration of the lease, in seconds, or negative one (-1) for a lease that never expires. A non-infinite lease can be between 15 and 60 seconds. A lease duration cannot be changed using renew or change."]
             pub fn x_ms_lease_duration(mut self, x_ms_lease_duration: i64) -> Self {
                 self.x_ms_lease_duration = Some(x_ms_lease_duration);
                 self
             }
+            #[doc = "Proposed lease ID, in a GUID string format. The Blob service returns 400 (Invalid request) if the proposed lease ID is not in the correct format. See Guid Constructor (String) for a list of valid GUID string formats."]
             pub fn x_ms_proposed_lease_id(mut self, x_ms_proposed_lease_id: impl Into<String>) -> Self {
                 self.x_ms_proposed_lease_id = Some(x_ms_proposed_lease_id.into());
                 self
             }
+            #[doc = "Specify this header value to operate only on a blob if it has been modified since the specified date/time."]
             pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
+            #[doc = "Specify this header value to operate only on a blob if it has not been modified since the specified date/time."]
             pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
+            #[doc = "Provides a client-generated, opaque value with a 1 KB character limit that is recorded in the analytics logs when storage analytics logging is enabled."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
@@ -2032,18 +2104,22 @@ pub mod container {
             pub(crate) x_ms_client_request_id: Option<String>,
         }
         impl Builder {
+            #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\">Setting Timeouts for Blob Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "Specify this header value to operate only on a blob if it has been modified since the specified date/time."]
             pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
+            #[doc = "Specify this header value to operate only on a blob if it has not been modified since the specified date/time."]
             pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
+            #[doc = "Provides a client-generated, opaque value with a 1 KB character limit that is recorded in the analytics logs when storage analytics logging is enabled."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
@@ -2111,18 +2187,22 @@ pub mod container {
             pub(crate) x_ms_client_request_id: Option<String>,
         }
         impl Builder {
+            #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\">Setting Timeouts for Blob Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "Specify this header value to operate only on a blob if it has been modified since the specified date/time."]
             pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
+            #[doc = "Specify this header value to operate only on a blob if it has not been modified since the specified date/time."]
             pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
+            #[doc = "Provides a client-generated, opaque value with a 1 KB character limit that is recorded in the analytics logs when storage analytics logging is enabled."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
@@ -2190,22 +2270,27 @@ pub mod container {
             pub(crate) x_ms_client_request_id: Option<String>,
         }
         impl Builder {
+            #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\">Setting Timeouts for Blob Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "For a break operation, proposed duration the lease should continue before it is broken, in seconds, between 0 and 60. This break period is only used if it is shorter than the time remaining on the lease. If longer, the time remaining on the lease is used. A new lease will not be available before the break period has expired, but the lease may be held for longer than the break period. If this header does not appear with a break operation, a fixed-duration lease breaks after the remaining lease period elapses, and an infinite lease breaks immediately."]
             pub fn x_ms_lease_break_period(mut self, x_ms_lease_break_period: i64) -> Self {
                 self.x_ms_lease_break_period = Some(x_ms_lease_break_period);
                 self
             }
+            #[doc = "Specify this header value to operate only on a blob if it has been modified since the specified date/time."]
             pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
+            #[doc = "Specify this header value to operate only on a blob if it has not been modified since the specified date/time."]
             pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
+            #[doc = "Provides a client-generated, opaque value with a 1 KB character limit that is recorded in the analytics logs when storage analytics logging is enabled."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
@@ -2276,18 +2361,22 @@ pub mod container {
             pub(crate) x_ms_client_request_id: Option<String>,
         }
         impl Builder {
+            #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\">Setting Timeouts for Blob Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "Specify this header value to operate only on a blob if it has been modified since the specified date/time."]
             pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
+            #[doc = "Specify this header value to operate only on a blob if it has not been modified since the specified date/time."]
             pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
+            #[doc = "Provides a client-generated, opaque value with a 1 KB character limit that is recorded in the analytics logs when storage analytics logging is enabled."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
@@ -2356,26 +2445,32 @@ pub mod container {
             pub(crate) x_ms_client_request_id: Option<String>,
         }
         impl Builder {
+            #[doc = "Filters the results to return only containers whose name begins with the specified prefix."]
             pub fn prefix(mut self, prefix: impl Into<String>) -> Self {
                 self.prefix = Some(prefix.into());
                 self
             }
+            #[doc = "A string value that identifies the portion of the list of containers to be returned with the next listing operation. The operation returns the NextMarker value within the response body if the listing operation did not return all containers remaining to be listed with the current page. The NextMarker value can be used as the value for the marker parameter in a subsequent call to request the next page of list items. The marker value is opaque to the client."]
             pub fn marker(mut self, marker: impl Into<String>) -> Self {
                 self.marker = Some(marker.into());
                 self
             }
+            #[doc = "Specifies the maximum number of containers to return. If the request does not specify maxresults, or specifies a value greater than 5000, the server will return up to 5000 items. Note that if the listing operation crosses a partition boundary, then the service will return a continuation token for retrieving the remainder of the results. For this reason, it is possible that the service will return fewer results than specified by maxresults, or than the default of 5000."]
             pub fn maxresults(mut self, maxresults: i64) -> Self {
                 self.maxresults = Some(maxresults);
                 self
             }
+            #[doc = "Include this parameter to specify one or more datasets to include in the response."]
             pub fn include(mut self, include: Vec<String>) -> Self {
                 self.include = include;
                 self
             }
+            #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\">Setting Timeouts for Blob Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "Provides a client-generated, opaque value with a 1 KB character limit that is recorded in the analytics logs when storage analytics logging is enabled."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
@@ -2468,26 +2563,32 @@ pub mod container {
             pub(crate) x_ms_client_request_id: Option<String>,
         }
         impl Builder {
+            #[doc = "Filters the results to return only containers whose name begins with the specified prefix."]
             pub fn prefix(mut self, prefix: impl Into<String>) -> Self {
                 self.prefix = Some(prefix.into());
                 self
             }
+            #[doc = "A string value that identifies the portion of the list of containers to be returned with the next listing operation. The operation returns the NextMarker value within the response body if the listing operation did not return all containers remaining to be listed with the current page. The NextMarker value can be used as the value for the marker parameter in a subsequent call to request the next page of list items. The marker value is opaque to the client."]
             pub fn marker(mut self, marker: impl Into<String>) -> Self {
                 self.marker = Some(marker.into());
                 self
             }
+            #[doc = "Specifies the maximum number of containers to return. If the request does not specify maxresults, or specifies a value greater than 5000, the server will return up to 5000 items. Note that if the listing operation crosses a partition boundary, then the service will return a continuation token for retrieving the remainder of the results. For this reason, it is possible that the service will return fewer results than specified by maxresults, or than the default of 5000."]
             pub fn maxresults(mut self, maxresults: i64) -> Self {
                 self.maxresults = Some(maxresults);
                 self
             }
+            #[doc = "Include this parameter to specify one or more datasets to include in the response."]
             pub fn include(mut self, include: Vec<String>) -> Self {
                 self.include = include;
                 self
             }
+            #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\">Setting Timeouts for Blob Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "Provides a client-generated, opaque value with a 1 KB character limit that is recorded in the analytics logs when storage analytics logging is enabled."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
@@ -3357,66 +3458,82 @@ pub mod blob {
             pub(crate) x_ms_client_request_id: Option<String>,
         }
         impl Builder {
+            #[doc = "The snapshot parameter is an opaque DateTime value that, when present, specifies the blob snapshot to retrieve. For more information on working with blob snapshots, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/creating-a-snapshot-of-a-blob\">Creating a Snapshot of a Blob.</a>"]
             pub fn snapshot(mut self, snapshot: impl Into<String>) -> Self {
                 self.snapshot = Some(snapshot.into());
                 self
             }
+            #[doc = "The version id parameter is an opaque DateTime value that, when present, specifies the version of the blob to operate on. It's for service version 2019-10-10 and newer."]
             pub fn versionid(mut self, versionid: impl Into<String>) -> Self {
                 self.versionid = Some(versionid.into());
                 self
             }
+            #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\">Setting Timeouts for Blob Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "Return only the bytes of the blob in the specified range."]
             pub fn x_ms_range(mut self, x_ms_range: impl Into<String>) -> Self {
                 self.x_ms_range = Some(x_ms_range.into());
                 self
             }
+            #[doc = "If specified, the operation only succeeds if the resource's lease is active and matches this ID."]
             pub fn x_ms_lease_id(mut self, x_ms_lease_id: impl Into<String>) -> Self {
                 self.x_ms_lease_id = Some(x_ms_lease_id.into());
                 self
             }
+            #[doc = "When set to true and specified together with the Range, the service returns the MD5 hash for the range, as long as the range is less than or equal to 4 MB in size."]
             pub fn x_ms_range_get_content_md5(mut self, x_ms_range_get_content_md5: bool) -> Self {
                 self.x_ms_range_get_content_md5 = Some(x_ms_range_get_content_md5);
                 self
             }
+            #[doc = "When set to true and specified together with the Range, the service returns the CRC64 hash for the range, as long as the range is less than or equal to 4 MB in size."]
             pub fn x_ms_range_get_content_crc64(mut self, x_ms_range_get_content_crc64: bool) -> Self {
                 self.x_ms_range_get_content_crc64 = Some(x_ms_range_get_content_crc64);
                 self
             }
+            #[doc = "Optional. Specifies the encryption key to use to encrypt the data provided in the request. If not specified, encryption is performed with the root account encryption key.  For more information, see Encryption at Rest for Azure Storage Services."]
             pub fn x_ms_encryption_key(mut self, x_ms_encryption_key: impl Into<String>) -> Self {
                 self.x_ms_encryption_key = Some(x_ms_encryption_key.into());
                 self
             }
+            #[doc = "The SHA-256 hash of the provided encryption key. Must be provided if the x-ms-encryption-key header is provided."]
             pub fn x_ms_encryption_key_sha256(mut self, x_ms_encryption_key_sha256: impl Into<String>) -> Self {
                 self.x_ms_encryption_key_sha256 = Some(x_ms_encryption_key_sha256.into());
                 self
             }
+            #[doc = "The algorithm used to produce the encryption key hash. Currently, the only accepted value is \"AES256\". Must be provided if the x-ms-encryption-key header is provided."]
             pub fn x_ms_encryption_algorithm(mut self, x_ms_encryption_algorithm: impl Into<String>) -> Self {
                 self.x_ms_encryption_algorithm = Some(x_ms_encryption_algorithm.into());
                 self
             }
+            #[doc = "Specify this header value to operate only on a blob if it has been modified since the specified date/time."]
             pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
+            #[doc = "Specify this header value to operate only on a blob if it has not been modified since the specified date/time."]
             pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
+            #[doc = "Specify an ETag value to operate only on blobs with a matching value."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
             }
+            #[doc = "Specify an ETag value to operate only on blobs without a matching value."]
             pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
                 self.if_none_match = Some(if_none_match.into());
                 self
             }
+            #[doc = "Specify a SQL where clause on blob tags to operate only on blobs with a matching value."]
             pub fn x_ms_if_tags(mut self, x_ms_if_tags: impl Into<String>) -> Self {
                 self.x_ms_if_tags = Some(x_ms_if_tags.into());
                 self
             }
+            #[doc = "Provides a client-generated, opaque value with a 1 KB character limit that is recorded in the analytics logs when storage analytics logging is enabled."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
@@ -3530,50 +3647,62 @@ pub mod blob {
             pub(crate) deletetype: Option<String>,
         }
         impl Builder {
+            #[doc = "The snapshot parameter is an opaque DateTime value that, when present, specifies the blob snapshot to retrieve. For more information on working with blob snapshots, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/creating-a-snapshot-of-a-blob\">Creating a Snapshot of a Blob.</a>"]
             pub fn snapshot(mut self, snapshot: impl Into<String>) -> Self {
                 self.snapshot = Some(snapshot.into());
                 self
             }
+            #[doc = "The version id parameter is an opaque DateTime value that, when present, specifies the version of the blob to operate on. It's for service version 2019-10-10 and newer."]
             pub fn versionid(mut self, versionid: impl Into<String>) -> Self {
                 self.versionid = Some(versionid.into());
                 self
             }
+            #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\">Setting Timeouts for Blob Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "If specified, the operation only succeeds if the resource's lease is active and matches this ID."]
             pub fn x_ms_lease_id(mut self, x_ms_lease_id: impl Into<String>) -> Self {
                 self.x_ms_lease_id = Some(x_ms_lease_id.into());
                 self
             }
+            #[doc = "Required if the blob has associated snapshots. Specify one of the following two options: include: Delete the base blob and all of its snapshots. only: Delete only the blob's snapshots and not the blob itself"]
             pub fn x_ms_delete_snapshots(mut self, x_ms_delete_snapshots: impl Into<String>) -> Self {
                 self.x_ms_delete_snapshots = Some(x_ms_delete_snapshots.into());
                 self
             }
+            #[doc = "Specify this header value to operate only on a blob if it has been modified since the specified date/time."]
             pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
+            #[doc = "Specify this header value to operate only on a blob if it has not been modified since the specified date/time."]
             pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
+            #[doc = "Specify an ETag value to operate only on blobs with a matching value."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
             }
+            #[doc = "Specify an ETag value to operate only on blobs without a matching value."]
             pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
                 self.if_none_match = Some(if_none_match.into());
                 self
             }
+            #[doc = "Specify a SQL where clause on blob tags to operate only on blobs with a matching value."]
             pub fn x_ms_if_tags(mut self, x_ms_if_tags: impl Into<String>) -> Self {
                 self.x_ms_if_tags = Some(x_ms_if_tags.into());
                 self
             }
+            #[doc = "Provides a client-generated, opaque value with a 1 KB character limit that is recorded in the analytics logs when storage analytics logging is enabled."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
             }
+            #[doc = "Optional.  Only possible value is 'permanent', which specifies to permanently delete a blob if blob soft delete is enabled."]
             pub fn deletetype(mut self, deletetype: impl Into<String>) -> Self {
                 self.deletetype = Some(deletetype.into());
                 self
@@ -3667,54 +3796,67 @@ pub mod blob {
             pub(crate) x_ms_client_request_id: Option<String>,
         }
         impl Builder {
+            #[doc = "The snapshot parameter is an opaque DateTime value that, when present, specifies the blob snapshot to retrieve. For more information on working with blob snapshots, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/creating-a-snapshot-of-a-blob\">Creating a Snapshot of a Blob.</a>"]
             pub fn snapshot(mut self, snapshot: impl Into<String>) -> Self {
                 self.snapshot = Some(snapshot.into());
                 self
             }
+            #[doc = "The version id parameter is an opaque DateTime value that, when present, specifies the version of the blob to operate on. It's for service version 2019-10-10 and newer."]
             pub fn versionid(mut self, versionid: impl Into<String>) -> Self {
                 self.versionid = Some(versionid.into());
                 self
             }
+            #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\">Setting Timeouts for Blob Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "If specified, the operation only succeeds if the resource's lease is active and matches this ID."]
             pub fn x_ms_lease_id(mut self, x_ms_lease_id: impl Into<String>) -> Self {
                 self.x_ms_lease_id = Some(x_ms_lease_id.into());
                 self
             }
+            #[doc = "Optional. Specifies the encryption key to use to encrypt the data provided in the request. If not specified, encryption is performed with the root account encryption key.  For more information, see Encryption at Rest for Azure Storage Services."]
             pub fn x_ms_encryption_key(mut self, x_ms_encryption_key: impl Into<String>) -> Self {
                 self.x_ms_encryption_key = Some(x_ms_encryption_key.into());
                 self
             }
+            #[doc = "The SHA-256 hash of the provided encryption key. Must be provided if the x-ms-encryption-key header is provided."]
             pub fn x_ms_encryption_key_sha256(mut self, x_ms_encryption_key_sha256: impl Into<String>) -> Self {
                 self.x_ms_encryption_key_sha256 = Some(x_ms_encryption_key_sha256.into());
                 self
             }
+            #[doc = "The algorithm used to produce the encryption key hash. Currently, the only accepted value is \"AES256\". Must be provided if the x-ms-encryption-key header is provided."]
             pub fn x_ms_encryption_algorithm(mut self, x_ms_encryption_algorithm: impl Into<String>) -> Self {
                 self.x_ms_encryption_algorithm = Some(x_ms_encryption_algorithm.into());
                 self
             }
+            #[doc = "Specify this header value to operate only on a blob if it has been modified since the specified date/time."]
             pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
+            #[doc = "Specify this header value to operate only on a blob if it has not been modified since the specified date/time."]
             pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
+            #[doc = "Specify an ETag value to operate only on blobs with a matching value."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
             }
+            #[doc = "Specify an ETag value to operate only on blobs without a matching value."]
             pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
                 self.if_none_match = Some(if_none_match.into());
                 self
             }
+            #[doc = "Specify a SQL where clause on blob tags to operate only on blobs with a matching value."]
             pub fn x_ms_if_tags(mut self, x_ms_if_tags: impl Into<String>) -> Self {
                 self.x_ms_if_tags = Some(x_ms_if_tags.into());
                 self
             }
+            #[doc = "Provides a client-generated, opaque value with a 1 KB character limit that is recorded in the analytics logs when storage analytics logging is enabled."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
@@ -3800,10 +3942,12 @@ pub mod blob {
             pub(crate) x_ms_client_request_id: Option<String>,
         }
         impl Builder {
+            #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\">Setting Timeouts for Blob Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "Provides a client-generated, opaque value with a 1 KB character limit that is recorded in the analytics logs when storage analytics logging is enabled."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
@@ -3863,14 +4007,17 @@ pub mod blob {
             pub(crate) x_ms_expiry_time: Option<String>,
         }
         impl Builder {
+            #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\">Setting Timeouts for Blob Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "Provides a client-generated, opaque value with a 1 KB character limit that is recorded in the analytics logs when storage analytics logging is enabled."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
             }
+            #[doc = "The time to set the blob to expiry"]
             pub fn x_ms_expiry_time(mut self, x_ms_expiry_time: impl Into<String>) -> Self {
                 self.x_ms_expiry_time = Some(x_ms_expiry_time.into());
                 self
@@ -3944,58 +4091,72 @@ pub mod blob {
             pub(crate) x_ms_client_request_id: Option<String>,
         }
         impl Builder {
+            #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\">Setting Timeouts for Blob Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "Optional. Sets the blob's cache control. If specified, this property is stored with the blob and returned with a read request."]
             pub fn x_ms_blob_cache_control(mut self, x_ms_blob_cache_control: impl Into<String>) -> Self {
                 self.x_ms_blob_cache_control = Some(x_ms_blob_cache_control.into());
                 self
             }
+            #[doc = "Optional. Sets the blob's content type. If specified, this property is stored with the blob and returned with a read request."]
             pub fn x_ms_blob_content_type(mut self, x_ms_blob_content_type: impl Into<String>) -> Self {
                 self.x_ms_blob_content_type = Some(x_ms_blob_content_type.into());
                 self
             }
+            #[doc = "Optional. An MD5 hash of the blob content. Note that this hash is not validated, as the hashes for the individual blocks were validated when each was uploaded."]
             pub fn x_ms_blob_content_md5(mut self, x_ms_blob_content_md5: impl Into<String>) -> Self {
                 self.x_ms_blob_content_md5 = Some(x_ms_blob_content_md5.into());
                 self
             }
+            #[doc = "Optional. Sets the blob's content encoding. If specified, this property is stored with the blob and returned with a read request."]
             pub fn x_ms_blob_content_encoding(mut self, x_ms_blob_content_encoding: impl Into<String>) -> Self {
                 self.x_ms_blob_content_encoding = Some(x_ms_blob_content_encoding.into());
                 self
             }
+            #[doc = "Optional. Set the blob's content language. If specified, this property is stored with the blob and returned with a read request."]
             pub fn x_ms_blob_content_language(mut self, x_ms_blob_content_language: impl Into<String>) -> Self {
                 self.x_ms_blob_content_language = Some(x_ms_blob_content_language.into());
                 self
             }
+            #[doc = "If specified, the operation only succeeds if the resource's lease is active and matches this ID."]
             pub fn x_ms_lease_id(mut self, x_ms_lease_id: impl Into<String>) -> Self {
                 self.x_ms_lease_id = Some(x_ms_lease_id.into());
                 self
             }
+            #[doc = "Specify this header value to operate only on a blob if it has been modified since the specified date/time."]
             pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
+            #[doc = "Specify this header value to operate only on a blob if it has not been modified since the specified date/time."]
             pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
+            #[doc = "Specify an ETag value to operate only on blobs with a matching value."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
             }
+            #[doc = "Specify an ETag value to operate only on blobs without a matching value."]
             pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
                 self.if_none_match = Some(if_none_match.into());
                 self
             }
+            #[doc = "Specify a SQL where clause on blob tags to operate only on blobs with a matching value."]
             pub fn x_ms_if_tags(mut self, x_ms_if_tags: impl Into<String>) -> Self {
                 self.x_ms_if_tags = Some(x_ms_if_tags.into());
                 self
             }
+            #[doc = "Optional. Sets the blob's Content-Disposition header."]
             pub fn x_ms_blob_content_disposition(mut self, x_ms_blob_content_disposition: impl Into<String>) -> Self {
                 self.x_ms_blob_content_disposition = Some(x_ms_blob_content_disposition.into());
                 self
             }
+            #[doc = "Provides a client-generated, opaque value with a 1 KB character limit that is recorded in the analytics logs when storage analytics logging is enabled."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
@@ -4092,22 +4253,27 @@ pub mod blob {
             pub(crate) x_ms_immutability_policy_mode: Option<String>,
         }
         impl Builder {
+            #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\">Setting Timeouts for Blob Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "Provides a client-generated, opaque value with a 1 KB character limit that is recorded in the analytics logs when storage analytics logging is enabled."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
             }
+            #[doc = "Specify this header value to operate only on a blob if it has not been modified since the specified date/time."]
             pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
+            #[doc = "Specifies the date time when the blobs immutability policy is set to expire."]
             pub fn x_ms_immutability_policy_until_date(mut self, x_ms_immutability_policy_until_date: impl Into<String>) -> Self {
                 self.x_ms_immutability_policy_until_date = Some(x_ms_immutability_policy_until_date.into());
                 self
             }
+            #[doc = "Specifies the immutability policy mode to set on the blob."]
             pub fn x_ms_immutability_policy_mode(mut self, x_ms_immutability_policy_mode: impl Into<String>) -> Self {
                 self.x_ms_immutability_policy_mode = Some(x_ms_immutability_policy_mode.into());
                 self
@@ -4174,10 +4340,12 @@ pub mod blob {
             pub(crate) x_ms_client_request_id: Option<String>,
         }
         impl Builder {
+            #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\">Setting Timeouts for Blob Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "Provides a client-generated, opaque value with a 1 KB character limit that is recorded in the analytics logs when storage analytics logging is enabled."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
@@ -4236,10 +4404,12 @@ pub mod blob {
             pub(crate) x_ms_client_request_id: Option<String>,
         }
         impl Builder {
+            #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\">Setting Timeouts for Blob Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "Provides a client-generated, opaque value with a 1 KB character limit that is recorded in the analytics logs when storage analytics logging is enabled."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
@@ -4309,54 +4479,67 @@ pub mod blob {
             pub(crate) x_ms_client_request_id: Option<String>,
         }
         impl Builder {
+            #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\">Setting Timeouts for Blob Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "Optional. Specifies a user-defined name-value pair associated with the blob. If no name-value pairs are specified, the operation will copy the metadata from the source blob or file to the destination blob. If one or more name-value pairs are specified, the destination blob is created with the specified metadata, and metadata is not copied from the source blob or file. Note that beginning with version 2009-09-19, metadata names must adhere to the naming rules for C# identifiers. See Naming and Referencing Containers, Blobs, and Metadata for more information."]
             pub fn x_ms_meta(mut self, x_ms_meta: impl Into<String>) -> Self {
                 self.x_ms_meta = Some(x_ms_meta.into());
                 self
             }
+            #[doc = "If specified, the operation only succeeds if the resource's lease is active and matches this ID."]
             pub fn x_ms_lease_id(mut self, x_ms_lease_id: impl Into<String>) -> Self {
                 self.x_ms_lease_id = Some(x_ms_lease_id.into());
                 self
             }
+            #[doc = "Optional. Specifies the encryption key to use to encrypt the data provided in the request. If not specified, encryption is performed with the root account encryption key.  For more information, see Encryption at Rest for Azure Storage Services."]
             pub fn x_ms_encryption_key(mut self, x_ms_encryption_key: impl Into<String>) -> Self {
                 self.x_ms_encryption_key = Some(x_ms_encryption_key.into());
                 self
             }
+            #[doc = "The SHA-256 hash of the provided encryption key. Must be provided if the x-ms-encryption-key header is provided."]
             pub fn x_ms_encryption_key_sha256(mut self, x_ms_encryption_key_sha256: impl Into<String>) -> Self {
                 self.x_ms_encryption_key_sha256 = Some(x_ms_encryption_key_sha256.into());
                 self
             }
+            #[doc = "The algorithm used to produce the encryption key hash. Currently, the only accepted value is \"AES256\". Must be provided if the x-ms-encryption-key header is provided."]
             pub fn x_ms_encryption_algorithm(mut self, x_ms_encryption_algorithm: impl Into<String>) -> Self {
                 self.x_ms_encryption_algorithm = Some(x_ms_encryption_algorithm.into());
                 self
             }
+            #[doc = "Optional. Version 2019-07-07 and later.  Specifies the name of the encryption scope to use to encrypt the data provided in the request. If not specified, encryption is performed with the default account encryption scope.  For more information, see Encryption at Rest for Azure Storage Services."]
             pub fn x_ms_encryption_scope(mut self, x_ms_encryption_scope: impl Into<String>) -> Self {
                 self.x_ms_encryption_scope = Some(x_ms_encryption_scope.into());
                 self
             }
+            #[doc = "Specify this header value to operate only on a blob if it has been modified since the specified date/time."]
             pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
+            #[doc = "Specify this header value to operate only on a blob if it has not been modified since the specified date/time."]
             pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
+            #[doc = "Specify an ETag value to operate only on blobs with a matching value."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
             }
+            #[doc = "Specify an ETag value to operate only on blobs without a matching value."]
             pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
                 self.if_none_match = Some(if_none_match.into());
                 self
             }
+            #[doc = "Specify a SQL where clause on blob tags to operate only on blobs with a matching value."]
             pub fn x_ms_if_tags(mut self, x_ms_if_tags: impl Into<String>) -> Self {
                 self.x_ms_if_tags = Some(x_ms_if_tags.into());
                 self
             }
+            #[doc = "Provides a client-generated, opaque value with a 1 KB character limit that is recorded in the analytics logs when storage analytics logging is enabled."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
@@ -4455,38 +4638,47 @@ pub mod blob {
             pub(crate) x_ms_client_request_id: Option<String>,
         }
         impl Builder {
+            #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\">Setting Timeouts for Blob Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "Specifies the duration of the lease, in seconds, or negative one (-1) for a lease that never expires. A non-infinite lease can be between 15 and 60 seconds. A lease duration cannot be changed using renew or change."]
             pub fn x_ms_lease_duration(mut self, x_ms_lease_duration: i64) -> Self {
                 self.x_ms_lease_duration = Some(x_ms_lease_duration);
                 self
             }
+            #[doc = "Proposed lease ID, in a GUID string format. The Blob service returns 400 (Invalid request) if the proposed lease ID is not in the correct format. See Guid Constructor (String) for a list of valid GUID string formats."]
             pub fn x_ms_proposed_lease_id(mut self, x_ms_proposed_lease_id: impl Into<String>) -> Self {
                 self.x_ms_proposed_lease_id = Some(x_ms_proposed_lease_id.into());
                 self
             }
+            #[doc = "Specify this header value to operate only on a blob if it has been modified since the specified date/time."]
             pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
+            #[doc = "Specify this header value to operate only on a blob if it has not been modified since the specified date/time."]
             pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
+            #[doc = "Specify an ETag value to operate only on blobs with a matching value."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
             }
+            #[doc = "Specify an ETag value to operate only on blobs without a matching value."]
             pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
                 self.if_none_match = Some(if_none_match.into());
                 self
             }
+            #[doc = "Specify a SQL where clause on blob tags to operate only on blobs with a matching value."]
             pub fn x_ms_if_tags(mut self, x_ms_if_tags: impl Into<String>) -> Self {
                 self.x_ms_if_tags = Some(x_ms_if_tags.into());
                 self
             }
+            #[doc = "Provides a client-generated, opaque value with a 1 KB character limit that is recorded in the analytics logs when storage analytics logging is enabled."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
@@ -4573,30 +4765,37 @@ pub mod blob {
             pub(crate) x_ms_client_request_id: Option<String>,
         }
         impl Builder {
+            #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\">Setting Timeouts for Blob Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "Specify this header value to operate only on a blob if it has been modified since the specified date/time."]
             pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
+            #[doc = "Specify this header value to operate only on a blob if it has not been modified since the specified date/time."]
             pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
+            #[doc = "Specify an ETag value to operate only on blobs with a matching value."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
             }
+            #[doc = "Specify an ETag value to operate only on blobs without a matching value."]
             pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
                 self.if_none_match = Some(if_none_match.into());
                 self
             }
+            #[doc = "Specify a SQL where clause on blob tags to operate only on blobs with a matching value."]
             pub fn x_ms_if_tags(mut self, x_ms_if_tags: impl Into<String>) -> Self {
                 self.x_ms_if_tags = Some(x_ms_if_tags.into());
                 self
             }
+            #[doc = "Provides a client-generated, opaque value with a 1 KB character limit that is recorded in the analytics logs when storage analytics logging is enabled."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
@@ -4678,30 +4877,37 @@ pub mod blob {
             pub(crate) x_ms_client_request_id: Option<String>,
         }
         impl Builder {
+            #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\">Setting Timeouts for Blob Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "Specify this header value to operate only on a blob if it has been modified since the specified date/time."]
             pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
+            #[doc = "Specify this header value to operate only on a blob if it has not been modified since the specified date/time."]
             pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
+            #[doc = "Specify an ETag value to operate only on blobs with a matching value."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
             }
+            #[doc = "Specify an ETag value to operate only on blobs without a matching value."]
             pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
                 self.if_none_match = Some(if_none_match.into());
                 self
             }
+            #[doc = "Specify a SQL where clause on blob tags to operate only on blobs with a matching value."]
             pub fn x_ms_if_tags(mut self, x_ms_if_tags: impl Into<String>) -> Self {
                 self.x_ms_if_tags = Some(x_ms_if_tags.into());
                 self
             }
+            #[doc = "Provides a client-generated, opaque value with a 1 KB character limit that is recorded in the analytics logs when storage analytics logging is enabled."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
@@ -4784,30 +4990,37 @@ pub mod blob {
             pub(crate) x_ms_client_request_id: Option<String>,
         }
         impl Builder {
+            #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\">Setting Timeouts for Blob Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "Specify this header value to operate only on a blob if it has been modified since the specified date/time."]
             pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
+            #[doc = "Specify this header value to operate only on a blob if it has not been modified since the specified date/time."]
             pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
+            #[doc = "Specify an ETag value to operate only on blobs with a matching value."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
             }
+            #[doc = "Specify an ETag value to operate only on blobs without a matching value."]
             pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
                 self.if_none_match = Some(if_none_match.into());
                 self
             }
+            #[doc = "Specify a SQL where clause on blob tags to operate only on blobs with a matching value."]
             pub fn x_ms_if_tags(mut self, x_ms_if_tags: impl Into<String>) -> Self {
                 self.x_ms_if_tags = Some(x_ms_if_tags.into());
                 self
             }
+            #[doc = "Provides a client-generated, opaque value with a 1 KB character limit that is recorded in the analytics logs when storage analytics logging is enabled."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
@@ -4890,34 +5103,42 @@ pub mod blob {
             pub(crate) x_ms_client_request_id: Option<String>,
         }
         impl Builder {
+            #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\">Setting Timeouts for Blob Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "For a break operation, proposed duration the lease should continue before it is broken, in seconds, between 0 and 60. This break period is only used if it is shorter than the time remaining on the lease. If longer, the time remaining on the lease is used. A new lease will not be available before the break period has expired, but the lease may be held for longer than the break period. If this header does not appear with a break operation, a fixed-duration lease breaks after the remaining lease period elapses, and an infinite lease breaks immediately."]
             pub fn x_ms_lease_break_period(mut self, x_ms_lease_break_period: i64) -> Self {
                 self.x_ms_lease_break_period = Some(x_ms_lease_break_period);
                 self
             }
+            #[doc = "Specify this header value to operate only on a blob if it has been modified since the specified date/time."]
             pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
+            #[doc = "Specify this header value to operate only on a blob if it has not been modified since the specified date/time."]
             pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
+            #[doc = "Specify an ETag value to operate only on blobs with a matching value."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
             }
+            #[doc = "Specify an ETag value to operate only on blobs without a matching value."]
             pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
                 self.if_none_match = Some(if_none_match.into());
                 self
             }
+            #[doc = "Specify a SQL where clause on blob tags to operate only on blobs with a matching value."]
             pub fn x_ms_if_tags(mut self, x_ms_if_tags: impl Into<String>) -> Self {
                 self.x_ms_if_tags = Some(x_ms_if_tags.into());
                 self
             }
+            #[doc = "Provides a client-generated, opaque value with a 1 KB character limit that is recorded in the analytics logs when storage analytics logging is enabled."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
@@ -5005,54 +5226,67 @@ pub mod blob {
             pub(crate) x_ms_client_request_id: Option<String>,
         }
         impl Builder {
+            #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\">Setting Timeouts for Blob Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "Optional. Specifies a user-defined name-value pair associated with the blob. If no name-value pairs are specified, the operation will copy the metadata from the source blob or file to the destination blob. If one or more name-value pairs are specified, the destination blob is created with the specified metadata, and metadata is not copied from the source blob or file. Note that beginning with version 2009-09-19, metadata names must adhere to the naming rules for C# identifiers. See Naming and Referencing Containers, Blobs, and Metadata for more information."]
             pub fn x_ms_meta(mut self, x_ms_meta: impl Into<String>) -> Self {
                 self.x_ms_meta = Some(x_ms_meta.into());
                 self
             }
+            #[doc = "Optional. Specifies the encryption key to use to encrypt the data provided in the request. If not specified, encryption is performed with the root account encryption key.  For more information, see Encryption at Rest for Azure Storage Services."]
             pub fn x_ms_encryption_key(mut self, x_ms_encryption_key: impl Into<String>) -> Self {
                 self.x_ms_encryption_key = Some(x_ms_encryption_key.into());
                 self
             }
+            #[doc = "The SHA-256 hash of the provided encryption key. Must be provided if the x-ms-encryption-key header is provided."]
             pub fn x_ms_encryption_key_sha256(mut self, x_ms_encryption_key_sha256: impl Into<String>) -> Self {
                 self.x_ms_encryption_key_sha256 = Some(x_ms_encryption_key_sha256.into());
                 self
             }
+            #[doc = "The algorithm used to produce the encryption key hash. Currently, the only accepted value is \"AES256\". Must be provided if the x-ms-encryption-key header is provided."]
             pub fn x_ms_encryption_algorithm(mut self, x_ms_encryption_algorithm: impl Into<String>) -> Self {
                 self.x_ms_encryption_algorithm = Some(x_ms_encryption_algorithm.into());
                 self
             }
+            #[doc = "Optional. Version 2019-07-07 and later.  Specifies the name of the encryption scope to use to encrypt the data provided in the request. If not specified, encryption is performed with the default account encryption scope.  For more information, see Encryption at Rest for Azure Storage Services."]
             pub fn x_ms_encryption_scope(mut self, x_ms_encryption_scope: impl Into<String>) -> Self {
                 self.x_ms_encryption_scope = Some(x_ms_encryption_scope.into());
                 self
             }
+            #[doc = "Specify this header value to operate only on a blob if it has been modified since the specified date/time."]
             pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
+            #[doc = "Specify this header value to operate only on a blob if it has not been modified since the specified date/time."]
             pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
+            #[doc = "Specify an ETag value to operate only on blobs with a matching value."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
             }
+            #[doc = "Specify an ETag value to operate only on blobs without a matching value."]
             pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
                 self.if_none_match = Some(if_none_match.into());
                 self
             }
+            #[doc = "Specify a SQL where clause on blob tags to operate only on blobs with a matching value."]
             pub fn x_ms_if_tags(mut self, x_ms_if_tags: impl Into<String>) -> Self {
                 self.x_ms_if_tags = Some(x_ms_if_tags.into());
                 self
             }
+            #[doc = "If specified, the operation only succeeds if the resource's lease is active and matches this ID."]
             pub fn x_ms_lease_id(mut self, x_ms_lease_id: impl Into<String>) -> Self {
                 self.x_ms_lease_id = Some(x_ms_lease_id.into());
                 self
             }
+            #[doc = "Provides a client-generated, opaque value with a 1 KB character limit that is recorded in the analytics logs when storage analytics logging is enabled."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
@@ -5163,86 +5397,107 @@ pub mod blob {
             pub(crate) x_ms_legal_hold: Option<bool>,
         }
         impl Builder {
+            #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\">Setting Timeouts for Blob Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "Optional. Specifies a user-defined name-value pair associated with the blob. If no name-value pairs are specified, the operation will copy the metadata from the source blob or file to the destination blob. If one or more name-value pairs are specified, the destination blob is created with the specified metadata, and metadata is not copied from the source blob or file. Note that beginning with version 2009-09-19, metadata names must adhere to the naming rules for C# identifiers. See Naming and Referencing Containers, Blobs, and Metadata for more information."]
             pub fn x_ms_meta(mut self, x_ms_meta: impl Into<String>) -> Self {
                 self.x_ms_meta = Some(x_ms_meta.into());
                 self
             }
+            #[doc = "Optional. Indicates the tier to be set on the blob."]
             pub fn x_ms_access_tier(mut self, x_ms_access_tier: impl Into<String>) -> Self {
                 self.x_ms_access_tier = Some(x_ms_access_tier.into());
                 self
             }
+            #[doc = "Optional: Indicates the priority with which to rehydrate an archived blob."]
             pub fn x_ms_rehydrate_priority(mut self, x_ms_rehydrate_priority: impl Into<String>) -> Self {
                 self.x_ms_rehydrate_priority = Some(x_ms_rehydrate_priority.into());
                 self
             }
+            #[doc = "Specify this header value to operate only on a blob if it has been modified since the specified date/time."]
             pub fn x_ms_source_if_modified_since(mut self, x_ms_source_if_modified_since: impl Into<String>) -> Self {
                 self.x_ms_source_if_modified_since = Some(x_ms_source_if_modified_since.into());
                 self
             }
+            #[doc = "Specify this header value to operate only on a blob if it has not been modified since the specified date/time."]
             pub fn x_ms_source_if_unmodified_since(mut self, x_ms_source_if_unmodified_since: impl Into<String>) -> Self {
                 self.x_ms_source_if_unmodified_since = Some(x_ms_source_if_unmodified_since.into());
                 self
             }
+            #[doc = "Specify an ETag value to operate only on blobs with a matching value."]
             pub fn x_ms_source_if_match(mut self, x_ms_source_if_match: impl Into<String>) -> Self {
                 self.x_ms_source_if_match = Some(x_ms_source_if_match.into());
                 self
             }
+            #[doc = "Specify an ETag value to operate only on blobs without a matching value."]
             pub fn x_ms_source_if_none_match(mut self, x_ms_source_if_none_match: impl Into<String>) -> Self {
                 self.x_ms_source_if_none_match = Some(x_ms_source_if_none_match.into());
                 self
             }
+            #[doc = "Specify a SQL where clause on blob tags to operate only on blobs with a matching value."]
             pub fn x_ms_source_if_tags(mut self, x_ms_source_if_tags: impl Into<String>) -> Self {
                 self.x_ms_source_if_tags = Some(x_ms_source_if_tags.into());
                 self
             }
+            #[doc = "Specify this header value to operate only on a blob if it has been modified since the specified date/time."]
             pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
+            #[doc = "Specify this header value to operate only on a blob if it has not been modified since the specified date/time."]
             pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
+            #[doc = "Specify an ETag value to operate only on blobs with a matching value."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
             }
+            #[doc = "Specify an ETag value to operate only on blobs without a matching value."]
             pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
                 self.if_none_match = Some(if_none_match.into());
                 self
             }
+            #[doc = "Specify a SQL where clause on blob tags to operate only on blobs with a matching value."]
             pub fn x_ms_if_tags(mut self, x_ms_if_tags: impl Into<String>) -> Self {
                 self.x_ms_if_tags = Some(x_ms_if_tags.into());
                 self
             }
+            #[doc = "If specified, the operation only succeeds if the resource's lease is active and matches this ID."]
             pub fn x_ms_lease_id(mut self, x_ms_lease_id: impl Into<String>) -> Self {
                 self.x_ms_lease_id = Some(x_ms_lease_id.into());
                 self
             }
+            #[doc = "Provides a client-generated, opaque value with a 1 KB character limit that is recorded in the analytics logs when storage analytics logging is enabled."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
             }
+            #[doc = "Optional.  Used to set blob tags in various blob operations."]
             pub fn x_ms_tags(mut self, x_ms_tags: impl Into<String>) -> Self {
                 self.x_ms_tags = Some(x_ms_tags.into());
                 self
             }
+            #[doc = "Overrides the sealed state of the destination blob.  Service version 2019-12-12 and newer."]
             pub fn x_ms_seal_blob(mut self, x_ms_seal_blob: bool) -> Self {
                 self.x_ms_seal_blob = Some(x_ms_seal_blob);
                 self
             }
+            #[doc = "Specifies the date time when the blobs immutability policy is set to expire."]
             pub fn x_ms_immutability_policy_until_date(mut self, x_ms_immutability_policy_until_date: impl Into<String>) -> Self {
                 self.x_ms_immutability_policy_until_date = Some(x_ms_immutability_policy_until_date.into());
                 self
             }
+            #[doc = "Specifies the immutability policy mode to set on the blob."]
             pub fn x_ms_immutability_policy_mode(mut self, x_ms_immutability_policy_mode: impl Into<String>) -> Self {
                 self.x_ms_immutability_policy_mode = Some(x_ms_immutability_policy_mode.into());
                 self
             }
+            #[doc = "Specified if a legal hold should be set on the blob."]
             pub fn x_ms_legal_hold(mut self, x_ms_legal_hold: bool) -> Self {
                 self.x_ms_legal_hold = Some(x_ms_legal_hold);
                 self
@@ -5380,90 +5635,112 @@ pub mod blob {
             pub(crate) x_ms_copy_source_tag_option: Option<String>,
         }
         impl Builder {
+            #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\">Setting Timeouts for Blob Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "Optional. Specifies a user-defined name-value pair associated with the blob. If no name-value pairs are specified, the operation will copy the metadata from the source blob or file to the destination blob. If one or more name-value pairs are specified, the destination blob is created with the specified metadata, and metadata is not copied from the source blob or file. Note that beginning with version 2009-09-19, metadata names must adhere to the naming rules for C# identifiers. See Naming and Referencing Containers, Blobs, and Metadata for more information."]
             pub fn x_ms_meta(mut self, x_ms_meta: impl Into<String>) -> Self {
                 self.x_ms_meta = Some(x_ms_meta.into());
                 self
             }
+            #[doc = "Optional. Indicates the tier to be set on the blob."]
             pub fn x_ms_access_tier(mut self, x_ms_access_tier: impl Into<String>) -> Self {
                 self.x_ms_access_tier = Some(x_ms_access_tier.into());
                 self
             }
+            #[doc = "Specify this header value to operate only on a blob if it has been modified since the specified date/time."]
             pub fn x_ms_source_if_modified_since(mut self, x_ms_source_if_modified_since: impl Into<String>) -> Self {
                 self.x_ms_source_if_modified_since = Some(x_ms_source_if_modified_since.into());
                 self
             }
+            #[doc = "Specify this header value to operate only on a blob if it has not been modified since the specified date/time."]
             pub fn x_ms_source_if_unmodified_since(mut self, x_ms_source_if_unmodified_since: impl Into<String>) -> Self {
                 self.x_ms_source_if_unmodified_since = Some(x_ms_source_if_unmodified_since.into());
                 self
             }
+            #[doc = "Specify an ETag value to operate only on blobs with a matching value."]
             pub fn x_ms_source_if_match(mut self, x_ms_source_if_match: impl Into<String>) -> Self {
                 self.x_ms_source_if_match = Some(x_ms_source_if_match.into());
                 self
             }
+            #[doc = "Specify an ETag value to operate only on blobs without a matching value."]
             pub fn x_ms_source_if_none_match(mut self, x_ms_source_if_none_match: impl Into<String>) -> Self {
                 self.x_ms_source_if_none_match = Some(x_ms_source_if_none_match.into());
                 self
             }
+            #[doc = "Specify this header value to operate only on a blob if it has been modified since the specified date/time."]
             pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
+            #[doc = "Specify this header value to operate only on a blob if it has not been modified since the specified date/time."]
             pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
+            #[doc = "Specify an ETag value to operate only on blobs with a matching value."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
             }
+            #[doc = "Specify an ETag value to operate only on blobs without a matching value."]
             pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
                 self.if_none_match = Some(if_none_match.into());
                 self
             }
+            #[doc = "Specify a SQL where clause on blob tags to operate only on blobs with a matching value."]
             pub fn x_ms_if_tags(mut self, x_ms_if_tags: impl Into<String>) -> Self {
                 self.x_ms_if_tags = Some(x_ms_if_tags.into());
                 self
             }
+            #[doc = "If specified, the operation only succeeds if the resource's lease is active and matches this ID."]
             pub fn x_ms_lease_id(mut self, x_ms_lease_id: impl Into<String>) -> Self {
                 self.x_ms_lease_id = Some(x_ms_lease_id.into());
                 self
             }
+            #[doc = "Provides a client-generated, opaque value with a 1 KB character limit that is recorded in the analytics logs when storage analytics logging is enabled."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
             }
+            #[doc = "Specify the md5 calculated for the range of bytes that must be read from the copy source."]
             pub fn x_ms_source_content_md5(mut self, x_ms_source_content_md5: impl Into<String>) -> Self {
                 self.x_ms_source_content_md5 = Some(x_ms_source_content_md5.into());
                 self
             }
+            #[doc = "Optional.  Used to set blob tags in various blob operations."]
             pub fn x_ms_tags(mut self, x_ms_tags: impl Into<String>) -> Self {
                 self.x_ms_tags = Some(x_ms_tags.into());
                 self
             }
+            #[doc = "Specifies the date time when the blobs immutability policy is set to expire."]
             pub fn x_ms_immutability_policy_until_date(mut self, x_ms_immutability_policy_until_date: impl Into<String>) -> Self {
                 self.x_ms_immutability_policy_until_date = Some(x_ms_immutability_policy_until_date.into());
                 self
             }
+            #[doc = "Specifies the immutability policy mode to set on the blob."]
             pub fn x_ms_immutability_policy_mode(mut self, x_ms_immutability_policy_mode: impl Into<String>) -> Self {
                 self.x_ms_immutability_policy_mode = Some(x_ms_immutability_policy_mode.into());
                 self
             }
+            #[doc = "Specified if a legal hold should be set on the blob."]
             pub fn x_ms_legal_hold(mut self, x_ms_legal_hold: bool) -> Self {
                 self.x_ms_legal_hold = Some(x_ms_legal_hold);
                 self
             }
+            #[doc = "Only Bearer type is supported. Credentials should be a valid OAuth access token to copy source."]
             pub fn x_ms_copy_source_authorization(mut self, x_ms_copy_source_authorization: impl Into<String>) -> Self {
                 self.x_ms_copy_source_authorization = Some(x_ms_copy_source_authorization.into());
                 self
             }
+            #[doc = "Optional. Version 2019-07-07 and later.  Specifies the name of the encryption scope to use to encrypt the data provided in the request. If not specified, encryption is performed with the default account encryption scope.  For more information, see Encryption at Rest for Azure Storage Services."]
             pub fn x_ms_encryption_scope(mut self, x_ms_encryption_scope: impl Into<String>) -> Self {
                 self.x_ms_encryption_scope = Some(x_ms_encryption_scope.into());
                 self
             }
+            #[doc = "Optional, default 'replace'.  Indicates if source tags should be copied or replaced with the tags specified by x-ms-tags."]
             pub fn x_ms_copy_source_tag_option(mut self, x_ms_copy_source_tag_option: impl Into<String>) -> Self {
                 self.x_ms_copy_source_tag_option = Some(x_ms_copy_source_tag_option.into());
                 self
@@ -5585,14 +5862,17 @@ pub mod blob {
             pub(crate) x_ms_client_request_id: Option<String>,
         }
         impl Builder {
+            #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\">Setting Timeouts for Blob Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "If specified, the operation only succeeds if the resource's lease is active and matches this ID."]
             pub fn x_ms_lease_id(mut self, x_ms_lease_id: impl Into<String>) -> Self {
                 self.x_ms_lease_id = Some(x_ms_lease_id.into());
                 self
             }
+            #[doc = "Provides a client-generated, opaque value with a 1 KB character limit that is recorded in the analytics logs when storage analytics logging is enabled."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
@@ -5664,30 +5944,37 @@ pub mod blob {
             pub(crate) x_ms_if_tags: Option<String>,
         }
         impl Builder {
+            #[doc = "The snapshot parameter is an opaque DateTime value that, when present, specifies the blob snapshot to retrieve. For more information on working with blob snapshots, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/creating-a-snapshot-of-a-blob\">Creating a Snapshot of a Blob.</a>"]
             pub fn snapshot(mut self, snapshot: impl Into<String>) -> Self {
                 self.snapshot = Some(snapshot.into());
                 self
             }
+            #[doc = "The version id parameter is an opaque DateTime value that, when present, specifies the version of the blob to operate on. It's for service version 2019-10-10 and newer."]
             pub fn versionid(mut self, versionid: impl Into<String>) -> Self {
                 self.versionid = Some(versionid.into());
                 self
             }
+            #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\">Setting Timeouts for Blob Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "Optional: Indicates the priority with which to rehydrate an archived blob."]
             pub fn x_ms_rehydrate_priority(mut self, x_ms_rehydrate_priority: impl Into<String>) -> Self {
                 self.x_ms_rehydrate_priority = Some(x_ms_rehydrate_priority.into());
                 self
             }
+            #[doc = "Provides a client-generated, opaque value with a 1 KB character limit that is recorded in the analytics logs when storage analytics logging is enabled."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
             }
+            #[doc = "If specified, the operation only succeeds if the resource's lease is active and matches this ID."]
             pub fn x_ms_lease_id(mut self, x_ms_lease_id: impl Into<String>) -> Self {
                 self.x_ms_lease_id = Some(x_ms_lease_id.into());
                 self
             }
+            #[doc = "Specify a SQL where clause on blob tags to operate only on blobs with a matching value."]
             pub fn x_ms_if_tags(mut self, x_ms_if_tags: impl Into<String>) -> Self {
                 self.x_ms_if_tags = Some(x_ms_if_tags.into());
                 self
@@ -5822,54 +6109,67 @@ pub mod blob {
             pub(crate) x_ms_client_request_id: Option<String>,
         }
         impl Builder {
+            #[doc = "the query request"]
             pub fn query_request(mut self, query_request: impl Into<models::QueryRequest>) -> Self {
                 self.query_request = Some(query_request.into());
                 self
             }
+            #[doc = "The snapshot parameter is an opaque DateTime value that, when present, specifies the blob snapshot to retrieve. For more information on working with blob snapshots, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/creating-a-snapshot-of-a-blob\">Creating a Snapshot of a Blob.</a>"]
             pub fn snapshot(mut self, snapshot: impl Into<String>) -> Self {
                 self.snapshot = Some(snapshot.into());
                 self
             }
+            #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\">Setting Timeouts for Blob Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "If specified, the operation only succeeds if the resource's lease is active and matches this ID."]
             pub fn x_ms_lease_id(mut self, x_ms_lease_id: impl Into<String>) -> Self {
                 self.x_ms_lease_id = Some(x_ms_lease_id.into());
                 self
             }
+            #[doc = "Optional. Specifies the encryption key to use to encrypt the data provided in the request. If not specified, encryption is performed with the root account encryption key.  For more information, see Encryption at Rest for Azure Storage Services."]
             pub fn x_ms_encryption_key(mut self, x_ms_encryption_key: impl Into<String>) -> Self {
                 self.x_ms_encryption_key = Some(x_ms_encryption_key.into());
                 self
             }
+            #[doc = "The SHA-256 hash of the provided encryption key. Must be provided if the x-ms-encryption-key header is provided."]
             pub fn x_ms_encryption_key_sha256(mut self, x_ms_encryption_key_sha256: impl Into<String>) -> Self {
                 self.x_ms_encryption_key_sha256 = Some(x_ms_encryption_key_sha256.into());
                 self
             }
+            #[doc = "The algorithm used to produce the encryption key hash. Currently, the only accepted value is \"AES256\". Must be provided if the x-ms-encryption-key header is provided."]
             pub fn x_ms_encryption_algorithm(mut self, x_ms_encryption_algorithm: impl Into<String>) -> Self {
                 self.x_ms_encryption_algorithm = Some(x_ms_encryption_algorithm.into());
                 self
             }
+            #[doc = "Specify this header value to operate only on a blob if it has been modified since the specified date/time."]
             pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
+            #[doc = "Specify this header value to operate only on a blob if it has not been modified since the specified date/time."]
             pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
+            #[doc = "Specify an ETag value to operate only on blobs with a matching value."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
             }
+            #[doc = "Specify an ETag value to operate only on blobs without a matching value."]
             pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
                 self.if_none_match = Some(if_none_match.into());
                 self
             }
+            #[doc = "Specify a SQL where clause on blob tags to operate only on blobs with a matching value."]
             pub fn x_ms_if_tags(mut self, x_ms_if_tags: impl Into<String>) -> Self {
                 self.x_ms_if_tags = Some(x_ms_if_tags.into());
                 self
             }
+            #[doc = "Provides a client-generated, opaque value with a 1 KB character limit that is recorded in the analytics logs when storage analytics logging is enabled."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
@@ -5975,26 +6275,32 @@ pub mod blob {
             pub(crate) x_ms_lease_id: Option<String>,
         }
         impl Builder {
+            #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\">Setting Timeouts for Blob Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "Provides a client-generated, opaque value with a 1 KB character limit that is recorded in the analytics logs when storage analytics logging is enabled."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
             }
+            #[doc = "The snapshot parameter is an opaque DateTime value that, when present, specifies the blob snapshot to retrieve. For more information on working with blob snapshots, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/creating-a-snapshot-of-a-blob\">Creating a Snapshot of a Blob.</a>"]
             pub fn snapshot(mut self, snapshot: impl Into<String>) -> Self {
                 self.snapshot = Some(snapshot.into());
                 self
             }
+            #[doc = "The version id parameter is an opaque DateTime value that, when present, specifies the version of the blob to operate on. It's for service version 2019-10-10 and newer."]
             pub fn versionid(mut self, versionid: impl Into<String>) -> Self {
                 self.versionid = Some(versionid.into());
                 self
             }
+            #[doc = "Specify a SQL where clause on blob tags to operate only on blobs with a matching value."]
             pub fn x_ms_if_tags(mut self, x_ms_if_tags: impl Into<String>) -> Self {
                 self.x_ms_if_tags = Some(x_ms_if_tags.into());
                 self
             }
+            #[doc = "If specified, the operation only succeeds if the resource's lease is active and matches this ID."]
             pub fn x_ms_lease_id(mut self, x_ms_lease_id: impl Into<String>) -> Self {
                 self.x_ms_lease_id = Some(x_ms_lease_id.into());
                 self
@@ -6074,34 +6380,42 @@ pub mod blob {
             pub(crate) tags: Option<models::BlobTags>,
         }
         impl Builder {
+            #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\">Setting Timeouts for Blob Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "The version id parameter is an opaque DateTime value that, when present, specifies the version of the blob to operate on. It's for service version 2019-10-10 and newer."]
             pub fn versionid(mut self, versionid: impl Into<String>) -> Self {
                 self.versionid = Some(versionid.into());
                 self
             }
+            #[doc = "Specify the transactional md5 for the body, to be validated by the service."]
             pub fn content_md5(mut self, content_md5: impl Into<String>) -> Self {
                 self.content_md5 = Some(content_md5.into());
                 self
             }
+            #[doc = "Specify the transactional crc64 for the body, to be validated by the service."]
             pub fn x_ms_content_crc64(mut self, x_ms_content_crc64: impl Into<String>) -> Self {
                 self.x_ms_content_crc64 = Some(x_ms_content_crc64.into());
                 self
             }
+            #[doc = "Provides a client-generated, opaque value with a 1 KB character limit that is recorded in the analytics logs when storage analytics logging is enabled."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
             }
+            #[doc = "Specify a SQL where clause on blob tags to operate only on blobs with a matching value."]
             pub fn x_ms_if_tags(mut self, x_ms_if_tags: impl Into<String>) -> Self {
                 self.x_ms_if_tags = Some(x_ms_if_tags.into());
                 self
             }
+            #[doc = "If specified, the operation only succeeds if the resource's lease is active and matches this ID."]
             pub fn x_ms_lease_id(mut self, x_ms_lease_id: impl Into<String>) -> Self {
                 self.x_ms_lease_id = Some(x_ms_lease_id.into());
                 self
             }
+            #[doc = "Blob tags"]
             pub fn tags(mut self, tags: impl Into<models::BlobTags>) -> Self {
                 self.tags = Some(tags.into());
                 self
@@ -6565,102 +6879,127 @@ pub mod page_blob {
             pub(crate) x_ms_legal_hold: Option<bool>,
         }
         impl Builder {
+            #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\">Setting Timeouts for Blob Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "Optional. Indicates the tier to be set on the page blob."]
             pub fn x_ms_access_tier(mut self, x_ms_access_tier: impl Into<String>) -> Self {
                 self.x_ms_access_tier = Some(x_ms_access_tier.into());
                 self
             }
+            #[doc = "Optional. Sets the blob's content type. If specified, this property is stored with the blob and returned with a read request."]
             pub fn x_ms_blob_content_type(mut self, x_ms_blob_content_type: impl Into<String>) -> Self {
                 self.x_ms_blob_content_type = Some(x_ms_blob_content_type.into());
                 self
             }
+            #[doc = "Optional. Sets the blob's content encoding. If specified, this property is stored with the blob and returned with a read request."]
             pub fn x_ms_blob_content_encoding(mut self, x_ms_blob_content_encoding: impl Into<String>) -> Self {
                 self.x_ms_blob_content_encoding = Some(x_ms_blob_content_encoding.into());
                 self
             }
+            #[doc = "Optional. Set the blob's content language. If specified, this property is stored with the blob and returned with a read request."]
             pub fn x_ms_blob_content_language(mut self, x_ms_blob_content_language: impl Into<String>) -> Self {
                 self.x_ms_blob_content_language = Some(x_ms_blob_content_language.into());
                 self
             }
+            #[doc = "Optional. An MD5 hash of the blob content. Note that this hash is not validated, as the hashes for the individual blocks were validated when each was uploaded."]
             pub fn x_ms_blob_content_md5(mut self, x_ms_blob_content_md5: impl Into<String>) -> Self {
                 self.x_ms_blob_content_md5 = Some(x_ms_blob_content_md5.into());
                 self
             }
+            #[doc = "Optional. Sets the blob's cache control. If specified, this property is stored with the blob and returned with a read request."]
             pub fn x_ms_blob_cache_control(mut self, x_ms_blob_cache_control: impl Into<String>) -> Self {
                 self.x_ms_blob_cache_control = Some(x_ms_blob_cache_control.into());
                 self
             }
+            #[doc = "Optional. Specifies a user-defined name-value pair associated with the blob. If no name-value pairs are specified, the operation will copy the metadata from the source blob or file to the destination blob. If one or more name-value pairs are specified, the destination blob is created with the specified metadata, and metadata is not copied from the source blob or file. Note that beginning with version 2009-09-19, metadata names must adhere to the naming rules for C# identifiers. See Naming and Referencing Containers, Blobs, and Metadata for more information."]
             pub fn x_ms_meta(mut self, x_ms_meta: impl Into<String>) -> Self {
                 self.x_ms_meta = Some(x_ms_meta.into());
                 self
             }
+            #[doc = "If specified, the operation only succeeds if the resource's lease is active and matches this ID."]
             pub fn x_ms_lease_id(mut self, x_ms_lease_id: impl Into<String>) -> Self {
                 self.x_ms_lease_id = Some(x_ms_lease_id.into());
                 self
             }
+            #[doc = "Optional. Sets the blob's Content-Disposition header."]
             pub fn x_ms_blob_content_disposition(mut self, x_ms_blob_content_disposition: impl Into<String>) -> Self {
                 self.x_ms_blob_content_disposition = Some(x_ms_blob_content_disposition.into());
                 self
             }
+            #[doc = "Optional. Specifies the encryption key to use to encrypt the data provided in the request. If not specified, encryption is performed with the root account encryption key.  For more information, see Encryption at Rest for Azure Storage Services."]
             pub fn x_ms_encryption_key(mut self, x_ms_encryption_key: impl Into<String>) -> Self {
                 self.x_ms_encryption_key = Some(x_ms_encryption_key.into());
                 self
             }
+            #[doc = "The SHA-256 hash of the provided encryption key. Must be provided if the x-ms-encryption-key header is provided."]
             pub fn x_ms_encryption_key_sha256(mut self, x_ms_encryption_key_sha256: impl Into<String>) -> Self {
                 self.x_ms_encryption_key_sha256 = Some(x_ms_encryption_key_sha256.into());
                 self
             }
+            #[doc = "The algorithm used to produce the encryption key hash. Currently, the only accepted value is \"AES256\". Must be provided if the x-ms-encryption-key header is provided."]
             pub fn x_ms_encryption_algorithm(mut self, x_ms_encryption_algorithm: impl Into<String>) -> Self {
                 self.x_ms_encryption_algorithm = Some(x_ms_encryption_algorithm.into());
                 self
             }
+            #[doc = "Optional. Version 2019-07-07 and later.  Specifies the name of the encryption scope to use to encrypt the data provided in the request. If not specified, encryption is performed with the default account encryption scope.  For more information, see Encryption at Rest for Azure Storage Services."]
             pub fn x_ms_encryption_scope(mut self, x_ms_encryption_scope: impl Into<String>) -> Self {
                 self.x_ms_encryption_scope = Some(x_ms_encryption_scope.into());
                 self
             }
+            #[doc = "Specify this header value to operate only on a blob if it has been modified since the specified date/time."]
             pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
+            #[doc = "Specify this header value to operate only on a blob if it has not been modified since the specified date/time."]
             pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
+            #[doc = "Specify an ETag value to operate only on blobs with a matching value."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
             }
+            #[doc = "Specify an ETag value to operate only on blobs without a matching value."]
             pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
                 self.if_none_match = Some(if_none_match.into());
                 self
             }
+            #[doc = "Specify a SQL where clause on blob tags to operate only on blobs with a matching value."]
             pub fn x_ms_if_tags(mut self, x_ms_if_tags: impl Into<String>) -> Self {
                 self.x_ms_if_tags = Some(x_ms_if_tags.into());
                 self
             }
+            #[doc = "Set for page blobs only. The sequence number is a user-controlled value that you can use to track requests. The value of the sequence number must be between 0 and 2^63 - 1."]
             pub fn x_ms_blob_sequence_number(mut self, x_ms_blob_sequence_number: i64) -> Self {
                 self.x_ms_blob_sequence_number = Some(x_ms_blob_sequence_number);
                 self
             }
+            #[doc = "Provides a client-generated, opaque value with a 1 KB character limit that is recorded in the analytics logs when storage analytics logging is enabled."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
             }
+            #[doc = "Optional.  Used to set blob tags in various blob operations."]
             pub fn x_ms_tags(mut self, x_ms_tags: impl Into<String>) -> Self {
                 self.x_ms_tags = Some(x_ms_tags.into());
                 self
             }
+            #[doc = "Specifies the date time when the blobs immutability policy is set to expire."]
             pub fn x_ms_immutability_policy_until_date(mut self, x_ms_immutability_policy_until_date: impl Into<String>) -> Self {
                 self.x_ms_immutability_policy_until_date = Some(x_ms_immutability_policy_until_date.into());
                 self
             }
+            #[doc = "Specifies the immutability policy mode to set on the blob."]
             pub fn x_ms_immutability_policy_mode(mut self, x_ms_immutability_policy_mode: impl Into<String>) -> Self {
                 self.x_ms_immutability_policy_mode = Some(x_ms_immutability_policy_mode.into());
                 self
             }
+            #[doc = "Specified if a legal hold should be set on the blob."]
             pub fn x_ms_legal_hold(mut self, x_ms_legal_hold: bool) -> Self {
                 self.x_ms_legal_hold = Some(x_ms_legal_hold);
                 self
@@ -6809,74 +7148,92 @@ pub mod page_blob {
             pub(crate) x_ms_client_request_id: Option<String>,
         }
         impl Builder {
+            #[doc = "Specify the transactional md5 for the body, to be validated by the service."]
             pub fn content_md5(mut self, content_md5: impl Into<String>) -> Self {
                 self.content_md5 = Some(content_md5.into());
                 self
             }
+            #[doc = "Specify the transactional crc64 for the body, to be validated by the service."]
             pub fn x_ms_content_crc64(mut self, x_ms_content_crc64: impl Into<String>) -> Self {
                 self.x_ms_content_crc64 = Some(x_ms_content_crc64.into());
                 self
             }
+            #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\">Setting Timeouts for Blob Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "Return only the bytes of the blob in the specified range."]
             pub fn x_ms_range(mut self, x_ms_range: impl Into<String>) -> Self {
                 self.x_ms_range = Some(x_ms_range.into());
                 self
             }
+            #[doc = "If specified, the operation only succeeds if the resource's lease is active and matches this ID."]
             pub fn x_ms_lease_id(mut self, x_ms_lease_id: impl Into<String>) -> Self {
                 self.x_ms_lease_id = Some(x_ms_lease_id.into());
                 self
             }
+            #[doc = "Optional. Specifies the encryption key to use to encrypt the data provided in the request. If not specified, encryption is performed with the root account encryption key.  For more information, see Encryption at Rest for Azure Storage Services."]
             pub fn x_ms_encryption_key(mut self, x_ms_encryption_key: impl Into<String>) -> Self {
                 self.x_ms_encryption_key = Some(x_ms_encryption_key.into());
                 self
             }
+            #[doc = "The SHA-256 hash of the provided encryption key. Must be provided if the x-ms-encryption-key header is provided."]
             pub fn x_ms_encryption_key_sha256(mut self, x_ms_encryption_key_sha256: impl Into<String>) -> Self {
                 self.x_ms_encryption_key_sha256 = Some(x_ms_encryption_key_sha256.into());
                 self
             }
+            #[doc = "The algorithm used to produce the encryption key hash. Currently, the only accepted value is \"AES256\". Must be provided if the x-ms-encryption-key header is provided."]
             pub fn x_ms_encryption_algorithm(mut self, x_ms_encryption_algorithm: impl Into<String>) -> Self {
                 self.x_ms_encryption_algorithm = Some(x_ms_encryption_algorithm.into());
                 self
             }
+            #[doc = "Optional. Version 2019-07-07 and later.  Specifies the name of the encryption scope to use to encrypt the data provided in the request. If not specified, encryption is performed with the default account encryption scope.  For more information, see Encryption at Rest for Azure Storage Services."]
             pub fn x_ms_encryption_scope(mut self, x_ms_encryption_scope: impl Into<String>) -> Self {
                 self.x_ms_encryption_scope = Some(x_ms_encryption_scope.into());
                 self
             }
+            #[doc = "Specify this header value to operate only on a blob if it has a sequence number less than or equal to the specified."]
             pub fn x_ms_if_sequence_number_le(mut self, x_ms_if_sequence_number_le: i64) -> Self {
                 self.x_ms_if_sequence_number_le = Some(x_ms_if_sequence_number_le);
                 self
             }
+            #[doc = "Specify this header value to operate only on a blob if it has a sequence number less than the specified."]
             pub fn x_ms_if_sequence_number_lt(mut self, x_ms_if_sequence_number_lt: i64) -> Self {
                 self.x_ms_if_sequence_number_lt = Some(x_ms_if_sequence_number_lt);
                 self
             }
+            #[doc = "Specify this header value to operate only on a blob if it has the specified sequence number."]
             pub fn x_ms_if_sequence_number_eq(mut self, x_ms_if_sequence_number_eq: i64) -> Self {
                 self.x_ms_if_sequence_number_eq = Some(x_ms_if_sequence_number_eq);
                 self
             }
+            #[doc = "Specify this header value to operate only on a blob if it has been modified since the specified date/time."]
             pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
+            #[doc = "Specify this header value to operate only on a blob if it has not been modified since the specified date/time."]
             pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
+            #[doc = "Specify an ETag value to operate only on blobs with a matching value."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
             }
+            #[doc = "Specify an ETag value to operate only on blobs without a matching value."]
             pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
                 self.if_none_match = Some(if_none_match.into());
                 self
             }
+            #[doc = "Specify a SQL where clause on blob tags to operate only on blobs with a matching value."]
             pub fn x_ms_if_tags(mut self, x_ms_if_tags: impl Into<String>) -> Self {
                 self.x_ms_if_tags = Some(x_ms_if_tags.into());
                 self
             }
+            #[doc = "Provides a client-generated, opaque value with a 1 KB character limit that is recorded in the analytics logs when storage analytics logging is enabled."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
@@ -7001,66 +7358,82 @@ pub mod page_blob {
             pub(crate) x_ms_client_request_id: Option<String>,
         }
         impl Builder {
+            #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\">Setting Timeouts for Blob Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "Return only the bytes of the blob in the specified range."]
             pub fn x_ms_range(mut self, x_ms_range: impl Into<String>) -> Self {
                 self.x_ms_range = Some(x_ms_range.into());
                 self
             }
+            #[doc = "If specified, the operation only succeeds if the resource's lease is active and matches this ID."]
             pub fn x_ms_lease_id(mut self, x_ms_lease_id: impl Into<String>) -> Self {
                 self.x_ms_lease_id = Some(x_ms_lease_id.into());
                 self
             }
+            #[doc = "Optional. Specifies the encryption key to use to encrypt the data provided in the request. If not specified, encryption is performed with the root account encryption key.  For more information, see Encryption at Rest for Azure Storage Services."]
             pub fn x_ms_encryption_key(mut self, x_ms_encryption_key: impl Into<String>) -> Self {
                 self.x_ms_encryption_key = Some(x_ms_encryption_key.into());
                 self
             }
+            #[doc = "The SHA-256 hash of the provided encryption key. Must be provided if the x-ms-encryption-key header is provided."]
             pub fn x_ms_encryption_key_sha256(mut self, x_ms_encryption_key_sha256: impl Into<String>) -> Self {
                 self.x_ms_encryption_key_sha256 = Some(x_ms_encryption_key_sha256.into());
                 self
             }
+            #[doc = "The algorithm used to produce the encryption key hash. Currently, the only accepted value is \"AES256\". Must be provided if the x-ms-encryption-key header is provided."]
             pub fn x_ms_encryption_algorithm(mut self, x_ms_encryption_algorithm: impl Into<String>) -> Self {
                 self.x_ms_encryption_algorithm = Some(x_ms_encryption_algorithm.into());
                 self
             }
+            #[doc = "Optional. Version 2019-07-07 and later.  Specifies the name of the encryption scope to use to encrypt the data provided in the request. If not specified, encryption is performed with the default account encryption scope.  For more information, see Encryption at Rest for Azure Storage Services."]
             pub fn x_ms_encryption_scope(mut self, x_ms_encryption_scope: impl Into<String>) -> Self {
                 self.x_ms_encryption_scope = Some(x_ms_encryption_scope.into());
                 self
             }
+            #[doc = "Specify this header value to operate only on a blob if it has a sequence number less than or equal to the specified."]
             pub fn x_ms_if_sequence_number_le(mut self, x_ms_if_sequence_number_le: i64) -> Self {
                 self.x_ms_if_sequence_number_le = Some(x_ms_if_sequence_number_le);
                 self
             }
+            #[doc = "Specify this header value to operate only on a blob if it has a sequence number less than the specified."]
             pub fn x_ms_if_sequence_number_lt(mut self, x_ms_if_sequence_number_lt: i64) -> Self {
                 self.x_ms_if_sequence_number_lt = Some(x_ms_if_sequence_number_lt);
                 self
             }
+            #[doc = "Specify this header value to operate only on a blob if it has the specified sequence number."]
             pub fn x_ms_if_sequence_number_eq(mut self, x_ms_if_sequence_number_eq: i64) -> Self {
                 self.x_ms_if_sequence_number_eq = Some(x_ms_if_sequence_number_eq);
                 self
             }
+            #[doc = "Specify this header value to operate only on a blob if it has been modified since the specified date/time."]
             pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
+            #[doc = "Specify this header value to operate only on a blob if it has not been modified since the specified date/time."]
             pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
+            #[doc = "Specify an ETag value to operate only on blobs with a matching value."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
             }
+            #[doc = "Specify an ETag value to operate only on blobs without a matching value."]
             pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
                 self.if_none_match = Some(if_none_match.into());
                 self
             }
+            #[doc = "Specify a SQL where clause on blob tags to operate only on blobs with a matching value."]
             pub fn x_ms_if_tags(mut self, x_ms_if_tags: impl Into<String>) -> Self {
                 self.x_ms_if_tags = Some(x_ms_if_tags.into());
                 self
             }
+            #[doc = "Provides a client-generated, opaque value with a 1 KB character limit that is recorded in the analytics logs when storage analytics logging is enabled."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
@@ -7187,90 +7560,112 @@ pub mod page_blob {
             pub(crate) x_ms_copy_source_authorization: Option<String>,
         }
         impl Builder {
+            #[doc = "Specify the md5 calculated for the range of bytes that must be read from the copy source."]
             pub fn x_ms_source_content_md5(mut self, x_ms_source_content_md5: impl Into<String>) -> Self {
                 self.x_ms_source_content_md5 = Some(x_ms_source_content_md5.into());
                 self
             }
+            #[doc = "Specify the crc64 calculated for the range of bytes that must be read from the copy source."]
             pub fn x_ms_source_content_crc64(mut self, x_ms_source_content_crc64: impl Into<String>) -> Self {
                 self.x_ms_source_content_crc64 = Some(x_ms_source_content_crc64.into());
                 self
             }
+            #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\">Setting Timeouts for Blob Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "Optional. Specifies the encryption key to use to encrypt the data provided in the request. If not specified, encryption is performed with the root account encryption key.  For more information, see Encryption at Rest for Azure Storage Services."]
             pub fn x_ms_encryption_key(mut self, x_ms_encryption_key: impl Into<String>) -> Self {
                 self.x_ms_encryption_key = Some(x_ms_encryption_key.into());
                 self
             }
+            #[doc = "The SHA-256 hash of the provided encryption key. Must be provided if the x-ms-encryption-key header is provided."]
             pub fn x_ms_encryption_key_sha256(mut self, x_ms_encryption_key_sha256: impl Into<String>) -> Self {
                 self.x_ms_encryption_key_sha256 = Some(x_ms_encryption_key_sha256.into());
                 self
             }
+            #[doc = "The algorithm used to produce the encryption key hash. Currently, the only accepted value is \"AES256\". Must be provided if the x-ms-encryption-key header is provided."]
             pub fn x_ms_encryption_algorithm(mut self, x_ms_encryption_algorithm: impl Into<String>) -> Self {
                 self.x_ms_encryption_algorithm = Some(x_ms_encryption_algorithm.into());
                 self
             }
+            #[doc = "Optional. Version 2019-07-07 and later.  Specifies the name of the encryption scope to use to encrypt the data provided in the request. If not specified, encryption is performed with the default account encryption scope.  For more information, see Encryption at Rest for Azure Storage Services."]
             pub fn x_ms_encryption_scope(mut self, x_ms_encryption_scope: impl Into<String>) -> Self {
                 self.x_ms_encryption_scope = Some(x_ms_encryption_scope.into());
                 self
             }
+            #[doc = "If specified, the operation only succeeds if the resource's lease is active and matches this ID."]
             pub fn x_ms_lease_id(mut self, x_ms_lease_id: impl Into<String>) -> Self {
                 self.x_ms_lease_id = Some(x_ms_lease_id.into());
                 self
             }
+            #[doc = "Specify this header value to operate only on a blob if it has a sequence number less than or equal to the specified."]
             pub fn x_ms_if_sequence_number_le(mut self, x_ms_if_sequence_number_le: i64) -> Self {
                 self.x_ms_if_sequence_number_le = Some(x_ms_if_sequence_number_le);
                 self
             }
+            #[doc = "Specify this header value to operate only on a blob if it has a sequence number less than the specified."]
             pub fn x_ms_if_sequence_number_lt(mut self, x_ms_if_sequence_number_lt: i64) -> Self {
                 self.x_ms_if_sequence_number_lt = Some(x_ms_if_sequence_number_lt);
                 self
             }
+            #[doc = "Specify this header value to operate only on a blob if it has the specified sequence number."]
             pub fn x_ms_if_sequence_number_eq(mut self, x_ms_if_sequence_number_eq: i64) -> Self {
                 self.x_ms_if_sequence_number_eq = Some(x_ms_if_sequence_number_eq);
                 self
             }
+            #[doc = "Specify this header value to operate only on a blob if it has been modified since the specified date/time."]
             pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
+            #[doc = "Specify this header value to operate only on a blob if it has not been modified since the specified date/time."]
             pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
+            #[doc = "Specify an ETag value to operate only on blobs with a matching value."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
             }
+            #[doc = "Specify an ETag value to operate only on blobs without a matching value."]
             pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
                 self.if_none_match = Some(if_none_match.into());
                 self
             }
+            #[doc = "Specify a SQL where clause on blob tags to operate only on blobs with a matching value."]
             pub fn x_ms_if_tags(mut self, x_ms_if_tags: impl Into<String>) -> Self {
                 self.x_ms_if_tags = Some(x_ms_if_tags.into());
                 self
             }
+            #[doc = "Specify this header value to operate only on a blob if it has been modified since the specified date/time."]
             pub fn x_ms_source_if_modified_since(mut self, x_ms_source_if_modified_since: impl Into<String>) -> Self {
                 self.x_ms_source_if_modified_since = Some(x_ms_source_if_modified_since.into());
                 self
             }
+            #[doc = "Specify this header value to operate only on a blob if it has not been modified since the specified date/time."]
             pub fn x_ms_source_if_unmodified_since(mut self, x_ms_source_if_unmodified_since: impl Into<String>) -> Self {
                 self.x_ms_source_if_unmodified_since = Some(x_ms_source_if_unmodified_since.into());
                 self
             }
+            #[doc = "Specify an ETag value to operate only on blobs with a matching value."]
             pub fn x_ms_source_if_match(mut self, x_ms_source_if_match: impl Into<String>) -> Self {
                 self.x_ms_source_if_match = Some(x_ms_source_if_match.into());
                 self
             }
+            #[doc = "Specify an ETag value to operate only on blobs without a matching value."]
             pub fn x_ms_source_if_none_match(mut self, x_ms_source_if_none_match: impl Into<String>) -> Self {
                 self.x_ms_source_if_none_match = Some(x_ms_source_if_none_match.into());
                 self
             }
+            #[doc = "Provides a client-generated, opaque value with a 1 KB character limit that is recorded in the analytics logs when storage analytics logging is enabled."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
             }
+            #[doc = "Only Bearer type is supported. Credentials should be a valid OAuth access token to copy source."]
             pub fn x_ms_copy_source_authorization(mut self, x_ms_copy_source_authorization: impl Into<String>) -> Self {
                 self.x_ms_copy_source_authorization = Some(x_ms_copy_source_authorization.into());
                 self
@@ -7403,50 +7798,62 @@ pub mod page_blob {
             pub(crate) maxresults: Option<i64>,
         }
         impl Builder {
+            #[doc = "The snapshot parameter is an opaque DateTime value that, when present, specifies the blob snapshot to retrieve. For more information on working with blob snapshots, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/creating-a-snapshot-of-a-blob\">Creating a Snapshot of a Blob.</a>"]
             pub fn snapshot(mut self, snapshot: impl Into<String>) -> Self {
                 self.snapshot = Some(snapshot.into());
                 self
             }
+            #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\">Setting Timeouts for Blob Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "Return only the bytes of the blob in the specified range."]
             pub fn x_ms_range(mut self, x_ms_range: impl Into<String>) -> Self {
                 self.x_ms_range = Some(x_ms_range.into());
                 self
             }
+            #[doc = "If specified, the operation only succeeds if the resource's lease is active and matches this ID."]
             pub fn x_ms_lease_id(mut self, x_ms_lease_id: impl Into<String>) -> Self {
                 self.x_ms_lease_id = Some(x_ms_lease_id.into());
                 self
             }
+            #[doc = "Specify this header value to operate only on a blob if it has been modified since the specified date/time."]
             pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
+            #[doc = "Specify this header value to operate only on a blob if it has not been modified since the specified date/time."]
             pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
+            #[doc = "Specify an ETag value to operate only on blobs with a matching value."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
             }
+            #[doc = "Specify an ETag value to operate only on blobs without a matching value."]
             pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
                 self.if_none_match = Some(if_none_match.into());
                 self
             }
+            #[doc = "Specify a SQL where clause on blob tags to operate only on blobs with a matching value."]
             pub fn x_ms_if_tags(mut self, x_ms_if_tags: impl Into<String>) -> Self {
                 self.x_ms_if_tags = Some(x_ms_if_tags.into());
                 self
             }
+            #[doc = "Provides a client-generated, opaque value with a 1 KB character limit that is recorded in the analytics logs when storage analytics logging is enabled."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
             }
+            #[doc = "A string value that identifies the portion of the list of containers to be returned with the next listing operation. The operation returns the NextMarker value within the response body if the listing operation did not return all containers remaining to be listed with the current page. The NextMarker value can be used as the value for the marker parameter in a subsequent call to request the next page of list items. The marker value is opaque to the client."]
             pub fn marker(mut self, marker: impl Into<String>) -> Self {
                 self.marker = Some(marker.into());
                 self
             }
+            #[doc = "Specifies the maximum number of containers to return. If the request does not specify maxresults, or specifies a value greater than 5000, the server will return up to 5000 items. Note that if the listing operation crosses a partition boundary, then the service will return a continuation token for retrieving the remainder of the results. For this reason, it is possible that the service will return fewer results than specified by maxresults, or than the default of 5000."]
             pub fn maxresults(mut self, maxresults: i64) -> Self {
                 self.maxresults = Some(maxresults);
                 self
@@ -7569,58 +7976,72 @@ pub mod page_blob {
             pub(crate) maxresults: Option<i64>,
         }
         impl Builder {
+            #[doc = "The snapshot parameter is an opaque DateTime value that, when present, specifies the blob snapshot to retrieve. For more information on working with blob snapshots, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/creating-a-snapshot-of-a-blob\">Creating a Snapshot of a Blob.</a>"]
             pub fn snapshot(mut self, snapshot: impl Into<String>) -> Self {
                 self.snapshot = Some(snapshot.into());
                 self
             }
+            #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\">Setting Timeouts for Blob Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "Optional in version 2015-07-08 and newer. The prevsnapshot parameter is a DateTime value that specifies that the response will contain only pages that were changed between target blob and previous snapshot. Changed pages include both updated and cleared pages. The target blob may be a snapshot, as long as the snapshot specified by prevsnapshot is the older of the two. Note that incremental snapshots are currently supported only for blobs created on or after January 1, 2016."]
             pub fn prevsnapshot(mut self, prevsnapshot: impl Into<String>) -> Self {
                 self.prevsnapshot = Some(prevsnapshot.into());
                 self
             }
+            #[doc = "Optional. This header is only supported in service versions 2019-04-19 and after and specifies the URL of a previous snapshot of the target blob. The response will only contain pages that were changed between the target blob and its previous snapshot."]
             pub fn x_ms_previous_snapshot_url(mut self, x_ms_previous_snapshot_url: impl Into<String>) -> Self {
                 self.x_ms_previous_snapshot_url = Some(x_ms_previous_snapshot_url.into());
                 self
             }
+            #[doc = "Return only the bytes of the blob in the specified range."]
             pub fn x_ms_range(mut self, x_ms_range: impl Into<String>) -> Self {
                 self.x_ms_range = Some(x_ms_range.into());
                 self
             }
+            #[doc = "If specified, the operation only succeeds if the resource's lease is active and matches this ID."]
             pub fn x_ms_lease_id(mut self, x_ms_lease_id: impl Into<String>) -> Self {
                 self.x_ms_lease_id = Some(x_ms_lease_id.into());
                 self
             }
+            #[doc = "Specify this header value to operate only on a blob if it has been modified since the specified date/time."]
             pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
+            #[doc = "Specify this header value to operate only on a blob if it has not been modified since the specified date/time."]
             pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
+            #[doc = "Specify an ETag value to operate only on blobs with a matching value."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
             }
+            #[doc = "Specify an ETag value to operate only on blobs without a matching value."]
             pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
                 self.if_none_match = Some(if_none_match.into());
                 self
             }
+            #[doc = "Specify a SQL where clause on blob tags to operate only on blobs with a matching value."]
             pub fn x_ms_if_tags(mut self, x_ms_if_tags: impl Into<String>) -> Self {
                 self.x_ms_if_tags = Some(x_ms_if_tags.into());
                 self
             }
+            #[doc = "Provides a client-generated, opaque value with a 1 KB character limit that is recorded in the analytics logs when storage analytics logging is enabled."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
             }
+            #[doc = "A string value that identifies the portion of the list of containers to be returned with the next listing operation. The operation returns the NextMarker value within the response body if the listing operation did not return all containers remaining to be listed with the current page. The NextMarker value can be used as the value for the marker parameter in a subsequent call to request the next page of list items. The marker value is opaque to the client."]
             pub fn marker(mut self, marker: impl Into<String>) -> Self {
                 self.marker = Some(marker.into());
                 self
             }
+            #[doc = "Specifies the maximum number of containers to return. If the request does not specify maxresults, or specifies a value greater than 5000, the server will return up to 5000 items. Note that if the listing operation crosses a partition boundary, then the service will return a continuation token for retrieving the remainder of the results. For this reason, it is possible that the service will return fewer results than specified by maxresults, or than the default of 5000."]
             pub fn maxresults(mut self, maxresults: i64) -> Self {
                 self.maxresults = Some(maxresults);
                 self
@@ -7748,50 +8169,62 @@ pub mod page_blob {
             pub(crate) x_ms_client_request_id: Option<String>,
         }
         impl Builder {
+            #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\">Setting Timeouts for Blob Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "If specified, the operation only succeeds if the resource's lease is active and matches this ID."]
             pub fn x_ms_lease_id(mut self, x_ms_lease_id: impl Into<String>) -> Self {
                 self.x_ms_lease_id = Some(x_ms_lease_id.into());
                 self
             }
+            #[doc = "Optional. Specifies the encryption key to use to encrypt the data provided in the request. If not specified, encryption is performed with the root account encryption key.  For more information, see Encryption at Rest for Azure Storage Services."]
             pub fn x_ms_encryption_key(mut self, x_ms_encryption_key: impl Into<String>) -> Self {
                 self.x_ms_encryption_key = Some(x_ms_encryption_key.into());
                 self
             }
+            #[doc = "The SHA-256 hash of the provided encryption key. Must be provided if the x-ms-encryption-key header is provided."]
             pub fn x_ms_encryption_key_sha256(mut self, x_ms_encryption_key_sha256: impl Into<String>) -> Self {
                 self.x_ms_encryption_key_sha256 = Some(x_ms_encryption_key_sha256.into());
                 self
             }
+            #[doc = "The algorithm used to produce the encryption key hash. Currently, the only accepted value is \"AES256\". Must be provided if the x-ms-encryption-key header is provided."]
             pub fn x_ms_encryption_algorithm(mut self, x_ms_encryption_algorithm: impl Into<String>) -> Self {
                 self.x_ms_encryption_algorithm = Some(x_ms_encryption_algorithm.into());
                 self
             }
+            #[doc = "Optional. Version 2019-07-07 and later.  Specifies the name of the encryption scope to use to encrypt the data provided in the request. If not specified, encryption is performed with the default account encryption scope.  For more information, see Encryption at Rest for Azure Storage Services."]
             pub fn x_ms_encryption_scope(mut self, x_ms_encryption_scope: impl Into<String>) -> Self {
                 self.x_ms_encryption_scope = Some(x_ms_encryption_scope.into());
                 self
             }
+            #[doc = "Specify this header value to operate only on a blob if it has been modified since the specified date/time."]
             pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
+            #[doc = "Specify this header value to operate only on a blob if it has not been modified since the specified date/time."]
             pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
+            #[doc = "Specify an ETag value to operate only on blobs with a matching value."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
             }
+            #[doc = "Specify an ETag value to operate only on blobs without a matching value."]
             pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
                 self.if_none_match = Some(if_none_match.into());
                 self
             }
+            #[doc = "Specify a SQL where clause on blob tags to operate only on blobs with a matching value."]
             pub fn x_ms_if_tags(mut self, x_ms_if_tags: impl Into<String>) -> Self {
                 self.x_ms_if_tags = Some(x_ms_if_tags.into());
                 self
             }
+            #[doc = "Provides a client-generated, opaque value with a 1 KB character limit that is recorded in the analytics logs when storage analytics logging is enabled."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
@@ -7888,38 +8321,47 @@ pub mod page_blob {
             pub(crate) x_ms_client_request_id: Option<String>,
         }
         impl Builder {
+            #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\">Setting Timeouts for Blob Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "If specified, the operation only succeeds if the resource's lease is active and matches this ID."]
             pub fn x_ms_lease_id(mut self, x_ms_lease_id: impl Into<String>) -> Self {
                 self.x_ms_lease_id = Some(x_ms_lease_id.into());
                 self
             }
+            #[doc = "Specify this header value to operate only on a blob if it has been modified since the specified date/time."]
             pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
+            #[doc = "Specify this header value to operate only on a blob if it has not been modified since the specified date/time."]
             pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
+            #[doc = "Specify an ETag value to operate only on blobs with a matching value."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
             }
+            #[doc = "Specify an ETag value to operate only on blobs without a matching value."]
             pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
                 self.if_none_match = Some(if_none_match.into());
                 self
             }
+            #[doc = "Specify a SQL where clause on blob tags to operate only on blobs with a matching value."]
             pub fn x_ms_if_tags(mut self, x_ms_if_tags: impl Into<String>) -> Self {
                 self.x_ms_if_tags = Some(x_ms_if_tags.into());
                 self
             }
+            #[doc = "Set for page blobs only. The sequence number is a user-controlled value that you can use to track requests. The value of the sequence number must be between 0 and 2^63 - 1."]
             pub fn x_ms_blob_sequence_number(mut self, x_ms_blob_sequence_number: i64) -> Self {
                 self.x_ms_blob_sequence_number = Some(x_ms_blob_sequence_number);
                 self
             }
+            #[doc = "Provides a client-generated, opaque value with a 1 KB character limit that is recorded in the analytics logs when storage analytics logging is enabled."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
@@ -8005,30 +8447,37 @@ pub mod page_blob {
             pub(crate) x_ms_client_request_id: Option<String>,
         }
         impl Builder {
+            #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\">Setting Timeouts for Blob Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "Specify this header value to operate only on a blob if it has been modified since the specified date/time."]
             pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
+            #[doc = "Specify this header value to operate only on a blob if it has not been modified since the specified date/time."]
             pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
+            #[doc = "Specify an ETag value to operate only on blobs with a matching value."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
             }
+            #[doc = "Specify an ETag value to operate only on blobs without a matching value."]
             pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
                 self.if_none_match = Some(if_none_match.into());
                 self
             }
+            #[doc = "Specify a SQL where clause on blob tags to operate only on blobs with a matching value."]
             pub fn x_ms_if_tags(mut self, x_ms_if_tags: impl Into<String>) -> Self {
                 self.x_ms_if_tags = Some(x_ms_if_tags.into());
                 self
             }
+            #[doc = "Provides a client-generated, opaque value with a 1 KB character limit that is recorded in the analytics logs when storage analytics logging is enabled."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
@@ -8290,94 +8739,117 @@ pub mod append_blob {
             pub(crate) x_ms_legal_hold: Option<bool>,
         }
         impl Builder {
+            #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\">Setting Timeouts for Blob Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "Optional. Sets the blob's content type. If specified, this property is stored with the blob and returned with a read request."]
             pub fn x_ms_blob_content_type(mut self, x_ms_blob_content_type: impl Into<String>) -> Self {
                 self.x_ms_blob_content_type = Some(x_ms_blob_content_type.into());
                 self
             }
+            #[doc = "Optional. Sets the blob's content encoding. If specified, this property is stored with the blob and returned with a read request."]
             pub fn x_ms_blob_content_encoding(mut self, x_ms_blob_content_encoding: impl Into<String>) -> Self {
                 self.x_ms_blob_content_encoding = Some(x_ms_blob_content_encoding.into());
                 self
             }
+            #[doc = "Optional. Set the blob's content language. If specified, this property is stored with the blob and returned with a read request."]
             pub fn x_ms_blob_content_language(mut self, x_ms_blob_content_language: impl Into<String>) -> Self {
                 self.x_ms_blob_content_language = Some(x_ms_blob_content_language.into());
                 self
             }
+            #[doc = "Optional. An MD5 hash of the blob content. Note that this hash is not validated, as the hashes for the individual blocks were validated when each was uploaded."]
             pub fn x_ms_blob_content_md5(mut self, x_ms_blob_content_md5: impl Into<String>) -> Self {
                 self.x_ms_blob_content_md5 = Some(x_ms_blob_content_md5.into());
                 self
             }
+            #[doc = "Optional. Sets the blob's cache control. If specified, this property is stored with the blob and returned with a read request."]
             pub fn x_ms_blob_cache_control(mut self, x_ms_blob_cache_control: impl Into<String>) -> Self {
                 self.x_ms_blob_cache_control = Some(x_ms_blob_cache_control.into());
                 self
             }
+            #[doc = "Optional. Specifies a user-defined name-value pair associated with the blob. If no name-value pairs are specified, the operation will copy the metadata from the source blob or file to the destination blob. If one or more name-value pairs are specified, the destination blob is created with the specified metadata, and metadata is not copied from the source blob or file. Note that beginning with version 2009-09-19, metadata names must adhere to the naming rules for C# identifiers. See Naming and Referencing Containers, Blobs, and Metadata for more information."]
             pub fn x_ms_meta(mut self, x_ms_meta: impl Into<String>) -> Self {
                 self.x_ms_meta = Some(x_ms_meta.into());
                 self
             }
+            #[doc = "If specified, the operation only succeeds if the resource's lease is active and matches this ID."]
             pub fn x_ms_lease_id(mut self, x_ms_lease_id: impl Into<String>) -> Self {
                 self.x_ms_lease_id = Some(x_ms_lease_id.into());
                 self
             }
+            #[doc = "Optional. Sets the blob's Content-Disposition header."]
             pub fn x_ms_blob_content_disposition(mut self, x_ms_blob_content_disposition: impl Into<String>) -> Self {
                 self.x_ms_blob_content_disposition = Some(x_ms_blob_content_disposition.into());
                 self
             }
+            #[doc = "Optional. Specifies the encryption key to use to encrypt the data provided in the request. If not specified, encryption is performed with the root account encryption key.  For more information, see Encryption at Rest for Azure Storage Services."]
             pub fn x_ms_encryption_key(mut self, x_ms_encryption_key: impl Into<String>) -> Self {
                 self.x_ms_encryption_key = Some(x_ms_encryption_key.into());
                 self
             }
+            #[doc = "The SHA-256 hash of the provided encryption key. Must be provided if the x-ms-encryption-key header is provided."]
             pub fn x_ms_encryption_key_sha256(mut self, x_ms_encryption_key_sha256: impl Into<String>) -> Self {
                 self.x_ms_encryption_key_sha256 = Some(x_ms_encryption_key_sha256.into());
                 self
             }
+            #[doc = "The algorithm used to produce the encryption key hash. Currently, the only accepted value is \"AES256\". Must be provided if the x-ms-encryption-key header is provided."]
             pub fn x_ms_encryption_algorithm(mut self, x_ms_encryption_algorithm: impl Into<String>) -> Self {
                 self.x_ms_encryption_algorithm = Some(x_ms_encryption_algorithm.into());
                 self
             }
+            #[doc = "Optional. Version 2019-07-07 and later.  Specifies the name of the encryption scope to use to encrypt the data provided in the request. If not specified, encryption is performed with the default account encryption scope.  For more information, see Encryption at Rest for Azure Storage Services."]
             pub fn x_ms_encryption_scope(mut self, x_ms_encryption_scope: impl Into<String>) -> Self {
                 self.x_ms_encryption_scope = Some(x_ms_encryption_scope.into());
                 self
             }
+            #[doc = "Specify this header value to operate only on a blob if it has been modified since the specified date/time."]
             pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
+            #[doc = "Specify this header value to operate only on a blob if it has not been modified since the specified date/time."]
             pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
+            #[doc = "Specify an ETag value to operate only on blobs with a matching value."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
             }
+            #[doc = "Specify an ETag value to operate only on blobs without a matching value."]
             pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
                 self.if_none_match = Some(if_none_match.into());
                 self
             }
+            #[doc = "Specify a SQL where clause on blob tags to operate only on blobs with a matching value."]
             pub fn x_ms_if_tags(mut self, x_ms_if_tags: impl Into<String>) -> Self {
                 self.x_ms_if_tags = Some(x_ms_if_tags.into());
                 self
             }
+            #[doc = "Provides a client-generated, opaque value with a 1 KB character limit that is recorded in the analytics logs when storage analytics logging is enabled."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
             }
+            #[doc = "Optional.  Used to set blob tags in various blob operations."]
             pub fn x_ms_tags(mut self, x_ms_tags: impl Into<String>) -> Self {
                 self.x_ms_tags = Some(x_ms_tags.into());
                 self
             }
+            #[doc = "Specifies the date time when the blobs immutability policy is set to expire."]
             pub fn x_ms_immutability_policy_until_date(mut self, x_ms_immutability_policy_until_date: impl Into<String>) -> Self {
                 self.x_ms_immutability_policy_until_date = Some(x_ms_immutability_policy_until_date.into());
                 self
             }
+            #[doc = "Specifies the immutability policy mode to set on the blob."]
             pub fn x_ms_immutability_policy_mode(mut self, x_ms_immutability_policy_mode: impl Into<String>) -> Self {
                 self.x_ms_immutability_policy_mode = Some(x_ms_immutability_policy_mode.into());
                 self
             }
+            #[doc = "Specified if a legal hold should be set on the blob."]
             pub fn x_ms_legal_hold(mut self, x_ms_legal_hold: bool) -> Self {
                 self.x_ms_legal_hold = Some(x_ms_legal_hold);
                 self
@@ -8516,66 +8988,82 @@ pub mod append_blob {
             pub(crate) x_ms_client_request_id: Option<String>,
         }
         impl Builder {
+            #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\">Setting Timeouts for Blob Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "Specify the transactional md5 for the body, to be validated by the service."]
             pub fn content_md5(mut self, content_md5: impl Into<String>) -> Self {
                 self.content_md5 = Some(content_md5.into());
                 self
             }
+            #[doc = "Specify the transactional crc64 for the body, to be validated by the service."]
             pub fn x_ms_content_crc64(mut self, x_ms_content_crc64: impl Into<String>) -> Self {
                 self.x_ms_content_crc64 = Some(x_ms_content_crc64.into());
                 self
             }
+            #[doc = "If specified, the operation only succeeds if the resource's lease is active and matches this ID."]
             pub fn x_ms_lease_id(mut self, x_ms_lease_id: impl Into<String>) -> Self {
                 self.x_ms_lease_id = Some(x_ms_lease_id.into());
                 self
             }
+            #[doc = "Optional conditional header. The max length in bytes permitted for the append blob. If the Append Block operation would cause the blob to exceed that limit or if the blob size is already greater than the value specified in this header, the request will fail with MaxBlobSizeConditionNotMet error (HTTP status code 412 - Precondition Failed)."]
             pub fn x_ms_blob_condition_maxsize(mut self, x_ms_blob_condition_maxsize: i64) -> Self {
                 self.x_ms_blob_condition_maxsize = Some(x_ms_blob_condition_maxsize);
                 self
             }
+            #[doc = "Optional conditional header, used only for the Append Block operation. A number indicating the byte offset to compare. Append Block will succeed only if the append position is equal to this number. If it is not, the request will fail with the AppendPositionConditionNotMet error (HTTP status code 412 - Precondition Failed)."]
             pub fn x_ms_blob_condition_appendpos(mut self, x_ms_blob_condition_appendpos: i64) -> Self {
                 self.x_ms_blob_condition_appendpos = Some(x_ms_blob_condition_appendpos);
                 self
             }
+            #[doc = "Optional. Specifies the encryption key to use to encrypt the data provided in the request. If not specified, encryption is performed with the root account encryption key.  For more information, see Encryption at Rest for Azure Storage Services."]
             pub fn x_ms_encryption_key(mut self, x_ms_encryption_key: impl Into<String>) -> Self {
                 self.x_ms_encryption_key = Some(x_ms_encryption_key.into());
                 self
             }
+            #[doc = "The SHA-256 hash of the provided encryption key. Must be provided if the x-ms-encryption-key header is provided."]
             pub fn x_ms_encryption_key_sha256(mut self, x_ms_encryption_key_sha256: impl Into<String>) -> Self {
                 self.x_ms_encryption_key_sha256 = Some(x_ms_encryption_key_sha256.into());
                 self
             }
+            #[doc = "The algorithm used to produce the encryption key hash. Currently, the only accepted value is \"AES256\". Must be provided if the x-ms-encryption-key header is provided."]
             pub fn x_ms_encryption_algorithm(mut self, x_ms_encryption_algorithm: impl Into<String>) -> Self {
                 self.x_ms_encryption_algorithm = Some(x_ms_encryption_algorithm.into());
                 self
             }
+            #[doc = "Optional. Version 2019-07-07 and later.  Specifies the name of the encryption scope to use to encrypt the data provided in the request. If not specified, encryption is performed with the default account encryption scope.  For more information, see Encryption at Rest for Azure Storage Services."]
             pub fn x_ms_encryption_scope(mut self, x_ms_encryption_scope: impl Into<String>) -> Self {
                 self.x_ms_encryption_scope = Some(x_ms_encryption_scope.into());
                 self
             }
+            #[doc = "Specify this header value to operate only on a blob if it has been modified since the specified date/time."]
             pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
+            #[doc = "Specify this header value to operate only on a blob if it has not been modified since the specified date/time."]
             pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
+            #[doc = "Specify an ETag value to operate only on blobs with a matching value."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
             }
+            #[doc = "Specify an ETag value to operate only on blobs without a matching value."]
             pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
                 self.if_none_match = Some(if_none_match.into());
                 self
             }
+            #[doc = "Specify a SQL where clause on blob tags to operate only on blobs with a matching value."]
             pub fn x_ms_if_tags(mut self, x_ms_if_tags: impl Into<String>) -> Self {
                 self.x_ms_if_tags = Some(x_ms_if_tags.into());
                 self
             }
+            #[doc = "Provides a client-generated, opaque value with a 1 KB character limit that is recorded in the analytics logs when storage analytics logging is enabled."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
@@ -8700,94 +9188,117 @@ pub mod append_blob {
             pub(crate) x_ms_copy_source_authorization: Option<String>,
         }
         impl Builder {
+            #[doc = "Bytes of source data in the specified range."]
             pub fn x_ms_source_range(mut self, x_ms_source_range: impl Into<String>) -> Self {
                 self.x_ms_source_range = Some(x_ms_source_range.into());
                 self
             }
+            #[doc = "Specify the md5 calculated for the range of bytes that must be read from the copy source."]
             pub fn x_ms_source_content_md5(mut self, x_ms_source_content_md5: impl Into<String>) -> Self {
                 self.x_ms_source_content_md5 = Some(x_ms_source_content_md5.into());
                 self
             }
+            #[doc = "Specify the crc64 calculated for the range of bytes that must be read from the copy source."]
             pub fn x_ms_source_content_crc64(mut self, x_ms_source_content_crc64: impl Into<String>) -> Self {
                 self.x_ms_source_content_crc64 = Some(x_ms_source_content_crc64.into());
                 self
             }
+            #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\">Setting Timeouts for Blob Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "Specify the transactional md5 for the body, to be validated by the service."]
             pub fn content_md5(mut self, content_md5: impl Into<String>) -> Self {
                 self.content_md5 = Some(content_md5.into());
                 self
             }
+            #[doc = "Optional. Specifies the encryption key to use to encrypt the data provided in the request. If not specified, encryption is performed with the root account encryption key.  For more information, see Encryption at Rest for Azure Storage Services."]
             pub fn x_ms_encryption_key(mut self, x_ms_encryption_key: impl Into<String>) -> Self {
                 self.x_ms_encryption_key = Some(x_ms_encryption_key.into());
                 self
             }
+            #[doc = "The SHA-256 hash of the provided encryption key. Must be provided if the x-ms-encryption-key header is provided."]
             pub fn x_ms_encryption_key_sha256(mut self, x_ms_encryption_key_sha256: impl Into<String>) -> Self {
                 self.x_ms_encryption_key_sha256 = Some(x_ms_encryption_key_sha256.into());
                 self
             }
+            #[doc = "The algorithm used to produce the encryption key hash. Currently, the only accepted value is \"AES256\". Must be provided if the x-ms-encryption-key header is provided."]
             pub fn x_ms_encryption_algorithm(mut self, x_ms_encryption_algorithm: impl Into<String>) -> Self {
                 self.x_ms_encryption_algorithm = Some(x_ms_encryption_algorithm.into());
                 self
             }
+            #[doc = "Optional. Version 2019-07-07 and later.  Specifies the name of the encryption scope to use to encrypt the data provided in the request. If not specified, encryption is performed with the default account encryption scope.  For more information, see Encryption at Rest for Azure Storage Services."]
             pub fn x_ms_encryption_scope(mut self, x_ms_encryption_scope: impl Into<String>) -> Self {
                 self.x_ms_encryption_scope = Some(x_ms_encryption_scope.into());
                 self
             }
+            #[doc = "If specified, the operation only succeeds if the resource's lease is active and matches this ID."]
             pub fn x_ms_lease_id(mut self, x_ms_lease_id: impl Into<String>) -> Self {
                 self.x_ms_lease_id = Some(x_ms_lease_id.into());
                 self
             }
+            #[doc = "Optional conditional header. The max length in bytes permitted for the append blob. If the Append Block operation would cause the blob to exceed that limit or if the blob size is already greater than the value specified in this header, the request will fail with MaxBlobSizeConditionNotMet error (HTTP status code 412 - Precondition Failed)."]
             pub fn x_ms_blob_condition_maxsize(mut self, x_ms_blob_condition_maxsize: i64) -> Self {
                 self.x_ms_blob_condition_maxsize = Some(x_ms_blob_condition_maxsize);
                 self
             }
+            #[doc = "Optional conditional header, used only for the Append Block operation. A number indicating the byte offset to compare. Append Block will succeed only if the append position is equal to this number. If it is not, the request will fail with the AppendPositionConditionNotMet error (HTTP status code 412 - Precondition Failed)."]
             pub fn x_ms_blob_condition_appendpos(mut self, x_ms_blob_condition_appendpos: i64) -> Self {
                 self.x_ms_blob_condition_appendpos = Some(x_ms_blob_condition_appendpos);
                 self
             }
+            #[doc = "Specify this header value to operate only on a blob if it has been modified since the specified date/time."]
             pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
+            #[doc = "Specify this header value to operate only on a blob if it has not been modified since the specified date/time."]
             pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
+            #[doc = "Specify an ETag value to operate only on blobs with a matching value."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
             }
+            #[doc = "Specify an ETag value to operate only on blobs without a matching value."]
             pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
                 self.if_none_match = Some(if_none_match.into());
                 self
             }
+            #[doc = "Specify a SQL where clause on blob tags to operate only on blobs with a matching value."]
             pub fn x_ms_if_tags(mut self, x_ms_if_tags: impl Into<String>) -> Self {
                 self.x_ms_if_tags = Some(x_ms_if_tags.into());
                 self
             }
+            #[doc = "Specify this header value to operate only on a blob if it has been modified since the specified date/time."]
             pub fn x_ms_source_if_modified_since(mut self, x_ms_source_if_modified_since: impl Into<String>) -> Self {
                 self.x_ms_source_if_modified_since = Some(x_ms_source_if_modified_since.into());
                 self
             }
+            #[doc = "Specify this header value to operate only on a blob if it has not been modified since the specified date/time."]
             pub fn x_ms_source_if_unmodified_since(mut self, x_ms_source_if_unmodified_since: impl Into<String>) -> Self {
                 self.x_ms_source_if_unmodified_since = Some(x_ms_source_if_unmodified_since.into());
                 self
             }
+            #[doc = "Specify an ETag value to operate only on blobs with a matching value."]
             pub fn x_ms_source_if_match(mut self, x_ms_source_if_match: impl Into<String>) -> Self {
                 self.x_ms_source_if_match = Some(x_ms_source_if_match.into());
                 self
             }
+            #[doc = "Specify an ETag value to operate only on blobs without a matching value."]
             pub fn x_ms_source_if_none_match(mut self, x_ms_source_if_none_match: impl Into<String>) -> Self {
                 self.x_ms_source_if_none_match = Some(x_ms_source_if_none_match.into());
                 self
             }
+            #[doc = "Provides a client-generated, opaque value with a 1 KB character limit that is recorded in the analytics logs when storage analytics logging is enabled."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
             }
+            #[doc = "Only Bearer type is supported. Credentials should be a valid OAuth access token to copy source."]
             pub fn x_ms_copy_source_authorization(mut self, x_ms_copy_source_authorization: impl Into<String>) -> Self {
                 self.x_ms_copy_source_authorization = Some(x_ms_copy_source_authorization.into());
                 self
@@ -8916,34 +9427,42 @@ pub mod append_blob {
             pub(crate) x_ms_blob_condition_appendpos: Option<i64>,
         }
         impl Builder {
+            #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\">Setting Timeouts for Blob Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "Provides a client-generated, opaque value with a 1 KB character limit that is recorded in the analytics logs when storage analytics logging is enabled."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
             }
+            #[doc = "If specified, the operation only succeeds if the resource's lease is active and matches this ID."]
             pub fn x_ms_lease_id(mut self, x_ms_lease_id: impl Into<String>) -> Self {
                 self.x_ms_lease_id = Some(x_ms_lease_id.into());
                 self
             }
+            #[doc = "Specify this header value to operate only on a blob if it has been modified since the specified date/time."]
             pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
+            #[doc = "Specify this header value to operate only on a blob if it has not been modified since the specified date/time."]
             pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
+            #[doc = "Specify an ETag value to operate only on blobs with a matching value."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
             }
+            #[doc = "Specify an ETag value to operate only on blobs without a matching value."]
             pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
                 self.if_none_match = Some(if_none_match.into());
                 self
             }
+            #[doc = "Optional conditional header, used only for the Append Block operation. A number indicating the byte offset to compare. Append Block will succeed only if the append position is equal to this number. If it is not, the request will fail with the AppendPositionConditionNotMet error (HTTP status code 412 - Precondition Failed)."]
             pub fn x_ms_blob_condition_appendpos(mut self, x_ms_blob_condition_appendpos: i64) -> Self {
                 self.x_ms_blob_condition_appendpos = Some(x_ms_blob_condition_appendpos);
                 self
@@ -9320,106 +9839,132 @@ pub mod block_blob {
             pub(crate) x_ms_content_crc64: Option<String>,
         }
         impl Builder {
+            #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\">Setting Timeouts for Blob Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "Specify the transactional md5 for the body, to be validated by the service."]
             pub fn content_md5(mut self, content_md5: impl Into<String>) -> Self {
                 self.content_md5 = Some(content_md5.into());
                 self
             }
+            #[doc = "Optional. Sets the blob's content type. If specified, this property is stored with the blob and returned with a read request."]
             pub fn x_ms_blob_content_type(mut self, x_ms_blob_content_type: impl Into<String>) -> Self {
                 self.x_ms_blob_content_type = Some(x_ms_blob_content_type.into());
                 self
             }
+            #[doc = "Optional. Sets the blob's content encoding. If specified, this property is stored with the blob and returned with a read request."]
             pub fn x_ms_blob_content_encoding(mut self, x_ms_blob_content_encoding: impl Into<String>) -> Self {
                 self.x_ms_blob_content_encoding = Some(x_ms_blob_content_encoding.into());
                 self
             }
+            #[doc = "Optional. Set the blob's content language. If specified, this property is stored with the blob and returned with a read request."]
             pub fn x_ms_blob_content_language(mut self, x_ms_blob_content_language: impl Into<String>) -> Self {
                 self.x_ms_blob_content_language = Some(x_ms_blob_content_language.into());
                 self
             }
+            #[doc = "Optional. An MD5 hash of the blob content. Note that this hash is not validated, as the hashes for the individual blocks were validated when each was uploaded."]
             pub fn x_ms_blob_content_md5(mut self, x_ms_blob_content_md5: impl Into<String>) -> Self {
                 self.x_ms_blob_content_md5 = Some(x_ms_blob_content_md5.into());
                 self
             }
+            #[doc = "Optional. Sets the blob's cache control. If specified, this property is stored with the blob and returned with a read request."]
             pub fn x_ms_blob_cache_control(mut self, x_ms_blob_cache_control: impl Into<String>) -> Self {
                 self.x_ms_blob_cache_control = Some(x_ms_blob_cache_control.into());
                 self
             }
+            #[doc = "Optional. Specifies a user-defined name-value pair associated with the blob. If no name-value pairs are specified, the operation will copy the metadata from the source blob or file to the destination blob. If one or more name-value pairs are specified, the destination blob is created with the specified metadata, and metadata is not copied from the source blob or file. Note that beginning with version 2009-09-19, metadata names must adhere to the naming rules for C# identifiers. See Naming and Referencing Containers, Blobs, and Metadata for more information."]
             pub fn x_ms_meta(mut self, x_ms_meta: impl Into<String>) -> Self {
                 self.x_ms_meta = Some(x_ms_meta.into());
                 self
             }
+            #[doc = "If specified, the operation only succeeds if the resource's lease is active and matches this ID."]
             pub fn x_ms_lease_id(mut self, x_ms_lease_id: impl Into<String>) -> Self {
                 self.x_ms_lease_id = Some(x_ms_lease_id.into());
                 self
             }
+            #[doc = "Optional. Sets the blob's Content-Disposition header."]
             pub fn x_ms_blob_content_disposition(mut self, x_ms_blob_content_disposition: impl Into<String>) -> Self {
                 self.x_ms_blob_content_disposition = Some(x_ms_blob_content_disposition.into());
                 self
             }
+            #[doc = "Optional. Specifies the encryption key to use to encrypt the data provided in the request. If not specified, encryption is performed with the root account encryption key.  For more information, see Encryption at Rest for Azure Storage Services."]
             pub fn x_ms_encryption_key(mut self, x_ms_encryption_key: impl Into<String>) -> Self {
                 self.x_ms_encryption_key = Some(x_ms_encryption_key.into());
                 self
             }
+            #[doc = "The SHA-256 hash of the provided encryption key. Must be provided if the x-ms-encryption-key header is provided."]
             pub fn x_ms_encryption_key_sha256(mut self, x_ms_encryption_key_sha256: impl Into<String>) -> Self {
                 self.x_ms_encryption_key_sha256 = Some(x_ms_encryption_key_sha256.into());
                 self
             }
+            #[doc = "The algorithm used to produce the encryption key hash. Currently, the only accepted value is \"AES256\". Must be provided if the x-ms-encryption-key header is provided."]
             pub fn x_ms_encryption_algorithm(mut self, x_ms_encryption_algorithm: impl Into<String>) -> Self {
                 self.x_ms_encryption_algorithm = Some(x_ms_encryption_algorithm.into());
                 self
             }
+            #[doc = "Optional. Version 2019-07-07 and later.  Specifies the name of the encryption scope to use to encrypt the data provided in the request. If not specified, encryption is performed with the default account encryption scope.  For more information, see Encryption at Rest for Azure Storage Services."]
             pub fn x_ms_encryption_scope(mut self, x_ms_encryption_scope: impl Into<String>) -> Self {
                 self.x_ms_encryption_scope = Some(x_ms_encryption_scope.into());
                 self
             }
+            #[doc = "Optional. Indicates the tier to be set on the blob."]
             pub fn x_ms_access_tier(mut self, x_ms_access_tier: impl Into<String>) -> Self {
                 self.x_ms_access_tier = Some(x_ms_access_tier.into());
                 self
             }
+            #[doc = "Specify this header value to operate only on a blob if it has been modified since the specified date/time."]
             pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
+            #[doc = "Specify this header value to operate only on a blob if it has not been modified since the specified date/time."]
             pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
+            #[doc = "Specify an ETag value to operate only on blobs with a matching value."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
             }
+            #[doc = "Specify an ETag value to operate only on blobs without a matching value."]
             pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
                 self.if_none_match = Some(if_none_match.into());
                 self
             }
+            #[doc = "Specify a SQL where clause on blob tags to operate only on blobs with a matching value."]
             pub fn x_ms_if_tags(mut self, x_ms_if_tags: impl Into<String>) -> Self {
                 self.x_ms_if_tags = Some(x_ms_if_tags.into());
                 self
             }
+            #[doc = "Provides a client-generated, opaque value with a 1 KB character limit that is recorded in the analytics logs when storage analytics logging is enabled."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
             }
+            #[doc = "Optional.  Used to set blob tags in various blob operations."]
             pub fn x_ms_tags(mut self, x_ms_tags: impl Into<String>) -> Self {
                 self.x_ms_tags = Some(x_ms_tags.into());
                 self
             }
+            #[doc = "Specifies the date time when the blobs immutability policy is set to expire."]
             pub fn x_ms_immutability_policy_until_date(mut self, x_ms_immutability_policy_until_date: impl Into<String>) -> Self {
                 self.x_ms_immutability_policy_until_date = Some(x_ms_immutability_policy_until_date.into());
                 self
             }
+            #[doc = "Specifies the immutability policy mode to set on the blob."]
             pub fn x_ms_immutability_policy_mode(mut self, x_ms_immutability_policy_mode: impl Into<String>) -> Self {
                 self.x_ms_immutability_policy_mode = Some(x_ms_immutability_policy_mode.into());
                 self
             }
+            #[doc = "Specified if a legal hold should be set on the blob."]
             pub fn x_ms_legal_hold(mut self, x_ms_legal_hold: bool) -> Self {
                 self.x_ms_legal_hold = Some(x_ms_legal_hold);
                 self
             }
+            #[doc = "Specify the transactional crc64 for the body, to be validated by the service."]
             pub fn x_ms_content_crc64(mut self, x_ms_content_crc64: impl Into<String>) -> Self {
                 self.x_ms_content_crc64 = Some(x_ms_content_crc64.into());
                 self
@@ -9584,126 +10129,157 @@ pub mod block_blob {
             pub(crate) x_ms_copy_source_tag_option: Option<String>,
         }
         impl Builder {
+            #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\">Setting Timeouts for Blob Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "Specify the transactional md5 for the body, to be validated by the service."]
             pub fn content_md5(mut self, content_md5: impl Into<String>) -> Self {
                 self.content_md5 = Some(content_md5.into());
                 self
             }
+            #[doc = "Optional. Sets the blob's content type. If specified, this property is stored with the blob and returned with a read request."]
             pub fn x_ms_blob_content_type(mut self, x_ms_blob_content_type: impl Into<String>) -> Self {
                 self.x_ms_blob_content_type = Some(x_ms_blob_content_type.into());
                 self
             }
+            #[doc = "Optional. Sets the blob's content encoding. If specified, this property is stored with the blob and returned with a read request."]
             pub fn x_ms_blob_content_encoding(mut self, x_ms_blob_content_encoding: impl Into<String>) -> Self {
                 self.x_ms_blob_content_encoding = Some(x_ms_blob_content_encoding.into());
                 self
             }
+            #[doc = "Optional. Set the blob's content language. If specified, this property is stored with the blob and returned with a read request."]
             pub fn x_ms_blob_content_language(mut self, x_ms_blob_content_language: impl Into<String>) -> Self {
                 self.x_ms_blob_content_language = Some(x_ms_blob_content_language.into());
                 self
             }
+            #[doc = "Optional. An MD5 hash of the blob content. Note that this hash is not validated, as the hashes for the individual blocks were validated when each was uploaded."]
             pub fn x_ms_blob_content_md5(mut self, x_ms_blob_content_md5: impl Into<String>) -> Self {
                 self.x_ms_blob_content_md5 = Some(x_ms_blob_content_md5.into());
                 self
             }
+            #[doc = "Optional. Sets the blob's cache control. If specified, this property is stored with the blob and returned with a read request."]
             pub fn x_ms_blob_cache_control(mut self, x_ms_blob_cache_control: impl Into<String>) -> Self {
                 self.x_ms_blob_cache_control = Some(x_ms_blob_cache_control.into());
                 self
             }
+            #[doc = "Optional. Specifies a user-defined name-value pair associated with the blob. If no name-value pairs are specified, the operation will copy the metadata from the source blob or file to the destination blob. If one or more name-value pairs are specified, the destination blob is created with the specified metadata, and metadata is not copied from the source blob or file. Note that beginning with version 2009-09-19, metadata names must adhere to the naming rules for C# identifiers. See Naming and Referencing Containers, Blobs, and Metadata for more information."]
             pub fn x_ms_meta(mut self, x_ms_meta: impl Into<String>) -> Self {
                 self.x_ms_meta = Some(x_ms_meta.into());
                 self
             }
+            #[doc = "If specified, the operation only succeeds if the resource's lease is active and matches this ID."]
             pub fn x_ms_lease_id(mut self, x_ms_lease_id: impl Into<String>) -> Self {
                 self.x_ms_lease_id = Some(x_ms_lease_id.into());
                 self
             }
+            #[doc = "Optional. Sets the blob's Content-Disposition header."]
             pub fn x_ms_blob_content_disposition(mut self, x_ms_blob_content_disposition: impl Into<String>) -> Self {
                 self.x_ms_blob_content_disposition = Some(x_ms_blob_content_disposition.into());
                 self
             }
+            #[doc = "Optional. Specifies the encryption key to use to encrypt the data provided in the request. If not specified, encryption is performed with the root account encryption key.  For more information, see Encryption at Rest for Azure Storage Services."]
             pub fn x_ms_encryption_key(mut self, x_ms_encryption_key: impl Into<String>) -> Self {
                 self.x_ms_encryption_key = Some(x_ms_encryption_key.into());
                 self
             }
+            #[doc = "The SHA-256 hash of the provided encryption key. Must be provided if the x-ms-encryption-key header is provided."]
             pub fn x_ms_encryption_key_sha256(mut self, x_ms_encryption_key_sha256: impl Into<String>) -> Self {
                 self.x_ms_encryption_key_sha256 = Some(x_ms_encryption_key_sha256.into());
                 self
             }
+            #[doc = "The algorithm used to produce the encryption key hash. Currently, the only accepted value is \"AES256\". Must be provided if the x-ms-encryption-key header is provided."]
             pub fn x_ms_encryption_algorithm(mut self, x_ms_encryption_algorithm: impl Into<String>) -> Self {
                 self.x_ms_encryption_algorithm = Some(x_ms_encryption_algorithm.into());
                 self
             }
+            #[doc = "Optional. Version 2019-07-07 and later.  Specifies the name of the encryption scope to use to encrypt the data provided in the request. If not specified, encryption is performed with the default account encryption scope.  For more information, see Encryption at Rest for Azure Storage Services."]
             pub fn x_ms_encryption_scope(mut self, x_ms_encryption_scope: impl Into<String>) -> Self {
                 self.x_ms_encryption_scope = Some(x_ms_encryption_scope.into());
                 self
             }
+            #[doc = "Optional. Indicates the tier to be set on the blob."]
             pub fn x_ms_access_tier(mut self, x_ms_access_tier: impl Into<String>) -> Self {
                 self.x_ms_access_tier = Some(x_ms_access_tier.into());
                 self
             }
+            #[doc = "Specify this header value to operate only on a blob if it has been modified since the specified date/time."]
             pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
+            #[doc = "Specify this header value to operate only on a blob if it has not been modified since the specified date/time."]
             pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
+            #[doc = "Specify an ETag value to operate only on blobs with a matching value."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
             }
+            #[doc = "Specify an ETag value to operate only on blobs without a matching value."]
             pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
                 self.if_none_match = Some(if_none_match.into());
                 self
             }
+            #[doc = "Specify a SQL where clause on blob tags to operate only on blobs with a matching value."]
             pub fn x_ms_if_tags(mut self, x_ms_if_tags: impl Into<String>) -> Self {
                 self.x_ms_if_tags = Some(x_ms_if_tags.into());
                 self
             }
+            #[doc = "Specify this header value to operate only on a blob if it has been modified since the specified date/time."]
             pub fn x_ms_source_if_modified_since(mut self, x_ms_source_if_modified_since: impl Into<String>) -> Self {
                 self.x_ms_source_if_modified_since = Some(x_ms_source_if_modified_since.into());
                 self
             }
+            #[doc = "Specify this header value to operate only on a blob if it has not been modified since the specified date/time."]
             pub fn x_ms_source_if_unmodified_since(mut self, x_ms_source_if_unmodified_since: impl Into<String>) -> Self {
                 self.x_ms_source_if_unmodified_since = Some(x_ms_source_if_unmodified_since.into());
                 self
             }
+            #[doc = "Specify an ETag value to operate only on blobs with a matching value."]
             pub fn x_ms_source_if_match(mut self, x_ms_source_if_match: impl Into<String>) -> Self {
                 self.x_ms_source_if_match = Some(x_ms_source_if_match.into());
                 self
             }
+            #[doc = "Specify an ETag value to operate only on blobs without a matching value."]
             pub fn x_ms_source_if_none_match(mut self, x_ms_source_if_none_match: impl Into<String>) -> Self {
                 self.x_ms_source_if_none_match = Some(x_ms_source_if_none_match.into());
                 self
             }
+            #[doc = "Specify a SQL where clause on blob tags to operate only on blobs with a matching value."]
             pub fn x_ms_source_if_tags(mut self, x_ms_source_if_tags: impl Into<String>) -> Self {
                 self.x_ms_source_if_tags = Some(x_ms_source_if_tags.into());
                 self
             }
+            #[doc = "Provides a client-generated, opaque value with a 1 KB character limit that is recorded in the analytics logs when storage analytics logging is enabled."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
             }
+            #[doc = "Specify the md5 calculated for the range of bytes that must be read from the copy source."]
             pub fn x_ms_source_content_md5(mut self, x_ms_source_content_md5: impl Into<String>) -> Self {
                 self.x_ms_source_content_md5 = Some(x_ms_source_content_md5.into());
                 self
             }
+            #[doc = "Optional.  Used to set blob tags in various blob operations."]
             pub fn x_ms_tags(mut self, x_ms_tags: impl Into<String>) -> Self {
                 self.x_ms_tags = Some(x_ms_tags.into());
                 self
             }
+            #[doc = "Optional, default is true.  Indicates if properties from the source blob should be copied."]
             pub fn x_ms_copy_source_blob_properties(mut self, x_ms_copy_source_blob_properties: bool) -> Self {
                 self.x_ms_copy_source_blob_properties = Some(x_ms_copy_source_blob_properties);
                 self
             }
+            #[doc = "Only Bearer type is supported. Credentials should be a valid OAuth access token to copy source."]
             pub fn x_ms_copy_source_authorization(mut self, x_ms_copy_source_authorization: impl Into<String>) -> Self {
                 self.x_ms_copy_source_authorization = Some(x_ms_copy_source_authorization.into());
                 self
             }
+            #[doc = "Optional, default 'replace'.  Indicates if source tags should be copied or replaced with the tags specified by x-ms-tags."]
             pub fn x_ms_copy_source_tag_option(mut self, x_ms_copy_source_tag_option: impl Into<String>) -> Self {
                 self.x_ms_copy_source_tag_option = Some(x_ms_copy_source_tag_option.into());
                 self
@@ -9861,38 +10437,47 @@ pub mod block_blob {
             pub(crate) x_ms_client_request_id: Option<String>,
         }
         impl Builder {
+            #[doc = "Specify the transactional md5 for the body, to be validated by the service."]
             pub fn content_md5(mut self, content_md5: impl Into<String>) -> Self {
                 self.content_md5 = Some(content_md5.into());
                 self
             }
+            #[doc = "Specify the transactional crc64 for the body, to be validated by the service."]
             pub fn x_ms_content_crc64(mut self, x_ms_content_crc64: impl Into<String>) -> Self {
                 self.x_ms_content_crc64 = Some(x_ms_content_crc64.into());
                 self
             }
+            #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\">Setting Timeouts for Blob Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "If specified, the operation only succeeds if the resource's lease is active and matches this ID."]
             pub fn x_ms_lease_id(mut self, x_ms_lease_id: impl Into<String>) -> Self {
                 self.x_ms_lease_id = Some(x_ms_lease_id.into());
                 self
             }
+            #[doc = "Optional. Specifies the encryption key to use to encrypt the data provided in the request. If not specified, encryption is performed with the root account encryption key.  For more information, see Encryption at Rest for Azure Storage Services."]
             pub fn x_ms_encryption_key(mut self, x_ms_encryption_key: impl Into<String>) -> Self {
                 self.x_ms_encryption_key = Some(x_ms_encryption_key.into());
                 self
             }
+            #[doc = "The SHA-256 hash of the provided encryption key. Must be provided if the x-ms-encryption-key header is provided."]
             pub fn x_ms_encryption_key_sha256(mut self, x_ms_encryption_key_sha256: impl Into<String>) -> Self {
                 self.x_ms_encryption_key_sha256 = Some(x_ms_encryption_key_sha256.into());
                 self
             }
+            #[doc = "The algorithm used to produce the encryption key hash. Currently, the only accepted value is \"AES256\". Must be provided if the x-ms-encryption-key header is provided."]
             pub fn x_ms_encryption_algorithm(mut self, x_ms_encryption_algorithm: impl Into<String>) -> Self {
                 self.x_ms_encryption_algorithm = Some(x_ms_encryption_algorithm.into());
                 self
             }
+            #[doc = "Optional. Version 2019-07-07 and later.  Specifies the name of the encryption scope to use to encrypt the data provided in the request. If not specified, encryption is performed with the default account encryption scope.  For more information, see Encryption at Rest for Azure Storage Services."]
             pub fn x_ms_encryption_scope(mut self, x_ms_encryption_scope: impl Into<String>) -> Self {
                 self.x_ms_encryption_scope = Some(x_ms_encryption_scope.into());
                 self
             }
+            #[doc = "Provides a client-generated, opaque value with a 1 KB character limit that is recorded in the analytics logs when storage analytics logging is enabled."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
@@ -9991,62 +10576,77 @@ pub mod block_blob {
             pub(crate) x_ms_copy_source_authorization: Option<String>,
         }
         impl Builder {
+            #[doc = "Bytes of source data in the specified range."]
             pub fn x_ms_source_range(mut self, x_ms_source_range: impl Into<String>) -> Self {
                 self.x_ms_source_range = Some(x_ms_source_range.into());
                 self
             }
+            #[doc = "Specify the md5 calculated for the range of bytes that must be read from the copy source."]
             pub fn x_ms_source_content_md5(mut self, x_ms_source_content_md5: impl Into<String>) -> Self {
                 self.x_ms_source_content_md5 = Some(x_ms_source_content_md5.into());
                 self
             }
+            #[doc = "Specify the crc64 calculated for the range of bytes that must be read from the copy source."]
             pub fn x_ms_source_content_crc64(mut self, x_ms_source_content_crc64: impl Into<String>) -> Self {
                 self.x_ms_source_content_crc64 = Some(x_ms_source_content_crc64.into());
                 self
             }
+            #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\">Setting Timeouts for Blob Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "Optional. Specifies the encryption key to use to encrypt the data provided in the request. If not specified, encryption is performed with the root account encryption key.  For more information, see Encryption at Rest for Azure Storage Services."]
             pub fn x_ms_encryption_key(mut self, x_ms_encryption_key: impl Into<String>) -> Self {
                 self.x_ms_encryption_key = Some(x_ms_encryption_key.into());
                 self
             }
+            #[doc = "The SHA-256 hash of the provided encryption key. Must be provided if the x-ms-encryption-key header is provided."]
             pub fn x_ms_encryption_key_sha256(mut self, x_ms_encryption_key_sha256: impl Into<String>) -> Self {
                 self.x_ms_encryption_key_sha256 = Some(x_ms_encryption_key_sha256.into());
                 self
             }
+            #[doc = "The algorithm used to produce the encryption key hash. Currently, the only accepted value is \"AES256\". Must be provided if the x-ms-encryption-key header is provided."]
             pub fn x_ms_encryption_algorithm(mut self, x_ms_encryption_algorithm: impl Into<String>) -> Self {
                 self.x_ms_encryption_algorithm = Some(x_ms_encryption_algorithm.into());
                 self
             }
+            #[doc = "Optional. Version 2019-07-07 and later.  Specifies the name of the encryption scope to use to encrypt the data provided in the request. If not specified, encryption is performed with the default account encryption scope.  For more information, see Encryption at Rest for Azure Storage Services."]
             pub fn x_ms_encryption_scope(mut self, x_ms_encryption_scope: impl Into<String>) -> Self {
                 self.x_ms_encryption_scope = Some(x_ms_encryption_scope.into());
                 self
             }
+            #[doc = "If specified, the operation only succeeds if the resource's lease is active and matches this ID."]
             pub fn x_ms_lease_id(mut self, x_ms_lease_id: impl Into<String>) -> Self {
                 self.x_ms_lease_id = Some(x_ms_lease_id.into());
                 self
             }
+            #[doc = "Specify this header value to operate only on a blob if it has been modified since the specified date/time."]
             pub fn x_ms_source_if_modified_since(mut self, x_ms_source_if_modified_since: impl Into<String>) -> Self {
                 self.x_ms_source_if_modified_since = Some(x_ms_source_if_modified_since.into());
                 self
             }
+            #[doc = "Specify this header value to operate only on a blob if it has not been modified since the specified date/time."]
             pub fn x_ms_source_if_unmodified_since(mut self, x_ms_source_if_unmodified_since: impl Into<String>) -> Self {
                 self.x_ms_source_if_unmodified_since = Some(x_ms_source_if_unmodified_since.into());
                 self
             }
+            #[doc = "Specify an ETag value to operate only on blobs with a matching value."]
             pub fn x_ms_source_if_match(mut self, x_ms_source_if_match: impl Into<String>) -> Self {
                 self.x_ms_source_if_match = Some(x_ms_source_if_match.into());
                 self
             }
+            #[doc = "Specify an ETag value to operate only on blobs without a matching value."]
             pub fn x_ms_source_if_none_match(mut self, x_ms_source_if_none_match: impl Into<String>) -> Self {
                 self.x_ms_source_if_none_match = Some(x_ms_source_if_none_match.into());
                 self
             }
+            #[doc = "Provides a client-generated, opaque value with a 1 KB character limit that is recorded in the analytics logs when storage analytics logging is enabled."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
             }
+            #[doc = "Only Bearer type is supported. Credentials should be a valid OAuth access token to copy source."]
             pub fn x_ms_copy_source_authorization(mut self, x_ms_copy_source_authorization: impl Into<String>) -> Self {
                 self.x_ms_copy_source_authorization = Some(x_ms_copy_source_authorization.into());
                 self
@@ -10151,22 +10751,27 @@ pub mod block_blob {
             pub(crate) x_ms_client_request_id: Option<String>,
         }
         impl Builder {
+            #[doc = "The snapshot parameter is an opaque DateTime value that, when present, specifies the blob snapshot to retrieve. For more information on working with blob snapshots, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/creating-a-snapshot-of-a-blob\">Creating a Snapshot of a Blob.</a>"]
             pub fn snapshot(mut self, snapshot: impl Into<String>) -> Self {
                 self.snapshot = Some(snapshot.into());
                 self
             }
+            #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\">Setting Timeouts for Blob Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "If specified, the operation only succeeds if the resource's lease is active and matches this ID."]
             pub fn x_ms_lease_id(mut self, x_ms_lease_id: impl Into<String>) -> Self {
                 self.x_ms_lease_id = Some(x_ms_lease_id.into());
                 self
             }
+            #[doc = "Specify a SQL where clause on blob tags to operate only on blobs with a matching value."]
             pub fn x_ms_if_tags(mut self, x_ms_if_tags: impl Into<String>) -> Self {
                 self.x_ms_if_tags = Some(x_ms_if_tags.into());
                 self
             }
+            #[doc = "Provides a client-generated, opaque value with a 1 KB character limit that is recorded in the analytics logs when storage analytics logging is enabled."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
@@ -10264,106 +10869,132 @@ pub mod block_blob {
             pub(crate) x_ms_legal_hold: Option<bool>,
         }
         impl Builder {
+            #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\">Setting Timeouts for Blob Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "Optional. Sets the blob's cache control. If specified, this property is stored with the blob and returned with a read request."]
             pub fn x_ms_blob_cache_control(mut self, x_ms_blob_cache_control: impl Into<String>) -> Self {
                 self.x_ms_blob_cache_control = Some(x_ms_blob_cache_control.into());
                 self
             }
+            #[doc = "Optional. Sets the blob's content type. If specified, this property is stored with the blob and returned with a read request."]
             pub fn x_ms_blob_content_type(mut self, x_ms_blob_content_type: impl Into<String>) -> Self {
                 self.x_ms_blob_content_type = Some(x_ms_blob_content_type.into());
                 self
             }
+            #[doc = "Optional. Sets the blob's content encoding. If specified, this property is stored with the blob and returned with a read request."]
             pub fn x_ms_blob_content_encoding(mut self, x_ms_blob_content_encoding: impl Into<String>) -> Self {
                 self.x_ms_blob_content_encoding = Some(x_ms_blob_content_encoding.into());
                 self
             }
+            #[doc = "Optional. Set the blob's content language. If specified, this property is stored with the blob and returned with a read request."]
             pub fn x_ms_blob_content_language(mut self, x_ms_blob_content_language: impl Into<String>) -> Self {
                 self.x_ms_blob_content_language = Some(x_ms_blob_content_language.into());
                 self
             }
+            #[doc = "Optional. An MD5 hash of the blob content. Note that this hash is not validated, as the hashes for the individual blocks were validated when each was uploaded."]
             pub fn x_ms_blob_content_md5(mut self, x_ms_blob_content_md5: impl Into<String>) -> Self {
                 self.x_ms_blob_content_md5 = Some(x_ms_blob_content_md5.into());
                 self
             }
+            #[doc = "Specify the transactional md5 for the body, to be validated by the service."]
             pub fn content_md5(mut self, content_md5: impl Into<String>) -> Self {
                 self.content_md5 = Some(content_md5.into());
                 self
             }
+            #[doc = "Specify the transactional crc64 for the body, to be validated by the service."]
             pub fn x_ms_content_crc64(mut self, x_ms_content_crc64: impl Into<String>) -> Self {
                 self.x_ms_content_crc64 = Some(x_ms_content_crc64.into());
                 self
             }
+            #[doc = "Optional. Specifies a user-defined name-value pair associated with the blob. If no name-value pairs are specified, the operation will copy the metadata from the source blob or file to the destination blob. If one or more name-value pairs are specified, the destination blob is created with the specified metadata, and metadata is not copied from the source blob or file. Note that beginning with version 2009-09-19, metadata names must adhere to the naming rules for C# identifiers. See Naming and Referencing Containers, Blobs, and Metadata for more information."]
             pub fn x_ms_meta(mut self, x_ms_meta: impl Into<String>) -> Self {
                 self.x_ms_meta = Some(x_ms_meta.into());
                 self
             }
+            #[doc = "If specified, the operation only succeeds if the resource's lease is active and matches this ID."]
             pub fn x_ms_lease_id(mut self, x_ms_lease_id: impl Into<String>) -> Self {
                 self.x_ms_lease_id = Some(x_ms_lease_id.into());
                 self
             }
+            #[doc = "Optional. Sets the blob's Content-Disposition header."]
             pub fn x_ms_blob_content_disposition(mut self, x_ms_blob_content_disposition: impl Into<String>) -> Self {
                 self.x_ms_blob_content_disposition = Some(x_ms_blob_content_disposition.into());
                 self
             }
+            #[doc = "Optional. Specifies the encryption key to use to encrypt the data provided in the request. If not specified, encryption is performed with the root account encryption key.  For more information, see Encryption at Rest for Azure Storage Services."]
             pub fn x_ms_encryption_key(mut self, x_ms_encryption_key: impl Into<String>) -> Self {
                 self.x_ms_encryption_key = Some(x_ms_encryption_key.into());
                 self
             }
+            #[doc = "The SHA-256 hash of the provided encryption key. Must be provided if the x-ms-encryption-key header is provided."]
             pub fn x_ms_encryption_key_sha256(mut self, x_ms_encryption_key_sha256: impl Into<String>) -> Self {
                 self.x_ms_encryption_key_sha256 = Some(x_ms_encryption_key_sha256.into());
                 self
             }
+            #[doc = "The algorithm used to produce the encryption key hash. Currently, the only accepted value is \"AES256\". Must be provided if the x-ms-encryption-key header is provided."]
             pub fn x_ms_encryption_algorithm(mut self, x_ms_encryption_algorithm: impl Into<String>) -> Self {
                 self.x_ms_encryption_algorithm = Some(x_ms_encryption_algorithm.into());
                 self
             }
+            #[doc = "Optional. Version 2019-07-07 and later.  Specifies the name of the encryption scope to use to encrypt the data provided in the request. If not specified, encryption is performed with the default account encryption scope.  For more information, see Encryption at Rest for Azure Storage Services."]
             pub fn x_ms_encryption_scope(mut self, x_ms_encryption_scope: impl Into<String>) -> Self {
                 self.x_ms_encryption_scope = Some(x_ms_encryption_scope.into());
                 self
             }
+            #[doc = "Optional. Indicates the tier to be set on the blob."]
             pub fn x_ms_access_tier(mut self, x_ms_access_tier: impl Into<String>) -> Self {
                 self.x_ms_access_tier = Some(x_ms_access_tier.into());
                 self
             }
+            #[doc = "Specify this header value to operate only on a blob if it has been modified since the specified date/time."]
             pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
+            #[doc = "Specify this header value to operate only on a blob if it has not been modified since the specified date/time."]
             pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
             }
+            #[doc = "Specify an ETag value to operate only on blobs with a matching value."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
             }
+            #[doc = "Specify an ETag value to operate only on blobs without a matching value."]
             pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
                 self.if_none_match = Some(if_none_match.into());
                 self
             }
+            #[doc = "Specify a SQL where clause on blob tags to operate only on blobs with a matching value."]
             pub fn x_ms_if_tags(mut self, x_ms_if_tags: impl Into<String>) -> Self {
                 self.x_ms_if_tags = Some(x_ms_if_tags.into());
                 self
             }
+            #[doc = "Provides a client-generated, opaque value with a 1 KB character limit that is recorded in the analytics logs when storage analytics logging is enabled."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
             }
+            #[doc = "Optional.  Used to set blob tags in various blob operations."]
             pub fn x_ms_tags(mut self, x_ms_tags: impl Into<String>) -> Self {
                 self.x_ms_tags = Some(x_ms_tags.into());
                 self
             }
+            #[doc = "Specifies the date time when the blobs immutability policy is set to expire."]
             pub fn x_ms_immutability_policy_until_date(mut self, x_ms_immutability_policy_until_date: impl Into<String>) -> Self {
                 self.x_ms_immutability_policy_until_date = Some(x_ms_immutability_policy_until_date.into());
                 self
             }
+            #[doc = "Specifies the immutability policy mode to set on the blob."]
             pub fn x_ms_immutability_policy_mode(mut self, x_ms_immutability_policy_mode: impl Into<String>) -> Self {
                 self.x_ms_immutability_policy_mode = Some(x_ms_immutability_policy_mode.into());
                 self
             }
+            #[doc = "Specified if a legal hold should be set on the blob."]
             pub fn x_ms_legal_hold(mut self, x_ms_legal_hold: bool) -> Self {
                 self.x_ms_legal_hold = Some(x_ms_legal_hold);
                 self

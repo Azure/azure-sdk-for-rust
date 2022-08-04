@@ -159,6 +159,7 @@ pub mod publish_cloud_event_events {
         pub(crate) aeg_channel_name: Option<String>,
     }
     impl Builder {
+        #[doc = "Required only when publishing to partner namespaces with partner topic routing mode ChannelNameHeader."]
         pub fn aeg_channel_name(mut self, aeg_channel_name: impl Into<String>) -> Self {
             self.aeg_channel_name = Some(aeg_channel_name.into());
             self

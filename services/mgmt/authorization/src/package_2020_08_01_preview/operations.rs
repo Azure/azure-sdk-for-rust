@@ -275,6 +275,7 @@ pub mod provider_operations_metadata {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "Specifies whether to expand the values."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -330,6 +331,7 @@ pub mod provider_operations_metadata {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "Specifies whether to expand the values."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -682,6 +684,7 @@ pub mod role_definitions {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the operation. Use atScopeAndBelow filter to search below the given scope as well."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -1075,6 +1078,7 @@ pub mod deny_assignments {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the operation. Use $filter=atScope() to return all deny assignments at or above the scope. Use $filter=denyAssignmentName eq '{name}' to search deny assignments by name at specified scope. Use $filter=principalId eq '{id}' to return all deny assignments at, above and below the scope for the specified principal. Use $filter=gdprExportPrincipalId eq '{id}' to return all deny assignments at, above and below the scope for the specified principal. This filter is different from the principalId filter as it returns not only those deny assignments that contain the specified principal is the Principals list but also those deny assignments that contain the specified principal is the ExcludePrincipals list. Additionally, when gdprExportPrincipalId filter is used, only the deny assignment name and description properties are returned."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -1163,6 +1167,7 @@ pub mod deny_assignments {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the operation. Use $filter=atScope() to return all deny assignments at or above the scope. Use $filter=denyAssignmentName eq '{name}' to search deny assignments by name at specified scope. Use $filter=principalId eq '{id}' to return all deny assignments at, above and below the scope for the specified principal. Use $filter=gdprExportPrincipalId eq '{id}' to return all deny assignments at, above and below the scope for the specified principal. This filter is different from the principalId filter as it returns not only those deny assignments that contain the specified principal is the Principals list but also those deny assignments that contain the specified principal is the ExcludePrincipals list. Additionally, when gdprExportPrincipalId filter is used, only the deny assignment name and description properties are returned."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -1246,6 +1251,7 @@ pub mod deny_assignments {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the operation. Use $filter=atScope() to return all deny assignments at or above the scope. Use $filter=denyAssignmentName eq '{name}' to search deny assignments by name at specified scope. Use $filter=principalId eq '{id}' to return all deny assignments at, above and below the scope for the specified principal. Use $filter=gdprExportPrincipalId eq '{id}' to return all deny assignments at, above and below the scope for the specified principal. This filter is different from the principalId filter as it returns not only those deny assignments that contain the specified principal is the Principals list but also those deny assignments that contain the specified principal is the ExcludePrincipals list. Additionally, when gdprExportPrincipalId filter is used, only the deny assignment name and description properties are returned."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -1422,6 +1428,7 @@ pub mod deny_assignments {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the operation. Use $filter=atScope() to return all deny assignments at or above the scope. Use $filter=denyAssignmentName eq '{name}' to search deny assignments by name at specified scope. Use $filter=principalId eq '{id}' to return all deny assignments at, above and below the scope for the specified principal. Use $filter=gdprExportPrincipalId eq '{id}' to return all deny assignments at, above and below the scope for the specified principal. This filter is different from the principalId filter as it returns not only those deny assignments that contain the specified principal is the Principals list but also those deny assignments that contain the specified principal is the ExcludePrincipals list. Additionally, when gdprExportPrincipalId filter is used, only the deny assignment name and description properties are returned."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -1762,10 +1769,12 @@ pub mod role_assignments {
             pub(crate) tenant_id: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the operation. Use $filter=atScope() to return all role assignments at or above the scope. Use $filter=principalId eq {id} to return all role assignments at, above or below the scope for the specified principal."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Tenant ID for cross-tenant request"]
             pub fn tenant_id(mut self, tenant_id: impl Into<String>) -> Self {
                 self.tenant_id = Some(tenant_id.into());
                 self
@@ -1853,10 +1862,12 @@ pub mod role_assignments {
             pub(crate) tenant_id: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the operation. Use $filter=atScope() to return all role assignments at or above the scope. Use $filter=principalId eq {id} to return all role assignments at, above or below the scope for the specified principal."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Tenant ID for cross-tenant request"]
             pub fn tenant_id(mut self, tenant_id: impl Into<String>) -> Self {
                 self.tenant_id = Some(tenant_id.into());
                 self
@@ -1948,10 +1959,12 @@ pub mod role_assignments {
             pub(crate) tenant_id: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the operation. Use $filter=atScope() to return all role assignments at or above the scope. Use $filter=principalId eq {id} to return all role assignments at, above or below the scope for the specified principal."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Tenant ID for cross-tenant request"]
             pub fn tenant_id(mut self, tenant_id: impl Into<String>) -> Self {
                 self.tenant_id = Some(tenant_id.into());
                 self
@@ -2042,6 +2055,7 @@ pub mod role_assignments {
             pub(crate) tenant_id: Option<String>,
         }
         impl Builder {
+            #[doc = "Tenant ID for cross-tenant request"]
             pub fn tenant_id(mut self, tenant_id: impl Into<String>) -> Self {
                 self.tenant_id = Some(tenant_id.into());
                 self
@@ -2165,6 +2179,7 @@ pub mod role_assignments {
             pub(crate) tenant_id: Option<String>,
         }
         impl Builder {
+            #[doc = "Tenant ID for cross-tenant request"]
             pub fn tenant_id(mut self, tenant_id: impl Into<String>) -> Self {
                 self.tenant_id = Some(tenant_id.into());
                 self
@@ -2276,10 +2291,12 @@ pub mod role_assignments {
             pub(crate) tenant_id: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the operation. Use $filter=atScope() to return all role assignments at or above the scope. Use $filter=principalId eq {id} to return all role assignments at, above or below the scope for the specified principal."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Tenant ID for cross-tenant request"]
             pub fn tenant_id(mut self, tenant_id: impl Into<String>) -> Self {
                 self.tenant_id = Some(tenant_id.into());
                 self
@@ -2365,6 +2382,7 @@ pub mod role_assignments {
             pub(crate) tenant_id: Option<String>,
         }
         impl Builder {
+            #[doc = "Tenant ID for cross-tenant request"]
             pub fn tenant_id(mut self, tenant_id: impl Into<String>) -> Self {
                 self.tenant_id = Some(tenant_id.into());
                 self
@@ -2476,6 +2494,7 @@ pub mod role_assignments {
             pub(crate) tenant_id: Option<String>,
         }
         impl Builder {
+            #[doc = "Tenant ID for cross-tenant request"]
             pub fn tenant_id(mut self, tenant_id: impl Into<String>) -> Self {
                 self.tenant_id = Some(tenant_id.into());
                 self

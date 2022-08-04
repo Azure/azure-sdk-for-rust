@@ -262,6 +262,7 @@ pub mod edge_modules {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "Specifies a non-negative integer n that limits the number of items returned from a collection. The service returns the number of available items up to but not greater than the specified value n."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -698,10 +699,12 @@ pub mod pipeline_topologies {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "Restricts the set of items returned."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Specifies a non-negative integer n that limits the number of items returned from a collection. The service returns the number of available items up to but not greater than the specified value n."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -1194,10 +1197,12 @@ pub mod live_pipelines {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "Restricts the set of items returned."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Specifies a non-negative integer n that limits the number of items returned from a collection. The service returns the number of available items up to but not greater than the specified value n."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -1781,10 +1786,12 @@ pub mod pipeline_jobs {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "Restricts the set of items returned."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Specifies a non-negative integer n that limits the number of items returned from a collection. The service returns the number of available items up to but not greater than the specified value n."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -3815,6 +3822,7 @@ pub mod videos {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "Specifies a non-negative integer n that limits the number of items returned from a collection. The service returns the number of available items up to but not greater than the specified value n."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -4311,6 +4319,7 @@ pub mod access_policies {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "Specifies a non-negative integer n that limits the number of items returned from a collection. The service returns the number of available items up to but not greater than the specified value n."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self

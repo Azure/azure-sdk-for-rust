@@ -1287,14 +1287,17 @@ pub mod device_templates {
             pub(crate) orderby: Option<String>,
         }
         impl Builder {
+            #[doc = "Filter string for results."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Page size of returned results."]
             pub fn top(mut self, top: i64) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "The order by string for results."]
             pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
                 self.orderby = Some(orderby.into());
                 self
@@ -2253,14 +2256,17 @@ pub mod devices {
             pub(crate) orderby: Option<String>,
         }
         impl Builder {
+            #[doc = "Filter string for results."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Page size of returned results."]
             pub fn top(mut self, top: i64) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "The order by string for results."]
             pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
                 self.orderby = Some(orderby.into());
                 self

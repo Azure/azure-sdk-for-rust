@@ -304,6 +304,7 @@ pub mod environments {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "Setting $expand=status will include the status of the internal services of the environment in the Time Series Insights service."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self

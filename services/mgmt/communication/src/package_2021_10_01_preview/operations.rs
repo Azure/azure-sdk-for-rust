@@ -430,6 +430,7 @@ pub mod communication_services {
             pub(crate) link_notification_hub_parameters: Option<models::LinkNotificationHubParameters>,
         }
         impl Builder {
+            #[doc = "Parameters supplied to the operation."]
             pub fn link_notification_hub_parameters(
                 mut self,
                 link_notification_hub_parameters: impl Into<models::LinkNotificationHubParameters>,

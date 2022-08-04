@@ -437,6 +437,7 @@ pub mod workspaces {
             pub(crate) workspace: Option<models::WorkspacePatch>,
         }
         impl Builder {
+            #[doc = "Object containing Workspace definitions."]
             pub fn workspace(mut self, workspace: impl Into<models::WorkspacePatch>) -> Self {
                 self.workspace = Some(workspace.into());
                 self
@@ -948,6 +949,7 @@ pub mod scaling_plans {
             pub(crate) scaling_plan: Option<models::ScalingPlanPatch>,
         }
         impl Builder {
+            #[doc = "Object containing scaling plan definitions."]
             pub fn scaling_plan(mut self, scaling_plan: impl Into<models::ScalingPlanPatch>) -> Self {
                 self.scaling_plan = Some(scaling_plan.into());
                 self
@@ -1520,6 +1522,7 @@ pub mod application_groups {
             pub(crate) application_group: Option<models::ApplicationGroupPatch>,
         }
         impl Builder {
+            #[doc = "Object containing ApplicationGroup definitions."]
             pub fn application_group(mut self, application_group: impl Into<models::ApplicationGroupPatch>) -> Self {
                 self.application_group = Some(application_group.into());
                 self
@@ -1634,6 +1637,7 @@ pub mod application_groups {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "OData filter expression. Valid properties for filtering are applicationGroupType."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -1717,6 +1721,7 @@ pub mod application_groups {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "OData filter expression. Valid properties for filtering are applicationGroupType."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -2121,6 +2126,7 @@ pub mod applications {
             pub(crate) application: Option<models::ApplicationPatch>,
         }
         impl Builder {
+            #[doc = "Object containing Application definitions."]
             pub fn application(mut self, application: impl Into<models::ApplicationPatch>) -> Self {
                 self.application = Some(application.into());
                 self
@@ -2415,6 +2421,7 @@ pub mod desktops {
             pub(crate) desktop: Option<models::DesktopPatch>,
         }
         impl Builder {
+            #[doc = "Object containing Desktop definitions."]
             pub fn desktop(mut self, desktop: impl Into<models::DesktopPatch>) -> Self {
                 self.desktop = Some(desktop.into());
                 self
@@ -2796,6 +2803,7 @@ pub mod host_pools {
             pub(crate) host_pool: Option<models::HostPoolPatch>,
         }
         impl Builder {
+            #[doc = "Object containing HostPool definitions."]
             pub fn host_pool(mut self, host_pool: impl Into<models::HostPoolPatch>) -> Self {
                 self.host_pool = Some(host_pool.into());
                 self
@@ -2862,6 +2870,7 @@ pub mod host_pools {
             pub(crate) force: Option<bool>,
         }
         impl Builder {
+            #[doc = "Force flag to delete sessionHost."]
             pub fn force(mut self, force: bool) -> Self {
                 self.force = Some(force);
                 self
@@ -3266,6 +3275,7 @@ pub mod user_sessions {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "OData filter expression. Valid properties for filtering are userprincipalname and sessionstate."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -3406,6 +3416,7 @@ pub mod user_sessions {
             pub(crate) force: Option<bool>,
         }
         impl Builder {
+            #[doc = "Force flag to login off userSession."]
             pub fn force(mut self, force: bool) -> Self {
                 self.force = Some(force);
                 self
@@ -3577,6 +3588,7 @@ pub mod user_sessions {
             pub(crate) send_message: Option<models::SendMessage>,
         }
         impl Builder {
+            #[doc = "Object containing message includes title and message body"]
             pub fn send_message(mut self, send_message: impl Into<models::SendMessage>) -> Self {
                 self.send_message = Some(send_message.into());
                 self
@@ -3779,10 +3791,12 @@ pub mod session_hosts {
             pub(crate) force: Option<bool>,
         }
         impl Builder {
+            #[doc = "Object containing SessionHost definitions."]
             pub fn session_host(mut self, session_host: impl Into<models::SessionHostPatch>) -> Self {
                 self.session_host = Some(session_host.into());
                 self
             }
+            #[doc = "Force flag to update assign, unassign or reassign personal desktop."]
             pub fn force(mut self, force: bool) -> Self {
                 self.force = Some(force);
                 self
@@ -3854,6 +3868,7 @@ pub mod session_hosts {
             pub(crate) force: Option<bool>,
         }
         impl Builder {
+            #[doc = "Force flag to force sessionHost deletion even when userSession exists."]
             pub fn force(mut self, force: bool) -> Self {
                 self.force = Some(force);
                 self
@@ -4227,6 +4242,7 @@ pub mod msix_packages {
             pub(crate) msix_package: Option<models::MsixPackagePatch>,
         }
         impl Builder {
+            #[doc = "Object containing MSIX Package definitions."]
             pub fn msix_package(mut self, msix_package: impl Into<models::MsixPackagePatch>) -> Self {
                 self.msix_package = Some(msix_package.into());
                 self

@@ -470,6 +470,7 @@ pub mod reservation {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "Supported value of this query is renewProperties"]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -665,26 +666,32 @@ pub mod reservation {
             pub(crate) take: Option<f64>,
         }
         impl Builder {
+            #[doc = "May be used to filter by reservation properties. The filter supports 'eq', 'or', and 'and'. It does not currently support 'ne', 'gt', 'le', 'ge', or 'not'. Reservation properties include sku/name, properties/{appliedScopeType, archived, displayName, displayProvisioningState, effectiveDateTime, expiryDate, provisioningState, quantity, renew, reservedResourceType, term, userFriendlyAppliedScopeType, userFriendlyRenewState}"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "May be used to sort order by reservation properties."]
             pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
                 self.orderby = Some(orderby.into());
                 self
             }
+            #[doc = "To indicate whether to refresh the roll up counts of the reservations group by provisioning states"]
             pub fn refresh_summary(mut self, refresh_summary: impl Into<String>) -> Self {
                 self.refresh_summary = Some(refresh_summary.into());
                 self
             }
+            #[doc = "The number of reservations to skip from the list before returning results"]
             pub fn skiptoken(mut self, skiptoken: f64) -> Self {
                 self.skiptoken = Some(skiptoken);
                 self
             }
+            #[doc = "The selected provisioning state"]
             pub fn selected_state(mut self, selected_state: impl Into<String>) -> Self {
                 self.selected_state = Some(selected_state.into());
                 self
             }
+            #[doc = "To number of reservations to return"]
             pub fn take(mut self, take: f64) -> Self {
                 self.take = Some(take);
                 self
@@ -812,22 +819,27 @@ pub mod get_catalog {
         pub(crate) plan_id: Option<String>,
     }
     impl Builder {
+        #[doc = "The type of the resource for which the skus should be provided."]
         pub fn reserved_resource_type(mut self, reserved_resource_type: impl Into<String>) -> Self {
             self.reserved_resource_type = Some(reserved_resource_type.into());
             self
         }
+        #[doc = "Filters the skus based on the location specified in this parameter. This can be an azure region or global"]
         pub fn location(mut self, location: impl Into<String>) -> Self {
             self.location = Some(location.into());
             self
         }
+        #[doc = "Publisher id used to get the third party products"]
         pub fn publisher_id(mut self, publisher_id: impl Into<String>) -> Self {
             self.publisher_id = Some(publisher_id.into());
             self
         }
+        #[doc = "Offer id used to get the third party products"]
         pub fn offer_id(mut self, offer_id: impl Into<String>) -> Self {
             self.offer_id = Some(offer_id.into());
             self
         }
+        #[doc = "Plan id used to get the third party products"]
         pub fn plan_id(mut self, plan_id: impl Into<String>) -> Self {
             self.plan_id = Some(plan_id.into());
             self
@@ -1127,6 +1139,7 @@ pub mod reservation_order {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "May be used to expand the planInformation."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -1982,14 +1995,17 @@ pub mod quota_request_status {
             pub(crate) skiptoken: Option<String>,
         }
         impl Builder {
+            #[doc = "| Field | Supported operators |\r\n|---------------------|------------------------|\r\n|requestSubmitTime | ge, le, eq, gt, lt |"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Skiptoken is only used if a previous operation returned a partial result. If a previous response contains a nextLink element, the value of the nextLink element includes a skiptoken parameter that specifies a starting point to use for subsequent calls."]
             pub fn skiptoken(mut self, skiptoken: impl Into<String>) -> Self {
                 self.skiptoken = Some(skiptoken.into());
                 self

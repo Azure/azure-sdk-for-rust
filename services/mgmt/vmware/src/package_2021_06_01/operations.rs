@@ -7372,6 +7372,7 @@ pub mod script_executions {
             pub(crate) script_output_stream_type: Vec<String>,
         }
         impl Builder {
+            #[doc = "Name of the desired output stream to return. If not provided, will return all. An empty array will return nothing"]
             pub fn script_output_stream_type(mut self, script_output_stream_type: Vec<String>) -> Self {
                 self.script_output_stream_type = script_output_stream_type;
                 self

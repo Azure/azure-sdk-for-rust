@@ -475,10 +475,12 @@ pub mod workflows {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "The number of items to be included in the result."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "The filter to apply on the operation. Options for filters include: State, Trigger, and ReferencedResourceId."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -566,10 +568,12 @@ pub mod workflows {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "The number of items to be included in the result."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "The filter to apply on the operation. Options for filters include: State, Trigger, and ReferencedResourceId."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -1393,6 +1397,7 @@ pub mod workflow_versions {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The number of items to be included in the result."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -1696,10 +1701,12 @@ pub mod workflow_triggers {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "The number of items to be included in the result."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "The filter to apply on the operation."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -2145,6 +2152,7 @@ pub mod workflow_version_triggers {
             pub(crate) parameters: Option<models::GetCallbackUrlParameters>,
         }
         impl Builder {
+            #[doc = "The callback URL parameters."]
             pub fn parameters(mut self, parameters: impl Into<models::GetCallbackUrlParameters>) -> Self {
                 self.parameters = Some(parameters.into());
                 self
@@ -2283,10 +2291,12 @@ pub mod workflow_trigger_histories {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "The number of items to be included in the result."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "The filter to apply on the operation. Options for filters include: Status, StartTime, and ClientTrackingId."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -2550,10 +2560,12 @@ pub mod workflow_runs {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "The number of items to be included in the result."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "The filter to apply on the operation. Options for filters include: Status, StartTime, and ClientTrackingId."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -2830,10 +2842,12 @@ pub mod workflow_run_actions {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "The number of items to be included in the result."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "The filter to apply on the operation. Options for filters include: Status."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -4092,6 +4106,7 @@ pub mod integration_accounts {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The number of items to be included in the result."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -4175,6 +4190,7 @@ pub mod integration_accounts {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The number of items to be included in the result."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -5528,10 +5544,12 @@ pub mod integration_account_schemas {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "The number of items to be included in the result."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "The filter to apply on the operation. Options for filters include: SchemaType."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -5965,10 +5983,12 @@ pub mod integration_account_maps {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "The number of items to be included in the result."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "The filter to apply on the operation. Options for filters include: MapType."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -6402,10 +6422,12 @@ pub mod integration_account_partners {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "The number of items to be included in the result."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "The filter to apply on the operation. Options for filters include: PartnerType."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -6839,10 +6861,12 @@ pub mod integration_account_agreements {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "The number of items to be included in the result."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "The filter to apply on the operation. Options for filters include: AgreementType."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -7250,6 +7274,7 @@ pub mod integration_account_certificates {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The number of items to be included in the result."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -7607,10 +7632,12 @@ pub mod integration_account_sessions {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "The number of items to be included in the result."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "The filter to apply on the operation. Options for filters include: ChangedTime."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -8007,6 +8034,7 @@ pub mod integration_service_environments {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The number of items to be included in the result."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -8090,6 +8118,7 @@ pub mod integration_service_environments {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The number of items to be included in the result."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self

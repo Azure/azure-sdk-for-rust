@@ -303,10 +303,12 @@ pub mod dns_resolvers {
             pub(crate) if_none_match: Option<String>,
         }
         impl Builder {
+            #[doc = "ETag of the resource. Omit this value to always overwrite the current resource. Specify the last-seen ETag value to prevent accidentally overwriting any concurrent changes."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
             }
+            #[doc = "Set to '*' to allow a new resource to be created, but to prevent updating an existing resource. Other values will be ignored."]
             pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
                 self.if_none_match = Some(if_none_match.into());
                 self
@@ -383,6 +385,7 @@ pub mod dns_resolvers {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "ETag of the resource. Omit this value to always overwrite the current resource. Specify the last-seen ETag value to prevent accidentally overwriting any concurrent changes."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -451,6 +454,7 @@ pub mod dns_resolvers {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "ETag of the resource. Omit this value to always overwrite the current resource. Specify the last-seen ETag value to prevent accidentally overwriting any concurrent changes."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -509,6 +513,7 @@ pub mod dns_resolvers {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The maximum number of results to return. If not specified, returns up to 100 results."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -592,6 +597,7 @@ pub mod dns_resolvers {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The maximum number of results to return. If not specified, returns up to 100 results."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -676,6 +682,7 @@ pub mod dns_resolvers {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The maximum number of results to return. If not specified, returns up to 100 results."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -949,10 +956,12 @@ pub mod inbound_endpoints {
             pub(crate) if_none_match: Option<String>,
         }
         impl Builder {
+            #[doc = "ETag of the resource. Omit this value to always overwrite the current resource. Specify the last-seen ETag value to prevent accidentally overwriting any concurrent changes."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
             }
+            #[doc = "Set to '*' to allow a new resource to be created, but to prevent updating an existing resource. Other values will be ignored."]
             pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
                 self.if_none_match = Some(if_none_match.into());
                 self
@@ -1031,6 +1040,7 @@ pub mod inbound_endpoints {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "ETag of the resource. Omit this value to always overwrite the current resource. Specify the last-seen ETag value to prevent accidentally overwriting any concurrent changes."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -1101,6 +1111,7 @@ pub mod inbound_endpoints {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "ETag of the resource. Omit this value to always overwrite the current resource. Specify the last-seen ETag value to prevent accidentally overwriting any concurrent changes."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -1161,6 +1172,7 @@ pub mod inbound_endpoints {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The maximum number of results to return. If not specified, returns up to 100 results."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -1433,10 +1445,12 @@ pub mod outbound_endpoints {
             pub(crate) if_none_match: Option<String>,
         }
         impl Builder {
+            #[doc = "ETag of the resource. Omit this value to always overwrite the current resource. Specify the last-seen ETag value to prevent accidentally overwriting any concurrent changes."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
             }
+            #[doc = "Set to '*' to allow a new resource to be created, but to prevent updating an existing resource. Other values will be ignored."]
             pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
                 self.if_none_match = Some(if_none_match.into());
                 self
@@ -1515,6 +1529,7 @@ pub mod outbound_endpoints {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "ETag of the resource. Omit this value to always overwrite the current resource. Specify the last-seen ETag value to prevent accidentally overwriting any concurrent changes."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -1585,6 +1600,7 @@ pub mod outbound_endpoints {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "ETag of the resource. Omit this value to always overwrite the current resource. Specify the last-seen ETag value to prevent accidentally overwriting any concurrent changes."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -1645,6 +1661,7 @@ pub mod outbound_endpoints {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The maximum number of results to return. If not specified, returns up to 100 results."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -1930,10 +1947,12 @@ pub mod dns_forwarding_rulesets {
             pub(crate) if_none_match: Option<String>,
         }
         impl Builder {
+            #[doc = "ETag of the resource. Omit this value to always overwrite the current resource. Specify the last-seen ETag value to prevent accidentally overwriting any concurrent changes."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
             }
+            #[doc = "Set to '*' to allow a new resource to be created, but to prevent updating an existing resource. Other values will be ignored."]
             pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
                 self.if_none_match = Some(if_none_match.into());
                 self
@@ -2010,6 +2029,7 @@ pub mod dns_forwarding_rulesets {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "ETag of the resource. Omit this value to always overwrite the current resource. Specify the last-seen ETag value to prevent accidentally overwriting any concurrent changes."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -2078,6 +2098,7 @@ pub mod dns_forwarding_rulesets {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "ETag of the resource. Omit this value to always overwrite the current resource. Specify the last-seen ETag value to prevent accidentally overwriting any concurrent changes."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -2136,6 +2157,7 @@ pub mod dns_forwarding_rulesets {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The maximum number of results to return. If not specified, returns up to 100 results."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -2219,6 +2241,7 @@ pub mod dns_forwarding_rulesets {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The maximum number of results to return. If not specified, returns up to 100 results."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -2303,6 +2326,7 @@ pub mod dns_forwarding_rulesets {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The maximum number of results to return. If not specified, returns up to 100 results."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -2569,10 +2593,12 @@ pub mod forwarding_rules {
             pub(crate) if_none_match: Option<String>,
         }
         impl Builder {
+            #[doc = "ETag of the resource. Omit this value to always overwrite the current resource. Specify the last-seen ETag value to prevent accidentally overwriting any concurrent changes."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
             }
+            #[doc = "Set to '*' to allow a new resource to be created, but to prevent updating an existing resource. Other values will be ignored."]
             pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
                 self.if_none_match = Some(if_none_match.into());
                 self
@@ -2645,6 +2671,7 @@ pub mod forwarding_rules {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "ETag of the resource. Omit this value to always overwrite the current resource. Specify the last-seen ETag value to prevent accidentally overwriting any concurrent changes."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -2712,6 +2739,7 @@ pub mod forwarding_rules {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "ETag of the resource. Omit this value to always overwrite the current resource. Specify the last-seen ETag value to prevent accidentally overwriting any concurrent changes."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -2770,6 +2798,7 @@ pub mod forwarding_rules {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The maximum number of results to return. If not specified, returns up to 100 results."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -3035,10 +3064,12 @@ pub mod virtual_network_links {
             pub(crate) if_none_match: Option<String>,
         }
         impl Builder {
+            #[doc = "ETag of the resource. Omit this value to always overwrite the current resource. Specify the last-seen ETag value to prevent accidentally overwriting any concurrent changes."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
             }
+            #[doc = "Set to '*' to allow a new resource to be created, but to prevent updating an existing resource. Other values will be ignored."]
             pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
                 self.if_none_match = Some(if_none_match.into());
                 self
@@ -3110,6 +3141,7 @@ pub mod virtual_network_links {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "ETag of the resource. Omit this value to always overwrite the current resource. Specify the last-seen ETag value to prevent accidentally overwriting any concurrent changes."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -3173,6 +3205,7 @@ pub mod virtual_network_links {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "ETag of the resource. Omit this value to always overwrite the current resource. Specify the last-seen ETag value to prevent accidentally overwriting any concurrent changes."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -3226,6 +3259,7 @@ pub mod virtual_network_links {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The maximum number of results to return. If not specified, returns up to 100 results."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self

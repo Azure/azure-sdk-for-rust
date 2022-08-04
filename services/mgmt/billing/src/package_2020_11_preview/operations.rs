@@ -202,6 +202,7 @@ pub mod billing_accounts {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "May be used to expand the soldTo, invoice sections and billing profiles."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -281,6 +282,7 @@ pub mod billing_accounts {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "May be used to expand the soldTo, invoice sections and billing profiles."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -889,6 +891,7 @@ pub mod billing_profiles {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "May be used to expand the invoice sections."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -972,6 +975,7 @@ pub mod billing_profiles {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "May be used to expand the invoice sections."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -1138,10 +1142,12 @@ pub mod customers {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "Used for searching customers by their name. Any customer with name containing the search text will be included in the response"]
             pub fn search(mut self, search: impl Into<String>) -> Self {
                 self.search = Some(search.into());
                 self
             }
+            #[doc = "May be used to filter the list of customers."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -1229,10 +1235,12 @@ pub mod customers {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "Used for searching customers by their name. Any customer with name containing the search text will be included in the response"]
             pub fn search(mut self, search: impl Into<String>) -> Self {
                 self.search = Some(search.into());
                 self
             }
+            #[doc = "May be used to filter the list of customers."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -1319,6 +1327,7 @@ pub mod customers {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "May be used to expand enabledAzurePlans and resellers"]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -2865,6 +2874,7 @@ pub mod products {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "May be used to filter by product type. The filter supports 'eq', 'lt', 'gt', 'le', 'ge', and 'and'. It does not currently support 'ne', 'or', or 'not'. Tag filter is a key value pair string where key and value are separated by a colon (:)."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -2948,6 +2958,7 @@ pub mod products {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "May be used to filter by product type. The filter supports 'eq', 'lt', 'gt', 'le', 'ge', and 'and'. It does not currently support 'ne', 'or', or 'not'. Tag filter is a key value pair string where key and value are separated by a colon (:)."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -3033,6 +3044,7 @@ pub mod products {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "May be used to filter by product type. The filter supports 'eq', 'lt', 'gt', 'le', 'ge', and 'and'. It does not currently support 'ne', 'or', or 'not'. Tag filter is a key value pair string where key and value are separated by a colon (:)."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -5822,6 +5834,7 @@ pub mod agreements {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "May be used to expand the participants."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -5905,6 +5918,7 @@ pub mod agreements {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "May be used to expand the participants."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -6005,18 +6019,22 @@ pub mod reservations {
             pub(crate) selected_state: Option<String>,
         }
         impl Builder {
+            #[doc = "May be used to filter by reservation properties. The filter supports 'eq', 'or', and 'and'. It does not currently support 'ne', 'gt', 'le', 'ge', or 'not'."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "May be used to sort order by reservation properties."]
             pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
                 self.orderby = Some(orderby.into());
                 self
             }
+            #[doc = "To indicate whether to refresh the roll up counts of the reservations group by provisioning states"]
             pub fn refresh_summary(mut self, refresh_summary: impl Into<String>) -> Self {
                 self.refresh_summary = Some(refresh_summary.into());
                 self
             }
+            #[doc = "The selected provisioning state"]
             pub fn selected_state(mut self, selected_state: impl Into<String>) -> Self {
                 self.selected_state = Some(selected_state.into());
                 self
@@ -6112,18 +6130,22 @@ pub mod reservations {
             pub(crate) selected_state: Option<String>,
         }
         impl Builder {
+            #[doc = "May be used to filter by reservation properties. The filter supports 'eq', 'or', and 'and'. It does not currently support 'ne', 'gt', 'le', 'ge', or 'not'."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "May be used to sort order by reservation properties."]
             pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
                 self.orderby = Some(orderby.into());
                 self
             }
+            #[doc = "To indicate whether to refresh the roll up counts of the reservations group by provisioning state"]
             pub fn refresh_summary(mut self, refresh_summary: impl Into<String>) -> Self {
                 self.refresh_summary = Some(refresh_summary.into());
                 self
             }
+            #[doc = "The selected provisioning state"]
             pub fn selected_state(mut self, selected_state: impl Into<String>) -> Self {
                 self.selected_state = Some(selected_state.into());
                 self

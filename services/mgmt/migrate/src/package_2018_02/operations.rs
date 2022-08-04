@@ -206,6 +206,7 @@ pub mod assessment_options {
             pub(crate) accept_language: Option<String>,
         }
         impl Builder {
+            #[doc = "Standard request header. Used by service to respond to client in appropriate language."]
             pub fn accept_language(mut self, accept_language: impl Into<String>) -> Self {
                 self.accept_language = Some(accept_language.into());
                 self
@@ -406,6 +407,7 @@ pub mod projects {
             pub(crate) accept_language: Option<String>,
         }
         impl Builder {
+            #[doc = "Standard request header. Used by service to respond to client in appropriate language."]
             pub fn accept_language(mut self, accept_language: impl Into<String>) -> Self {
                 self.accept_language = Some(accept_language.into());
                 self
@@ -464,6 +466,7 @@ pub mod projects {
             pub(crate) accept_language: Option<String>,
         }
         impl Builder {
+            #[doc = "Standard request header. Used by service to respond to client in appropriate language."]
             pub fn accept_language(mut self, accept_language: impl Into<String>) -> Self {
                 self.accept_language = Some(accept_language.into());
                 self
@@ -524,6 +527,7 @@ pub mod projects {
             pub(crate) accept_language: Option<String>,
         }
         impl Builder {
+            #[doc = "Standard request header. Used by service to respond to client in appropriate language."]
             pub fn accept_language(mut self, accept_language: impl Into<String>) -> Self {
                 self.accept_language = Some(accept_language.into());
                 self
@@ -589,10 +593,12 @@ pub mod projects {
             pub(crate) project: Option<models::Project>,
         }
         impl Builder {
+            #[doc = "Standard request header. Used by service to respond to client in appropriate language."]
             pub fn accept_language(mut self, accept_language: impl Into<String>) -> Self {
                 self.accept_language = Some(accept_language.into());
                 self
             }
+            #[doc = "New or Updated project object."]
             pub fn project(mut self, project: impl Into<models::Project>) -> Self {
                 self.project = Some(project.into());
                 self
@@ -664,10 +670,12 @@ pub mod projects {
             pub(crate) project: Option<models::Project>,
         }
         impl Builder {
+            #[doc = "Standard request header. Used by service to respond to client in appropriate language."]
             pub fn accept_language(mut self, accept_language: impl Into<String>) -> Self {
                 self.accept_language = Some(accept_language.into());
                 self
             }
+            #[doc = "Updated project object."]
             pub fn project(mut self, project: impl Into<models::Project>) -> Self {
                 self.project = Some(project.into());
                 self
@@ -733,6 +741,7 @@ pub mod projects {
             pub(crate) accept_language: Option<String>,
         }
         impl Builder {
+            #[doc = "Standard request header. Used by service to respond to client in appropriate language."]
             pub fn accept_language(mut self, accept_language: impl Into<String>) -> Self {
                 self.accept_language = Some(accept_language.into());
                 self
@@ -789,6 +798,7 @@ pub mod projects {
             pub(crate) accept_language: Option<String>,
         }
         impl Builder {
+            #[doc = "Standard request header. Used by service to respond to client in appropriate language."]
             pub fn accept_language(mut self, accept_language: impl Into<String>) -> Self {
                 self.accept_language = Some(accept_language.into());
                 self
@@ -901,6 +911,7 @@ pub mod machines {
             pub(crate) accept_language: Option<String>,
         }
         impl Builder {
+            #[doc = "Standard request header. Used by service to respond to client in appropriate language."]
             pub fn accept_language(mut self, accept_language: impl Into<String>) -> Self {
                 self.accept_language = Some(accept_language.into());
                 self
@@ -963,6 +974,7 @@ pub mod machines {
             pub(crate) accept_language: Option<String>,
         }
         impl Builder {
+            #[doc = "Standard request header. Used by service to respond to client in appropriate language."]
             pub fn accept_language(mut self, accept_language: impl Into<String>) -> Self {
                 self.accept_language = Some(accept_language.into());
                 self
@@ -1124,6 +1136,7 @@ pub mod groups {
             pub(crate) accept_language: Option<String>,
         }
         impl Builder {
+            #[doc = "Standard request header. Used by service to respond to client in appropriate language."]
             pub fn accept_language(mut self, accept_language: impl Into<String>) -> Self {
                 self.accept_language = Some(accept_language.into());
                 self
@@ -1186,6 +1199,7 @@ pub mod groups {
             pub(crate) accept_language: Option<String>,
         }
         impl Builder {
+            #[doc = "Standard request header. Used by service to respond to client in appropriate language."]
             pub fn accept_language(mut self, accept_language: impl Into<String>) -> Self {
                 self.accept_language = Some(accept_language.into());
                 self
@@ -1253,10 +1267,12 @@ pub mod groups {
             pub(crate) group: Option<models::Group>,
         }
         impl Builder {
+            #[doc = "Standard request header. Used by service to respond to client in appropriate language."]
             pub fn accept_language(mut self, accept_language: impl Into<String>) -> Self {
                 self.accept_language = Some(accept_language.into());
                 self
             }
+            #[doc = "New or Updated Group object."]
             pub fn group(mut self, group: impl Into<models::Group>) -> Self {
                 self.group = Some(group.into());
                 self
@@ -1329,6 +1345,7 @@ pub mod groups {
             pub(crate) accept_language: Option<String>,
         }
         impl Builder {
+            #[doc = "Standard request header. Used by service to respond to client in appropriate language."]
             pub fn accept_language(mut self, accept_language: impl Into<String>) -> Self {
                 self.accept_language = Some(accept_language.into());
                 self
@@ -1547,6 +1564,7 @@ pub mod assessments {
             pub(crate) accept_language: Option<String>,
         }
         impl Builder {
+            #[doc = "Standard request header. Used by service to respond to client in appropriate language."]
             pub fn accept_language(mut self, accept_language: impl Into<String>) -> Self {
                 self.accept_language = Some(accept_language.into());
                 self
@@ -1609,6 +1627,7 @@ pub mod assessments {
             pub(crate) accept_language: Option<String>,
         }
         impl Builder {
+            #[doc = "Standard request header. Used by service to respond to client in appropriate language."]
             pub fn accept_language(mut self, accept_language: impl Into<String>) -> Self {
                 self.accept_language = Some(accept_language.into());
                 self
@@ -1672,6 +1691,7 @@ pub mod assessments {
             pub(crate) accept_language: Option<String>,
         }
         impl Builder {
+            #[doc = "Standard request header. Used by service to respond to client in appropriate language."]
             pub fn accept_language(mut self, accept_language: impl Into<String>) -> Self {
                 self.accept_language = Some(accept_language.into());
                 self
@@ -1741,10 +1761,12 @@ pub mod assessments {
             pub(crate) assessment: Option<models::Assessment>,
         }
         impl Builder {
+            #[doc = "Standard request header. Used by service to respond to client in appropriate language."]
             pub fn accept_language(mut self, accept_language: impl Into<String>) -> Self {
                 self.accept_language = Some(accept_language.into());
                 self
             }
+            #[doc = "New or Updated Assessment object."]
             pub fn assessment(mut self, assessment: impl Into<models::Assessment>) -> Self {
                 self.assessment = Some(assessment.into());
                 self
@@ -1819,6 +1841,7 @@ pub mod assessments {
             pub(crate) accept_language: Option<String>,
         }
         impl Builder {
+            #[doc = "Standard request header. Used by service to respond to client in appropriate language."]
             pub fn accept_language(mut self, accept_language: impl Into<String>) -> Self {
                 self.accept_language = Some(accept_language.into());
                 self
@@ -1879,6 +1902,7 @@ pub mod assessments {
             pub(crate) accept_language: Option<String>,
         }
         impl Builder {
+            #[doc = "Standard request header. Used by service to respond to client in appropriate language."]
             pub fn accept_language(mut self, accept_language: impl Into<String>) -> Self {
                 self.accept_language = Some(accept_language.into());
                 self
@@ -1999,6 +2023,7 @@ pub mod assessed_machines {
             pub(crate) accept_language: Option<String>,
         }
         impl Builder {
+            #[doc = "Standard request header. Used by service to respond to client in appropriate language."]
             pub fn accept_language(mut self, accept_language: impl Into<String>) -> Self {
                 self.accept_language = Some(accept_language.into());
                 self
@@ -2057,6 +2082,7 @@ pub mod assessed_machines {
             pub(crate) accept_language: Option<String>,
         }
         impl Builder {
+            #[doc = "Standard request header. Used by service to respond to client in appropriate language."]
             pub fn accept_language(mut self, accept_language: impl Into<String>) -> Self {
                 self.accept_language = Some(accept_language.into());
                 self

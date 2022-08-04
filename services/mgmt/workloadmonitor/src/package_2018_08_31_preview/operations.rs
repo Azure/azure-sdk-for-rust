@@ -202,10 +202,12 @@ pub mod monitors {
             pub(crate) skiptoken: Option<String>,
         }
         impl Builder {
+            #[doc = "Filter to be applied on the operation."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "The page-continuation token to use with a paged version of this API."]
             pub fn skiptoken(mut self, skiptoken: impl Into<String>) -> Self {
                 self.skiptoken = Some(skiptoken.into());
                 self
@@ -491,30 +493,37 @@ pub mod components {
             pub(crate) skiptoken: Option<String>,
         }
         impl Builder {
+            #[doc = "Properties to be returned in the response."]
             pub fn select(mut self, select: impl Into<String>) -> Self {
                 self.select = Some(select.into());
                 self
             }
+            #[doc = "Filter to be applied on the operation."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Apply aggregation."]
             pub fn apply(mut self, apply: impl Into<String>) -> Self {
                 self.apply = Some(apply.into());
                 self
             }
+            #[doc = "Sort the result on one or more properties."]
             pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
                 self.orderby = Some(orderby.into());
                 self
             }
+            #[doc = "Include properties inline in the response."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
             }
+            #[doc = "Limit the result to the specified number of rows."]
             pub fn top(mut self, top: impl Into<String>) -> Self {
                 self.top = Some(top.into());
                 self
             }
+            #[doc = "The page-continuation token to use with a paged version of this API."]
             pub fn skiptoken(mut self, skiptoken: impl Into<String>) -> Self {
                 self.skiptoken = Some(skiptoken.into());
                 self
@@ -625,10 +634,12 @@ pub mod components {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "Properties to be returned in the response."]
             pub fn select(mut self, select: impl Into<String>) -> Self {
                 self.select = Some(select.into());
                 self
             }
+            #[doc = "Include properties inline in the response."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -771,30 +782,37 @@ pub mod monitor_instances {
             pub(crate) skiptoken: Option<String>,
         }
         impl Builder {
+            #[doc = "Properties to be returned in the response."]
             pub fn select(mut self, select: impl Into<String>) -> Self {
                 self.select = Some(select.into());
                 self
             }
+            #[doc = "Filter to be applied on the operation."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Apply aggregation."]
             pub fn apply(mut self, apply: impl Into<String>) -> Self {
                 self.apply = Some(apply.into());
                 self
             }
+            #[doc = "Sort the result on one or more properties."]
             pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
                 self.orderby = Some(orderby.into());
                 self
             }
+            #[doc = "Include properties inline in the response."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
             }
+            #[doc = "Limit the result to the specified number of rows."]
             pub fn top(mut self, top: impl Into<String>) -> Self {
                 self.top = Some(top.into());
                 self
             }
+            #[doc = "The page-continuation token to use with a paged version of this API."]
             pub fn skiptoken(mut self, skiptoken: impl Into<String>) -> Self {
                 self.skiptoken = Some(skiptoken.into());
                 self
@@ -905,10 +923,12 @@ pub mod monitor_instances {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "Properties to be returned in the response."]
             pub fn select(mut self, select: impl Into<String>) -> Self {
                 self.select = Some(select.into());
                 self
             }
+            #[doc = "Include properties inline in the response."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -1059,6 +1079,7 @@ pub mod notification_settings {
             pub(crate) skiptoken: Option<String>,
         }
         impl Builder {
+            #[doc = "The page-continuation token to use with a paged version of this API."]
             pub fn skiptoken(mut self, skiptoken: impl Into<String>) -> Self {
                 self.skiptoken = Some(skiptoken.into());
                 self
@@ -1266,30 +1287,37 @@ pub mod components_summary {
             pub(crate) skiptoken: Option<String>,
         }
         impl Builder {
+            #[doc = "Properties to be returned in the response."]
             pub fn select(mut self, select: impl Into<String>) -> Self {
                 self.select = Some(select.into());
                 self
             }
+            #[doc = "Filter to be applied on the operation."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Apply aggregation."]
             pub fn apply(mut self, apply: impl Into<String>) -> Self {
                 self.apply = Some(apply.into());
                 self
             }
+            #[doc = "Sort the result on one or more properties."]
             pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
                 self.orderby = Some(orderby.into());
                 self
             }
+            #[doc = "Include properties inline in the response."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
             }
+            #[doc = "Limit the result to the specified number of rows."]
             pub fn top(mut self, top: impl Into<String>) -> Self {
                 self.top = Some(top.into());
                 self
             }
+            #[doc = "The page-continuation token to use with a paged version of this API."]
             pub fn skiptoken(mut self, skiptoken: impl Into<String>) -> Self {
                 self.skiptoken = Some(skiptoken.into());
                 self
@@ -1419,30 +1447,37 @@ pub mod monitor_instances_summary {
             pub(crate) skiptoken: Option<String>,
         }
         impl Builder {
+            #[doc = "Properties to be returned in the response."]
             pub fn select(mut self, select: impl Into<String>) -> Self {
                 self.select = Some(select.into());
                 self
             }
+            #[doc = "Filter to be applied on the operation."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Apply aggregation."]
             pub fn apply(mut self, apply: impl Into<String>) -> Self {
                 self.apply = Some(apply.into());
                 self
             }
+            #[doc = "Sort the result on one or more properties."]
             pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
                 self.orderby = Some(orderby.into());
                 self
             }
+            #[doc = "Include properties inline in the response."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
             }
+            #[doc = "Limit the result to the specified number of rows."]
             pub fn top(mut self, top: impl Into<String>) -> Self {
                 self.top = Some(top.into());
                 self
             }
+            #[doc = "The page-continuation token to use with a paged version of this API."]
             pub fn skiptoken(mut self, skiptoken: impl Into<String>) -> Self {
                 self.skiptoken = Some(skiptoken.into());
                 self
@@ -1555,6 +1590,7 @@ pub mod operations {
             pub(crate) skiptoken: Option<String>,
         }
         impl Builder {
+            #[doc = "The page-continuation token to use with a paged version of this API."]
             pub fn skiptoken(mut self, skiptoken: impl Into<String>) -> Self {
                 self.skiptoken = Some(skiptoken.into());
                 self

@@ -2547,6 +2547,7 @@ pub mod activity_logs {
             pub(crate) select: Option<String>,
         }
         impl Builder {
+            #[doc = "Used to fetch events with only the given properties.<br>The **$select** argument is a comma separated list of property names to be returned. Possible values are: *authorization*, *claims*, *correlationId*, *description*, *eventDataId*, *eventName*, *eventTimestamp*, *httpRequest*, *level*, *operationId*, *operationName*, *properties*, *resourceGroupName*, *resourceProviderName*, *resourceId*, *status*, *submissionTimestamp*, *subStatus*, *subscriptionId*"]
             pub fn select(mut self, select: impl Into<String>) -> Self {
                 self.select = Some(select.into());
                 self
@@ -2700,10 +2701,12 @@ pub mod tenant_activity_logs {
             pub(crate) select: Option<String>,
         }
         impl Builder {
+            #[doc = "Reduces the set of data collected. <br>The **$filter** is very restricted and allows only the following patterns.<br>- List events for a resource group: $filter=eventTimestamp ge '<Start Time>' and eventTimestamp le '<End Time>' and eventChannels eq 'Admin, Operation' and resourceGroupName eq '<ResourceGroupName>'.<br>- List events for resource: $filter=eventTimestamp ge '<Start Time>' and eventTimestamp le '<End Time>' and eventChannels eq 'Admin, Operation' and resourceUri eq '<ResourceURI>'.<br>- List events for a subscription: $filter=eventTimestamp ge '<Start Time>' and eventTimestamp le '<End Time>' and eventChannels eq 'Admin, Operation'.<br>- List events for a resource provider: $filter=eventTimestamp ge '<Start Time>' and eventTimestamp le '<End Time>' and eventChannels eq 'Admin, Operation' and resourceProvider eq '<ResourceProviderName>'.<br>- List events for a correlation Id: api-version=2014-04-01&$filter=eventTimestamp ge '2014-07-16T04:36:37.6407898Z' and eventTimestamp le '2014-07-20T04:36:37.6407898Z' and eventChannels eq 'Admin, Operation' and correlationId eq '<CorrelationID>'.<br>**NOTE**: No other syntax is allowed."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Used to fetch events with only the given properties.<br>The **$select** argument is a comma separated list of property names to be returned. Possible values are: *authorization*, *claims*, *correlationId*, *description*, *eventDataId*, *eventName*, *eventTimestamp*, *httpRequest*, *level*, *operationId*, *operationName*, *properties*, *resourceGroupName*, *resourceProviderName*, *resourceId*, *status*, *submissionTimestamp*, *subStatus*, *subscriptionId*"]
             pub fn select(mut self, select: impl Into<String>) -> Self {
                 self.select = Some(select.into());
                 self
@@ -2805,6 +2808,7 @@ pub mod metric_definitions {
             pub(crate) metricnamespace: Option<String>,
         }
         impl Builder {
+            #[doc = "Metric namespace to query metric definitions for."]
             pub fn metricnamespace(mut self, metricnamespace: impl Into<String>) -> Self {
                 self.metricnamespace = Some(metricnamespace.into());
                 self
@@ -2895,38 +2899,47 @@ pub mod metrics {
             pub(crate) metricnamespace: Option<String>,
         }
         impl Builder {
+            #[doc = "The timespan of the query. It is a string with the following format 'startDateTime_ISO/endDateTime_ISO'."]
             pub fn timespan(mut self, timespan: impl Into<String>) -> Self {
                 self.timespan = Some(timespan.into());
                 self
             }
+            #[doc = "The interval (i.e. timegrain) of the query."]
             pub fn interval(mut self, interval: impl Into<String>) -> Self {
                 self.interval = Some(interval.into());
                 self
             }
+            #[doc = "The names of the metrics (comma separated) to retrieve. Special case: If a metricname itself has a comma in it then use %2 to indicate it. Eg: 'Metric,Name1' should be **'Metric%2Name1'**"]
             pub fn metricnames(mut self, metricnames: impl Into<String>) -> Self {
                 self.metricnames = Some(metricnames.into());
                 self
             }
+            #[doc = "The list of aggregation types (comma separated) to retrieve."]
             pub fn aggregation(mut self, aggregation: impl Into<String>) -> Self {
                 self.aggregation = Some(aggregation.into());
                 self
             }
+            #[doc = "The maximum number of records to retrieve.\nValid only if $filter is specified.\nDefaults to 10."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "The aggregation to use for sorting results and the direction of the sort.\nOnly one order can be specified.\nExamples: sum asc."]
             pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
                 self.orderby = Some(orderby.into());
                 self
             }
+            #[doc = "The **$filter** is used to reduce the set of metric data returned. Example: Metric contains metadata A, B and C. - Return all time series of C where A = a1 and B = b1 or b2 **$filter=A eq 'a1' and B eq 'b1' or B eq 'b2' and C eq '*'** - Invalid variant: **$filter=A eq 'a1' and B eq 'b1' and C eq '*' or B = 'b2'** This is invalid because the logical or operator cannot separate two different metadata names. - Return all time series where A = a1, B = b1 and C = c1: **$filter=A eq 'a1' and B eq 'b1' and C eq 'c1'** - Return all time series where A = a1 **$filter=A eq 'a1' and B eq '*' and C eq '*'**. Special case: When dimension name or dimension value uses round brackets. Eg: When dimension name is **dim (test) 1** Instead of using $filter= \"dim (test) 1 eq '*' \" use **$filter= \"dim %2528test%2529 1 eq '*' \"** When dimension name is **dim (test) 3** and dimension value is **dim3 (test) val** Instead of using $filter= \"dim (test) 3 eq 'dim3 (test) val' \" use **$filter= \"dim %2528test%2529 3 eq 'dim3 %2528test%2529 val' \"**"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Reduces the set of data collected. The syntax allowed depends on the operation. See the operation's description for details."]
             pub fn result_type(mut self, result_type: impl Into<String>) -> Self {
                 self.result_type = Some(result_type.into());
                 self
             }
+            #[doc = "Metric namespace to query metric definitions for."]
             pub fn metricnamespace(mut self, metricnamespace: impl Into<String>) -> Self {
                 self.metricnamespace = Some(metricnamespace.into());
                 self
@@ -3038,34 +3051,42 @@ pub mod baselines {
             pub(crate) result_type: Option<String>,
         }
         impl Builder {
+            #[doc = "The names of the metrics (comma separated) to retrieve. Special case: If a metricname itself has a comma in it then use %2 to indicate it. Eg: 'Metric,Name1' should be **'Metric%2Name1'**"]
             pub fn metricnames(mut self, metricnames: impl Into<String>) -> Self {
                 self.metricnames = Some(metricnames.into());
                 self
             }
+            #[doc = "Metric namespace to query metric definitions for."]
             pub fn metricnamespace(mut self, metricnamespace: impl Into<String>) -> Self {
                 self.metricnamespace = Some(metricnamespace.into());
                 self
             }
+            #[doc = "The timespan of the query. It is a string with the following format 'startDateTime_ISO/endDateTime_ISO'."]
             pub fn timespan(mut self, timespan: impl Into<String>) -> Self {
                 self.timespan = Some(timespan.into());
                 self
             }
+            #[doc = "The interval (i.e. timegrain) of the query."]
             pub fn interval(mut self, interval: impl Into<String>) -> Self {
                 self.interval = Some(interval.into());
                 self
             }
+            #[doc = "The list of aggregation types (comma separated) to retrieve."]
             pub fn aggregation(mut self, aggregation: impl Into<String>) -> Self {
                 self.aggregation = Some(aggregation.into());
                 self
             }
+            #[doc = "The list of sensitivities (comma separated) to retrieve."]
             pub fn sensitivities(mut self, sensitivities: impl Into<String>) -> Self {
                 self.sensitivities = Some(sensitivities.into());
                 self
             }
+            #[doc = "The **$filter** is used to reduce the set of metric data returned. Example: Metric contains metadata A, B and C. - Return all time series of C where A = a1 and B = b1 or b2 **$filter=A eq 'a1' and B eq 'b1' or B eq 'b2' and C eq '*'** - Invalid variant: **$filter=A eq 'a1' and B eq 'b1' and C eq '*' or B = 'b2'** This is invalid because the logical or operator cannot separate two different metadata names. - Return all time series where A = a1, B = b1 and C = c1: **$filter=A eq 'a1' and B eq 'b1' and C eq 'c1'** - Return all time series where A = a1 **$filter=A eq 'a1' and B eq '*' and C eq '*'**. Special case: When dimension name or dimension value uses round brackets. Eg: When dimension name is **dim (test) 1** Instead of using $filter= \"dim (test) 1 eq '*' \" use **$filter= \"dim %2528test%2529 1 eq '*' \"** When dimension name is **dim (test) 3** and dimension value is **dim3 (test) val** Instead of using $filter= \"dim (test) 3 eq 'dim3 (test) val' \" use **$filter= \"dim %2528test%2529 3 eq 'dim3 %2528test%2529 val' \"**"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Allows retrieving only metadata of the baseline. On data request all information is retrieved."]
             pub fn result_type(mut self, result_type: impl Into<String>) -> Self {
                 self.result_type = Some(result_type.into());
                 self
@@ -4062,6 +4083,7 @@ pub mod scheduled_query_rules {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the operation. For more information please see https://msdn.microsoft.com/en-us/library/azure/dn931934.aspx"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -4120,6 +4142,7 @@ pub mod scheduled_query_rules {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the operation. For more information please see https://msdn.microsoft.com/en-us/library/azure/dn931934.aspx"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -4195,6 +4218,7 @@ pub mod metric_namespaces {
             pub(crate) start_time: Option<String>,
         }
         impl Builder {
+            #[doc = "The ISO 8601 conform Date start time from which to query for metric namespaces."]
             pub fn start_time(mut self, start_time: impl Into<String>) -> Self {
                 self.start_time = Some(start_time.into());
                 self
@@ -6477,6 +6501,7 @@ pub mod data_collection_endpoints {
             pub(crate) body: Option<models::DataCollectionEndpointResource>,
         }
         impl Builder {
+            #[doc = "The payload"]
             pub fn body(mut self, body: impl Into<models::DataCollectionEndpointResource>) -> Self {
                 self.body = Some(body.into());
                 self
@@ -6544,6 +6569,7 @@ pub mod data_collection_endpoints {
             pub(crate) body: Option<models::ResourceForUpdate>,
         }
         impl Builder {
+            #[doc = "The payload"]
             pub fn body(mut self, body: impl Into<models::ResourceForUpdate>) -> Self {
                 self.body = Some(body.into());
                 self
@@ -6975,6 +7001,7 @@ pub mod data_collection_rules {
             pub(crate) body: Option<models::DataCollectionRuleResource>,
         }
         impl Builder {
+            #[doc = "The payload"]
             pub fn body(mut self, body: impl Into<models::DataCollectionRuleResource>) -> Self {
                 self.body = Some(body.into());
                 self
@@ -7042,6 +7069,7 @@ pub mod data_collection_rules {
             pub(crate) body: Option<models::ResourceForUpdate>,
         }
         impl Builder {
+            #[doc = "The payload"]
             pub fn body(mut self, body: impl Into<models::ResourceForUpdate>) -> Self {
                 self.body = Some(body.into());
                 self
@@ -7436,6 +7464,7 @@ pub mod data_collection_rule_associations {
             pub(crate) body: Option<models::DataCollectionRuleAssociationProxyOnlyResource>,
         }
         impl Builder {
+            #[doc = "The payload"]
             pub fn body(mut self, body: impl Into<models::DataCollectionRuleAssociationProxyOnlyResource>) -> Self {
                 self.body = Some(body.into());
                 self

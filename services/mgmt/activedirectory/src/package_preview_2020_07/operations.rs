@@ -313,6 +313,7 @@ pub mod azure_ad_metrics {
             pub(crate) azure_ad_metrics_config: Option<models::AzureAdMetricsUpdateParameter>,
         }
         impl Builder {
+            #[doc = "AzureADMetrics resource with the tags to be updated."]
             pub fn azure_ad_metrics_config(mut self, azure_ad_metrics_config: impl Into<models::AzureAdMetricsUpdateParameter>) -> Self {
                 self.azure_ad_metrics_config = Some(azure_ad_metrics_config.into());
                 self

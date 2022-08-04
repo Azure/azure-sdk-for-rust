@@ -118,18 +118,22 @@ pub mod public_offers {
             pub(crate) hide_keys: Vec<String>,
         }
         impl Builder {
+            #[doc = "Offer language"]
             pub fn language(mut self, language: impl Into<String>) -> Self {
                 self.language = Some(language.into());
                 self
             }
+            #[doc = "Offer market"]
             pub fn market(mut self, market: impl Into<String>) -> Self {
                 self.market = Some(market.into());
                 self
             }
+            #[doc = "To include stop sold or hidden plans"]
             pub fn include_stop_sold_plans(mut self, include_stop_sold_plans: bool) -> Self {
                 self.include_stop_sold_plans = Some(include_stop_sold_plans);
                 self
             }
+            #[doc = "Add hide key to retrieve preview items"]
             pub fn hide_keys(mut self, hide_keys: Vec<String>) -> Self {
                 self.hide_keys = hide_keys;
                 self
@@ -194,10 +198,12 @@ pub mod public_offers {
             pub(crate) hide_keys: Vec<String>,
         }
         impl Builder {
+            #[doc = "Offer language"]
             pub fn language(mut self, language: impl Into<String>) -> Self {
                 self.language = Some(language.into());
                 self
             }
+            #[doc = "Add hide key to retrieve preview items"]
             pub fn hide_keys(mut self, hide_keys: Vec<String>) -> Self {
                 self.hide_keys = hide_keys;
                 self

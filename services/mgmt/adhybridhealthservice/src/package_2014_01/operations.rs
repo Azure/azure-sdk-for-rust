@@ -359,18 +359,22 @@ pub mod adds_services {
             pub(crate) take_count: Option<i64>,
         }
         impl Builder {
+            #[doc = "The service property filter to apply."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "The service type for the services onboarded to Azure Active Directory Connect Health. Depending on whether the service is monitoring, ADFS, Sync or ADDS roles, the service type can either be AdFederationService or AadSyncService or AdDomainService."]
             pub fn service_type(mut self, service_type: impl Into<String>) -> Self {
                 self.service_type = Some(service_type.into());
                 self
             }
+            #[doc = "The skip count, which specifies the number of elements that can be bypassed from a sequence and then return the remaining elements."]
             pub fn skip_count(mut self, skip_count: i64) -> Self {
                 self.skip_count = Some(skip_count);
                 self
             }
+            #[doc = "The take count , which specifies the number of elements that can be returned from a sequence."]
             pub fn take_count(mut self, take_count: i64) -> Self {
                 self.take_count = Some(take_count);
                 self
@@ -607,6 +611,7 @@ pub mod adds_services {
             pub(crate) confirm: Option<bool>,
         }
         impl Builder {
+            #[doc = "Indicates if the service will be permanently deleted or disabled. True indicates that the service will be permanently deleted and False indicates that the service will be marked disabled and then deleted after 30 days, if it is not re-registered."]
             pub fn confirm(mut self, confirm: bool) -> Self {
                 self.confirm = Some(confirm);
                 self
@@ -864,10 +869,12 @@ pub mod adds_services {
             pub(crate) perf_counter: Option<bool>,
         }
         impl Builder {
+            #[doc = "The metric metadata property filter to apply."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Indicates if only performance counter metrics are requested."]
             pub fn perf_counter(mut self, perf_counter: bool) -> Self {
                 self.perf_counter = Some(perf_counter);
                 self
@@ -1009,14 +1016,17 @@ pub mod adds_services {
             pub(crate) to_date: Option<String>,
         }
         impl Builder {
+            #[doc = "The group key"]
             pub fn group_key(mut self, group_key: impl Into<String>) -> Self {
                 self.group_key = Some(group_key.into());
                 self
             }
+            #[doc = "The start date."]
             pub fn from_date(mut self, from_date: impl Into<String>) -> Self {
                 self.from_date = Some(from_date.into());
                 self
             }
+            #[doc = "The end date."]
             pub fn to_date(mut self, to_date: impl Into<String>) -> Self {
                 self.to_date = Some(to_date.into());
                 self
@@ -1082,10 +1092,12 @@ pub mod adds_services {
             pub(crate) with_details: Option<bool>,
         }
         impl Builder {
+            #[doc = "The server property filter to apply."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Indicates if InboundReplicationNeighbor details are required or not."]
             pub fn with_details(mut self, with_details: bool) -> Self {
                 self.with_details = Some(with_details);
                 self
@@ -1153,10 +1165,12 @@ pub mod adds_services {
             pub(crate) take_count: Option<i64>,
         }
         impl Builder {
+            #[doc = "The server property filter to apply."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "The take count , which specifies the number of elements that can be returned from a sequence."]
             pub fn take_count(mut self, take_count: i64) -> Self {
                 self.take_count = Some(take_count);
                 self
@@ -1231,18 +1245,22 @@ pub mod adds_services {
             pub(crate) to: Option<String>,
         }
         impl Builder {
+            #[doc = "The alert property filter to apply."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "The alert state to query for."]
             pub fn state(mut self, state: impl Into<String>) -> Self {
                 self.state = Some(state.into());
                 self
             }
+            #[doc = "The start date to query for."]
             pub fn from(mut self, from: impl Into<String>) -> Self {
                 self.from = Some(from.into());
                 self
             }
+            #[doc = "The end date till when to query for."]
             pub fn to(mut self, to: impl Into<String>) -> Self {
                 self.to = Some(to.into());
                 self
@@ -1337,18 +1355,22 @@ pub mod adds_services {
             pub(crate) take_count: Option<i64>,
         }
         impl Builder {
+            #[doc = "The service property filter to apply."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "The service type for the services onboarded to Azure Active Directory Connect Health. Depending on whether the service is monitoring, ADFS, Sync or ADDS roles, the service type can either be AdFederationService or AadSyncService or AdDomainService."]
             pub fn service_type(mut self, service_type: impl Into<String>) -> Self {
                 self.service_type = Some(service_type.into());
                 self
             }
+            #[doc = "The skip count, which specifies the number of elements that can be bypassed from a sequence and then return the remaining elements."]
             pub fn skip_count(mut self, skip_count: i64) -> Self {
                 self.skip_count = Some(skip_count);
                 self
             }
+            #[doc = "The take count , which specifies the number of elements that can be returned from a sequence."]
             pub fn take_count(mut self, take_count: i64) -> Self {
                 self.take_count = Some(take_count);
                 self
@@ -1462,18 +1484,22 @@ pub mod alerts {
             pub(crate) to: Option<String>,
         }
         impl Builder {
+            #[doc = "The alert property filter to apply."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "The alert state to query for."]
             pub fn state(mut self, state: impl Into<String>) -> Self {
                 self.state = Some(state.into());
                 self
             }
+            #[doc = "The start date to query for."]
             pub fn from(mut self, from: impl Into<String>) -> Self {
                 self.from = Some(from.into());
                 self
             }
+            #[doc = "The end date till when to query for."]
             pub fn to(mut self, to: impl Into<String>) -> Self {
                 self.to = Some(to.into());
                 self
@@ -1600,6 +1626,7 @@ pub mod configuration {
             pub(crate) grouping: Option<String>,
         }
         impl Builder {
+            #[doc = "The grouping for configurations."]
             pub fn grouping(mut self, grouping: impl Into<String>) -> Self {
                 self.grouping = Some(grouping.into());
                 self
@@ -1962,6 +1989,7 @@ pub mod adds_service_members {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "The server property filter to apply."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -2095,6 +2123,7 @@ pub mod adds_service_members {
             pub(crate) confirm: Option<bool>,
         }
         impl Builder {
+            #[doc = "Indicates if the server will be permanently deleted or disabled. True indicates that the server will be permanently deleted and False indicates that the server will be marked disabled and then deleted after 30 days, if it is not re-registered."]
             pub fn confirm(mut self, confirm: bool) -> Self {
                 self.confirm = Some(confirm);
                 self
@@ -2149,6 +2178,7 @@ pub mod adds_service_members {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "The property filter to apply."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -2243,14 +2273,17 @@ pub mod ad_domain_service_members {
             pub(crate) take_count: Option<i64>,
         }
         impl Builder {
+            #[doc = "The server property filter to apply."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "The custom query."]
             pub fn query(mut self, query: impl Into<String>) -> Self {
                 self.query = Some(query.into());
                 self
             }
+            #[doc = "The take count , which specifies the number of elements that can be returned from a sequence."]
             pub fn take_count(mut self, take_count: i64) -> Self {
                 self.take_count = Some(take_count);
                 self
@@ -2572,14 +2605,17 @@ pub mod adds_service {
             pub(crate) to_date: Option<String>,
         }
         impl Builder {
+            #[doc = "The group key"]
             pub fn group_key(mut self, group_key: impl Into<String>) -> Self {
                 self.group_key = Some(group_key.into());
                 self
             }
+            #[doc = "The start date."]
             pub fn from_date(mut self, from_date: impl Into<String>) -> Self {
                 self.from_date = Some(from_date.into());
                 self
             }
+            #[doc = "The end date."]
             pub fn to_date(mut self, to_date: impl Into<String>) -> Self {
                 self.to_date = Some(to_date.into());
                 self
@@ -2741,14 +2777,17 @@ pub mod adds_services_service_members {
             pub(crate) dimension_signature: Option<String>,
         }
         impl Builder {
+            #[doc = "The server property filter to apply."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "The server specific dimension."]
             pub fn dimension_type(mut self, dimension_type: impl Into<String>) -> Self {
                 self.dimension_type = Some(dimension_type.into());
                 self
             }
+            #[doc = "The value of the dimension."]
             pub fn dimension_signature(mut self, dimension_signature: impl Into<String>) -> Self {
                 self.dimension_signature = Some(dimension_signature.into());
                 self
@@ -3352,18 +3391,22 @@ pub mod services {
             pub(crate) take_count: Option<i64>,
         }
         impl Builder {
+            #[doc = "The service property filter to apply."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "The service type for the services onboarded to Azure Active Directory Connect Health. Depending on whether the service is monitoring, ADFS, Sync or ADDS roles, the service type can either be AdFederationService or AadSyncService or AdDomainService."]
             pub fn service_type(mut self, service_type: impl Into<String>) -> Self {
                 self.service_type = Some(service_type.into());
                 self
             }
+            #[doc = "The skip count, which specifies the number of elements that can be bypassed from a sequence and then return the remaining elements."]
             pub fn skip_count(mut self, skip_count: i64) -> Self {
                 self.skip_count = Some(skip_count);
                 self
             }
+            #[doc = "The take count , which specifies the number of elements that can be returned from a sequence."]
             pub fn take_count(mut self, take_count: i64) -> Self {
                 self.take_count = Some(take_count);
                 self
@@ -3504,18 +3547,22 @@ pub mod services {
             pub(crate) take_count: Option<i64>,
         }
         impl Builder {
+            #[doc = "The service property filter to apply."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "The service type for the services onboarded to Azure Active Directory Connect Health. Depending on whether the service is monitoring, ADFS, Sync or ADDS roles, the service type can either be AdFederationService or AadSyncService or AdDomainService."]
             pub fn service_type(mut self, service_type: impl Into<String>) -> Self {
                 self.service_type = Some(service_type.into());
                 self
             }
+            #[doc = "The skip count, which specifies the number of elements that can be bypassed from a sequence and then return the remaining elements."]
             pub fn skip_count(mut self, skip_count: i64) -> Self {
                 self.skip_count = Some(skip_count);
                 self
             }
+            #[doc = "The take count , which specifies the number of elements that can be returned from a sequence."]
             pub fn take_count(mut self, take_count: i64) -> Self {
                 self.take_count = Some(take_count);
                 self
@@ -3704,6 +3751,7 @@ pub mod services {
             pub(crate) confirm: Option<bool>,
         }
         impl Builder {
+            #[doc = "Indicates if the service will be permanently deleted or disabled. True indicates that the service will be permanently deleted and False indicates that the service will be marked disabled and then deleted after 30 days, if it is not re-registered."]
             pub fn confirm(mut self, confirm: bool) -> Self {
                 self.confirm = Some(confirm);
                 self
@@ -3759,18 +3807,22 @@ pub mod services {
             pub(crate) to: Option<String>,
         }
         impl Builder {
+            #[doc = "The alert property filter to apply."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "The alert state to query for."]
             pub fn state(mut self, state: impl Into<String>) -> Self {
                 self.state = Some(state.into());
                 self
             }
+            #[doc = "The start date to query for."]
             pub fn from(mut self, from: impl Into<String>) -> Self {
                 self.from = Some(from.into());
                 self
             }
+            #[doc = "The end date till when to query for."]
             pub fn to(mut self, to: impl Into<String>) -> Self {
                 self.to = Some(to.into());
                 self
@@ -4345,10 +4397,12 @@ pub mod services {
             pub(crate) perf_counter: Option<bool>,
         }
         impl Builder {
+            #[doc = "The metric metadata property filter to apply."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Indicates if only performance counter metrics are requested."]
             pub fn perf_counter(mut self, perf_counter: bool) -> Self {
                 self.perf_counter = Some(perf_counter);
                 self
@@ -4490,14 +4544,17 @@ pub mod services {
             pub(crate) to_date: Option<String>,
         }
         impl Builder {
+            #[doc = "The group key"]
             pub fn group_key(mut self, group_key: impl Into<String>) -> Self {
                 self.group_key = Some(group_key.into());
                 self
             }
+            #[doc = "The start date."]
             pub fn from_date(mut self, from_date: impl Into<String>) -> Self {
                 self.from_date = Some(from_date.into());
                 self
             }
+            #[doc = "The end date."]
             pub fn to_date(mut self, to_date: impl Into<String>) -> Self {
                 self.to_date = Some(to_date.into());
                 self
@@ -4657,6 +4714,7 @@ pub mod services {
             pub(crate) data_source: Option<String>,
         }
         impl Builder {
+            #[doc = "The source of data, if its test data or customer data."]
             pub fn data_source(mut self, data_source: impl Into<String>) -> Self {
                 self.data_source = Some(data_source.into());
                 self
@@ -4895,14 +4953,17 @@ pub mod service {
             pub(crate) to_date: Option<String>,
         }
         impl Builder {
+            #[doc = "The group key"]
             pub fn group_key(mut self, group_key: impl Into<String>) -> Self {
                 self.group_key = Some(group_key.into());
                 self
             }
+            #[doc = "The start date."]
             pub fn from_date(mut self, from_date: impl Into<String>) -> Self {
                 self.from_date = Some(from_date.into());
                 self
             }
+            #[doc = "The end date."]
             pub fn to_date(mut self, to_date: impl Into<String>) -> Self {
                 self.to_date = Some(to_date.into());
                 self
@@ -5186,14 +5247,17 @@ pub mod service_members {
             pub(crate) dimension_signature: Option<String>,
         }
         impl Builder {
+            #[doc = "The server property filter to apply."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "The server specific dimension."]
             pub fn dimension_type(mut self, dimension_type: impl Into<String>) -> Self {
                 self.dimension_type = Some(dimension_type.into());
                 self
             }
+            #[doc = "The value of the dimension."]
             pub fn dimension_signature(mut self, dimension_signature: impl Into<String>) -> Self {
                 self.dimension_signature = Some(dimension_signature.into());
                 self
@@ -5385,6 +5449,7 @@ pub mod service_members {
             pub(crate) confirm: Option<bool>,
         }
         impl Builder {
+            #[doc = "Indicates if the server will be permanently deleted or disabled. True indicates that the server will be permanently deleted and False indicates that the server will be marked disabled and then deleted after 30 days, if it is not re-registered."]
             pub fn confirm(mut self, confirm: bool) -> Self {
                 self.confirm = Some(confirm);
                 self
@@ -5442,18 +5507,22 @@ pub mod service_members {
             pub(crate) to: Option<String>,
         }
         impl Builder {
+            #[doc = "The alert property filter to apply."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "The alert state to query for."]
             pub fn state(mut self, state: impl Into<String>) -> Self {
                 self.state = Some(state.into());
                 self
             }
+            #[doc = "The start date to query for."]
             pub fn from(mut self, from: impl Into<String>) -> Self {
                 self.from = Some(from.into());
                 self
             }
+            #[doc = "The end date till when to query for."]
             pub fn to(mut self, to: impl Into<String>) -> Self {
                 self.to = Some(to.into());
                 self
@@ -5598,6 +5667,7 @@ pub mod service_members {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "The property filter to apply."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -5885,14 +5955,17 @@ pub mod service_members {
             pub(crate) to_date: Option<String>,
         }
         impl Builder {
+            #[doc = "The group key"]
             pub fn group_key(mut self, group_key: impl Into<String>) -> Self {
                 self.group_key = Some(group_key.into());
                 self
             }
+            #[doc = "The start date."]
             pub fn from_date(mut self, from_date: impl Into<String>) -> Self {
                 self.from_date = Some(from_date.into());
                 self
             }
+            #[doc = "The end date."]
             pub fn to_date(mut self, to_date: impl Into<String>) -> Self {
                 self.to_date = Some(to_date.into());
                 self
@@ -6087,6 +6160,7 @@ pub mod list {
             pub(crate) skiptoken: Option<String>,
         }
         impl Builder {
+            #[doc = "A continuationtoken value returned in paginated result to load different pages."]
             pub fn skiptoken(mut self, skiptoken: impl Into<String>) -> Self {
                 self.skiptoken = Some(skiptoken.into());
                 self

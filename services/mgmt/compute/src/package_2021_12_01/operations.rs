@@ -628,6 +628,7 @@ pub mod availability_sets {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "The expand expression to apply to the operation. Allowed values are 'instanceView'."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -956,6 +957,7 @@ pub mod proximity_placement_groups {
             pub(crate) include_colocation_status: Option<String>,
         }
         impl Builder {
+            #[doc = "includeColocationStatus=true enables fetching the colocation status of all the resources in the proximity placement group."]
             pub fn include_colocation_status(mut self, include_colocation_status: impl Into<String>) -> Self {
                 self.include_colocation_status = Some(include_colocation_status.into());
                 self
@@ -1448,6 +1450,7 @@ pub mod dedicated_host_groups {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "The expand expression to apply on the operation. 'InstanceView' will retrieve the list of instance views of the dedicated hosts under the dedicated host group. 'UserData' is not supported for dedicated host group."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -1971,6 +1974,7 @@ pub mod dedicated_hosts {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "The expand expression to apply on the operation. 'InstanceView' will retrieve the list of instance views of the dedicated host. 'UserData' is not supported for dedicated host."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -3073,6 +3077,7 @@ pub mod virtual_machine_extension_images {
             pub(crate) orderby: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the operation."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -3263,6 +3268,7 @@ pub mod virtual_machine_extensions {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "The expand expression to apply on the operation."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -3505,6 +3511,7 @@ pub mod virtual_machine_extensions {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "The expand expression to apply on the operation."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -3733,6 +3740,7 @@ pub mod virtual_machine_images {
             pub(crate) orderby: Option<String>,
         }
         impl Builder {
+            #[doc = "The expand expression to apply on the operation."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -4139,14 +4147,17 @@ pub mod virtual_machine_images_edge_zone {
             pub(crate) orderby: Option<String>,
         }
         impl Builder {
+            #[doc = "The expand expression to apply on the operation."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
             }
+            #[doc = "An integer value specifying the number of images to return that matches supplied values."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Specifies the order of the results returned. Formatted as an OData query."]
             pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
                 self.orderby = Some(orderby.into());
                 self
@@ -5066,6 +5077,7 @@ pub mod virtual_machines {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "The expand expression to apply on the operation. 'InstanceView' retrieves a snapshot of the runtime properties of the virtual machine that is managed by the platform and can change outside of control plane operations. 'UserData' retrieves the UserData property as part of the VM model view that was provided by the user during the VM Create/Update operation."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -5250,6 +5262,7 @@ pub mod virtual_machines {
             pub(crate) force_deletion: Option<bool>,
         }
         impl Builder {
+            #[doc = "Optional parameter to force delete virtual machines."]
             pub fn force_deletion(mut self, force_deletion: bool) -> Self {
                 self.force_deletion = Some(force_deletion);
                 self
@@ -5422,6 +5435,7 @@ pub mod virtual_machines {
             pub(crate) hibernate: Option<bool>,
         }
         impl Builder {
+            #[doc = "Optional parameter to hibernate a virtual machine. (Feature in Preview)"]
             pub fn hibernate(mut self, hibernate: bool) -> Self {
                 self.hibernate = Some(hibernate);
                 self
@@ -5529,6 +5543,7 @@ pub mod virtual_machines {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "The system query option to filter VMs returned in the response. Allowed value is 'virtualMachineScaleSet/id' eq /subscriptions/{subId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Compute/virtualMachineScaleSets/{vmssName}'"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -5613,10 +5628,12 @@ pub mod virtual_machines {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "statusOnly=true enables fetching run time status of all Virtual Machines in the subscription."]
             pub fn status_only(mut self, status_only: impl Into<String>) -> Self {
                 self.status_only = Some(status_only.into());
                 self
             }
+            #[doc = "The system query option to filter VMs returned in the response. Allowed value is 'virtualMachineScaleSet/id' eq /subscriptions/{subId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Compute/virtualMachineScaleSets/{vmssName}'"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -5761,6 +5778,7 @@ pub mod virtual_machines {
             pub(crate) skip_shutdown: Option<bool>,
         }
         impl Builder {
+            #[doc = "The parameter to request non-graceful VM shutdown. True value for this flag indicates non-graceful shutdown whereas false indicates otherwise. Default value for this flag is false if not specified"]
             pub fn skip_shutdown(mut self, skip_shutdown: bool) -> Self {
                 self.skip_shutdown = Some(skip_shutdown);
                 self
@@ -6046,6 +6064,7 @@ pub mod virtual_machines {
             pub(crate) parameters: Option<models::VirtualMachineReimageParameters>,
         }
         impl Builder {
+            #[doc = "Parameters supplied to the Reimage Virtual Machine operation."]
             pub fn parameters(mut self, parameters: impl Into<models::VirtualMachineReimageParameters>) -> Self {
                 self.parameters = Some(parameters.into());
                 self
@@ -6106,6 +6125,7 @@ pub mod virtual_machines {
             pub(crate) sas_uri_expiration_time_in_minutes: Option<i32>,
         }
         impl Builder {
+            #[doc = "Expiration duration in minutes for the SAS URIs with a value between 1 to 1440 minutes. <br><br>NOTE: If not specified, SAS URIs will be generated with a default expiration duration of 120 minutes."]
             pub fn sas_uri_expiration_time_in_minutes(mut self, sas_uri_expiration_time_in_minutes: i32) -> Self {
                 self.sas_uri_expiration_time_in_minutes = Some(sas_uri_expiration_time_in_minutes);
                 self
@@ -6977,6 +6997,7 @@ pub mod virtual_machine_scale_sets {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "The expand expression to apply on the operation. 'UserData' retrieves the UserData property of the VM scale set that was provided by the user during the VM scale set Create/Update operation"]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -7161,6 +7182,7 @@ pub mod virtual_machine_scale_sets {
             pub(crate) force_deletion: Option<bool>,
         }
         impl Builder {
+            #[doc = "Optional parameter to force delete a VM scale set. (Feature in Preview)"]
             pub fn force_deletion(mut self, force_deletion: bool) -> Self {
                 self.force_deletion = Some(force_deletion);
                 self
@@ -7226,6 +7248,7 @@ pub mod virtual_machine_scale_sets {
             pub(crate) vm_instance_i_ds: Option<models::VirtualMachineScaleSetVmInstanceIDs>,
         }
         impl Builder {
+            #[doc = "A list of virtual machine instance IDs from the VM scale set."]
             pub fn vm_instance_i_ds(mut self, vm_instance_i_ds: impl Into<models::VirtualMachineScaleSetVmInstanceIDs>) -> Self {
                 self.vm_instance_i_ds = Some(vm_instance_i_ds.into());
                 self
@@ -7291,6 +7314,7 @@ pub mod virtual_machine_scale_sets {
             pub(crate) force_deletion: Option<bool>,
         }
         impl Builder {
+            #[doc = "Optional parameter to force delete virtual machines from the VM scale set. (Feature in Preview)"]
             pub fn force_deletion(mut self, force_deletion: bool) -> Self {
                 self.force_deletion = Some(force_deletion);
                 self
@@ -7715,10 +7739,12 @@ pub mod virtual_machine_scale_sets {
             pub(crate) skip_shutdown: Option<bool>,
         }
         impl Builder {
+            #[doc = "A list of virtual machine instance IDs from the VM scale set."]
             pub fn vm_instance_i_ds(mut self, vm_instance_i_ds: impl Into<models::VirtualMachineScaleSetVmInstanceIDs>) -> Self {
                 self.vm_instance_i_ds = Some(vm_instance_i_ds.into());
                 self
             }
+            #[doc = "The parameter to request non-graceful VM shutdown. True value for this flag indicates non-graceful shutdown whereas false indicates otherwise. Default value for this flag is false if not specified"]
             pub fn skip_shutdown(mut self, skip_shutdown: bool) -> Self {
                 self.skip_shutdown = Some(skip_shutdown);
                 self
@@ -7788,6 +7814,7 @@ pub mod virtual_machine_scale_sets {
             pub(crate) vm_instance_i_ds: Option<models::VirtualMachineScaleSetVmInstanceIDs>,
         }
         impl Builder {
+            #[doc = "A list of virtual machine instance IDs from the VM scale set."]
             pub fn vm_instance_i_ds(mut self, vm_instance_i_ds: impl Into<models::VirtualMachineScaleSetVmInstanceIDs>) -> Self {
                 self.vm_instance_i_ds = Some(vm_instance_i_ds.into());
                 self
@@ -7852,6 +7879,7 @@ pub mod virtual_machine_scale_sets {
             pub(crate) vm_instance_i_ds: Option<models::VirtualMachineScaleSetVmInstanceIDs>,
         }
         impl Builder {
+            #[doc = "A list of virtual machine instance IDs from the VM scale set."]
             pub fn vm_instance_i_ds(mut self, vm_instance_i_ds: impl Into<models::VirtualMachineScaleSetVmInstanceIDs>) -> Self {
                 self.vm_instance_i_ds = Some(vm_instance_i_ds.into());
                 self
@@ -7916,6 +7944,7 @@ pub mod virtual_machine_scale_sets {
             pub(crate) vm_instance_i_ds: Option<models::VirtualMachineScaleSetVmInstanceIDs>,
         }
         impl Builder {
+            #[doc = "A list of virtual machine instance IDs from the VM scale set."]
             pub fn vm_instance_i_ds(mut self, vm_instance_i_ds: impl Into<models::VirtualMachineScaleSetVmInstanceIDs>) -> Self {
                 self.vm_instance_i_ds = Some(vm_instance_i_ds.into());
                 self
@@ -7980,6 +8009,7 @@ pub mod virtual_machine_scale_sets {
             pub(crate) vm_instance_i_ds: Option<models::VirtualMachineScaleSetVmInstanceIDs>,
         }
         impl Builder {
+            #[doc = "A list of virtual machine instance IDs from the VM scale set."]
             pub fn vm_instance_i_ds(mut self, vm_instance_i_ds: impl Into<models::VirtualMachineScaleSetVmInstanceIDs>) -> Self {
                 self.vm_instance_i_ds = Some(vm_instance_i_ds.into());
                 self
@@ -8094,6 +8124,7 @@ pub mod virtual_machine_scale_sets {
             pub(crate) vm_scale_set_reimage_input: Option<models::VirtualMachineScaleSetReimageParameters>,
         }
         impl Builder {
+            #[doc = "Parameters for Reimaging VM ScaleSet."]
             pub fn vm_scale_set_reimage_input(
                 mut self,
                 vm_scale_set_reimage_input: impl Into<models::VirtualMachineScaleSetReimageParameters>,
@@ -8161,6 +8192,7 @@ pub mod virtual_machine_scale_sets {
             pub(crate) vm_instance_i_ds: Option<models::VirtualMachineScaleSetVmInstanceIDs>,
         }
         impl Builder {
+            #[doc = "A list of virtual machine instance IDs from the VM scale set."]
             pub fn vm_instance_i_ds(mut self, vm_instance_i_ds: impl Into<models::VirtualMachineScaleSetVmInstanceIDs>) -> Self {
                 self.vm_instance_i_ds = Some(vm_instance_i_ds.into());
                 self
@@ -8223,10 +8255,12 @@ pub mod virtual_machine_scale_sets {
             pub(crate) placement_group_id: Option<String>,
         }
         impl Builder {
+            #[doc = "The zone in which the manual recovery walk is requested for cross zone virtual machine scale set"]
             pub fn zone(mut self, zone: impl Into<String>) -> Self {
                 self.zone = Some(zone.into());
                 self
             }
+            #[doc = "The placement group id for which the manual recovery walk is requested."]
             pub fn placement_group_id(mut self, placement_group_id: impl Into<String>) -> Self {
                 self.placement_group_id = Some(placement_group_id.into());
                 self
@@ -8567,6 +8601,7 @@ pub mod images {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "The expand expression to apply on the operation."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -9072,6 +9107,7 @@ pub mod restore_point_collections {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "The expand expression to apply on the operation. If expand=restorePoints, server will return all contained restore points in the restorePointCollection."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -9532,6 +9568,7 @@ pub mod restore_points {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "The expand expression to apply on the operation. 'InstanceView' retrieves information about the run-time state of a restore point."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -9825,6 +9862,7 @@ pub mod capacity_reservation_groups {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "The expand expression to apply on the operation. 'InstanceView' will retrieve the list of instance views of the capacity reservations under the capacity reservation group which is a snapshot of the runtime properties of a capacity reservation that is managed by the platform and can change outside of control plane operations."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -10054,6 +10092,7 @@ pub mod capacity_reservation_groups {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "The expand expression to apply on the operation. Based on the expand param(s) specified we return Virtual Machine or ScaleSet VM Instance or both resource Ids which are associated to capacity reservation group in the response."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -10137,6 +10176,7 @@ pub mod capacity_reservation_groups {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "The expand expression to apply on the operation. Based on the expand param(s) specified we return Virtual Machine or ScaleSet VM Instance or both resource Ids which are associated to capacity reservation group in the response."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -10342,6 +10382,7 @@ pub mod capacity_reservations {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "The expand expression to apply on the operation. 'InstanceView' retrieves a snapshot of the runtime properties of the capacity reservation that is managed by the platform and can change outside of control plane operations."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -10754,6 +10795,7 @@ pub mod virtual_machine_scale_set_extensions {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "The expand expression to apply on the operation."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -11502,6 +11544,7 @@ pub mod virtual_machine_scale_set_vm_extensions {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "The expand expression to apply on the operation."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -11720,6 +11763,7 @@ pub mod virtual_machine_scale_set_vm_extensions {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "The expand expression to apply on the operation."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -12148,6 +12192,7 @@ pub mod virtual_machine_scale_set_v_ms {
             pub(crate) vm_scale_set_vm_reimage_input: Option<models::VirtualMachineScaleSetVmReimageParameters>,
         }
         impl Builder {
+            #[doc = "Parameters for the Reimaging Virtual machine in ScaleSet."]
             pub fn vm_scale_set_vm_reimage_input(
                 mut self,
                 vm_scale_set_vm_reimage_input: impl Into<models::VirtualMachineScaleSetVmReimageParameters>,
@@ -12306,6 +12351,7 @@ pub mod virtual_machine_scale_set_v_ms {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "The expand expression to apply on the operation. 'InstanceView' will retrieve the instance view of the virtual machine. 'UserData' will retrieve the UserData of the virtual machine."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -12425,6 +12471,7 @@ pub mod virtual_machine_scale_set_v_ms {
             pub(crate) force_deletion: Option<bool>,
         }
         impl Builder {
+            #[doc = "Optional parameter to force delete a virtual machine from a VM scale set. (Feature in Preview)"]
             pub fn force_deletion(mut self, force_deletion: bool) -> Self {
                 self.force_deletion = Some(force_deletion);
                 self
@@ -12529,14 +12576,17 @@ pub mod virtual_machine_scale_set_v_ms {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply to the operation. Allowed values are 'startswith(instanceView/statuses/code, 'PowerState') eq true', 'properties/latestModelApplied eq true', 'properties/latestModelApplied eq false'."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "The list parameters. Allowed values are 'instanceView', 'instanceView/statuses'."]
             pub fn select(mut self, select: impl Into<String>) -> Self {
                 self.select = Some(select.into());
                 self
             }
+            #[doc = "The expand expression to apply to the operation. Allowed values are 'instanceView'."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -12634,6 +12684,7 @@ pub mod virtual_machine_scale_set_v_ms {
             pub(crate) skip_shutdown: Option<bool>,
         }
         impl Builder {
+            #[doc = "The parameter to request non-graceful VM shutdown. True value for this flag indicates non-graceful shutdown whereas false indicates otherwise. Default value for this flag is false if not specified"]
             pub fn skip_shutdown(mut self, skip_shutdown: bool) -> Self {
                 self.skip_shutdown = Some(skip_shutdown);
                 self
@@ -12840,6 +12891,7 @@ pub mod virtual_machine_scale_set_v_ms {
             pub(crate) sas_uri_expiration_time_in_minutes: Option<i32>,
         }
         impl Builder {
+            #[doc = "Expiration duration in minutes for the SAS URIs with a value between 1 to 1440 minutes. <br><br>NOTE: If not specified, SAS URIs will be generated with a default expiration duration of 120 minutes."]
             pub fn sas_uri_expiration_time_in_minutes(mut self, sas_uri_expiration_time_in_minutes: i32) -> Self {
                 self.sas_uri_expiration_time_in_minutes = Some(sas_uri_expiration_time_in_minutes);
                 self
@@ -13482,6 +13534,7 @@ pub mod virtual_machine_run_commands {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "The expand expression to apply on the operation."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -13724,6 +13777,7 @@ pub mod virtual_machine_run_commands {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "The expand expression to apply on the operation."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -13948,6 +14002,7 @@ pub mod virtual_machine_scale_set_vm_run_commands {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "The expand expression to apply on the operation."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -14166,6 +14221,7 @@ pub mod virtual_machine_scale_set_vm_run_commands {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "The expand expression to apply on the operation."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -14263,10 +14319,12 @@ pub mod resource_skus {
             pub(crate) include_extended_locations: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the operation. Only **location** filter is supported currently."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "To Include Extended Locations information or not in the response."]
             pub fn include_extended_locations(mut self, include_extended_locations: impl Into<String>) -> Self {
                 self.include_extended_locations = Some(include_extended_locations.into());
                 self
@@ -17610,10 +17668,12 @@ pub mod galleries {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "The select expression to apply on the operation."]
             pub fn select(mut self, select: impl Into<String>) -> Self {
                 self.select = Some(select.into());
                 self
             }
+            #[doc = "The expand query option to apply on the operation."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -18583,6 +18643,7 @@ pub mod gallery_image_versions {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "The expand expression to apply on the operation."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -19493,6 +19554,7 @@ pub mod gallery_application_versions {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "The expand expression to apply on the operation."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -19957,6 +20019,7 @@ pub mod shared_galleries {
             pub(crate) shared_to: Option<String>,
         }
         impl Builder {
+            #[doc = "The query parameter to decide what shared galleries to fetch when doing listing operations."]
             pub fn shared_to(mut self, shared_to: impl Into<String>) -> Self {
                 self.shared_to = Some(shared_to.into());
                 self
@@ -20142,6 +20205,7 @@ pub mod shared_gallery_images {
             pub(crate) shared_to: Option<String>,
         }
         impl Builder {
+            #[doc = "The query parameter to decide what shared galleries to fetch when doing listing operations."]
             pub fn shared_to(mut self, shared_to: impl Into<String>) -> Self {
                 self.shared_to = Some(shared_to.into());
                 self
@@ -20337,6 +20401,7 @@ pub mod shared_gallery_image_versions {
             pub(crate) shared_to: Option<String>,
         }
         impl Builder {
+            #[doc = "The query parameter to decide what shared galleries to fetch when doing listing operations."]
             pub fn shared_to(mut self, shared_to: impl Into<String>) -> Self {
                 self.shared_to = Some(shared_to.into());
                 self
@@ -20892,6 +20957,7 @@ pub mod cloud_service_role_instances {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "The expand expression to apply to the operation. 'UserData' is not supported for cloud services."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -21058,6 +21124,7 @@ pub mod cloud_service_role_instances {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "The expand expression to apply to the operation. 'UserData' is not supported for cloud services."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -21836,6 +21903,7 @@ pub mod cloud_services {
             pub(crate) parameters: Option<models::CloudService>,
         }
         impl Builder {
+            #[doc = "The cloud service object."]
             pub fn parameters(mut self, parameters: impl Into<models::CloudService>) -> Self {
                 self.parameters = Some(parameters.into());
                 self
@@ -21904,6 +21972,7 @@ pub mod cloud_services {
             pub(crate) parameters: Option<models::CloudServiceUpdate>,
         }
         impl Builder {
+            #[doc = "The cloud service object."]
             pub fn parameters(mut self, parameters: impl Into<models::CloudServiceUpdate>) -> Self {
                 self.parameters = Some(parameters.into());
                 self
@@ -22339,6 +22408,7 @@ pub mod cloud_services {
             pub(crate) parameters: Option<models::RoleInstances>,
         }
         impl Builder {
+            #[doc = "List of cloud service role instance names."]
             pub fn parameters(mut self, parameters: impl Into<models::RoleInstances>) -> Self {
                 self.parameters = Some(parameters.into());
                 self
@@ -22403,6 +22473,7 @@ pub mod cloud_services {
             pub(crate) parameters: Option<models::RoleInstances>,
         }
         impl Builder {
+            #[doc = "List of cloud service role instance names."]
             pub fn parameters(mut self, parameters: impl Into<models::RoleInstances>) -> Self {
                 self.parameters = Some(parameters.into());
                 self
@@ -22467,6 +22538,7 @@ pub mod cloud_services {
             pub(crate) parameters: Option<models::RoleInstances>,
         }
         impl Builder {
+            #[doc = "List of cloud service role instance names."]
             pub fn parameters(mut self, parameters: impl Into<models::RoleInstances>) -> Self {
                 self.parameters = Some(parameters.into());
                 self
@@ -22531,6 +22603,7 @@ pub mod cloud_services {
             pub(crate) parameters: Option<models::RoleInstances>,
         }
         impl Builder {
+            #[doc = "List of cloud service role instance names."]
             pub fn parameters(mut self, parameters: impl Into<models::RoleInstances>) -> Self {
                 self.parameters = Some(parameters.into());
                 self
@@ -22720,6 +22793,7 @@ pub mod cloud_services_update_domain {
             pub(crate) parameters: Option<models::UpdateDomain>,
         }
         impl Builder {
+            #[doc = "The update domain object."]
             pub fn parameters(mut self, parameters: impl Into<models::UpdateDomain>) -> Self {
                 self.parameters = Some(parameters.into());
                 self

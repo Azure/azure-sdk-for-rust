@@ -271,26 +271,32 @@ pub mod accounts {
             pub(crate) count: Option<bool>,
         }
         impl Builder {
+            #[doc = "OData filter. Optional."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "The number of items to return. Optional."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "The number of items to skip over before returning elements. Optional."]
             pub fn skip(mut self, skip: i32) -> Self {
                 self.skip = Some(skip);
                 self
             }
+            #[doc = "OData Select statement. Limits the properties on each entry to just those requested, e.g. Categories?$select=CategoryName,Description. Optional."]
             pub fn select(mut self, select: impl Into<String>) -> Self {
                 self.select = Some(select.into());
                 self
             }
+            #[doc = "OrderBy clause. One or more comma-separated expressions with an optional \"asc\" (the default) or \"desc\" depending on the order you'd like the values sorted, e.g. Categories?$orderby=CategoryName desc. Optional."]
             pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
                 self.orderby = Some(orderby.into());
                 self
             }
+            #[doc = "The Boolean value of true or false to request a count of the matching resources included with the resources in the response, e.g. Categories?$count=true. Optional."]
             pub fn count(mut self, count: bool) -> Self {
                 self.count = Some(count);
                 self
@@ -394,26 +400,32 @@ pub mod accounts {
             pub(crate) count: Option<bool>,
         }
         impl Builder {
+            #[doc = "OData filter. Optional."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "The number of items to return. Optional."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "The number of items to skip over before returning elements. Optional."]
             pub fn skip(mut self, skip: i32) -> Self {
                 self.skip = Some(skip);
                 self
             }
+            #[doc = "OData Select statement. Limits the properties on each entry to just those requested, e.g. Categories?$select=CategoryName,Description. Optional."]
             pub fn select(mut self, select: impl Into<String>) -> Self {
                 self.select = Some(select.into());
                 self
             }
+            #[doc = "OrderBy clause. One or more comma-separated expressions with an optional \"asc\" (the default) or \"desc\" depending on the order you'd like the values sorted, e.g. Categories?$orderby=CategoryName desc. Optional."]
             pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
                 self.orderby = Some(orderby.into());
                 self
             }
+            #[doc = "A Boolean value of true or false to request a count of the matching resources included with the resources in the response, e.g. Categories?$count=true. Optional."]
             pub fn count(mut self, count: bool) -> Self {
                 self.count = Some(count);
                 self
@@ -1163,6 +1175,7 @@ pub mod firewall_rules {
             pub(crate) parameters: Option<models::UpdateFirewallRuleParameters>,
         }
         impl Builder {
+            #[doc = "Parameters supplied to update the firewall rule."]
             pub fn parameters(mut self, parameters: impl Into<models::UpdateFirewallRuleParameters>) -> Self {
                 self.parameters = Some(parameters.into());
                 self
@@ -1587,6 +1600,7 @@ pub mod virtual_network_rules {
             pub(crate) parameters: Option<models::UpdateVirtualNetworkRuleParameters>,
         }
         impl Builder {
+            #[doc = "Parameters supplied to update the virtual network rule."]
             pub fn parameters(mut self, parameters: impl Into<models::UpdateVirtualNetworkRuleParameters>) -> Self {
                 self.parameters = Some(parameters.into());
                 self
@@ -2011,6 +2025,7 @@ pub mod trusted_id_providers {
             pub(crate) parameters: Option<models::UpdateTrustedIdProviderParameters>,
         }
         impl Builder {
+            #[doc = "Parameters supplied to update the trusted identity provider."]
             pub fn parameters(mut self, parameters: impl Into<models::UpdateTrustedIdProviderParameters>) -> Self {
                 self.parameters = Some(parameters.into());
                 self

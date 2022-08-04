@@ -920,6 +920,7 @@ pub mod code_package {
             pub(crate) tail: Option<i64>,
         }
         impl Builder {
+            #[doc = "Number of lines to show from the end of the logs. Default is 100."]
             pub fn tail(mut self, tail: i64) -> Self {
                 self.tail = Some(tail);
                 self

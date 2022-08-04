@@ -236,6 +236,7 @@ pub mod hybrid_use_benefit {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "Supports applying filter on the type of SKU"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self

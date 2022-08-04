@@ -1149,6 +1149,7 @@ pub mod automation_rules {
             pub(crate) automation_rule_to_upsert: Option<models::AutomationRule>,
         }
         impl Builder {
+            #[doc = "The automation rule"]
             pub fn automation_rule_to_upsert(mut self, automation_rule_to_upsert: impl Into<models::AutomationRule>) -> Self {
                 self.automation_rule_to_upsert = Some(automation_rule_to_upsert.into());
                 self
@@ -1609,18 +1610,22 @@ pub mod incidents {
             pub(crate) skip_token: Option<String>,
         }
         impl Builder {
+            #[doc = "Filters the results, based on a Boolean condition. Optional."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Sorts the results. Optional."]
             pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
                 self.orderby = Some(orderby.into());
                 self
             }
+            #[doc = "Returns only the first n results. Optional."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Skiptoken is only used if a previous operation returned a partial result. If a previous response contains a nextLink element, the value of the nextLink element will include a skiptoken parameter that specifies a starting point to use for subsequent calls. Optional."]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());
                 self
@@ -2489,18 +2494,22 @@ pub mod bookmark_relations {
             pub(crate) skip_token: Option<String>,
         }
         impl Builder {
+            #[doc = "Filters the results, based on a Boolean condition. Optional."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Sorts the results. Optional."]
             pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
                 self.orderby = Some(orderby.into());
                 self
             }
+            #[doc = "Returns only the first n results. Optional."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Skiptoken is only used if a previous operation returned a partial result. If a previous response contains a nextLink element, the value of the nextLink element will include a skiptoken parameter that specifies a starting point to use for subsequent calls. Optional."]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());
                 self
@@ -3487,18 +3496,22 @@ pub mod entities_relations {
             pub(crate) skip_token: Option<String>,
         }
         impl Builder {
+            #[doc = "Filters the results, based on a Boolean condition. Optional."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Sorts the results. Optional."]
             pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
                 self.orderby = Some(orderby.into());
                 self
             }
+            #[doc = "Returns only the first n results. Optional."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Skiptoken is only used if a previous operation returned a partial result. If a previous response contains a nextLink element, the value of the nextLink element will include a skiptoken parameter that specifies a starting point to use for subsequent calls. Optional."]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());
                 self
@@ -3762,6 +3775,7 @@ pub mod entity_queries {
             pub(crate) kind: Option<String>,
         }
         impl Builder {
+            #[doc = "The entity query kind we want to fetch"]
             pub fn kind(mut self, kind: impl Into<String>) -> Self {
                 self.kind = Some(kind.into());
                 self
@@ -4043,6 +4057,7 @@ pub mod entity_query_templates {
             pub(crate) kind: Option<String>,
         }
         impl Builder {
+            #[doc = "The entity template query kind we want to fetch"]
             pub fn kind(mut self, kind: impl Into<String>) -> Self {
                 self.kind = Some(kind.into());
                 self
@@ -4284,18 +4299,22 @@ pub mod incident_comments {
             pub(crate) skip_token: Option<String>,
         }
         impl Builder {
+            #[doc = "Filters the results, based on a Boolean condition. Optional."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Sorts the results. Optional."]
             pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
                 self.orderby = Some(orderby.into());
                 self
             }
+            #[doc = "Returns only the first n results. Optional."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Skiptoken is only used if a previous operation returned a partial result. If a previous response contains a nextLink element, the value of the nextLink element will include a skiptoken parameter that specifies a starting point to use for subsequent calls. Optional."]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());
                 self
@@ -4655,18 +4674,22 @@ pub mod incident_relations {
             pub(crate) skip_token: Option<String>,
         }
         impl Builder {
+            #[doc = "Filters the results, based on a Boolean condition. Optional."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Sorts the results. Optional."]
             pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
                 self.orderby = Some(orderby.into());
                 self
             }
+            #[doc = "Returns only the first n results. Optional."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Skiptoken is only used if a previous operation returned a partial result. If a previous response contains a nextLink element, the value of the nextLink element will include a skiptoken parameter that specifies a starting point to use for subsequent calls. Optional."]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());
                 self
@@ -5038,18 +5061,22 @@ pub mod metadata {
             pub(crate) skip: Option<i32>,
         }
         impl Builder {
+            #[doc = "Filters the results, based on a Boolean condition. Optional."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Sorts the results. Optional."]
             pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
                 self.orderby = Some(orderby.into());
                 self
             }
+            #[doc = "Returns only the first n results. Optional."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Used to skip n elements in the OData query (offset). Returns a nextLink to the next page of results if there are any left."]
             pub fn skip(mut self, skip: i32) -> Self {
                 self.skip = Some(skip);
                 self
@@ -5721,6 +5748,7 @@ pub mod sentinel_onboarding_states {
             pub(crate) sentinel_onboarding_state_parameter: Option<models::SentinelOnboardingState>,
         }
         impl Builder {
+            #[doc = "The Sentinel onboarding state parameter"]
             pub fn sentinel_onboarding_state_parameter(
                 mut self,
                 sentinel_onboarding_state_parameter: impl Into<models::SentinelOnboardingState>,
@@ -7482,18 +7510,22 @@ pub mod threat_intelligence_indicators {
             pub(crate) skip_token: Option<String>,
         }
         impl Builder {
+            #[doc = "Filters the results, based on a Boolean condition. Optional."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Sorts the results. Optional."]
             pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
                 self.orderby = Some(orderby.into());
                 self
             }
+            #[doc = "Returns only the first n results. Optional."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Skiptoken is only used if a previous operation returned a partial result. If a previous response contains a nextLink element, the value of the nextLink element will include a skiptoken parameter that specifies a starting point to use for subsequent calls. Optional."]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());
                 self
@@ -7749,6 +7781,7 @@ pub mod watchlists {
             pub(crate) skip_token: Option<String>,
         }
         impl Builder {
+            #[doc = "Skiptoken is only used if a previous operation returned a partial result. If a previous response contains a nextLink element, the value of the nextLink element will include a skiptoken parameter that specifies a starting point to use for subsequent calls. Optional."]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());
                 self
@@ -8090,6 +8123,7 @@ pub mod watchlist_items {
             pub(crate) skip_token: Option<String>,
         }
         impl Builder {
+            #[doc = "Skiptoken is only used if a previous operation returned a partial result. If a previous response contains a nextLink element, the value of the nextLink element will include a skiptoken parameter that specifies a starting point to use for subsequent calls. Optional."]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());
                 self

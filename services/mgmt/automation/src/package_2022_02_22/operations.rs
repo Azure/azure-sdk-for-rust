@@ -1408,18 +1408,22 @@ pub mod dsc_node {
             pub(crate) inlinecount: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the operation."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "The number of rows to skip."]
             pub fn skip(mut self, skip: i64) -> Self {
                 self.skip = Some(skip);
                 self
             }
+            #[doc = "The number of rows to take."]
             pub fn top(mut self, top: i64) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Return total rows."]
             pub fn inlinecount(mut self, inlinecount: impl Into<String>) -> Self {
                 self.inlinecount = Some(inlinecount.into());
                 self
@@ -1595,6 +1599,7 @@ pub mod node_reports {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the operation."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -2024,18 +2029,22 @@ pub mod dsc_node_configuration {
             pub(crate) inlinecount: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the operation."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "The number of rows to skip."]
             pub fn skip(mut self, skip: i64) -> Self {
                 self.skip = Some(skip);
                 self
             }
+            #[doc = "The number of rows to take."]
             pub fn top(mut self, top: i64) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Return total rows."]
             pub fn inlinecount(mut self, inlinecount: impl Into<String>) -> Self {
                 self.inlinecount = Some(inlinecount.into());
                 self
@@ -2340,6 +2349,7 @@ pub mod dsc_compilation_job {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the operation."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -2976,6 +2986,7 @@ pub mod source_control {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the operation."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -3243,6 +3254,7 @@ pub mod source_control_sync_job {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the operation."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -3385,6 +3397,7 @@ pub mod source_control_sync_job_streams {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the operation."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -4027,6 +4040,7 @@ pub mod statistics {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the operation."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -6107,6 +6121,7 @@ pub mod job_schedule {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the operation."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -8431,6 +8446,7 @@ pub mod watcher {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the operation."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -8780,6 +8796,7 @@ pub mod dsc_configuration {
             pub(crate) parameters: Option<models::DscConfigurationUpdateParameters>,
         }
         impl Builder {
+            #[doc = "The create or update parameters for configuration."]
             pub fn parameters(mut self, parameters: impl Into<models::DscConfigurationUpdateParameters>) -> Self {
                 self.parameters = Some(parameters.into());
                 self
@@ -8948,18 +8965,22 @@ pub mod dsc_configuration {
             pub(crate) inlinecount: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the operation."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "The number of rows to skip."]
             pub fn skip(mut self, skip: i64) -> Self {
                 self.skip = Some(skip);
                 self
             }
+            #[doc = "The number of rows to take."]
             pub fn top(mut self, top: i64) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Return total rows."]
             pub fn inlinecount(mut self, inlinecount: impl Into<String>) -> Self {
                 self.inlinecount = Some(inlinecount.into());
                 self
@@ -9247,6 +9268,7 @@ pub mod job {
             pub(crate) client_request_id: Option<String>,
         }
         impl Builder {
+            #[doc = "Identifies this specific client request."]
             pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
                 self.client_request_id = Some(client_request_id.into());
                 self
@@ -9309,6 +9331,7 @@ pub mod job {
             pub(crate) client_request_id: Option<String>,
         }
         impl Builder {
+            #[doc = "Identifies this specific client request."]
             pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
                 self.client_request_id = Some(client_request_id.into());
                 self
@@ -9364,6 +9387,7 @@ pub mod job {
             pub(crate) client_request_id: Option<String>,
         }
         impl Builder {
+            #[doc = "Identifies this specific client request."]
             pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
                 self.client_request_id = Some(client_request_id.into());
                 self
@@ -9423,6 +9447,7 @@ pub mod job {
             pub(crate) client_request_id: Option<String>,
         }
         impl Builder {
+            #[doc = "Identifies this specific client request."]
             pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
                 self.client_request_id = Some(client_request_id.into());
                 self
@@ -9482,6 +9507,7 @@ pub mod job {
             pub(crate) client_request_id: Option<String>,
         }
         impl Builder {
+            #[doc = "Identifies this specific client request."]
             pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
                 self.client_request_id = Some(client_request_id.into());
                 self
@@ -9545,6 +9571,7 @@ pub mod job {
             pub(crate) client_request_id: Option<String>,
         }
         impl Builder {
+            #[doc = "Identifies this specific client request."]
             pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
                 self.client_request_id = Some(client_request_id.into());
                 self
@@ -9608,10 +9635,12 @@ pub mod job {
             pub(crate) client_request_id: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the operation."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Identifies this specific client request."]
             pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
                 self.client_request_id = Some(client_request_id.into());
                 self
@@ -9702,6 +9731,7 @@ pub mod job {
             pub(crate) client_request_id: Option<String>,
         }
         impl Builder {
+            #[doc = "Identifies this specific client request."]
             pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
                 self.client_request_id = Some(client_request_id.into());
                 self
@@ -9818,6 +9848,7 @@ pub mod job_stream {
             pub(crate) client_request_id: Option<String>,
         }
         impl Builder {
+            #[doc = "Identifies this specific client request."]
             pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
                 self.client_request_id = Some(client_request_id.into());
                 self
@@ -9882,10 +9913,12 @@ pub mod job_stream {
             pub(crate) client_request_id: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the operation."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Identifies this specific client request."]
             pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
                 self.client_request_id = Some(client_request_id.into());
                 self
@@ -10203,6 +10236,7 @@ pub mod software_update_configurations {
             pub(crate) client_request_id: Option<String>,
         }
         impl Builder {
+            #[doc = "Identifies this specific client request."]
             pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
                 self.client_request_id = Some(client_request_id.into());
                 self
@@ -10263,6 +10297,7 @@ pub mod software_update_configurations {
             pub(crate) client_request_id: Option<String>,
         }
         impl Builder {
+            #[doc = "Identifies this specific client request."]
             pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
                 self.client_request_id = Some(client_request_id.into());
                 self
@@ -10328,6 +10363,7 @@ pub mod software_update_configurations {
             pub(crate) client_request_id: Option<String>,
         }
         impl Builder {
+            #[doc = "Identifies this specific client request."]
             pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
                 self.client_request_id = Some(client_request_id.into());
                 self
@@ -10380,10 +10416,12 @@ pub mod software_update_configurations {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "Identifies this specific client request."]
             pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
                 self.client_request_id = Some(client_request_id.into());
                 self
             }
+            #[doc = "The filter to apply on the operation."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -10494,6 +10532,7 @@ pub mod software_update_configuration_runs {
             pub(crate) client_request_id: Option<String>,
         }
         impl Builder {
+            #[doc = "Identifies this specific client request."]
             pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
                 self.client_request_id = Some(client_request_id.into());
                 self
@@ -10551,18 +10590,22 @@ pub mod software_update_configuration_runs {
             pub(crate) top: Option<String>,
         }
         impl Builder {
+            #[doc = "Identifies this specific client request."]
             pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
                 self.client_request_id = Some(client_request_id.into());
                 self
             }
+            #[doc = "The filter to apply on the operation. You can use the following filters: 'properties/osType', 'properties/status', 'properties/startTime', and 'properties/softwareUpdateConfiguration/name'"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Number of entries you skip before returning results"]
             pub fn skip(mut self, skip: impl Into<String>) -> Self {
                 self.skip = Some(skip.into());
                 self
             }
+            #[doc = "Maximum number of entries returned in the results collection"]
             pub fn top(mut self, top: impl Into<String>) -> Self {
                 self.top = Some(top.into());
                 self
@@ -10679,6 +10722,7 @@ pub mod software_update_configuration_machine_runs {
             pub(crate) client_request_id: Option<String>,
         }
         impl Builder {
+            #[doc = "Identifies this specific client request."]
             pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
                 self.client_request_id = Some(client_request_id.into());
                 self
@@ -10736,18 +10780,22 @@ pub mod software_update_configuration_machine_runs {
             pub(crate) top: Option<String>,
         }
         impl Builder {
+            #[doc = "Identifies this specific client request."]
             pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
                 self.client_request_id = Some(client_request_id.into());
                 self
             }
+            #[doc = "The filter to apply on the operation. You can use the following filters: 'properties/osType', 'properties/status', 'properties/startTime', and 'properties/softwareUpdateConfiguration/name'"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "number of entries you skip before returning results"]
             pub fn skip(mut self, skip: impl Into<String>) -> Self {
                 self.skip = Some(skip.into());
                 self
             }
+            #[doc = "Maximum number of entries returned in the results collection"]
             pub fn top(mut self, top: impl Into<String>) -> Self {
                 self.top = Some(top.into());
                 self
@@ -11778,6 +11826,7 @@ pub mod test_job_streams {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the operation."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -12616,6 +12665,7 @@ pub mod webhook {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the operation."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -13031,6 +13081,7 @@ pub mod hybrid_runbook_workers {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the operation."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -13483,6 +13534,7 @@ pub mod hybrid_runbook_worker_group {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the operation."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self

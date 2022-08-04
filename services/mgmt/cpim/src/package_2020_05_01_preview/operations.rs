@@ -317,6 +317,7 @@ pub mod guest_usages {
             pub(crate) resource: Option<models::GuestUsagesResource>,
         }
         impl Builder {
+            #[doc = "Guest Usages resource to be created"]
             pub fn resource(mut self, resource: impl Into<models::GuestUsagesResource>) -> Self {
                 self.resource = Some(resource.into());
                 self
@@ -379,6 +380,7 @@ pub mod guest_usages {
             pub(crate) resource_patch: Option<models::GuestUsagesResourcePatch>,
         }
         impl Builder {
+            #[doc = "Guest Usages Resource to be updated"]
             pub fn resource_patch(mut self, resource_patch: impl Into<models::GuestUsagesResourcePatch>) -> Self {
                 self.resource_patch = Some(resource_patch.into());
                 self

@@ -569,6 +569,7 @@ pub mod managed_clusters {
             pub(crate) resource_type: Option<String>,
         }
         impl Builder {
+            #[doc = "The resource type for which the OS options needs to be returned"]
             pub fn resource_type(mut self, resource_type: impl Into<String>) -> Self {
                 self.resource_type = Some(resource_type.into());
                 self
@@ -872,6 +873,7 @@ pub mod managed_clusters {
             pub(crate) server_fqdn: Option<String>,
         }
         impl Builder {
+            #[doc = "server fqdn type for credentials to be returned"]
             pub fn server_fqdn(mut self, server_fqdn: impl Into<String>) -> Self {
                 self.server_fqdn = Some(server_fqdn.into());
                 self
@@ -928,10 +930,12 @@ pub mod managed_clusters {
             pub(crate) format: Option<String>,
         }
         impl Builder {
+            #[doc = "server fqdn type for credentials to be returned"]
             pub fn server_fqdn(mut self, server_fqdn: impl Into<String>) -> Self {
                 self.server_fqdn = Some(server_fqdn.into());
                 self
             }
+            #[doc = "Only apply to AAD clusters, specifies the format of returned kubeconfig. Format 'azure' will return azure auth-provider kubeconfig; format 'exec' will return exec format kubeconfig, which requires kubelogin binary in the path."]
             pub fn format(mut self, format: impl Into<String>) -> Self {
                 self.format = Some(format.into());
                 self
@@ -990,6 +994,7 @@ pub mod managed_clusters {
             pub(crate) server_fqdn: Option<String>,
         }
         impl Builder {
+            #[doc = "server fqdn type for credentials to be returned"]
             pub fn server_fqdn(mut self, server_fqdn: impl Into<String>) -> Self {
                 self.server_fqdn = Some(server_fqdn.into());
                 self

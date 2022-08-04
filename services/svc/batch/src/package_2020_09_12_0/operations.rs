@@ -147,22 +147,27 @@ pub mod application {
             pub(crate) ocp_date: Option<String>,
         }
         impl Builder {
+            #[doc = "The maximum number of items to return in the response. A maximum of 1000 applications can be returned."]
             pub fn maxresults(mut self, maxresults: i32) -> Self {
                 self.maxresults = Some(maxresults);
                 self
             }
+            #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "The caller-generated request identity, in the form of a GUID with no decoration such as curly braces, e.g. 9C4D50EE-2D56-4CD3-8152-34347DC9F2B0."]
             pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
                 self.client_request_id = Some(client_request_id.into());
                 self
             }
+            #[doc = "Whether the server should return the client-request-id in the response."]
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
+            #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
             pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
@@ -256,18 +261,22 @@ pub mod application {
             pub(crate) ocp_date: Option<String>,
         }
         impl Builder {
+            #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "The caller-generated request identity, in the form of a GUID with no decoration such as curly braces, e.g. 9C4D50EE-2D56-4CD3-8152-34347DC9F2B0."]
             pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
                 self.client_request_id = Some(client_request_id.into());
                 self
             }
+            #[doc = "Whether the server should return the client-request-id in the response."]
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
+            #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
             pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
@@ -620,34 +629,42 @@ pub mod pool {
             pub(crate) ocp_date: Option<String>,
         }
         impl Builder {
+            #[doc = "The earliest time from which to include metrics. This must be at least two and a half hours before the current time. If not specified this defaults to the start time of the last aggregation interval currently available."]
             pub fn starttime(mut self, starttime: impl Into<String>) -> Self {
                 self.starttime = Some(starttime.into());
                 self
             }
+            #[doc = "The latest time from which to include metrics. This must be at least two hours before the current time. If not specified this defaults to the end time of the last aggregation interval currently available."]
             pub fn endtime(mut self, endtime: impl Into<String>) -> Self {
                 self.endtime = Some(endtime.into());
                 self
             }
+            #[doc = "An OData $filter clause. For more information on constructing this filter, see https://docs.microsoft.com/en-us/rest/api/batchservice/odata-filters-in-batch#list-account-usage-metrics."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "The maximum number of items to return in the response. A maximum of 1000 results will be returned."]
             pub fn maxresults(mut self, maxresults: i32) -> Self {
                 self.maxresults = Some(maxresults);
                 self
             }
+            #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "The caller-generated request identity, in the form of a GUID with no decoration such as curly braces, e.g. 9C4D50EE-2D56-4CD3-8152-34347DC9F2B0."]
             pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
                 self.client_request_id = Some(client_request_id.into());
                 self
             }
+            #[doc = "Whether the server should return the client-request-id in the response."]
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
+            #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
             pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
@@ -749,18 +766,22 @@ pub mod pool {
             pub(crate) ocp_date: Option<String>,
         }
         impl Builder {
+            #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "The caller-generated request identity, in the form of a GUID with no decoration such as curly braces, e.g. 9C4D50EE-2D56-4CD3-8152-34347DC9F2B0."]
             pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
                 self.client_request_id = Some(client_request_id.into());
                 self
             }
+            #[doc = "Whether the server should return the client-request-id in the response."]
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
+            #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
             pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
@@ -828,34 +849,42 @@ pub mod pool {
             pub(crate) ocp_date: Option<String>,
         }
         impl Builder {
+            #[doc = "An OData $filter clause. For more information on constructing this filter, see https://docs.microsoft.com/en-us/rest/api/batchservice/odata-filters-in-batch#list-pools."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "An OData $select clause."]
             pub fn select(mut self, select: impl Into<String>) -> Self {
                 self.select = Some(select.into());
                 self
             }
+            #[doc = "An OData $expand clause."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
             }
+            #[doc = "The maximum number of items to return in the response. A maximum of 1000 Pools can be returned."]
             pub fn maxresults(mut self, maxresults: i32) -> Self {
                 self.maxresults = Some(maxresults);
                 self
             }
+            #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "The caller-generated request identity, in the form of a GUID with no decoration such as curly braces, e.g. 9C4D50EE-2D56-4CD3-8152-34347DC9F2B0."]
             pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
                 self.client_request_id = Some(client_request_id.into());
                 self
             }
+            #[doc = "Whether the server should return the client-request-id in the response."]
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
+            #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
             pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
@@ -958,18 +987,22 @@ pub mod pool {
             pub(crate) ocp_date: Option<String>,
         }
         impl Builder {
+            #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "The caller-generated request identity, in the form of a GUID with no decoration such as curly braces, e.g. 9C4D50EE-2D56-4CD3-8152-34347DC9F2B0."]
             pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
                 self.client_request_id = Some(client_request_id.into());
                 self
             }
+            #[doc = "Whether the server should return the client-request-id in the response."]
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
+            #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
             pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
@@ -1037,42 +1070,52 @@ pub mod pool {
             pub(crate) if_unmodified_since: Option<String>,
         }
         impl Builder {
+            #[doc = "An OData $select clause."]
             pub fn select(mut self, select: impl Into<String>) -> Self {
                 self.select = Some(select.into());
                 self
             }
+            #[doc = "An OData $expand clause."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
             }
+            #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "The caller-generated request identity, in the form of a GUID with no decoration such as curly braces, e.g. 9C4D50EE-2D56-4CD3-8152-34347DC9F2B0."]
             pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
                 self.client_request_id = Some(client_request_id.into());
                 self
             }
+            #[doc = "Whether the server should return the client-request-id in the response."]
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
+            #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
             pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
+            #[doc = "An ETag value associated with the version of the resource known to the client. The operation will be performed only if the resource's current ETag on the service exactly matches the value specified by the client."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
             }
+            #[doc = "An ETag value associated with the version of the resource known to the client. The operation will be performed only if the resource's current ETag on the service does not match the value specified by the client."]
             pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
                 self.if_none_match = Some(if_none_match.into());
                 self
             }
+            #[doc = "A timestamp indicating the last modified time of the resource known to the client. The operation will be performed only if the resource on the service has been modified since the specified time."]
             pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
+            #[doc = "A timestamp indicating the last modified time of the resource known to the client. The operation will be performed only if the resource on the service has not been modified since the specified time."]
             pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
@@ -1160,34 +1203,42 @@ pub mod pool {
             pub(crate) if_unmodified_since: Option<String>,
         }
         impl Builder {
+            #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "The caller-generated request identity, in the form of a GUID with no decoration such as curly braces, e.g. 9C4D50EE-2D56-4CD3-8152-34347DC9F2B0."]
             pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
                 self.client_request_id = Some(client_request_id.into());
                 self
             }
+            #[doc = "Whether the server should return the client-request-id in the response."]
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
+            #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
             pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
+            #[doc = "An ETag value associated with the version of the resource known to the client. The operation will be performed only if the resource's current ETag on the service exactly matches the value specified by the client."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
             }
+            #[doc = "An ETag value associated with the version of the resource known to the client. The operation will be performed only if the resource's current ETag on the service does not match the value specified by the client."]
             pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
                 self.if_none_match = Some(if_none_match.into());
                 self
             }
+            #[doc = "A timestamp indicating the last modified time of the resource known to the client. The operation will be performed only if the resource on the service has been modified since the specified time."]
             pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
+            #[doc = "A timestamp indicating the last modified time of the resource known to the client. The operation will be performed only if the resource on the service has not been modified since the specified time."]
             pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
@@ -1265,34 +1316,42 @@ pub mod pool {
             pub(crate) if_unmodified_since: Option<String>,
         }
         impl Builder {
+            #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "The caller-generated request identity, in the form of a GUID with no decoration such as curly braces, e.g. 9C4D50EE-2D56-4CD3-8152-34347DC9F2B0."]
             pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
                 self.client_request_id = Some(client_request_id.into());
                 self
             }
+            #[doc = "Whether the server should return the client-request-id in the response."]
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
+            #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
             pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
+            #[doc = "An ETag value associated with the version of the resource known to the client. The operation will be performed only if the resource's current ETag on the service exactly matches the value specified by the client."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
             }
+            #[doc = "An ETag value associated with the version of the resource known to the client. The operation will be performed only if the resource's current ETag on the service does not match the value specified by the client."]
             pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
                 self.if_none_match = Some(if_none_match.into());
                 self
             }
+            #[doc = "A timestamp indicating the last modified time of the resource known to the client. The operation will be performed only if the resource on the service has been modified since the specified time."]
             pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
+            #[doc = "A timestamp indicating the last modified time of the resource known to the client. The operation will be performed only if the resource on the service has not been modified since the specified time."]
             pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
@@ -1369,34 +1428,42 @@ pub mod pool {
             pub(crate) if_unmodified_since: Option<String>,
         }
         impl Builder {
+            #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "The caller-generated request identity, in the form of a GUID with no decoration such as curly braces, e.g. 9C4D50EE-2D56-4CD3-8152-34347DC9F2B0."]
             pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
                 self.client_request_id = Some(client_request_id.into());
                 self
             }
+            #[doc = "Whether the server should return the client-request-id in the response."]
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
+            #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
             pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
+            #[doc = "An ETag value associated with the version of the resource known to the client. The operation will be performed only if the resource's current ETag on the service exactly matches the value specified by the client."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
             }
+            #[doc = "An ETag value associated with the version of the resource known to the client. The operation will be performed only if the resource's current ETag on the service does not match the value specified by the client."]
             pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
                 self.if_none_match = Some(if_none_match.into());
                 self
             }
+            #[doc = "A timestamp indicating the last modified time of the resource known to the client. The operation will be performed only if the resource on the service has been modified since the specified time."]
             pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
+            #[doc = "A timestamp indicating the last modified time of the resource known to the client. The operation will be performed only if the resource on the service has not been modified since the specified time."]
             pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
@@ -1469,18 +1536,22 @@ pub mod pool {
             pub(crate) ocp_date: Option<String>,
         }
         impl Builder {
+            #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "The caller-generated request identity, in the form of a GUID with no decoration such as curly braces, e.g. 9C4D50EE-2D56-4CD3-8152-34347DC9F2B0."]
             pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
                 self.client_request_id = Some(client_request_id.into());
                 self
             }
+            #[doc = "Whether the server should return the client-request-id in the response."]
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
+            #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
             pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
@@ -1547,34 +1618,42 @@ pub mod pool {
             pub(crate) if_unmodified_since: Option<String>,
         }
         impl Builder {
+            #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "The caller-generated request identity, in the form of a GUID with no decoration such as curly braces, e.g. 9C4D50EE-2D56-4CD3-8152-34347DC9F2B0."]
             pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
                 self.client_request_id = Some(client_request_id.into());
                 self
             }
+            #[doc = "Whether the server should return the client-request-id in the response."]
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
+            #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
             pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
+            #[doc = "An ETag value associated with the version of the resource known to the client. The operation will be performed only if the resource's current ETag on the service exactly matches the value specified by the client."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
             }
+            #[doc = "An ETag value associated with the version of the resource known to the client. The operation will be performed only if the resource's current ETag on the service does not match the value specified by the client."]
             pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
                 self.if_none_match = Some(if_none_match.into());
                 self
             }
+            #[doc = "A timestamp indicating the last modified time of the resource known to the client. The operation will be performed only if the resource on the service has been modified since the specified time."]
             pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
+            #[doc = "A timestamp indicating the last modified time of the resource known to the client. The operation will be performed only if the resource on the service has not been modified since the specified time."]
             pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
@@ -1649,18 +1728,22 @@ pub mod pool {
             pub(crate) ocp_date: Option<String>,
         }
         impl Builder {
+            #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "The caller-generated request identity, in the form of a GUID with no decoration such as curly braces, e.g. 9C4D50EE-2D56-4CD3-8152-34347DC9F2B0."]
             pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
                 self.client_request_id = Some(client_request_id.into());
                 self
             }
+            #[doc = "Whether the server should return the client-request-id in the response."]
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
+            #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
             pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
@@ -1731,34 +1814,42 @@ pub mod pool {
             pub(crate) if_unmodified_since: Option<String>,
         }
         impl Builder {
+            #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "The caller-generated request identity, in the form of a GUID with no decoration such as curly braces, e.g. 9C4D50EE-2D56-4CD3-8152-34347DC9F2B0."]
             pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
                 self.client_request_id = Some(client_request_id.into());
                 self
             }
+            #[doc = "Whether the server should return the client-request-id in the response."]
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
+            #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
             pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
+            #[doc = "An ETag value associated with the version of the resource known to the client. The operation will be performed only if the resource's current ETag on the service exactly matches the value specified by the client."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
             }
+            #[doc = "An ETag value associated with the version of the resource known to the client. The operation will be performed only if the resource's current ETag on the service does not match the value specified by the client."]
             pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
                 self.if_none_match = Some(if_none_match.into());
                 self
             }
+            #[doc = "A timestamp indicating the last modified time of the resource known to the client. The operation will be performed only if the resource on the service has been modified since the specified time."]
             pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
+            #[doc = "A timestamp indicating the last modified time of the resource known to the client. The operation will be performed only if the resource on the service has not been modified since the specified time."]
             pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
@@ -1836,34 +1927,42 @@ pub mod pool {
             pub(crate) if_unmodified_since: Option<String>,
         }
         impl Builder {
+            #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "The caller-generated request identity, in the form of a GUID with no decoration such as curly braces, e.g. 9C4D50EE-2D56-4CD3-8152-34347DC9F2B0."]
             pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
                 self.client_request_id = Some(client_request_id.into());
                 self
             }
+            #[doc = "Whether the server should return the client-request-id in the response."]
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
+            #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
             pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
+            #[doc = "An ETag value associated with the version of the resource known to the client. The operation will be performed only if the resource's current ETag on the service exactly matches the value specified by the client."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
             }
+            #[doc = "An ETag value associated with the version of the resource known to the client. The operation will be performed only if the resource's current ETag on the service does not match the value specified by the client."]
             pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
                 self.if_none_match = Some(if_none_match.into());
                 self
             }
+            #[doc = "A timestamp indicating the last modified time of the resource known to the client. The operation will be performed only if the resource on the service has been modified since the specified time."]
             pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
+            #[doc = "A timestamp indicating the last modified time of the resource known to the client. The operation will be performed only if the resource on the service has not been modified since the specified time."]
             pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
@@ -1938,18 +2037,22 @@ pub mod pool {
             pub(crate) ocp_date: Option<String>,
         }
         impl Builder {
+            #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "The caller-generated request identity, in the form of a GUID with no decoration such as curly braces, e.g. 9C4D50EE-2D56-4CD3-8152-34347DC9F2B0."]
             pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
                 self.client_request_id = Some(client_request_id.into());
                 self
             }
+            #[doc = "Whether the server should return the client-request-id in the response."]
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
+            #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
             pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
@@ -2016,34 +2119,42 @@ pub mod pool {
             pub(crate) if_unmodified_since: Option<String>,
         }
         impl Builder {
+            #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "The caller-generated request identity, in the form of a GUID with no decoration such as curly braces, e.g. 9C4D50EE-2D56-4CD3-8152-34347DC9F2B0."]
             pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
                 self.client_request_id = Some(client_request_id.into());
                 self
             }
+            #[doc = "Whether the server should return the client-request-id in the response."]
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
+            #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
             pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
+            #[doc = "An ETag value associated with the version of the resource known to the client. The operation will be performed only if the resource's current ETag on the service exactly matches the value specified by the client."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
             }
+            #[doc = "An ETag value associated with the version of the resource known to the client. The operation will be performed only if the resource's current ETag on the service does not match the value specified by the client."]
             pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
                 self.if_none_match = Some(if_none_match.into());
                 self
             }
+            #[doc = "A timestamp indicating the last modified time of the resource known to the client. The operation will be performed only if the resource on the service has been modified since the specified time."]
             pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
+            #[doc = "A timestamp indicating the last modified time of the resource known to the client. The operation will be performed only if the resource on the service has not been modified since the specified time."]
             pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
@@ -2148,26 +2259,32 @@ pub mod account {
             pub(crate) ocp_date: Option<String>,
         }
         impl Builder {
+            #[doc = "An OData $filter clause. For more information on constructing this filter, see https://docs.microsoft.com/en-us/rest/api/batchservice/odata-filters-in-batch#list-support-images."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "The maximum number of items to return in the response. A maximum of 1000 results will be returned."]
             pub fn maxresults(mut self, maxresults: i32) -> Self {
                 self.maxresults = Some(maxresults);
                 self
             }
+            #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "The caller-generated request identity, in the form of a GUID with no decoration such as curly braces, e.g. 9C4D50EE-2D56-4CD3-8152-34347DC9F2B0."]
             pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
                 self.client_request_id = Some(client_request_id.into());
                 self
             }
+            #[doc = "Whether the server should return the client-request-id in the response."]
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
+            #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
             pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
@@ -2265,26 +2382,32 @@ pub mod account {
             pub(crate) ocp_date: Option<String>,
         }
         impl Builder {
+            #[doc = "An OData $filter clause. For more information on constructing this filter, see https://docs.microsoft.com/en-us/rest/api/batchservice/odata-filters-in-batch."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "The maximum number of items to return in the response."]
             pub fn maxresults(mut self, maxresults: i32) -> Self {
                 self.maxresults = Some(maxresults);
                 self
             }
+            #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "The caller-generated request identity, in the form of a GUID with no decoration such as curly braces, e.g. 9C4D50EE-2D56-4CD3-8152-34347DC9F2B0."]
             pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
                 self.client_request_id = Some(client_request_id.into());
                 self
             }
+            #[doc = "Whether the server should return the client-request-id in the response."]
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
+            #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
             pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
@@ -2625,18 +2748,22 @@ pub mod job {
             pub(crate) ocp_date: Option<String>,
         }
         impl Builder {
+            #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "The caller-generated request identity, in the form of a GUID with no decoration such as curly braces, e.g. 9C4D50EE-2D56-4CD3-8152-34347DC9F2B0."]
             pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
                 self.client_request_id = Some(client_request_id.into());
                 self
             }
+            #[doc = "Whether the server should return the client-request-id in the response."]
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
+            #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
             pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
@@ -2707,42 +2834,52 @@ pub mod job {
             pub(crate) if_unmodified_since: Option<String>,
         }
         impl Builder {
+            #[doc = "An OData $select clause."]
             pub fn select(mut self, select: impl Into<String>) -> Self {
                 self.select = Some(select.into());
                 self
             }
+            #[doc = "An OData $expand clause."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
             }
+            #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "The caller-generated request identity, in the form of a GUID with no decoration such as curly braces, e.g. 9C4D50EE-2D56-4CD3-8152-34347DC9F2B0."]
             pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
                 self.client_request_id = Some(client_request_id.into());
                 self
             }
+            #[doc = "Whether the server should return the client-request-id in the response."]
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
+            #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
             pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
+            #[doc = "An ETag value associated with the version of the resource known to the client. The operation will be performed only if the resource's current ETag on the service exactly matches the value specified by the client."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
             }
+            #[doc = "An ETag value associated with the version of the resource known to the client. The operation will be performed only if the resource's current ETag on the service does not match the value specified by the client."]
             pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
                 self.if_none_match = Some(if_none_match.into());
                 self
             }
+            #[doc = "A timestamp indicating the last modified time of the resource known to the client. The operation will be performed only if the resource on the service has been modified since the specified time."]
             pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
+            #[doc = "A timestamp indicating the last modified time of the resource known to the client. The operation will be performed only if the resource on the service has not been modified since the specified time."]
             pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
@@ -2830,34 +2967,42 @@ pub mod job {
             pub(crate) if_unmodified_since: Option<String>,
         }
         impl Builder {
+            #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "The caller-generated request identity, in the form of a GUID with no decoration such as curly braces, e.g. 9C4D50EE-2D56-4CD3-8152-34347DC9F2B0."]
             pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
                 self.client_request_id = Some(client_request_id.into());
                 self
             }
+            #[doc = "Whether the server should return the client-request-id in the response."]
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
+            #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
             pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
+            #[doc = "An ETag value associated with the version of the resource known to the client. The operation will be performed only if the resource's current ETag on the service exactly matches the value specified by the client."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
             }
+            #[doc = "An ETag value associated with the version of the resource known to the client. The operation will be performed only if the resource's current ETag on the service does not match the value specified by the client."]
             pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
                 self.if_none_match = Some(if_none_match.into());
                 self
             }
+            #[doc = "A timestamp indicating the last modified time of the resource known to the client. The operation will be performed only if the resource on the service has been modified since the specified time."]
             pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
+            #[doc = "A timestamp indicating the last modified time of the resource known to the client. The operation will be performed only if the resource on the service has not been modified since the specified time."]
             pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
@@ -2936,34 +3081,42 @@ pub mod job {
             pub(crate) if_unmodified_since: Option<String>,
         }
         impl Builder {
+            #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "The caller-generated request identity, in the form of a GUID with no decoration such as curly braces, e.g. 9C4D50EE-2D56-4CD3-8152-34347DC9F2B0."]
             pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
                 self.client_request_id = Some(client_request_id.into());
                 self
             }
+            #[doc = "Whether the server should return the client-request-id in the response."]
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
+            #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
             pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
+            #[doc = "An ETag value associated with the version of the resource known to the client. The operation will be performed only if the resource's current ETag on the service exactly matches the value specified by the client."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
             }
+            #[doc = "An ETag value associated with the version of the resource known to the client. The operation will be performed only if the resource's current ETag on the service does not match the value specified by the client."]
             pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
                 self.if_none_match = Some(if_none_match.into());
                 self
             }
+            #[doc = "A timestamp indicating the last modified time of the resource known to the client. The operation will be performed only if the resource on the service has been modified since the specified time."]
             pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
+            #[doc = "A timestamp indicating the last modified time of the resource known to the client. The operation will be performed only if the resource on the service has not been modified since the specified time."]
             pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
@@ -3041,34 +3194,42 @@ pub mod job {
             pub(crate) if_unmodified_since: Option<String>,
         }
         impl Builder {
+            #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "The caller-generated request identity, in the form of a GUID with no decoration such as curly braces, e.g. 9C4D50EE-2D56-4CD3-8152-34347DC9F2B0."]
             pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
                 self.client_request_id = Some(client_request_id.into());
                 self
             }
+            #[doc = "Whether the server should return the client-request-id in the response."]
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
+            #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
             pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
+            #[doc = "An ETag value associated with the version of the resource known to the client. The operation will be performed only if the resource's current ETag on the service exactly matches the value specified by the client."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
             }
+            #[doc = "An ETag value associated with the version of the resource known to the client. The operation will be performed only if the resource's current ETag on the service does not match the value specified by the client."]
             pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
                 self.if_none_match = Some(if_none_match.into());
                 self
             }
+            #[doc = "A timestamp indicating the last modified time of the resource known to the client. The operation will be performed only if the resource on the service has been modified since the specified time."]
             pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
+            #[doc = "A timestamp indicating the last modified time of the resource known to the client. The operation will be performed only if the resource on the service has not been modified since the specified time."]
             pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
@@ -3146,34 +3307,42 @@ pub mod job {
             pub(crate) if_unmodified_since: Option<String>,
         }
         impl Builder {
+            #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "The caller-generated request identity, in the form of a GUID with no decoration such as curly braces, e.g. 9C4D50EE-2D56-4CD3-8152-34347DC9F2B0."]
             pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
                 self.client_request_id = Some(client_request_id.into());
                 self
             }
+            #[doc = "Whether the server should return the client-request-id in the response."]
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
+            #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
             pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
+            #[doc = "An ETag value associated with the version of the resource known to the client. The operation will be performed only if the resource's current ETag on the service exactly matches the value specified by the client."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
             }
+            #[doc = "An ETag value associated with the version of the resource known to the client. The operation will be performed only if the resource's current ETag on the service does not match the value specified by the client."]
             pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
                 self.if_none_match = Some(if_none_match.into());
                 self
             }
+            #[doc = "A timestamp indicating the last modified time of the resource known to the client. The operation will be performed only if the resource on the service has been modified since the specified time."]
             pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
+            #[doc = "A timestamp indicating the last modified time of the resource known to the client. The operation will be performed only if the resource on the service has not been modified since the specified time."]
             pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
@@ -3251,34 +3420,42 @@ pub mod job {
             pub(crate) if_unmodified_since: Option<String>,
         }
         impl Builder {
+            #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "The caller-generated request identity, in the form of a GUID with no decoration such as curly braces, e.g. 9C4D50EE-2D56-4CD3-8152-34347DC9F2B0."]
             pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
                 self.client_request_id = Some(client_request_id.into());
                 self
             }
+            #[doc = "Whether the server should return the client-request-id in the response."]
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
+            #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
             pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
+            #[doc = "An ETag value associated with the version of the resource known to the client. The operation will be performed only if the resource's current ETag on the service exactly matches the value specified by the client."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
             }
+            #[doc = "An ETag value associated with the version of the resource known to the client. The operation will be performed only if the resource's current ETag on the service does not match the value specified by the client."]
             pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
                 self.if_none_match = Some(if_none_match.into());
                 self
             }
+            #[doc = "A timestamp indicating the last modified time of the resource known to the client. The operation will be performed only if the resource on the service has been modified since the specified time."]
             pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
+            #[doc = "A timestamp indicating the last modified time of the resource known to the client. The operation will be performed only if the resource on the service has not been modified since the specified time."]
             pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
@@ -3357,38 +3534,47 @@ pub mod job {
             pub(crate) if_unmodified_since: Option<String>,
         }
         impl Builder {
+            #[doc = "The parameters for the request."]
             pub fn job_terminate_parameter(mut self, job_terminate_parameter: impl Into<models::JobTerminateParameter>) -> Self {
                 self.job_terminate_parameter = Some(job_terminate_parameter.into());
                 self
             }
+            #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "The caller-generated request identity, in the form of a GUID with no decoration such as curly braces, e.g. 9C4D50EE-2D56-4CD3-8152-34347DC9F2B0."]
             pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
                 self.client_request_id = Some(client_request_id.into());
                 self
             }
+            #[doc = "Whether the server should return the client-request-id in the response."]
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
+            #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
             pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
+            #[doc = "An ETag value associated with the version of the resource known to the client. The operation will be performed only if the resource's current ETag on the service exactly matches the value specified by the client."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
             }
+            #[doc = "An ETag value associated with the version of the resource known to the client. The operation will be performed only if the resource's current ETag on the service does not match the value specified by the client."]
             pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
                 self.if_none_match = Some(if_none_match.into());
                 self
             }
+            #[doc = "A timestamp indicating the last modified time of the resource known to the client. The operation will be performed only if the resource on the service has been modified since the specified time."]
             pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
+            #[doc = "A timestamp indicating the last modified time of the resource known to the client. The operation will be performed only if the resource on the service has not been modified since the specified time."]
             pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
@@ -3469,34 +3655,42 @@ pub mod job {
             pub(crate) ocp_date: Option<String>,
         }
         impl Builder {
+            #[doc = "An OData $filter clause. For more information on constructing this filter, see https://docs.microsoft.com/en-us/rest/api/batchservice/odata-filters-in-batch#list-jobs."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "An OData $select clause."]
             pub fn select(mut self, select: impl Into<String>) -> Self {
                 self.select = Some(select.into());
                 self
             }
+            #[doc = "An OData $expand clause."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
             }
+            #[doc = "The maximum number of items to return in the response. A maximum of 1000 Jobs can be returned."]
             pub fn maxresults(mut self, maxresults: i32) -> Self {
                 self.maxresults = Some(maxresults);
                 self
             }
+            #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "The caller-generated request identity, in the form of a GUID with no decoration such as curly braces, e.g. 9C4D50EE-2D56-4CD3-8152-34347DC9F2B0."]
             pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
                 self.client_request_id = Some(client_request_id.into());
                 self
             }
+            #[doc = "Whether the server should return the client-request-id in the response."]
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
+            #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
             pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
@@ -3599,18 +3793,22 @@ pub mod job {
             pub(crate) ocp_date: Option<String>,
         }
         impl Builder {
+            #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "The caller-generated request identity, in the form of a GUID with no decoration such as curly braces, e.g. 9C4D50EE-2D56-4CD3-8152-34347DC9F2B0."]
             pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
                 self.client_request_id = Some(client_request_id.into());
                 self
             }
+            #[doc = "Whether the server should return the client-request-id in the response."]
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
+            #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
             pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
@@ -3676,34 +3874,42 @@ pub mod job {
             pub(crate) ocp_date: Option<String>,
         }
         impl Builder {
+            #[doc = "An OData $filter clause. For more information on constructing this filter, see https://docs.microsoft.com/en-us/rest/api/batchservice/odata-filters-in-batch#list-jobs-in-a-job-schedule."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "An OData $select clause."]
             pub fn select(mut self, select: impl Into<String>) -> Self {
                 self.select = Some(select.into());
                 self
             }
+            #[doc = "An OData $expand clause."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
             }
+            #[doc = "The maximum number of items to return in the response. A maximum of 1000 Jobs can be returned."]
             pub fn maxresults(mut self, maxresults: i32) -> Self {
                 self.maxresults = Some(maxresults);
                 self
             }
+            #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "The caller-generated request identity, in the form of a GUID with no decoration such as curly braces, e.g. 9C4D50EE-2D56-4CD3-8152-34347DC9F2B0."]
             pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
                 self.client_request_id = Some(client_request_id.into());
                 self
             }
+            #[doc = "Whether the server should return the client-request-id in the response."]
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
+            #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
             pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
@@ -3810,30 +4016,37 @@ pub mod job {
             pub(crate) ocp_date: Option<String>,
         }
         impl Builder {
+            #[doc = "An OData $filter clause. For more information on constructing this filter, see https://docs.microsoft.com/en-us/rest/api/batchservice/odata-filters-in-batch#list-job-preparation-and-release-status."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "An OData $select clause."]
             pub fn select(mut self, select: impl Into<String>) -> Self {
                 self.select = Some(select.into());
                 self
             }
+            #[doc = "The maximum number of items to return in the response. A maximum of 1000 Tasks can be returned."]
             pub fn maxresults(mut self, maxresults: i32) -> Self {
                 self.maxresults = Some(maxresults);
                 self
             }
+            #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "The caller-generated request identity, in the form of a GUID with no decoration such as curly braces, e.g. 9C4D50EE-2D56-4CD3-8152-34347DC9F2B0."]
             pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
                 self.client_request_id = Some(client_request_id.into());
                 self
             }
+            #[doc = "Whether the server should return the client-request-id in the response."]
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
+            #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
             pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
@@ -3938,18 +4151,22 @@ pub mod job {
             pub(crate) ocp_date: Option<String>,
         }
         impl Builder {
+            #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "The caller-generated request identity, in the form of a GUID with no decoration such as curly braces, e.g. 9C4D50EE-2D56-4CD3-8152-34347DC9F2B0."]
             pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
                 self.client_request_id = Some(client_request_id.into());
                 self
             }
+            #[doc = "Whether the server should return the client-request-id in the response."]
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
+            #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
             pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
@@ -4100,30 +4317,37 @@ pub mod certificate {
             pub(crate) ocp_date: Option<String>,
         }
         impl Builder {
+            #[doc = "An OData $filter clause. For more information on constructing this filter, see https://docs.microsoft.com/en-us/rest/api/batchservice/odata-filters-in-batch#list-certificates."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "An OData $select clause."]
             pub fn select(mut self, select: impl Into<String>) -> Self {
                 self.select = Some(select.into());
                 self
             }
+            #[doc = "The maximum number of items to return in the response. A maximum of 1000 Certificates can be returned."]
             pub fn maxresults(mut self, maxresults: i32) -> Self {
                 self.maxresults = Some(maxresults);
                 self
             }
+            #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "The caller-generated request identity, in the form of a GUID with no decoration such as curly braces, e.g. 9C4D50EE-2D56-4CD3-8152-34347DC9F2B0."]
             pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
                 self.client_request_id = Some(client_request_id.into());
                 self
             }
+            #[doc = "Whether the server should return the client-request-id in the response."]
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
+            #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
             pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
@@ -4223,18 +4447,22 @@ pub mod certificate {
             pub(crate) ocp_date: Option<String>,
         }
         impl Builder {
+            #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "The caller-generated request identity, in the form of a GUID with no decoration such as curly braces, e.g. 9C4D50EE-2D56-4CD3-8152-34347DC9F2B0."]
             pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
                 self.client_request_id = Some(client_request_id.into());
                 self
             }
+            #[doc = "Whether the server should return the client-request-id in the response."]
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
+            #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
             pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
@@ -4297,18 +4525,22 @@ pub mod certificate {
             pub(crate) ocp_date: Option<String>,
         }
         impl Builder {
+            #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "The caller-generated request identity, in the form of a GUID with no decoration such as curly braces, e.g. 9C4D50EE-2D56-4CD3-8152-34347DC9F2B0."]
             pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
                 self.client_request_id = Some(client_request_id.into());
                 self
             }
+            #[doc = "Whether the server should return the client-request-id in the response."]
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
+            #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
             pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
@@ -4377,22 +4609,27 @@ pub mod certificate {
             pub(crate) ocp_date: Option<String>,
         }
         impl Builder {
+            #[doc = "An OData $select clause."]
             pub fn select(mut self, select: impl Into<String>) -> Self {
                 self.select = Some(select.into());
                 self
             }
+            #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "The caller-generated request identity, in the form of a GUID with no decoration such as curly braces, e.g. 9C4D50EE-2D56-4CD3-8152-34347DC9F2B0."]
             pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
                 self.client_request_id = Some(client_request_id.into());
                 self
             }
+            #[doc = "Whether the server should return the client-request-id in the response."]
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
+            #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
             pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
@@ -4466,18 +4703,22 @@ pub mod certificate {
             pub(crate) ocp_date: Option<String>,
         }
         impl Builder {
+            #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "The caller-generated request identity, in the form of a GUID with no decoration such as curly braces, e.g. 9C4D50EE-2D56-4CD3-8152-34347DC9F2B0."]
             pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
                 self.client_request_id = Some(client_request_id.into());
                 self
             }
+            #[doc = "Whether the server should return the client-request-id in the response."]
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
+            #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
             pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
@@ -4742,30 +4983,37 @@ pub mod file {
             pub(crate) if_unmodified_since: Option<String>,
         }
         impl Builder {
+            #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "The caller-generated request identity, in the form of a GUID with no decoration such as curly braces, e.g. 9C4D50EE-2D56-4CD3-8152-34347DC9F2B0."]
             pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
                 self.client_request_id = Some(client_request_id.into());
                 self
             }
+            #[doc = "Whether the server should return the client-request-id in the response."]
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
+            #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
             pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
+            #[doc = "The byte range to be retrieved. The default is to retrieve the entire file. The format is bytes=startRange-endRange."]
             pub fn ocp_range(mut self, ocp_range: impl Into<String>) -> Self {
                 self.ocp_range = Some(ocp_range.into());
                 self
             }
+            #[doc = "A timestamp indicating the last modified time of the resource known to the client. The operation will be performed only if the resource on the service has been modified since the specified time."]
             pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
+            #[doc = "A timestamp indicating the last modified time of the resource known to the client. The operation will be performed only if the resource on the service has not been modified since the specified time."]
             pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
@@ -4848,22 +5096,27 @@ pub mod file {
             pub(crate) ocp_date: Option<String>,
         }
         impl Builder {
+            #[doc = "Whether to delete children of a directory. If the filePath parameter represents a directory instead of a file, you can set recursive to true to delete the directory and all of the files and subdirectories in it. If recursive is false then the directory must be empty or deletion will fail."]
             pub fn recursive(mut self, recursive: bool) -> Self {
                 self.recursive = Some(recursive);
                 self
             }
+            #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "The caller-generated request identity, in the form of a GUID with no decoration such as curly braces, e.g. 9C4D50EE-2D56-4CD3-8152-34347DC9F2B0."]
             pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
                 self.client_request_id = Some(client_request_id.into());
                 self
             }
+            #[doc = "Whether the server should return the client-request-id in the response."]
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
+            #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
             pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
@@ -4937,26 +5190,32 @@ pub mod file {
             pub(crate) if_unmodified_since: Option<String>,
         }
         impl Builder {
+            #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "The caller-generated request identity, in the form of a GUID with no decoration such as curly braces, e.g. 9C4D50EE-2D56-4CD3-8152-34347DC9F2B0."]
             pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
                 self.client_request_id = Some(client_request_id.into());
                 self
             }
+            #[doc = "Whether the server should return the client-request-id in the response."]
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
+            #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
             pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
+            #[doc = "A timestamp indicating the last modified time of the resource known to the client. The operation will be performed only if the resource on the service has been modified since the specified time."]
             pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
+            #[doc = "A timestamp indicating the last modified time of the resource known to the client. The operation will be performed only if the resource on the service has not been modified since the specified time."]
             pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
@@ -5034,30 +5293,37 @@ pub mod file {
             pub(crate) if_unmodified_since: Option<String>,
         }
         impl Builder {
+            #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "The caller-generated request identity, in the form of a GUID with no decoration such as curly braces, e.g. 9C4D50EE-2D56-4CD3-8152-34347DC9F2B0."]
             pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
                 self.client_request_id = Some(client_request_id.into());
                 self
             }
+            #[doc = "Whether the server should return the client-request-id in the response."]
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
+            #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
             pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
+            #[doc = "The byte range to be retrieved. The default is to retrieve the entire file. The format is bytes=startRange-endRange."]
             pub fn ocp_range(mut self, ocp_range: impl Into<String>) -> Self {
                 self.ocp_range = Some(ocp_range.into());
                 self
             }
+            #[doc = "A timestamp indicating the last modified time of the resource known to the client. The operation will be performed only if the resource on the service has been modified since the specified time."]
             pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
+            #[doc = "A timestamp indicating the last modified time of the resource known to the client. The operation will be performed only if the resource on the service has not been modified since the specified time."]
             pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
@@ -5140,22 +5406,27 @@ pub mod file {
             pub(crate) ocp_date: Option<String>,
         }
         impl Builder {
+            #[doc = "Whether to delete children of a directory. If the filePath parameter represents a directory instead of a file, you can set recursive to true to delete the directory and all of the files and subdirectories in it. If recursive is false then the directory must be empty or deletion will fail."]
             pub fn recursive(mut self, recursive: bool) -> Self {
                 self.recursive = Some(recursive);
                 self
             }
+            #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "The caller-generated request identity, in the form of a GUID with no decoration such as curly braces, e.g. 9C4D50EE-2D56-4CD3-8152-34347DC9F2B0."]
             pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
                 self.client_request_id = Some(client_request_id.into());
                 self
             }
+            #[doc = "Whether the server should return the client-request-id in the response."]
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
+            #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
             pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
@@ -5229,26 +5500,32 @@ pub mod file {
             pub(crate) if_unmodified_since: Option<String>,
         }
         impl Builder {
+            #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "The caller-generated request identity, in the form of a GUID with no decoration such as curly braces, e.g. 9C4D50EE-2D56-4CD3-8152-34347DC9F2B0."]
             pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
                 self.client_request_id = Some(client_request_id.into());
                 self
             }
+            #[doc = "Whether the server should return the client-request-id in the response."]
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
+            #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
             pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
+            #[doc = "A timestamp indicating the last modified time of the resource known to the client. The operation will be performed only if the resource on the service has been modified since the specified time."]
             pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
+            #[doc = "A timestamp indicating the last modified time of the resource known to the client. The operation will be performed only if the resource on the service has not been modified since the specified time."]
             pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
@@ -5325,30 +5602,37 @@ pub mod file {
             pub(crate) ocp_date: Option<String>,
         }
         impl Builder {
+            #[doc = "An OData $filter clause. For more information on constructing this filter, see https://docs.microsoft.com/en-us/rest/api/batchservice/odata-filters-in-batch#list-task-files."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Whether to list children of the Task directory. This parameter can be used in combination with the filter parameter to list specific type of files."]
             pub fn recursive(mut self, recursive: bool) -> Self {
                 self.recursive = Some(recursive);
                 self
             }
+            #[doc = "The maximum number of items to return in the response. A maximum of 1000 files can be returned."]
             pub fn maxresults(mut self, maxresults: i32) -> Self {
                 self.maxresults = Some(maxresults);
                 self
             }
+            #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "The caller-generated request identity, in the form of a GUID with no decoration such as curly braces, e.g. 9C4D50EE-2D56-4CD3-8152-34347DC9F2B0."]
             pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
                 self.client_request_id = Some(client_request_id.into());
                 self
             }
+            #[doc = "Whether the server should return the client-request-id in the response."]
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
+            #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
             pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
@@ -5457,30 +5741,37 @@ pub mod file {
             pub(crate) ocp_date: Option<String>,
         }
         impl Builder {
+            #[doc = "An OData $filter clause. For more information on constructing this filter, see https://docs.microsoft.com/en-us/rest/api/batchservice/odata-filters-in-batch#list-compute-node-files."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Whether to list children of a directory."]
             pub fn recursive(mut self, recursive: bool) -> Self {
                 self.recursive = Some(recursive);
                 self
             }
+            #[doc = "The maximum number of items to return in the response. A maximum of 1000 files can be returned."]
             pub fn maxresults(mut self, maxresults: i32) -> Self {
                 self.maxresults = Some(maxresults);
                 self
             }
+            #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "The caller-generated request identity, in the form of a GUID with no decoration such as curly braces, e.g. 9C4D50EE-2D56-4CD3-8152-34347DC9F2B0."]
             pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
                 self.client_request_id = Some(client_request_id.into());
                 self
             }
+            #[doc = "Whether the server should return the client-request-id in the response."]
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
+            #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
             pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
@@ -5787,42 +6078,52 @@ pub mod job_schedule {
             pub(crate) if_unmodified_since: Option<String>,
         }
         impl Builder {
+            #[doc = "An OData $select clause."]
             pub fn select(mut self, select: impl Into<String>) -> Self {
                 self.select = Some(select.into());
                 self
             }
+            #[doc = "An OData $expand clause."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
             }
+            #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "The caller-generated request identity, in the form of a GUID with no decoration such as curly braces, e.g. 9C4D50EE-2D56-4CD3-8152-34347DC9F2B0."]
             pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
                 self.client_request_id = Some(client_request_id.into());
                 self
             }
+            #[doc = "Whether the server should return the client-request-id in the response."]
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
+            #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
             pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
+            #[doc = "An ETag value associated with the version of the resource known to the client. The operation will be performed only if the resource's current ETag on the service exactly matches the value specified by the client."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
             }
+            #[doc = "An ETag value associated with the version of the resource known to the client. The operation will be performed only if the resource's current ETag on the service does not match the value specified by the client."]
             pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
                 self.if_none_match = Some(if_none_match.into());
                 self
             }
+            #[doc = "A timestamp indicating the last modified time of the resource known to the client. The operation will be performed only if the resource on the service has been modified since the specified time."]
             pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
+            #[doc = "A timestamp indicating the last modified time of the resource known to the client. The operation will be performed only if the resource on the service has not been modified since the specified time."]
             pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
@@ -5910,34 +6211,42 @@ pub mod job_schedule {
             pub(crate) if_unmodified_since: Option<String>,
         }
         impl Builder {
+            #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "The caller-generated request identity, in the form of a GUID with no decoration such as curly braces, e.g. 9C4D50EE-2D56-4CD3-8152-34347DC9F2B0."]
             pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
                 self.client_request_id = Some(client_request_id.into());
                 self
             }
+            #[doc = "Whether the server should return the client-request-id in the response."]
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
+            #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
             pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
+            #[doc = "An ETag value associated with the version of the resource known to the client. The operation will be performed only if the resource's current ETag on the service exactly matches the value specified by the client."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
             }
+            #[doc = "An ETag value associated with the version of the resource known to the client. The operation will be performed only if the resource's current ETag on the service does not match the value specified by the client."]
             pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
                 self.if_none_match = Some(if_none_match.into());
                 self
             }
+            #[doc = "A timestamp indicating the last modified time of the resource known to the client. The operation will be performed only if the resource on the service has been modified since the specified time."]
             pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
+            #[doc = "A timestamp indicating the last modified time of the resource known to the client. The operation will be performed only if the resource on the service has not been modified since the specified time."]
             pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
@@ -6016,34 +6325,42 @@ pub mod job_schedule {
             pub(crate) if_unmodified_since: Option<String>,
         }
         impl Builder {
+            #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "The caller-generated request identity, in the form of a GUID with no decoration such as curly braces, e.g. 9C4D50EE-2D56-4CD3-8152-34347DC9F2B0."]
             pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
                 self.client_request_id = Some(client_request_id.into());
                 self
             }
+            #[doc = "Whether the server should return the client-request-id in the response."]
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
+            #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
             pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
+            #[doc = "An ETag value associated with the version of the resource known to the client. The operation will be performed only if the resource's current ETag on the service exactly matches the value specified by the client."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
             }
+            #[doc = "An ETag value associated with the version of the resource known to the client. The operation will be performed only if the resource's current ETag on the service does not match the value specified by the client."]
             pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
                 self.if_none_match = Some(if_none_match.into());
                 self
             }
+            #[doc = "A timestamp indicating the last modified time of the resource known to the client. The operation will be performed only if the resource on the service has been modified since the specified time."]
             pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
+            #[doc = "A timestamp indicating the last modified time of the resource known to the client. The operation will be performed only if the resource on the service has not been modified since the specified time."]
             pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
@@ -6121,34 +6438,42 @@ pub mod job_schedule {
             pub(crate) if_unmodified_since: Option<String>,
         }
         impl Builder {
+            #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "The caller-generated request identity, in the form of a GUID with no decoration such as curly braces, e.g. 9C4D50EE-2D56-4CD3-8152-34347DC9F2B0."]
             pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
                 self.client_request_id = Some(client_request_id.into());
                 self
             }
+            #[doc = "Whether the server should return the client-request-id in the response."]
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
+            #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
             pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
+            #[doc = "An ETag value associated with the version of the resource known to the client. The operation will be performed only if the resource's current ETag on the service exactly matches the value specified by the client."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
             }
+            #[doc = "An ETag value associated with the version of the resource known to the client. The operation will be performed only if the resource's current ETag on the service does not match the value specified by the client."]
             pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
                 self.if_none_match = Some(if_none_match.into());
                 self
             }
+            #[doc = "A timestamp indicating the last modified time of the resource known to the client. The operation will be performed only if the resource on the service has been modified since the specified time."]
             pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
+            #[doc = "A timestamp indicating the last modified time of the resource known to the client. The operation will be performed only if the resource on the service has not been modified since the specified time."]
             pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
@@ -6225,34 +6550,42 @@ pub mod job_schedule {
             pub(crate) if_unmodified_since: Option<String>,
         }
         impl Builder {
+            #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "The caller-generated request identity, in the form of a GUID with no decoration such as curly braces, e.g. 9C4D50EE-2D56-4CD3-8152-34347DC9F2B0."]
             pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
                 self.client_request_id = Some(client_request_id.into());
                 self
             }
+            #[doc = "Whether the server should return the client-request-id in the response."]
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
+            #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
             pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
+            #[doc = "An ETag value associated with the version of the resource known to the client. The operation will be performed only if the resource's current ETag on the service exactly matches the value specified by the client."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
             }
+            #[doc = "An ETag value associated with the version of the resource known to the client. The operation will be performed only if the resource's current ETag on the service does not match the value specified by the client."]
             pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
                 self.if_none_match = Some(if_none_match.into());
                 self
             }
+            #[doc = "A timestamp indicating the last modified time of the resource known to the client. The operation will be performed only if the resource on the service has been modified since the specified time."]
             pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
+            #[doc = "A timestamp indicating the last modified time of the resource known to the client. The operation will be performed only if the resource on the service has not been modified since the specified time."]
             pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
@@ -6329,34 +6662,42 @@ pub mod job_schedule {
             pub(crate) if_unmodified_since: Option<String>,
         }
         impl Builder {
+            #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "The caller-generated request identity, in the form of a GUID with no decoration such as curly braces, e.g. 9C4D50EE-2D56-4CD3-8152-34347DC9F2B0."]
             pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
                 self.client_request_id = Some(client_request_id.into());
                 self
             }
+            #[doc = "Whether the server should return the client-request-id in the response."]
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
+            #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
             pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
+            #[doc = "An ETag value associated with the version of the resource known to the client. The operation will be performed only if the resource's current ETag on the service exactly matches the value specified by the client."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
             }
+            #[doc = "An ETag value associated with the version of the resource known to the client. The operation will be performed only if the resource's current ETag on the service does not match the value specified by the client."]
             pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
                 self.if_none_match = Some(if_none_match.into());
                 self
             }
+            #[doc = "A timestamp indicating the last modified time of the resource known to the client. The operation will be performed only if the resource on the service has been modified since the specified time."]
             pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
+            #[doc = "A timestamp indicating the last modified time of the resource known to the client. The operation will be performed only if the resource on the service has not been modified since the specified time."]
             pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
@@ -6438,34 +6779,42 @@ pub mod job_schedule {
             pub(crate) if_unmodified_since: Option<String>,
         }
         impl Builder {
+            #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "The caller-generated request identity, in the form of a GUID with no decoration such as curly braces, e.g. 9C4D50EE-2D56-4CD3-8152-34347DC9F2B0."]
             pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
                 self.client_request_id = Some(client_request_id.into());
                 self
             }
+            #[doc = "Whether the server should return the client-request-id in the response."]
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
+            #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
             pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
+            #[doc = "An ETag value associated with the version of the resource known to the client. The operation will be performed only if the resource's current ETag on the service exactly matches the value specified by the client."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
             }
+            #[doc = "An ETag value associated with the version of the resource known to the client. The operation will be performed only if the resource's current ETag on the service does not match the value specified by the client."]
             pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
                 self.if_none_match = Some(if_none_match.into());
                 self
             }
+            #[doc = "A timestamp indicating the last modified time of the resource known to the client. The operation will be performed only if the resource on the service has been modified since the specified time."]
             pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
+            #[doc = "A timestamp indicating the last modified time of the resource known to the client. The operation will be performed only if the resource on the service has not been modified since the specified time."]
             pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
@@ -6544,34 +6893,42 @@ pub mod job_schedule {
             pub(crate) if_unmodified_since: Option<String>,
         }
         impl Builder {
+            #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "The caller-generated request identity, in the form of a GUID with no decoration such as curly braces, e.g. 9C4D50EE-2D56-4CD3-8152-34347DC9F2B0."]
             pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
                 self.client_request_id = Some(client_request_id.into());
                 self
             }
+            #[doc = "Whether the server should return the client-request-id in the response."]
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
+            #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
             pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
+            #[doc = "An ETag value associated with the version of the resource known to the client. The operation will be performed only if the resource's current ETag on the service exactly matches the value specified by the client."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
             }
+            #[doc = "An ETag value associated with the version of the resource known to the client. The operation will be performed only if the resource's current ETag on the service does not match the value specified by the client."]
             pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
                 self.if_none_match = Some(if_none_match.into());
                 self
             }
+            #[doc = "A timestamp indicating the last modified time of the resource known to the client. The operation will be performed only if the resource on the service has been modified since the specified time."]
             pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
+            #[doc = "A timestamp indicating the last modified time of the resource known to the client. The operation will be performed only if the resource on the service has not been modified since the specified time."]
             pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
@@ -6652,34 +7009,42 @@ pub mod job_schedule {
             pub(crate) ocp_date: Option<String>,
         }
         impl Builder {
+            #[doc = "An OData $filter clause. For more information on constructing this filter, see https://docs.microsoft.com/en-us/rest/api/batchservice/odata-filters-in-batch#list-job-schedules."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "An OData $select clause."]
             pub fn select(mut self, select: impl Into<String>) -> Self {
                 self.select = Some(select.into());
                 self
             }
+            #[doc = "An OData $expand clause."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
             }
+            #[doc = "The maximum number of items to return in the response. A maximum of 1000 Job Schedules can be returned."]
             pub fn maxresults(mut self, maxresults: i32) -> Self {
                 self.maxresults = Some(maxresults);
                 self
             }
+            #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "The caller-generated request identity, in the form of a GUID with no decoration such as curly braces, e.g. 9C4D50EE-2D56-4CD3-8152-34347DC9F2B0."]
             pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
                 self.client_request_id = Some(client_request_id.into());
                 self
             }
+            #[doc = "Whether the server should return the client-request-id in the response."]
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
+            #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
             pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
@@ -6782,18 +7147,22 @@ pub mod job_schedule {
             pub(crate) ocp_date: Option<String>,
         }
         impl Builder {
+            #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "The caller-generated request identity, in the form of a GUID with no decoration such as curly braces, e.g. 9C4D50EE-2D56-4CD3-8152-34347DC9F2B0."]
             pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
                 self.client_request_id = Some(client_request_id.into());
                 self
             }
+            #[doc = "Whether the server should return the client-request-id in the response."]
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
+            #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
             pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
@@ -7053,34 +7422,42 @@ pub mod task {
             pub(crate) ocp_date: Option<String>,
         }
         impl Builder {
+            #[doc = "An OData $filter clause. For more information on constructing this filter, see https://docs.microsoft.com/en-us/rest/api/batchservice/odata-filters-in-batch#list-tasks."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "An OData $select clause."]
             pub fn select(mut self, select: impl Into<String>) -> Self {
                 self.select = Some(select.into());
                 self
             }
+            #[doc = "An OData $expand clause."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
             }
+            #[doc = "The maximum number of items to return in the response. A maximum of 1000 Tasks can be returned."]
             pub fn maxresults(mut self, maxresults: i32) -> Self {
                 self.maxresults = Some(maxresults);
                 self
             }
+            #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "The caller-generated request identity, in the form of a GUID with no decoration such as curly braces, e.g. 9C4D50EE-2D56-4CD3-8152-34347DC9F2B0."]
             pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
                 self.client_request_id = Some(client_request_id.into());
                 self
             }
+            #[doc = "Whether the server should return the client-request-id in the response."]
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
+            #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
             pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
@@ -7184,18 +7561,22 @@ pub mod task {
             pub(crate) ocp_date: Option<String>,
         }
         impl Builder {
+            #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "The caller-generated request identity, in the form of a GUID with no decoration such as curly braces, e.g. 9C4D50EE-2D56-4CD3-8152-34347DC9F2B0."]
             pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
                 self.client_request_id = Some(client_request_id.into());
                 self
             }
+            #[doc = "Whether the server should return the client-request-id in the response."]
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
+            #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
             pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
@@ -7258,18 +7639,22 @@ pub mod task {
             pub(crate) ocp_date: Option<String>,
         }
         impl Builder {
+            #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "The caller-generated request identity, in the form of a GUID with no decoration such as curly braces, e.g. 9C4D50EE-2D56-4CD3-8152-34347DC9F2B0."]
             pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
                 self.client_request_id = Some(client_request_id.into());
                 self
             }
+            #[doc = "Whether the server should return the client-request-id in the response."]
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
+            #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
             pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
@@ -7342,42 +7727,52 @@ pub mod task {
             pub(crate) if_unmodified_since: Option<String>,
         }
         impl Builder {
+            #[doc = "An OData $select clause."]
             pub fn select(mut self, select: impl Into<String>) -> Self {
                 self.select = Some(select.into());
                 self
             }
+            #[doc = "An OData $expand clause."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
             }
+            #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "The caller-generated request identity, in the form of a GUID with no decoration such as curly braces, e.g. 9C4D50EE-2D56-4CD3-8152-34347DC9F2B0."]
             pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
                 self.client_request_id = Some(client_request_id.into());
                 self
             }
+            #[doc = "Whether the server should return the client-request-id in the response."]
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
+            #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
             pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
+            #[doc = "An ETag value associated with the version of the resource known to the client. The operation will be performed only if the resource's current ETag on the service exactly matches the value specified by the client."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
             }
+            #[doc = "An ETag value associated with the version of the resource known to the client. The operation will be performed only if the resource's current ETag on the service does not match the value specified by the client."]
             pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
                 self.if_none_match = Some(if_none_match.into());
                 self
             }
+            #[doc = "A timestamp indicating the last modified time of the resource known to the client. The operation will be performed only if the resource on the service has been modified since the specified time."]
             pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
+            #[doc = "A timestamp indicating the last modified time of the resource known to the client. The operation will be performed only if the resource on the service has not been modified since the specified time."]
             pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
@@ -7467,34 +7862,42 @@ pub mod task {
             pub(crate) if_unmodified_since: Option<String>,
         }
         impl Builder {
+            #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "The caller-generated request identity, in the form of a GUID with no decoration such as curly braces, e.g. 9C4D50EE-2D56-4CD3-8152-34347DC9F2B0."]
             pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
                 self.client_request_id = Some(client_request_id.into());
                 self
             }
+            #[doc = "Whether the server should return the client-request-id in the response."]
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
+            #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
             pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
+            #[doc = "An ETag value associated with the version of the resource known to the client. The operation will be performed only if the resource's current ETag on the service exactly matches the value specified by the client."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
             }
+            #[doc = "An ETag value associated with the version of the resource known to the client. The operation will be performed only if the resource's current ETag on the service does not match the value specified by the client."]
             pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
                 self.if_none_match = Some(if_none_match.into());
                 self
             }
+            #[doc = "A timestamp indicating the last modified time of the resource known to the client. The operation will be performed only if the resource on the service has been modified since the specified time."]
             pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
+            #[doc = "A timestamp indicating the last modified time of the resource known to the client. The operation will be performed only if the resource on the service has not been modified since the specified time."]
             pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
@@ -7574,34 +7977,42 @@ pub mod task {
             pub(crate) if_unmodified_since: Option<String>,
         }
         impl Builder {
+            #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "The caller-generated request identity, in the form of a GUID with no decoration such as curly braces, e.g. 9C4D50EE-2D56-4CD3-8152-34347DC9F2B0."]
             pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
                 self.client_request_id = Some(client_request_id.into());
                 self
             }
+            #[doc = "Whether the server should return the client-request-id in the response."]
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
+            #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
             pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
+            #[doc = "An ETag value associated with the version of the resource known to the client. The operation will be performed only if the resource's current ETag on the service exactly matches the value specified by the client."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
             }
+            #[doc = "An ETag value associated with the version of the resource known to the client. The operation will be performed only if the resource's current ETag on the service does not match the value specified by the client."]
             pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
                 self.if_none_match = Some(if_none_match.into());
                 self
             }
+            #[doc = "A timestamp indicating the last modified time of the resource known to the client. The operation will be performed only if the resource on the service has been modified since the specified time."]
             pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
+            #[doc = "A timestamp indicating the last modified time of the resource known to the client. The operation will be performed only if the resource on the service has not been modified since the specified time."]
             pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
@@ -7677,22 +8088,27 @@ pub mod task {
             pub(crate) ocp_date: Option<String>,
         }
         impl Builder {
+            #[doc = "An OData $select clause."]
             pub fn select(mut self, select: impl Into<String>) -> Self {
                 self.select = Some(select.into());
                 self
             }
+            #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "The caller-generated request identity, in the form of a GUID with no decoration such as curly braces, e.g. 9C4D50EE-2D56-4CD3-8152-34347DC9F2B0."]
             pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
                 self.client_request_id = Some(client_request_id.into());
                 self
             }
+            #[doc = "Whether the server should return the client-request-id in the response."]
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
+            #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
             pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
@@ -7770,34 +8186,42 @@ pub mod task {
             pub(crate) if_unmodified_since: Option<String>,
         }
         impl Builder {
+            #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "The caller-generated request identity, in the form of a GUID with no decoration such as curly braces, e.g. 9C4D50EE-2D56-4CD3-8152-34347DC9F2B0."]
             pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
                 self.client_request_id = Some(client_request_id.into());
                 self
             }
+            #[doc = "Whether the server should return the client-request-id in the response."]
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
+            #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
             pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
+            #[doc = "An ETag value associated with the version of the resource known to the client. The operation will be performed only if the resource's current ETag on the service exactly matches the value specified by the client."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
             }
+            #[doc = "An ETag value associated with the version of the resource known to the client. The operation will be performed only if the resource's current ETag on the service does not match the value specified by the client."]
             pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
                 self.if_none_match = Some(if_none_match.into());
                 self
             }
+            #[doc = "A timestamp indicating the last modified time of the resource known to the client. The operation will be performed only if the resource on the service has been modified since the specified time."]
             pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
+            #[doc = "A timestamp indicating the last modified time of the resource known to the client. The operation will be performed only if the resource on the service has not been modified since the specified time."]
             pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
@@ -7881,34 +8305,42 @@ pub mod task {
             pub(crate) if_unmodified_since: Option<String>,
         }
         impl Builder {
+            #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "The caller-generated request identity, in the form of a GUID with no decoration such as curly braces, e.g. 9C4D50EE-2D56-4CD3-8152-34347DC9F2B0."]
             pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
                 self.client_request_id = Some(client_request_id.into());
                 self
             }
+            #[doc = "Whether the server should return the client-request-id in the response."]
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
+            #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
             pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
             }
+            #[doc = "An ETag value associated with the version of the resource known to the client. The operation will be performed only if the resource's current ETag on the service exactly matches the value specified by the client."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
             }
+            #[doc = "An ETag value associated with the version of the resource known to the client. The operation will be performed only if the resource's current ETag on the service does not match the value specified by the client."]
             pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
                 self.if_none_match = Some(if_none_match.into());
                 self
             }
+            #[doc = "A timestamp indicating the last modified time of the resource known to the client. The operation will be performed only if the resource on the service has been modified since the specified time."]
             pub fn if_modified_since(mut self, if_modified_since: impl Into<String>) -> Self {
                 self.if_modified_since = Some(if_modified_since.into());
                 self
             }
+            #[doc = "A timestamp indicating the last modified time of the resource known to the client. The operation will be performed only if the resource on the service has not been modified since the specified time."]
             pub fn if_unmodified_since(mut self, if_unmodified_since: impl Into<String>) -> Self {
                 self.if_unmodified_since = Some(if_unmodified_since.into());
                 self
@@ -8237,18 +8669,22 @@ pub mod compute_node {
             pub(crate) ocp_date: Option<String>,
         }
         impl Builder {
+            #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "The caller-generated request identity, in the form of a GUID with no decoration such as curly braces, e.g. 9C4D50EE-2D56-4CD3-8152-34347DC9F2B0."]
             pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
                 self.client_request_id = Some(client_request_id.into());
                 self
             }
+            #[doc = "Whether the server should return the client-request-id in the response."]
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
+            #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
             pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
@@ -8318,18 +8754,22 @@ pub mod compute_node {
             pub(crate) ocp_date: Option<String>,
         }
         impl Builder {
+            #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "The caller-generated request identity, in the form of a GUID with no decoration such as curly braces, e.g. 9C4D50EE-2D56-4CD3-8152-34347DC9F2B0."]
             pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
                 self.client_request_id = Some(client_request_id.into());
                 self
             }
+            #[doc = "Whether the server should return the client-request-id in the response."]
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
+            #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
             pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
@@ -8399,18 +8839,22 @@ pub mod compute_node {
             pub(crate) ocp_date: Option<String>,
         }
         impl Builder {
+            #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "The caller-generated request identity, in the form of a GUID with no decoration such as curly braces, e.g. 9C4D50EE-2D56-4CD3-8152-34347DC9F2B0."]
             pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
                 self.client_request_id = Some(client_request_id.into());
                 self
             }
+            #[doc = "Whether the server should return the client-request-id in the response."]
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
+            #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
             pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
@@ -8479,22 +8923,27 @@ pub mod compute_node {
             pub(crate) ocp_date: Option<String>,
         }
         impl Builder {
+            #[doc = "An OData $select clause."]
             pub fn select(mut self, select: impl Into<String>) -> Self {
                 self.select = Some(select.into());
                 self
             }
+            #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "The caller-generated request identity, in the form of a GUID with no decoration such as curly braces, e.g. 9C4D50EE-2D56-4CD3-8152-34347DC9F2B0."]
             pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
                 self.client_request_id = Some(client_request_id.into());
                 self
             }
+            #[doc = "Whether the server should return the client-request-id in the response."]
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
+            #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
             pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
@@ -8569,22 +9018,27 @@ pub mod compute_node {
             pub(crate) ocp_date: Option<String>,
         }
         impl Builder {
+            #[doc = "The parameters for the request."]
             pub fn node_reboot_parameter(mut self, node_reboot_parameter: impl Into<models::NodeRebootParameter>) -> Self {
                 self.node_reboot_parameter = Some(node_reboot_parameter.into());
                 self
             }
+            #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "The caller-generated request identity, in the form of a GUID with no decoration such as curly braces, e.g. 9C4D50EE-2D56-4CD3-8152-34347DC9F2B0."]
             pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
                 self.client_request_id = Some(client_request_id.into());
                 self
             }
+            #[doc = "Whether the server should return the client-request-id in the response."]
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
+            #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
             pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
@@ -8657,22 +9111,27 @@ pub mod compute_node {
             pub(crate) ocp_date: Option<String>,
         }
         impl Builder {
+            #[doc = "The parameters for the request."]
             pub fn node_reimage_parameter(mut self, node_reimage_parameter: impl Into<models::NodeReimageParameter>) -> Self {
                 self.node_reimage_parameter = Some(node_reimage_parameter.into());
                 self
             }
+            #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "The caller-generated request identity, in the form of a GUID with no decoration such as curly braces, e.g. 9C4D50EE-2D56-4CD3-8152-34347DC9F2B0."]
             pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
                 self.client_request_id = Some(client_request_id.into());
                 self
             }
+            #[doc = "Whether the server should return the client-request-id in the response."]
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
+            #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
             pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
@@ -8745,6 +9204,7 @@ pub mod compute_node {
             pub(crate) ocp_date: Option<String>,
         }
         impl Builder {
+            #[doc = "The parameters for the request."]
             pub fn node_disable_scheduling_parameter(
                 mut self,
                 node_disable_scheduling_parameter: impl Into<models::NodeDisableSchedulingParameter>,
@@ -8752,18 +9212,22 @@ pub mod compute_node {
                 self.node_disable_scheduling_parameter = Some(node_disable_scheduling_parameter.into());
                 self
             }
+            #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "The caller-generated request identity, in the form of a GUID with no decoration such as curly braces, e.g. 9C4D50EE-2D56-4CD3-8152-34347DC9F2B0."]
             pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
                 self.client_request_id = Some(client_request_id.into());
                 self
             }
+            #[doc = "Whether the server should return the client-request-id in the response."]
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
+            #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
             pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
@@ -8835,18 +9299,22 @@ pub mod compute_node {
             pub(crate) ocp_date: Option<String>,
         }
         impl Builder {
+            #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "The caller-generated request identity, in the form of a GUID with no decoration such as curly braces, e.g. 9C4D50EE-2D56-4CD3-8152-34347DC9F2B0."]
             pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
                 self.client_request_id = Some(client_request_id.into());
                 self
             }
+            #[doc = "Whether the server should return the client-request-id in the response."]
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
+            #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
             pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
@@ -8914,18 +9382,22 @@ pub mod compute_node {
             pub(crate) ocp_date: Option<String>,
         }
         impl Builder {
+            #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "The caller-generated request identity, in the form of a GUID with no decoration such as curly braces, e.g. 9C4D50EE-2D56-4CD3-8152-34347DC9F2B0."]
             pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
                 self.client_request_id = Some(client_request_id.into());
                 self
             }
+            #[doc = "Whether the server should return the client-request-id in the response."]
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
+            #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
             pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
@@ -8996,18 +9468,22 @@ pub mod compute_node {
             pub(crate) ocp_date: Option<String>,
         }
         impl Builder {
+            #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "The caller-generated request identity, in the form of a GUID with no decoration such as curly braces, e.g. 9C4D50EE-2D56-4CD3-8152-34347DC9F2B0."]
             pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
                 self.client_request_id = Some(client_request_id.into());
                 self
             }
+            #[doc = "Whether the server should return the client-request-id in the response."]
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
+            #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
             pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
@@ -9079,18 +9555,22 @@ pub mod compute_node {
             pub(crate) ocp_date: Option<String>,
         }
         impl Builder {
+            #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "The caller-generated request identity, in the form of a GUID with no decoration such as curly braces, e.g. 9C4D50EE-2D56-4CD3-8152-34347DC9F2B0."]
             pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
                 self.client_request_id = Some(client_request_id.into());
                 self
             }
+            #[doc = "Whether the server should return the client-request-id in the response."]
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
+            #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
             pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self
@@ -9164,30 +9644,37 @@ pub mod compute_node {
             pub(crate) ocp_date: Option<String>,
         }
         impl Builder {
+            #[doc = "An OData $filter clause. For more information on constructing this filter, see https://docs.microsoft.com/en-us/rest/api/batchservice/odata-filters-in-batch#list-nodes-in-a-pool."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "An OData $select clause."]
             pub fn select(mut self, select: impl Into<String>) -> Self {
                 self.select = Some(select.into());
                 self
             }
+            #[doc = "The maximum number of items to return in the response. A maximum of 1000 Compute Nodes can be returned."]
             pub fn maxresults(mut self, maxresults: i32) -> Self {
                 self.maxresults = Some(maxresults);
                 self
             }
+            #[doc = "The maximum time that the server can spend processing the request, in seconds. The default is 30 seconds."]
             pub fn timeout(mut self, timeout: i32) -> Self {
                 self.timeout = Some(timeout);
                 self
             }
+            #[doc = "The caller-generated request identity, in the form of a GUID with no decoration such as curly braces, e.g. 9C4D50EE-2D56-4CD3-8152-34347DC9F2B0."]
             pub fn client_request_id(mut self, client_request_id: impl Into<String>) -> Self {
                 self.client_request_id = Some(client_request_id.into());
                 self
             }
+            #[doc = "Whether the server should return the client-request-id in the response."]
             pub fn return_client_request_id(mut self, return_client_request_id: bool) -> Self {
                 self.return_client_request_id = Some(return_client_request_id);
                 self
             }
+            #[doc = "The time the request was issued. Client libraries typically set this to the current system clock time; set it explicitly if you are calling the REST API directly."]
             pub fn ocp_date(mut self, ocp_date: impl Into<String>) -> Self {
                 self.ocp_date = Some(ocp_date.into());
                 self

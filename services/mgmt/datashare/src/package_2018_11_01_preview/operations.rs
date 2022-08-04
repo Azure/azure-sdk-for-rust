@@ -242,6 +242,7 @@ pub mod accounts {
             pub(crate) skip_token: Option<String>,
         }
         impl Builder {
+            #[doc = "Continuation token"]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());
                 self
@@ -555,6 +556,7 @@ pub mod accounts {
             pub(crate) skip_token: Option<String>,
         }
         impl Builder {
+            #[doc = "Continuation token"]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());
                 self
@@ -681,6 +683,7 @@ pub mod consumer_invitations {
             pub(crate) skip_token: Option<String>,
         }
         impl Builder {
+            #[doc = "The continuation token"]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());
                 self
@@ -1161,14 +1164,17 @@ pub mod data_sets {
             pub(crate) orderby: Option<String>,
         }
         impl Builder {
+            #[doc = "continuation token"]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());
                 self
             }
+            #[doc = "Filters the results using OData syntax."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Sorts the results using OData syntax."]
             pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
                 self.orderby = Some(orderby.into());
                 self
@@ -1534,14 +1540,17 @@ pub mod data_set_mappings {
             pub(crate) orderby: Option<String>,
         }
         impl Builder {
+            #[doc = "Continuation token"]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());
                 self
             }
+            #[doc = "Filters the results using OData syntax."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Sorts the results using OData syntax."]
             pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
                 self.orderby = Some(orderby.into());
                 self
@@ -1924,14 +1933,17 @@ pub mod invitations {
             pub(crate) orderby: Option<String>,
         }
         impl Builder {
+            #[doc = "The continuation token"]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());
                 self
             }
+            #[doc = "Filters the results using OData syntax."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Sorts the results using OData syntax."]
             pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
                 self.orderby = Some(orderby.into());
                 self
@@ -2266,14 +2278,17 @@ pub mod shares {
             pub(crate) orderby: Option<String>,
         }
         impl Builder {
+            #[doc = "Continuation token"]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());
                 self
             }
+            #[doc = "Filters the results using OData syntax."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Sorts the results using OData syntax."]
             pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
                 self.orderby = Some(orderby.into());
                 self
@@ -2364,14 +2379,17 @@ pub mod shares {
             pub(crate) orderby: Option<String>,
         }
         impl Builder {
+            #[doc = "Continuation token"]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());
                 self
             }
+            #[doc = "Filters the results using OData syntax."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Sorts the results using OData syntax."]
             pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
                 self.orderby = Some(orderby.into());
                 self
@@ -2642,14 +2660,17 @@ pub mod shares {
             pub(crate) orderby: Option<String>,
         }
         impl Builder {
+            #[doc = "Continuation Token"]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());
                 self
             }
+            #[doc = "Filters the results using OData syntax."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Sorts the results using OData syntax."]
             pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
                 self.orderby = Some(orderby.into());
                 self
@@ -3007,6 +3028,7 @@ pub mod provider_share_subscriptions {
             pub(crate) skip_token: Option<String>,
         }
         impl Builder {
+            #[doc = "Continuation Token"]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());
                 self
@@ -3379,6 +3401,7 @@ pub mod share_subscriptions {
             pub(crate) skip_token: Option<String>,
         }
         impl Builder {
+            #[doc = "Continuation token"]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());
                 self
@@ -3464,14 +3487,17 @@ pub mod share_subscriptions {
             pub(crate) orderby: Option<String>,
         }
         impl Builder {
+            #[doc = "Continuation token"]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());
                 self
             }
+            #[doc = "Filters the results using OData syntax."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Sorts the results using OData syntax."]
             pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
                 self.orderby = Some(orderby.into());
                 self
@@ -3562,14 +3588,17 @@ pub mod share_subscriptions {
             pub(crate) orderby: Option<String>,
         }
         impl Builder {
+            #[doc = "Continuation token"]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());
                 self
             }
+            #[doc = "Filters the results using OData syntax."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Sorts the results using OData syntax."]
             pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
                 self.orderby = Some(orderby.into());
                 self
@@ -3899,14 +3928,17 @@ pub mod share_subscriptions {
             pub(crate) orderby: Option<String>,
         }
         impl Builder {
+            #[doc = "Continuation Token"]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());
                 self
             }
+            #[doc = "Filters the results using OData syntax."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Sorts the results using OData syntax."]
             pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
                 self.orderby = Some(orderby.into());
                 self
@@ -4030,6 +4062,7 @@ pub mod consumer_source_data_sets {
             pub(crate) skip_token: Option<String>,
         }
         impl Builder {
+            #[doc = "Continuation token"]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());
                 self
@@ -4385,6 +4418,7 @@ pub mod synchronization_settings {
             pub(crate) skip_token: Option<String>,
         }
         impl Builder {
+            #[doc = "continuation token"]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());
                 self
@@ -4741,6 +4775,7 @@ pub mod triggers {
             pub(crate) skip_token: Option<String>,
         }
         impl Builder {
+            #[doc = "Continuation token"]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());
                 self

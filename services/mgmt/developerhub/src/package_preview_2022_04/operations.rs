@@ -548,6 +548,7 @@ pub mod workflow {
             pub(crate) managed_cluster_resource: Option<String>,
         }
         impl Builder {
+            #[doc = "The ManagedCluster resource associated with the workflows."]
             pub fn managed_cluster_resource(mut self, managed_cluster_resource: impl Into<String>) -> Self {
                 self.managed_cluster_resource = Some(managed_cluster_resource.into());
                 self

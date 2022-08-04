@@ -119,6 +119,7 @@ pub mod locations {
             pub(crate) accept_language: Option<String>,
         }
         impl Builder {
+            #[doc = "Specifies the preferred language for the response."]
             pub fn accept_language(mut self, accept_language: impl Into<String>) -> Self {
                 self.accept_language = Some(accept_language.into());
                 self
@@ -173,6 +174,7 @@ pub mod locations {
             pub(crate) accept_language: Option<String>,
         }
         impl Builder {
+            #[doc = "Specifies the preferred language for the response."]
             pub fn accept_language(mut self, accept_language: impl Into<String>) -> Self {
                 self.accept_language = Some(accept_language.into());
                 self
@@ -356,14 +358,17 @@ pub mod jobs {
             pub(crate) accept_language: Option<String>,
         }
         impl Builder {
+            #[doc = "An integer value that specifies how many jobs at most should be returned. The value cannot exceed 100."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Can be used to restrict the results to certain conditions."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Specifies the preferred language for the response."]
             pub fn accept_language(mut self, accept_language: impl Into<String>) -> Self {
                 self.accept_language = Some(accept_language.into());
                 self
@@ -455,14 +460,17 @@ pub mod jobs {
             pub(crate) accept_language: Option<String>,
         }
         impl Builder {
+            #[doc = "An integer value that specifies how many jobs at most should be returned. The value cannot exceed 100."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Can be used to restrict the results to certain conditions."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Specifies the preferred language for the response."]
             pub fn accept_language(mut self, accept_language: impl Into<String>) -> Self {
                 self.accept_language = Some(accept_language.into());
                 self
@@ -554,6 +562,7 @@ pub mod jobs {
             pub(crate) accept_language: Option<String>,
         }
         impl Builder {
+            #[doc = "Specifies the preferred language for the response."]
             pub fn accept_language(mut self, accept_language: impl Into<String>) -> Self {
                 self.accept_language = Some(accept_language.into());
                 self
@@ -620,10 +629,12 @@ pub mod jobs {
             pub(crate) x_ms_client_tenant_id: Option<String>,
         }
         impl Builder {
+            #[doc = "Specifies the preferred language for the response."]
             pub fn accept_language(mut self, accept_language: impl Into<String>) -> Self {
                 self.accept_language = Some(accept_language.into());
                 self
             }
+            #[doc = "The tenant ID of the client making the request."]
             pub fn x_ms_client_tenant_id(mut self, x_ms_client_tenant_id: impl Into<String>) -> Self {
                 self.x_ms_client_tenant_id = Some(x_ms_client_tenant_id.into());
                 self
@@ -694,6 +705,7 @@ pub mod jobs {
             pub(crate) accept_language: Option<String>,
         }
         impl Builder {
+            #[doc = "Specifies the preferred language for the response."]
             pub fn accept_language(mut self, accept_language: impl Into<String>) -> Self {
                 self.accept_language = Some(accept_language.into());
                 self
@@ -755,6 +767,7 @@ pub mod jobs {
             pub(crate) accept_language: Option<String>,
         }
         impl Builder {
+            #[doc = "Specifies the preferred language for the response."]
             pub fn accept_language(mut self, accept_language: impl Into<String>) -> Self {
                 self.accept_language = Some(accept_language.into());
                 self
@@ -837,6 +850,7 @@ pub mod bit_locker_keys {
             pub(crate) accept_language: Option<String>,
         }
         impl Builder {
+            #[doc = "Specifies the preferred language for the response."]
             pub fn accept_language(mut self, accept_language: impl Into<String>) -> Self {
                 self.accept_language = Some(accept_language.into());
                 self
@@ -909,6 +923,7 @@ pub mod operations {
             pub(crate) accept_language: Option<String>,
         }
         impl Builder {
+            #[doc = "Specifies the preferred language for the response."]
             pub fn accept_language(mut self, accept_language: impl Into<String>) -> Self {
                 self.accept_language = Some(accept_language.into());
                 self

@@ -397,6 +397,7 @@ pub mod test_base_accounts {
             pub(crate) get_deleted: Option<bool>,
         }
         impl Builder {
+            #[doc = "The flag indicating if we need to include the Test Base Accounts which were soft deleted before."]
             pub fn get_deleted(mut self, get_deleted: bool) -> Self {
                 self.get_deleted = Some(get_deleted);
                 self
@@ -480,6 +481,7 @@ pub mod test_base_accounts {
             pub(crate) get_deleted: Option<bool>,
         }
         impl Builder {
+            #[doc = "The flag indicating if we need to include the Test Base Accounts which were soft deleted before."]
             pub fn get_deleted(mut self, get_deleted: bool) -> Self {
                 self.get_deleted = Some(get_deleted);
                 self
@@ -622,6 +624,7 @@ pub mod test_base_accounts {
             pub(crate) restore: Option<bool>,
         }
         impl Builder {
+            #[doc = "The flag indicating if we would like to restore the Test Base Accounts which were soft deleted before."]
             pub fn restore(mut self, restore: bool) -> Self {
                 self.restore = Some(restore);
                 self
@@ -864,6 +867,7 @@ pub mod test_base_accounts {
             pub(crate) parameters: Option<models::GetFileUploadUrlParameters>,
         }
         impl Builder {
+            #[doc = "Parameters supplied to the Test Base Account GetFileUploadURL operation."]
             pub fn parameters(mut self, parameters: impl Into<models::GetFileUploadUrlParameters>) -> Self {
                 self.parameters = Some(parameters.into());
                 self
@@ -1000,6 +1004,7 @@ pub mod usage {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "Odata filter"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -2507,6 +2512,7 @@ pub mod test_results {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "Odata filter"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self

@@ -543,6 +543,7 @@ pub mod endpoints {
             pub(crate) expiresin: Option<i64>,
         }
         impl Builder {
+            #[doc = "The is how long the endpoint access token is valid (in seconds)."]
             pub fn expiresin(mut self, expiresin: i64) -> Self {
                 self.expiresin = Some(expiresin);
                 self

@@ -536,10 +536,12 @@ pub mod list_addresses_at_subscription_level {
         pub(crate) skip_token: Option<String>,
     }
     impl Builder {
+        #[doc = "$filter is supported to filter based on shipping address properties. Filter supports only equals operation."]
         pub fn filter(mut self, filter: impl Into<String>) -> Self {
             self.filter = Some(filter.into());
             self
         }
+        #[doc = "$skipToken is supported on Get list of addresses, which provides the next page in the list of addresses."]
         pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
             self.skip_token = Some(skip_token.into());
             self
@@ -627,10 +629,12 @@ pub mod list_product_families {
         pub(crate) skip_token: Option<String>,
     }
     impl Builder {
+        #[doc = "$expand is supported on configurations parameter for product, which provides details on the configurations for the product."]
         pub fn expand(mut self, expand: impl Into<String>) -> Self {
             self.expand = Some(expand.into());
             self
         }
+        #[doc = "$skipToken is supported on list of product families, which provides the next page in the list of product families."]
         pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
             self.skip_token = Some(skip_token.into());
             self
@@ -718,6 +722,7 @@ pub mod list_configurations {
         pub(crate) skip_token: Option<String>,
     }
     impl Builder {
+        #[doc = "$skipToken is supported on list of configurations, which provides the next page in the list of configurations."]
         pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
             self.skip_token = Some(skip_token.into());
             self
@@ -801,6 +806,7 @@ pub mod list_product_families_metadata {
         pub(crate) skip_token: Option<String>,
     }
     impl Builder {
+        #[doc = "$skipToken is supported on list of product families metadata, which provides the next page in the list of product families metadata."]
         pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
             self.skip_token = Some(skip_token.into());
             self
@@ -884,6 +890,7 @@ pub mod list_order_at_subscription_level {
         pub(crate) skip_token: Option<String>,
     }
     impl Builder {
+        #[doc = "$skipToken is supported on Get list of order, which provides the next page in the list of order."]
         pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
             self.skip_token = Some(skip_token.into());
             self
@@ -968,14 +975,17 @@ pub mod list_order_items_at_subscription_level {
         pub(crate) skip_token: Option<String>,
     }
     impl Builder {
+        #[doc = "$filter is supported to filter based on order id. Filter supports only equals operation."]
         pub fn filter(mut self, filter: impl Into<String>) -> Self {
             self.filter = Some(filter.into());
             self
         }
+        #[doc = "$expand is supported on device details, forward shipping details and reverse shipping details parameters. Each of these can be provided as a comma separated list. Device Details for order item provides details on the devices of the product, Forward and Reverse Shipping details provide forward and reverse shipping details respectively."]
         pub fn expand(mut self, expand: impl Into<String>) -> Self {
             self.expand = Some(expand.into());
             self
         }
+        #[doc = "$skipToken is supported on Get list of order items, which provides the next page in the list of order items."]
         pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
             self.skip_token = Some(skip_token.into());
             self
@@ -1066,10 +1076,12 @@ pub mod list_addresses_at_resource_group_level {
         pub(crate) skip_token: Option<String>,
     }
     impl Builder {
+        #[doc = "$filter is supported to filter based on shipping address properties. Filter supports only equals operation."]
         pub fn filter(mut self, filter: impl Into<String>) -> Self {
             self.filter = Some(filter.into());
             self
         }
+        #[doc = "$skipToken is supported on Get list of addresses, which provides the next page in the list of address."]
         pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
             self.skip_token = Some(skip_token.into());
             self
@@ -1275,6 +1287,7 @@ pub mod update_address {
         pub(crate) if_match: Option<String>,
     }
     impl Builder {
+        #[doc = "Defines the If-Match condition. The patch will be performed only if the ETag of the job on the server matches this value."]
         pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
             self.if_match = Some(if_match.into());
             self
@@ -1393,6 +1406,7 @@ pub mod list_order_at_resource_group_level {
         pub(crate) skip_token: Option<String>,
     }
     impl Builder {
+        #[doc = "$skipToken is supported on Get list of order, which provides the next page in the list of order."]
         pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
             self.skip_token = Some(skip_token.into());
             self
@@ -1533,14 +1547,17 @@ pub mod list_order_items_at_resource_group_level {
         pub(crate) skip_token: Option<String>,
     }
     impl Builder {
+        #[doc = "$filter is supported to filter based on order id. Filter supports only equals operation."]
         pub fn filter(mut self, filter: impl Into<String>) -> Self {
             self.filter = Some(filter.into());
             self
         }
+        #[doc = "$expand is supported on device details, forward shipping details and reverse shipping details parameters. Each of these can be provided as a comma separated list. Device Details for order item provides details on the devices of the product, Forward and Reverse Shipping details provide forward and reverse shipping details respectively."]
         pub fn expand(mut self, expand: impl Into<String>) -> Self {
             self.expand = Some(expand.into());
             self
         }
+        #[doc = "$skipToken is supported on Get list of order items, which provides the next page in the list of order items."]
         pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
             self.skip_token = Some(skip_token.into());
             self
@@ -1632,6 +1649,7 @@ pub mod get_order_item_by_name {
         pub(crate) expand: Option<String>,
     }
     impl Builder {
+        #[doc = "$expand is supported on device details, forward shipping details and reverse shipping details parameters. Each of these can be provided as a comma separated list. Device Details for order item provides details on the devices of the product, Forward and Reverse Shipping details provide forward and reverse shipping details respectively."]
         pub fn expand(mut self, expand: impl Into<String>) -> Self {
             self.expand = Some(expand.into());
             self
@@ -1757,6 +1775,7 @@ pub mod update_order_item {
         pub(crate) if_match: Option<String>,
     }
     impl Builder {
+        #[doc = "Defines the If-Match condition. The patch will be performed only if the ETag of the order on the server matches this value."]
         pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
             self.if_match = Some(if_match.into());
             self

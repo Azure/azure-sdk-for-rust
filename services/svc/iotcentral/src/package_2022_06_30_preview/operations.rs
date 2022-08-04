@@ -1529,14 +1529,17 @@ pub mod device_groups {
             pub(crate) orderby: Option<String>,
         }
         impl Builder {
+            #[doc = "An expression on the resource type that selects the resources to be returned."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "The maximum number of resources to return from the collection."]
             pub fn top(mut self, top: i64) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "An expression that specify the order of the returned resources."]
             pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
                 self.orderby = Some(orderby.into());
                 self
@@ -1797,6 +1800,7 @@ pub mod device_groups {
             pub(crate) top: Option<i64>,
         }
         impl Builder {
+            #[doc = "The maximum number of resources to return from the collection."]
             pub fn top(mut self, top: i64) -> Self {
                 self.top = Some(top);
                 self
@@ -1940,14 +1944,17 @@ pub mod device_templates {
             pub(crate) orderby: Option<String>,
         }
         impl Builder {
+            #[doc = "An expression on the resource type that selects the resources to be returned."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "The maximum number of resources to return from the collection."]
             pub fn top(mut self, top: i64) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "An expression that specify the order of the returned resources."]
             pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
                 self.orderby = Some(orderby.into());
                 self
@@ -2912,14 +2919,17 @@ pub mod devices {
             pub(crate) orderby: Option<String>,
         }
         impl Builder {
+            #[doc = "An expression on the resource type that selects the resources to be returned."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "The maximum number of resources to return from the collection."]
             pub fn top(mut self, top: i64) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "An expression that specify the order of the returned resources."]
             pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
                 self.orderby = Some(orderby.into());
                 self
@@ -3661,6 +3671,7 @@ pub mod devices {
             pub(crate) unmodeled: Option<bool>,
         }
         impl Builder {
+            #[doc = "The query parameter for supporting unmodeled properties."]
             pub fn unmodeled(mut self, unmodeled: bool) -> Self {
                 self.unmodeled = Some(unmodeled);
                 self
@@ -3720,6 +3731,7 @@ pub mod devices {
             pub(crate) unmodeled: Option<bool>,
         }
         impl Builder {
+            #[doc = "The query parameter for supporting unmodeled properties."]
             pub fn unmodeled(mut self, unmodeled: bool) -> Self {
                 self.unmodeled = Some(unmodeled);
                 self
@@ -3780,6 +3792,7 @@ pub mod devices {
             pub(crate) unmodeled: Option<bool>,
         }
         impl Builder {
+            #[doc = "The query parameter for supporting unmodeled properties."]
             pub fn unmodeled(mut self, unmodeled: bool) -> Self {
                 self.unmodeled = Some(unmodeled);
                 self
@@ -4716,6 +4729,7 @@ pub mod devices {
             pub(crate) unmodeled: Option<bool>,
         }
         impl Builder {
+            #[doc = "The query parameter for supporting unmodeled properties."]
             pub fn unmodeled(mut self, unmodeled: bool) -> Self {
                 self.unmodeled = Some(unmodeled);
                 self
@@ -4769,6 +4783,7 @@ pub mod devices {
             pub(crate) unmodeled: Option<bool>,
         }
         impl Builder {
+            #[doc = "The query parameter for supporting unmodeled properties."]
             pub fn unmodeled(mut self, unmodeled: bool) -> Self {
                 self.unmodeled = Some(unmodeled);
                 self
@@ -4823,6 +4838,7 @@ pub mod devices {
             pub(crate) unmodeled: Option<bool>,
         }
         impl Builder {
+            #[doc = "The query parameter for supporting unmodeled properties."]
             pub fn unmodeled(mut self, unmodeled: bool) -> Self {
                 self.unmodeled = Some(unmodeled);
                 self

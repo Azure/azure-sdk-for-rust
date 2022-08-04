@@ -853,6 +853,7 @@ pub mod caches {
             pub(crate) cache: Option<models::Cache>,
         }
         impl Builder {
+            #[doc = "Object containing the user-selectable properties of the new Cache. If read-only properties are included, they must match the existing values of those properties."]
             pub fn cache(mut self, cache: impl Into<models::Cache>) -> Self {
                 self.cache = Some(cache.into());
                 self
@@ -922,6 +923,7 @@ pub mod caches {
             pub(crate) cache: Option<models::Cache>,
         }
         impl Builder {
+            #[doc = "Object containing the user-selectable properties of the Cache. If read-only properties are included, they must match the existing values of those properties."]
             pub fn cache(mut self, cache: impl Into<models::Cache>) -> Self {
                 self.cache = Some(cache.into());
                 self
@@ -1634,6 +1636,7 @@ pub mod storage_targets {
             pub(crate) storagetarget: Option<models::StorageTarget>,
         }
         impl Builder {
+            #[doc = "Object containing the definition of a Storage Target."]
             pub fn storagetarget(mut self, storagetarget: impl Into<models::StorageTarget>) -> Self {
                 self.storagetarget = Some(storagetarget.into());
                 self

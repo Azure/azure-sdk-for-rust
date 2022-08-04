@@ -363,6 +363,7 @@ pub mod communication_service {
             pub(crate) name_availability_parameters: Option<models::NameAvailabilityParameters>,
         }
         impl Builder {
+            #[doc = "Parameters supplied to the operation."]
             pub fn name_availability_parameters(
                 mut self,
                 name_availability_parameters: impl Into<models::NameAvailabilityParameters>,
@@ -426,6 +427,7 @@ pub mod communication_service {
             pub(crate) link_notification_hub_parameters: Option<models::LinkNotificationHubParameters>,
         }
         impl Builder {
+            #[doc = "Parameters supplied to the operation."]
             pub fn link_notification_hub_parameters(
                 mut self,
                 link_notification_hub_parameters: impl Into<models::LinkNotificationHubParameters>,
@@ -691,6 +693,7 @@ pub mod communication_service {
             pub(crate) parameters: Option<models::CommunicationServiceResource>,
         }
         impl Builder {
+            #[doc = "Parameters for the create or update operation"]
             pub fn parameters(mut self, parameters: impl Into<models::CommunicationServiceResource>) -> Self {
                 self.parameters = Some(parameters.into());
                 self
@@ -759,6 +762,7 @@ pub mod communication_service {
             pub(crate) parameters: Option<models::CommunicationServiceResource>,
         }
         impl Builder {
+            #[doc = "Parameters for the update operation"]
             pub fn parameters(mut self, parameters: impl Into<models::CommunicationServiceResource>) -> Self {
                 self.parameters = Some(parameters.into());
                 self

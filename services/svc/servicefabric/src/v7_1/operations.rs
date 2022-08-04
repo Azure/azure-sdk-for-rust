@@ -3314,6 +3314,7 @@ pub mod get_cluster_manifest {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -3370,26 +3371,32 @@ pub mod get_cluster_health {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "Allows filtering of the node health state objects returned in the result of cluster health query\nbased on their health state. The possible values for this parameter include integer value of one of the\nfollowing health states. Only nodes that match the filter are returned. All nodes are used to evaluate the aggregated health state.\nIf not specified, all entries are returned.\nThe state values are flag-based enumeration, so the value could be a combination of these values obtained using bitwise 'OR' operator.\nFor example, if the provided value is 6 then health state of nodes with HealthState value of OK (2) and Warning (4) are returned.\n\n- Default - Default value. Matches any HealthState. The value is zero.\n- None - Filter that doesn't match any HealthState value. Used in order to return no results on a given collection of states. The value is 1.\n- Ok - Filter that matches input with HealthState value Ok. The value is 2.\n- Warning - Filter that matches input with HealthState value Warning. The value is 4.\n- Error - Filter that matches input with HealthState value Error. The value is 8.\n- All - Filter that matches input with any HealthState value. The value is 65535."]
         pub fn nodes_health_state_filter(mut self, nodes_health_state_filter: i64) -> Self {
             self.nodes_health_state_filter = Some(nodes_health_state_filter);
             self
         }
+        #[doc = "Allows filtering of the application health state objects returned in the result of cluster health\nquery based on their health state.\nThe possible values for this parameter include integer value obtained from members or bitwise operations\non members of HealthStateFilter enumeration. Only applications that match the filter are returned.\nAll applications are used to evaluate the aggregated health state. If not specified, all entries are returned.\nThe state values are flag-based enumeration, so the value could be a combination of these values obtained using bitwise 'OR' operator.\nFor example, if the provided value is 6 then health state of applications with HealthState value of OK (2) and Warning (4) are returned.\n\n- Default - Default value. Matches any HealthState. The value is zero.\n- None - Filter that doesn't match any HealthState value. Used in order to return no results on a given collection of states. The value is 1.\n- Ok - Filter that matches input with HealthState value Ok. The value is 2.\n- Warning - Filter that matches input with HealthState value Warning. The value is 4.\n- Error - Filter that matches input with HealthState value Error. The value is 8.\n- All - Filter that matches input with any HealthState value. The value is 65535."]
         pub fn applications_health_state_filter(mut self, applications_health_state_filter: i64) -> Self {
             self.applications_health_state_filter = Some(applications_health_state_filter);
             self
         }
+        #[doc = "Allows filtering the collection of HealthEvent objects returned based on health state.\nThe possible values for this parameter include integer value of one of the following health states.\nOnly events that match the filter are returned. All events are used to evaluate the aggregated health state.\nIf not specified, all entries are returned. The state values are flag-based enumeration, so the value could be a combination of these values, obtained using the bitwise 'OR' operator. For example, If the provided value is 6 then all of the events with HealthState value of OK (2) and Warning (4) are returned.\n\n- Default - Default value. Matches any HealthState. The value is zero.\n- None - Filter that doesn't match any HealthState value. Used in order to return no results on a given collection of states. The value is 1.\n- Ok - Filter that matches input with HealthState value Ok. The value is 2.\n- Warning - Filter that matches input with HealthState value Warning. The value is 4.\n- Error - Filter that matches input with HealthState value Error. The value is 8.\n- All - Filter that matches input with any HealthState value. The value is 65535."]
         pub fn events_health_state_filter(mut self, events_health_state_filter: i64) -> Self {
             self.events_health_state_filter = Some(events_health_state_filter);
             self
         }
+        #[doc = "Indicates whether the health statistics should be returned as part of the query result. False by default.\nThe statistics show the number of children entities in health state Ok, Warning, and Error."]
         pub fn exclude_health_statistics(mut self, exclude_health_statistics: bool) -> Self {
             self.exclude_health_statistics = Some(exclude_health_statistics);
             self
         }
+        #[doc = "Indicates whether the health statistics should include the fabric:/System application health statistics. False by default.\nIf IncludeSystemApplicationHealthStatistics is set to true, the health statistics include the entities that belong to the fabric:/System application.\nOtherwise, the query result includes health statistics only for user applications.\nThe health statistics must be included in the query result for this parameter to be applied."]
         pub fn include_system_application_health_statistics(mut self, include_system_application_health_statistics: bool) -> Self {
             self.include_system_application_health_statistics = Some(include_system_application_health_statistics);
             self
         }
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -3473,30 +3480,37 @@ pub mod get_cluster_health_using_policy {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "Allows filtering of the node health state objects returned in the result of cluster health query\nbased on their health state. The possible values for this parameter include integer value of one of the\nfollowing health states. Only nodes that match the filter are returned. All nodes are used to evaluate the aggregated health state.\nIf not specified, all entries are returned.\nThe state values are flag-based enumeration, so the value could be a combination of these values obtained using bitwise 'OR' operator.\nFor example, if the provided value is 6 then health state of nodes with HealthState value of OK (2) and Warning (4) are returned.\n\n- Default - Default value. Matches any HealthState. The value is zero.\n- None - Filter that doesn't match any HealthState value. Used in order to return no results on a given collection of states. The value is 1.\n- Ok - Filter that matches input with HealthState value Ok. The value is 2.\n- Warning - Filter that matches input with HealthState value Warning. The value is 4.\n- Error - Filter that matches input with HealthState value Error. The value is 8.\n- All - Filter that matches input with any HealthState value. The value is 65535."]
         pub fn nodes_health_state_filter(mut self, nodes_health_state_filter: i64) -> Self {
             self.nodes_health_state_filter = Some(nodes_health_state_filter);
             self
         }
+        #[doc = "Allows filtering of the application health state objects returned in the result of cluster health\nquery based on their health state.\nThe possible values for this parameter include integer value obtained from members or bitwise operations\non members of HealthStateFilter enumeration. Only applications that match the filter are returned.\nAll applications are used to evaluate the aggregated health state. If not specified, all entries are returned.\nThe state values are flag-based enumeration, so the value could be a combination of these values obtained using bitwise 'OR' operator.\nFor example, if the provided value is 6 then health state of applications with HealthState value of OK (2) and Warning (4) are returned.\n\n- Default - Default value. Matches any HealthState. The value is zero.\n- None - Filter that doesn't match any HealthState value. Used in order to return no results on a given collection of states. The value is 1.\n- Ok - Filter that matches input with HealthState value Ok. The value is 2.\n- Warning - Filter that matches input with HealthState value Warning. The value is 4.\n- Error - Filter that matches input with HealthState value Error. The value is 8.\n- All - Filter that matches input with any HealthState value. The value is 65535."]
         pub fn applications_health_state_filter(mut self, applications_health_state_filter: i64) -> Self {
             self.applications_health_state_filter = Some(applications_health_state_filter);
             self
         }
+        #[doc = "Allows filtering the collection of HealthEvent objects returned based on health state.\nThe possible values for this parameter include integer value of one of the following health states.\nOnly events that match the filter are returned. All events are used to evaluate the aggregated health state.\nIf not specified, all entries are returned. The state values are flag-based enumeration, so the value could be a combination of these values, obtained using the bitwise 'OR' operator. For example, If the provided value is 6 then all of the events with HealthState value of OK (2) and Warning (4) are returned.\n\n- Default - Default value. Matches any HealthState. The value is zero.\n- None - Filter that doesn't match any HealthState value. Used in order to return no results on a given collection of states. The value is 1.\n- Ok - Filter that matches input with HealthState value Ok. The value is 2.\n- Warning - Filter that matches input with HealthState value Warning. The value is 4.\n- Error - Filter that matches input with HealthState value Error. The value is 8.\n- All - Filter that matches input with any HealthState value. The value is 65535."]
         pub fn events_health_state_filter(mut self, events_health_state_filter: i64) -> Self {
             self.events_health_state_filter = Some(events_health_state_filter);
             self
         }
+        #[doc = "Indicates whether the health statistics should be returned as part of the query result. False by default.\nThe statistics show the number of children entities in health state Ok, Warning, and Error."]
         pub fn exclude_health_statistics(mut self, exclude_health_statistics: bool) -> Self {
             self.exclude_health_statistics = Some(exclude_health_statistics);
             self
         }
+        #[doc = "Indicates whether the health statistics should include the fabric:/System application health statistics. False by default.\nIf IncludeSystemApplicationHealthStatistics is set to true, the health statistics include the entities that belong to the fabric:/System application.\nOtherwise, the query result includes health statistics only for user applications.\nThe health statistics must be included in the query result for this parameter to be applied."]
         pub fn include_system_application_health_statistics(mut self, include_system_application_health_statistics: bool) -> Self {
             self.include_system_application_health_statistics = Some(include_system_application_health_statistics);
             self
         }
+        #[doc = "Describes the health policies used to evaluate the cluster health.\nIf not present, the health evaluation uses the cluster health policy defined in the cluster manifest or the default cluster health policy.\nBy default, each application is evaluated using its specific application health policy, defined in the application manifest, or the default health policy, if no policy is defined in manifest.\nIf the application health policy map is specified, and it has an entry for an application, the specified application health policy\nis used to evaluate the application health."]
         pub fn cluster_health_policies(mut self, cluster_health_policies: impl Into<models::ClusterHealthPolicies>) -> Self {
             self.cluster_health_policies = Some(cluster_health_policies.into());
             self
         }
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -3579,6 +3593,7 @@ pub mod get_cluster_health_chunk {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -3631,6 +3646,7 @@ pub mod get_cluster_health_chunk_using_policy_and_advanced_filters {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "Describes the cluster and application health policies used to evaluate the cluster health and the filters to select which cluster entities to be returned.\nIf the cluster health policy is present, it is used to evaluate the cluster events and the cluster nodes. If not present, the health evaluation uses the cluster health policy defined in the cluster manifest or the default cluster health policy.\nBy default, each application is evaluated using its specific application health policy, defined in the application manifest, or the default health policy, if no policy is defined in manifest.\nIf the application health policy map is specified, and it has an entry for an application, the specified application health policy\nis used to evaluate the application health.\nUsers can specify very flexible filters to select which cluster entities to include in response. The selection can be done based on the entities health state and based on the hierarchy.\nThe query can return multi-level children of the entities based on the specified filters. For example, it can return one application with a specified name, and for this application, return\nonly services that are in Error or Warning, and all partitions and replicas for one of these services."]
         pub fn cluster_health_chunk_query_description(
             mut self,
             cluster_health_chunk_query_description: impl Into<models::ClusterHealthChunkQueryDescription>,
@@ -3638,6 +3654,7 @@ pub mod get_cluster_health_chunk_using_policy_and_advanced_filters {
             self.cluster_health_chunk_query_description = Some(cluster_health_chunk_query_description.into());
             self
         }
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -3696,10 +3713,12 @@ pub mod report_cluster_health {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "A flag that indicates whether the report should be sent immediately.\nA health report is sent to a Service Fabric gateway Application, which forwards to the health store.\nIf Immediate is set to true, the report is sent immediately from HTTP Gateway to the health store, regardless of the fabric client settings that the HTTP Gateway Application is using.\nThis is useful for critical reports that should be sent as soon as possible.\nDepending on timing and other conditions, sending the report may still fail, for example if the HTTP Gateway is closed or the message doesn't reach the Gateway.\nIf Immediate is set to false, the report is sent based on the health client settings from the HTTP Gateway. Therefore, it will be batched according to the HealthReportSendInterval configuration.\nThis is the recommended setting because it allows the health client to optimize health reporting messages to health store as well as health report processing.\nBy default, reports are not sent immediately."]
         pub fn immediate(mut self, immediate: bool) -> Self {
             self.immediate = Some(immediate);
             self
         }
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -3752,10 +3771,12 @@ pub mod get_provisioned_fabric_code_version_info_list {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The product version of Service Fabric."]
         pub fn code_version(mut self, code_version: impl Into<String>) -> Self {
             self.code_version = Some(code_version.into());
             self
         }
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -3811,10 +3832,12 @@ pub mod get_provisioned_fabric_config_version_info_list {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The config version of Service Fabric."]
         pub fn config_version(mut self, config_version: impl Into<String>) -> Self {
             self.config_version = Some(config_version.into());
             self
         }
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -3869,6 +3892,7 @@ pub mod get_cluster_upgrade_progress {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -3921,6 +3945,7 @@ pub mod get_cluster_configuration {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -3976,6 +4001,7 @@ pub mod get_cluster_configuration_upgrade_status {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -4027,6 +4053,7 @@ pub mod get_upgrade_orchestration_service_state {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -4079,6 +4106,7 @@ pub mod set_upgrade_orchestration_service_state {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -4132,6 +4160,7 @@ pub mod provision_cluster {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -4181,6 +4210,7 @@ pub mod unprovision_cluster {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -4229,6 +4259,7 @@ pub mod rollback_cluster_upgrade {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -4278,6 +4309,7 @@ pub mod resume_cluster_upgrade {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -4327,6 +4359,7 @@ pub mod start_cluster_upgrade {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -4376,6 +4409,7 @@ pub mod start_cluster_configuration_upgrade {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -4425,6 +4459,7 @@ pub mod update_cluster_upgrade {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -4473,6 +4508,7 @@ pub mod get_aad_metadata {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -4524,6 +4560,7 @@ pub mod get_cluster_version {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -4575,6 +4612,7 @@ pub mod get_cluster_load {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -4627,6 +4665,7 @@ pub mod toggle_verbose_service_placement_health_reporting {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -4683,18 +4722,22 @@ pub mod get_node_info_list {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The continuation token parameter is used to obtain next set of results. A continuation token with a non-empty value is included in the response of the API when the results from the system do not fit in a single response. When this value is passed to the next API call, the API returns next set of results. If there are no further results, then the continuation token does not contain a value. The value of this parameter should not be URL encoded."]
         pub fn continuation_token(mut self, continuation_token: impl Into<String>) -> Self {
             self.continuation_token = Some(continuation_token.into());
             self
         }
+        #[doc = "Allows filtering the nodes based on the NodeStatus. Only the nodes that are matching the specified filter value will be returned. The filter value can be one of the following."]
         pub fn node_status_filter(mut self, node_status_filter: impl Into<String>) -> Self {
             self.node_status_filter = Some(node_status_filter.into());
             self
         }
+        #[doc = "The maximum number of results to be returned as part of the paged queries. This parameter defines the upper bound on the number of results returned. The results returned can be less than the specified maximum results if they do not fit in the message as per the max message size restrictions defined in the configuration. If this parameter is zero or not specified, the paged query includes as many results as possible that fit in the return message."]
         pub fn max_results(mut self, max_results: i64) -> Self {
             self.max_results = Some(max_results);
             self
         }
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -4760,6 +4803,7 @@ pub mod get_node_info {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -4814,10 +4858,12 @@ pub mod get_node_health {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "Allows filtering the collection of HealthEvent objects returned based on health state.\nThe possible values for this parameter include integer value of one of the following health states.\nOnly events that match the filter are returned. All events are used to evaluate the aggregated health state.\nIf not specified, all entries are returned. The state values are flag-based enumeration, so the value could be a combination of these values, obtained using the bitwise 'OR' operator. For example, If the provided value is 6 then all of the events with HealthState value of OK (2) and Warning (4) are returned.\n\n- Default - Default value. Matches any HealthState. The value is zero.\n- None - Filter that doesn't match any HealthState value. Used in order to return no results on a given collection of states. The value is 1.\n- Ok - Filter that matches input with HealthState value Ok. The value is 2.\n- Warning - Filter that matches input with HealthState value Warning. The value is 4.\n- Error - Filter that matches input with HealthState value Error. The value is 8.\n- All - Filter that matches input with any HealthState value. The value is 65535."]
         pub fn events_health_state_filter(mut self, events_health_state_filter: i64) -> Self {
             self.events_health_state_filter = Some(events_health_state_filter);
             self
         }
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -4877,14 +4923,17 @@ pub mod get_node_health_using_policy {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "Allows filtering the collection of HealthEvent objects returned based on health state.\nThe possible values for this parameter include integer value of one of the following health states.\nOnly events that match the filter are returned. All events are used to evaluate the aggregated health state.\nIf not specified, all entries are returned. The state values are flag-based enumeration, so the value could be a combination of these values, obtained using the bitwise 'OR' operator. For example, If the provided value is 6 then all of the events with HealthState value of OK (2) and Warning (4) are returned.\n\n- Default - Default value. Matches any HealthState. The value is zero.\n- None - Filter that doesn't match any HealthState value. Used in order to return no results on a given collection of states. The value is 1.\n- Ok - Filter that matches input with HealthState value Ok. The value is 2.\n- Warning - Filter that matches input with HealthState value Warning. The value is 4.\n- Error - Filter that matches input with HealthState value Error. The value is 8.\n- All - Filter that matches input with any HealthState value. The value is 65535."]
         pub fn events_health_state_filter(mut self, events_health_state_filter: i64) -> Self {
             self.events_health_state_filter = Some(events_health_state_filter);
             self
         }
+        #[doc = "Describes the health policies used to evaluate the health of a cluster or node. If not present, the health evaluation uses the health policy from cluster manifest or the default health policy."]
         pub fn cluster_health_policy(mut self, cluster_health_policy: impl Into<models::ClusterHealthPolicy>) -> Self {
             self.cluster_health_policy = Some(cluster_health_policy.into());
             self
         }
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -4949,10 +4998,12 @@ pub mod report_node_health {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "A flag that indicates whether the report should be sent immediately.\nA health report is sent to a Service Fabric gateway Application, which forwards to the health store.\nIf Immediate is set to true, the report is sent immediately from HTTP Gateway to the health store, regardless of the fabric client settings that the HTTP Gateway Application is using.\nThis is useful for critical reports that should be sent as soon as possible.\nDepending on timing and other conditions, sending the report may still fail, for example if the HTTP Gateway is closed or the message doesn't reach the Gateway.\nIf Immediate is set to false, the report is sent based on the health client settings from the HTTP Gateway. Therefore, it will be batched according to the HealthReportSendInterval configuration.\nThis is the recommended setting because it allows the health client to optimize health reporting messages to health store as well as health report processing.\nBy default, reports are not sent immediately."]
         pub fn immediate(mut self, immediate: bool) -> Self {
             self.immediate = Some(immediate);
             self
         }
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -5005,6 +5056,7 @@ pub mod get_node_load_info {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -5062,6 +5114,7 @@ pub mod disable_node {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -5111,6 +5164,7 @@ pub mod enable_node {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -5160,6 +5214,7 @@ pub mod remove_node_state {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -5210,6 +5265,7 @@ pub mod restart_node {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -5259,6 +5315,7 @@ pub mod remove_configuration_overrides {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -5311,6 +5368,7 @@ pub mod get_configuration_overrides {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -5369,10 +5427,12 @@ pub mod add_configuration_parameter_overrides {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "Force adding configuration overrides on specified nodes."]
         pub fn force(mut self, force: bool) -> Self {
             self.force = Some(force);
             self
         }
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -5432,22 +5492,27 @@ pub mod get_application_type_info_list {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "Used to filter on ApplicationTypeDefinitionKind which is the mechanism used to define a Service Fabric application type.\n- Default - Default value, which performs the same function as selecting \"All\". The value is 0.\n- All - Filter that matches input with any ApplicationTypeDefinitionKind value. The value is 65535.\n- ServiceFabricApplicationPackage - Filter that matches input with ApplicationTypeDefinitionKind value ServiceFabricApplicationPackage. The value is 1.\n- Compose - Filter that matches input with ApplicationTypeDefinitionKind value Compose. The value is 2."]
         pub fn application_type_definition_kind_filter(mut self, application_type_definition_kind_filter: i64) -> Self {
             self.application_type_definition_kind_filter = Some(application_type_definition_kind_filter);
             self
         }
+        #[doc = "The flag that specifies whether application parameters will be excluded from the result."]
         pub fn exclude_application_parameters(mut self, exclude_application_parameters: bool) -> Self {
             self.exclude_application_parameters = Some(exclude_application_parameters);
             self
         }
+        #[doc = "The continuation token parameter is used to obtain next set of results. A continuation token with a non-empty value is included in the response of the API when the results from the system do not fit in a single response. When this value is passed to the next API call, the API returns next set of results. If there are no further results, then the continuation token does not contain a value. The value of this parameter should not be URL encoded."]
         pub fn continuation_token(mut self, continuation_token: impl Into<String>) -> Self {
             self.continuation_token = Some(continuation_token.into());
             self
         }
+        #[doc = "The maximum number of results to be returned as part of the paged queries. This parameter defines the upper bound on the number of results returned. The results returned can be less than the specified maximum results if they do not fit in the message as per the max message size restrictions defined in the configuration. If this parameter is zero or not specified, the paged query includes as many results as possible that fit in the return message."]
         pub fn max_results(mut self, max_results: i64) -> Self {
             self.max_results = Some(max_results);
             self
         }
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -5521,22 +5586,27 @@ pub mod get_application_type_info_list_by_name {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The version of the application type."]
         pub fn application_type_version(mut self, application_type_version: impl Into<String>) -> Self {
             self.application_type_version = Some(application_type_version.into());
             self
         }
+        #[doc = "The flag that specifies whether application parameters will be excluded from the result."]
         pub fn exclude_application_parameters(mut self, exclude_application_parameters: bool) -> Self {
             self.exclude_application_parameters = Some(exclude_application_parameters);
             self
         }
+        #[doc = "The continuation token parameter is used to obtain next set of results. A continuation token with a non-empty value is included in the response of the API when the results from the system do not fit in a single response. When this value is passed to the next API call, the API returns next set of results. If there are no further results, then the continuation token does not contain a value. The value of this parameter should not be URL encoded."]
         pub fn continuation_token(mut self, continuation_token: impl Into<String>) -> Self {
             self.continuation_token = Some(continuation_token.into());
             self
         }
+        #[doc = "The maximum number of results to be returned as part of the paged queries. This parameter defines the upper bound on the number of results returned. The results returned can be less than the specified maximum results if they do not fit in the message as per the max message size restrictions defined in the configuration. If this parameter is zero or not specified, the paged query includes as many results as possible that fit in the return message."]
         pub fn max_results(mut self, max_results: i64) -> Self {
             self.max_results = Some(max_results);
             self
         }
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -5613,6 +5683,7 @@ pub mod provision_application_type {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -5668,6 +5739,7 @@ pub mod unprovision_application_type {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -5723,6 +5795,7 @@ pub mod get_service_type_info_list {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -5789,6 +5862,7 @@ pub mod get_service_type_info_by_name {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -5853,6 +5927,7 @@ pub mod get_service_manifest {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -5919,10 +5994,12 @@ pub mod get_deployed_service_type_info_list {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The name of the service manifest to filter the list of deployed service type information. If specified, the response will only contain the information about service types that are defined in this service manifest."]
         pub fn service_manifest_name(mut self, service_manifest_name: impl Into<String>) -> Self {
             self.service_manifest_name = Some(service_manifest_name.into());
             self
         }
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -5992,10 +6069,12 @@ pub mod get_deployed_service_type_info_by_name {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The name of the service manifest to filter the list of deployed service type information. If specified, the response will only contain the information about service types that are defined in this service manifest."]
         pub fn service_manifest_name(mut self, service_manifest_name: impl Into<String>) -> Self {
             self.service_manifest_name = Some(service_manifest_name.into());
             self
         }
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -6060,6 +6139,7 @@ pub mod create_application {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -6110,10 +6190,12 @@ pub mod delete_application {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "Remove a Service Fabric application or service forcefully without going through the graceful shutdown sequence. This parameter can be used to forcefully delete an application or service for which delete is timing out due to issues in the service code that prevents graceful close of replicas."]
         pub fn force_remove(mut self, force_remove: bool) -> Self {
             self.force_remove = Some(force_remove);
             self
         }
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -6176,6 +6258,7 @@ pub mod get_application_load_info {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -6237,26 +6320,32 @@ pub mod get_application_info_list {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "Used to filter on ApplicationDefinitionKind, which is the mechanism used to define a Service Fabric application.\n- Default - Default value, which performs the same function as selecting \"All\". The value is 0.\n- All - Filter that matches input with any ApplicationDefinitionKind value. The value is 65535.\n- ServiceFabricApplicationDescription - Filter that matches input with ApplicationDefinitionKind value ServiceFabricApplicationDescription. The value is 1.\n- Compose - Filter that matches input with ApplicationDefinitionKind value Compose. The value is 2."]
         pub fn application_definition_kind_filter(mut self, application_definition_kind_filter: i64) -> Self {
             self.application_definition_kind_filter = Some(application_definition_kind_filter);
             self
         }
+        #[doc = "The application type name used to filter the applications to query for. This value should not contain the application type version."]
         pub fn application_type_name(mut self, application_type_name: impl Into<String>) -> Self {
             self.application_type_name = Some(application_type_name.into());
             self
         }
+        #[doc = "The flag that specifies whether application parameters will be excluded from the result."]
         pub fn exclude_application_parameters(mut self, exclude_application_parameters: bool) -> Self {
             self.exclude_application_parameters = Some(exclude_application_parameters);
             self
         }
+        #[doc = "The continuation token parameter is used to obtain next set of results. A continuation token with a non-empty value is included in the response of the API when the results from the system do not fit in a single response. When this value is passed to the next API call, the API returns next set of results. If there are no further results, then the continuation token does not contain a value. The value of this parameter should not be URL encoded."]
         pub fn continuation_token(mut self, continuation_token: impl Into<String>) -> Self {
             self.continuation_token = Some(continuation_token.into());
             self
         }
+        #[doc = "The maximum number of results to be returned as part of the paged queries. This parameter defines the upper bound on the number of results returned. The results returned can be less than the specified maximum results if they do not fit in the message as per the max message size restrictions defined in the configuration. If this parameter is zero or not specified, the paged query includes as many results as possible that fit in the return message."]
         pub fn max_results(mut self, max_results: i64) -> Self {
             self.max_results = Some(max_results);
             self
         }
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -6335,10 +6424,12 @@ pub mod get_application_info {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The flag that specifies whether application parameters will be excluded from the result."]
         pub fn exclude_application_parameters(mut self, exclude_application_parameters: bool) -> Self {
             self.exclude_application_parameters = Some(exclude_application_parameters);
             self
         }
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -6401,22 +6492,27 @@ pub mod get_application_health {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "Allows filtering the collection of HealthEvent objects returned based on health state.\nThe possible values for this parameter include integer value of one of the following health states.\nOnly events that match the filter are returned. All events are used to evaluate the aggregated health state.\nIf not specified, all entries are returned. The state values are flag-based enumeration, so the value could be a combination of these values, obtained using the bitwise 'OR' operator. For example, If the provided value is 6 then all of the events with HealthState value of OK (2) and Warning (4) are returned.\n\n- Default - Default value. Matches any HealthState. The value is zero.\n- None - Filter that doesn't match any HealthState value. Used in order to return no results on a given collection of states. The value is 1.\n- Ok - Filter that matches input with HealthState value Ok. The value is 2.\n- Warning - Filter that matches input with HealthState value Warning. The value is 4.\n- Error - Filter that matches input with HealthState value Error. The value is 8.\n- All - Filter that matches input with any HealthState value. The value is 65535."]
         pub fn events_health_state_filter(mut self, events_health_state_filter: i64) -> Self {
             self.events_health_state_filter = Some(events_health_state_filter);
             self
         }
+        #[doc = "Allows filtering of the deployed applications health state objects returned in the result of application health query based on their health state.\nThe possible values for this parameter include integer value of one of the following health states. Only deployed applications that match the filter will be returned.\nAll deployed applications are used to evaluate the aggregated health state. If not specified, all entries are returned.\nThe state values are flag-based enumeration, so the value could be a combination of these values, obtained using bitwise 'OR' operator.\nFor example, if the provided value is 6 then health state of deployed applications with HealthState value of OK (2) and Warning (4) are returned.\n\n- Default - Default value. Matches any HealthState. The value is zero.\n- None - Filter that doesn't match any HealthState value. Used in order to return no results on a given collection of states. The value is 1.\n- Ok - Filter that matches input with HealthState value Ok. The value is 2.\n- Warning - Filter that matches input with HealthState value Warning. The value is 4.\n- Error - Filter that matches input with HealthState value Error. The value is 8.\n- All - Filter that matches input with any HealthState value. The value is 65535."]
         pub fn deployed_applications_health_state_filter(mut self, deployed_applications_health_state_filter: i64) -> Self {
             self.deployed_applications_health_state_filter = Some(deployed_applications_health_state_filter);
             self
         }
+        #[doc = "Allows filtering of the services health state objects returned in the result of services health query based on their health state.\nThe possible values for this parameter include integer value of one of the following health states.\nOnly services that match the filter are returned. All services are used to evaluate the aggregated health state.\nIf not specified, all entries are returned. The state values are flag-based enumeration, so the value could be a combination of these values,\nobtained using bitwise 'OR' operator. For example, if the provided value is 6 then health state of services with HealthState value of OK (2) and Warning (4) will be returned.\n\n- Default - Default value. Matches any HealthState. The value is zero.\n- None - Filter that doesn't match any HealthState value. Used in order to return no results on a given collection of states. The value is 1.\n- Ok - Filter that matches input with HealthState value Ok. The value is 2.\n- Warning - Filter that matches input with HealthState value Warning. The value is 4.\n- Error - Filter that matches input with HealthState value Error. The value is 8.\n- All - Filter that matches input with any HealthState value. The value is 65535."]
         pub fn services_health_state_filter(mut self, services_health_state_filter: i64) -> Self {
             self.services_health_state_filter = Some(services_health_state_filter);
             self
         }
+        #[doc = "Indicates whether the health statistics should be returned as part of the query result. False by default.\nThe statistics show the number of children entities in health state Ok, Warning, and Error."]
         pub fn exclude_health_statistics(mut self, exclude_health_statistics: bool) -> Self {
             self.exclude_health_statistics = Some(exclude_health_statistics);
             self
         }
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -6499,26 +6595,32 @@ pub mod get_application_health_using_policy {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "Allows filtering the collection of HealthEvent objects returned based on health state.\nThe possible values for this parameter include integer value of one of the following health states.\nOnly events that match the filter are returned. All events are used to evaluate the aggregated health state.\nIf not specified, all entries are returned. The state values are flag-based enumeration, so the value could be a combination of these values, obtained using the bitwise 'OR' operator. For example, If the provided value is 6 then all of the events with HealthState value of OK (2) and Warning (4) are returned.\n\n- Default - Default value. Matches any HealthState. The value is zero.\n- None - Filter that doesn't match any HealthState value. Used in order to return no results on a given collection of states. The value is 1.\n- Ok - Filter that matches input with HealthState value Ok. The value is 2.\n- Warning - Filter that matches input with HealthState value Warning. The value is 4.\n- Error - Filter that matches input with HealthState value Error. The value is 8.\n- All - Filter that matches input with any HealthState value. The value is 65535."]
         pub fn events_health_state_filter(mut self, events_health_state_filter: i64) -> Self {
             self.events_health_state_filter = Some(events_health_state_filter);
             self
         }
+        #[doc = "Allows filtering of the deployed applications health state objects returned in the result of application health query based on their health state.\nThe possible values for this parameter include integer value of one of the following health states. Only deployed applications that match the filter will be returned.\nAll deployed applications are used to evaluate the aggregated health state. If not specified, all entries are returned.\nThe state values are flag-based enumeration, so the value could be a combination of these values, obtained using bitwise 'OR' operator.\nFor example, if the provided value is 6 then health state of deployed applications with HealthState value of OK (2) and Warning (4) are returned.\n\n- Default - Default value. Matches any HealthState. The value is zero.\n- None - Filter that doesn't match any HealthState value. Used in order to return no results on a given collection of states. The value is 1.\n- Ok - Filter that matches input with HealthState value Ok. The value is 2.\n- Warning - Filter that matches input with HealthState value Warning. The value is 4.\n- Error - Filter that matches input with HealthState value Error. The value is 8.\n- All - Filter that matches input with any HealthState value. The value is 65535."]
         pub fn deployed_applications_health_state_filter(mut self, deployed_applications_health_state_filter: i64) -> Self {
             self.deployed_applications_health_state_filter = Some(deployed_applications_health_state_filter);
             self
         }
+        #[doc = "Allows filtering of the services health state objects returned in the result of services health query based on their health state.\nThe possible values for this parameter include integer value of one of the following health states.\nOnly services that match the filter are returned. All services are used to evaluate the aggregated health state.\nIf not specified, all entries are returned. The state values are flag-based enumeration, so the value could be a combination of these values,\nobtained using bitwise 'OR' operator. For example, if the provided value is 6 then health state of services with HealthState value of OK (2) and Warning (4) will be returned.\n\n- Default - Default value. Matches any HealthState. The value is zero.\n- None - Filter that doesn't match any HealthState value. Used in order to return no results on a given collection of states. The value is 1.\n- Ok - Filter that matches input with HealthState value Ok. The value is 2.\n- Warning - Filter that matches input with HealthState value Warning. The value is 4.\n- Error - Filter that matches input with HealthState value Error. The value is 8.\n- All - Filter that matches input with any HealthState value. The value is 65535."]
         pub fn services_health_state_filter(mut self, services_health_state_filter: i64) -> Self {
             self.services_health_state_filter = Some(services_health_state_filter);
             self
         }
+        #[doc = "Indicates whether the health statistics should be returned as part of the query result. False by default.\nThe statistics show the number of children entities in health state Ok, Warning, and Error."]
         pub fn exclude_health_statistics(mut self, exclude_health_statistics: bool) -> Self {
             self.exclude_health_statistics = Some(exclude_health_statistics);
             self
         }
+        #[doc = "Describes the health policies used to evaluate the health of an application or one of its children.\nIf not present, the health evaluation uses the health policy from application manifest or the default health policy."]
         pub fn application_health_policy(mut self, application_health_policy: impl Into<models::ApplicationHealthPolicy>) -> Self {
             self.application_health_policy = Some(application_health_policy.into());
             self
         }
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -6603,10 +6705,12 @@ pub mod report_application_health {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "A flag that indicates whether the report should be sent immediately.\nA health report is sent to a Service Fabric gateway Application, which forwards to the health store.\nIf Immediate is set to true, the report is sent immediately from HTTP Gateway to the health store, regardless of the fabric client settings that the HTTP Gateway Application is using.\nThis is useful for critical reports that should be sent as soon as possible.\nDepending on timing and other conditions, sending the report may still fail, for example if the HTTP Gateway is closed or the message doesn't reach the Gateway.\nIf Immediate is set to false, the report is sent based on the health client settings from the HTTP Gateway. Therefore, it will be batched according to the HealthReportSendInterval configuration.\nThis is the recommended setting because it allows the health client to optimize health reporting messages to health store as well as health report processing.\nBy default, reports are not sent immediately."]
         pub fn immediate(mut self, immediate: bool) -> Self {
             self.immediate = Some(immediate);
             self
         }
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -6664,6 +6768,7 @@ pub mod start_application_upgrade {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -6717,6 +6822,7 @@ pub mod get_application_upgrade {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -6774,6 +6880,7 @@ pub mod update_application_upgrade {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -6828,6 +6935,7 @@ pub mod resume_application_upgrade {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -6881,6 +6989,7 @@ pub mod rollback_application_upgrade {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -6937,18 +7046,22 @@ pub mod get_deployed_application_info_list {
         pub(crate) max_results: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
         }
+        #[doc = "Include the health state of an entity.\nIf this parameter is false or not specified, then the health state returned is \"Unknown\".\nWhen set to true, the query goes in parallel to the node and the health system service before the results are merged.\nAs a result, the query is more expensive and may take a longer time."]
         pub fn include_health_state(mut self, include_health_state: bool) -> Self {
             self.include_health_state = Some(include_health_state);
             self
         }
+        #[doc = "The continuation token parameter is used to obtain next set of results. A continuation token with a non-empty value is included in the response of the API when the results from the system do not fit in a single response. When this value is passed to the next API call, the API returns next set of results. If there are no further results, then the continuation token does not contain a value. The value of this parameter should not be URL encoded."]
         pub fn continuation_token(mut self, continuation_token: impl Into<String>) -> Self {
             self.continuation_token = Some(continuation_token.into());
             self
         }
+        #[doc = "The maximum number of results to be returned as part of the paged queries. This parameter defines the upper bound on the number of results returned. The results returned can be less than the specified maximum results if they do not fit in the message as per the max message size restrictions defined in the configuration. If this parameter is zero or not specified, the paged query includes as many results as possible that fit in the return message."]
         pub fn max_results(mut self, max_results: i64) -> Self {
             self.max_results = Some(max_results);
             self
@@ -7018,10 +7131,12 @@ pub mod get_deployed_application_info {
         pub(crate) include_health_state: Option<bool>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
         }
+        #[doc = "Include the health state of an entity.\nIf this parameter is false or not specified, then the health state returned is \"Unknown\".\nWhen set to true, the query goes in parallel to the node and the health system service before the results are merged.\nAs a result, the query is more expensive and may take a longer time."]
         pub fn include_health_state(mut self, include_health_state: bool) -> Self {
             self.include_health_state = Some(include_health_state);
             self
@@ -7089,18 +7204,22 @@ pub mod get_deployed_application_health {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "Allows filtering the collection of HealthEvent objects returned based on health state.\nThe possible values for this parameter include integer value of one of the following health states.\nOnly events that match the filter are returned. All events are used to evaluate the aggregated health state.\nIf not specified, all entries are returned. The state values are flag-based enumeration, so the value could be a combination of these values, obtained using the bitwise 'OR' operator. For example, If the provided value is 6 then all of the events with HealthState value of OK (2) and Warning (4) are returned.\n\n- Default - Default value. Matches any HealthState. The value is zero.\n- None - Filter that doesn't match any HealthState value. Used in order to return no results on a given collection of states. The value is 1.\n- Ok - Filter that matches input with HealthState value Ok. The value is 2.\n- Warning - Filter that matches input with HealthState value Warning. The value is 4.\n- Error - Filter that matches input with HealthState value Error. The value is 8.\n- All - Filter that matches input with any HealthState value. The value is 65535."]
         pub fn events_health_state_filter(mut self, events_health_state_filter: i64) -> Self {
             self.events_health_state_filter = Some(events_health_state_filter);
             self
         }
+        #[doc = "Allows filtering of the deployed service package health state objects returned in the result of deployed application health query based on their health state.\nThe possible values for this parameter include integer value of one of the following health states.\nOnly deployed service packages that match the filter are returned. All deployed service packages are used to evaluate the aggregated health state of the deployed application.\nIf not specified, all entries are returned.\nThe state values are flag-based enumeration, so the value can be a combination of these values, obtained using the bitwise 'OR' operator.\nFor example, if the provided value is 6 then health state of service packages with HealthState value of OK (2) and Warning (4) are returned.\n\n- Default - Default value. Matches any HealthState. The value is zero.\n- None - Filter that doesn't match any HealthState value. Used in order to return no results on a given collection of states. The value is 1.\n- Ok - Filter that matches input with HealthState value Ok. The value is 2.\n- Warning - Filter that matches input with HealthState value Warning. The value is 4.\n- Error - Filter that matches input with HealthState value Error. The value is 8.\n- All - Filter that matches input with any HealthState value. The value is 65535."]
         pub fn deployed_service_packages_health_state_filter(mut self, deployed_service_packages_health_state_filter: i64) -> Self {
             self.deployed_service_packages_health_state_filter = Some(deployed_service_packages_health_state_filter);
             self
         }
+        #[doc = "Indicates whether the health statistics should be returned as part of the query result. False by default.\nThe statistics show the number of children entities in health state Ok, Warning, and Error."]
         pub fn exclude_health_statistics(mut self, exclude_health_statistics: bool) -> Self {
             self.exclude_health_statistics = Some(exclude_health_statistics);
             self
         }
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -7179,22 +7298,27 @@ pub mod get_deployed_application_health_using_policy {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "Allows filtering the collection of HealthEvent objects returned based on health state.\nThe possible values for this parameter include integer value of one of the following health states.\nOnly events that match the filter are returned. All events are used to evaluate the aggregated health state.\nIf not specified, all entries are returned. The state values are flag-based enumeration, so the value could be a combination of these values, obtained using the bitwise 'OR' operator. For example, If the provided value is 6 then all of the events with HealthState value of OK (2) and Warning (4) are returned.\n\n- Default - Default value. Matches any HealthState. The value is zero.\n- None - Filter that doesn't match any HealthState value. Used in order to return no results on a given collection of states. The value is 1.\n- Ok - Filter that matches input with HealthState value Ok. The value is 2.\n- Warning - Filter that matches input with HealthState value Warning. The value is 4.\n- Error - Filter that matches input with HealthState value Error. The value is 8.\n- All - Filter that matches input with any HealthState value. The value is 65535."]
         pub fn events_health_state_filter(mut self, events_health_state_filter: i64) -> Self {
             self.events_health_state_filter = Some(events_health_state_filter);
             self
         }
+        #[doc = "Allows filtering of the deployed service package health state objects returned in the result of deployed application health query based on their health state.\nThe possible values for this parameter include integer value of one of the following health states.\nOnly deployed service packages that match the filter are returned. All deployed service packages are used to evaluate the aggregated health state of the deployed application.\nIf not specified, all entries are returned.\nThe state values are flag-based enumeration, so the value can be a combination of these values, obtained using the bitwise 'OR' operator.\nFor example, if the provided value is 6 then health state of service packages with HealthState value of OK (2) and Warning (4) are returned.\n\n- Default - Default value. Matches any HealthState. The value is zero.\n- None - Filter that doesn't match any HealthState value. Used in order to return no results on a given collection of states. The value is 1.\n- Ok - Filter that matches input with HealthState value Ok. The value is 2.\n- Warning - Filter that matches input with HealthState value Warning. The value is 4.\n- Error - Filter that matches input with HealthState value Error. The value is 8.\n- All - Filter that matches input with any HealthState value. The value is 65535."]
         pub fn deployed_service_packages_health_state_filter(mut self, deployed_service_packages_health_state_filter: i64) -> Self {
             self.deployed_service_packages_health_state_filter = Some(deployed_service_packages_health_state_filter);
             self
         }
+        #[doc = "Describes the health policies used to evaluate the health of an application or one of its children.\nIf not present, the health evaluation uses the health policy from application manifest or the default health policy."]
         pub fn application_health_policy(mut self, application_health_policy: impl Into<models::ApplicationHealthPolicy>) -> Self {
             self.application_health_policy = Some(application_health_policy.into());
             self
         }
+        #[doc = "Indicates whether the health statistics should be returned as part of the query result. False by default.\nThe statistics show the number of children entities in health state Ok, Warning, and Error."]
         pub fn exclude_health_statistics(mut self, exclude_health_statistics: bool) -> Self {
             self.exclude_health_statistics = Some(exclude_health_statistics);
             self
         }
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -7276,10 +7400,12 @@ pub mod report_deployed_application_health {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "A flag that indicates whether the report should be sent immediately.\nA health report is sent to a Service Fabric gateway Application, which forwards to the health store.\nIf Immediate is set to true, the report is sent immediately from HTTP Gateway to the health store, regardless of the fabric client settings that the HTTP Gateway Application is using.\nThis is useful for critical reports that should be sent as soon as possible.\nDepending on timing and other conditions, sending the report may still fail, for example if the HTTP Gateway is closed or the message doesn't reach the Gateway.\nIf Immediate is set to false, the report is sent based on the health client settings from the HTTP Gateway. Therefore, it will be batched according to the HealthReportSendInterval configuration.\nThis is the recommended setting because it allows the health client to optimize health reporting messages to health store as well as health report processing.\nBy default, reports are not sent immediately."]
         pub fn immediate(mut self, immediate: bool) -> Self {
             self.immediate = Some(immediate);
             self
         }
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -7338,6 +7464,7 @@ pub mod get_application_manifest {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -7400,14 +7527,17 @@ pub mod get_service_info_list {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The service type name used to filter the services to query for."]
         pub fn service_type_name(mut self, service_type_name: impl Into<String>) -> Self {
             self.service_type_name = Some(service_type_name.into());
             self
         }
+        #[doc = "The continuation token parameter is used to obtain next set of results. A continuation token with a non-empty value is included in the response of the API when the results from the system do not fit in a single response. When this value is passed to the next API call, the API returns next set of results. If there are no further results, then the continuation token does not contain a value. The value of this parameter should not be URL encoded."]
         pub fn continuation_token(mut self, continuation_token: impl Into<String>) -> Self {
             self.continuation_token = Some(continuation_token.into());
             self
         }
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -7475,6 +7605,7 @@ pub mod get_service_info {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -7533,6 +7664,7 @@ pub mod get_application_name_info {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -7590,6 +7722,7 @@ pub mod create_service {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -7644,6 +7777,7 @@ pub mod create_service_from_template {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -7698,10 +7832,12 @@ pub mod delete_service {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "Remove a Service Fabric application or service forcefully without going through the graceful shutdown sequence. This parameter can be used to forcefully delete an application or service for which delete is timing out due to issues in the service code that prevents graceful close of replicas."]
         pub fn force_remove(mut self, force_remove: bool) -> Self {
             self.force_remove = Some(force_remove);
             self
         }
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -7757,6 +7893,7 @@ pub mod update_service {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -7806,6 +7943,7 @@ pub mod get_service_description {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -7865,18 +8003,22 @@ pub mod get_service_health {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "Allows filtering the collection of HealthEvent objects returned based on health state.\nThe possible values for this parameter include integer value of one of the following health states.\nOnly events that match the filter are returned. All events are used to evaluate the aggregated health state.\nIf not specified, all entries are returned. The state values are flag-based enumeration, so the value could be a combination of these values, obtained using the bitwise 'OR' operator. For example, If the provided value is 6 then all of the events with HealthState value of OK (2) and Warning (4) are returned.\n\n- Default - Default value. Matches any HealthState. The value is zero.\n- None - Filter that doesn't match any HealthState value. Used in order to return no results on a given collection of states. The value is 1.\n- Ok - Filter that matches input with HealthState value Ok. The value is 2.\n- Warning - Filter that matches input with HealthState value Warning. The value is 4.\n- Error - Filter that matches input with HealthState value Error. The value is 8.\n- All - Filter that matches input with any HealthState value. The value is 65535."]
         pub fn events_health_state_filter(mut self, events_health_state_filter: i64) -> Self {
             self.events_health_state_filter = Some(events_health_state_filter);
             self
         }
+        #[doc = "Allows filtering of the partitions health state objects returned in the result of service health query based on their health state.\nThe possible values for this parameter include integer value of one of the following health states.\nOnly partitions that match the filter are returned. All partitions are used to evaluate the aggregated health state.\nIf not specified, all entries are returned. The state values are flag-based enumeration, so the value could be a combination of these value\nobtained using bitwise 'OR' operator. For example, if the provided value is 6 then health state of partitions with HealthState value of OK (2) and Warning (4) will be returned.\n\n- Default - Default value. Matches any HealthState. The value is zero.\n- None - Filter that doesn't match any HealthState value. Used in order to return no results on a given collection of states. The value is 1.\n- Ok - Filter that matches input with HealthState value Ok. The value is 2.\n- Warning - Filter that matches input with HealthState value Warning. The value is 4.\n- Error - Filter that matches input with HealthState value Error. The value is 8.\n- All - Filter that matches input with any HealthState value. The value is 65535."]
         pub fn partitions_health_state_filter(mut self, partitions_health_state_filter: i64) -> Self {
             self.partitions_health_state_filter = Some(partitions_health_state_filter);
             self
         }
+        #[doc = "Indicates whether the health statistics should be returned as part of the query result. False by default.\nThe statistics show the number of children entities in health state Ok, Warning, and Error."]
         pub fn exclude_health_statistics(mut self, exclude_health_statistics: bool) -> Self {
             self.exclude_health_statistics = Some(exclude_health_statistics);
             self
         }
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -7948,22 +8090,27 @@ pub mod get_service_health_using_policy {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "Allows filtering the collection of HealthEvent objects returned based on health state.\nThe possible values for this parameter include integer value of one of the following health states.\nOnly events that match the filter are returned. All events are used to evaluate the aggregated health state.\nIf not specified, all entries are returned. The state values are flag-based enumeration, so the value could be a combination of these values, obtained using the bitwise 'OR' operator. For example, If the provided value is 6 then all of the events with HealthState value of OK (2) and Warning (4) are returned.\n\n- Default - Default value. Matches any HealthState. The value is zero.\n- None - Filter that doesn't match any HealthState value. Used in order to return no results on a given collection of states. The value is 1.\n- Ok - Filter that matches input with HealthState value Ok. The value is 2.\n- Warning - Filter that matches input with HealthState value Warning. The value is 4.\n- Error - Filter that matches input with HealthState value Error. The value is 8.\n- All - Filter that matches input with any HealthState value. The value is 65535."]
         pub fn events_health_state_filter(mut self, events_health_state_filter: i64) -> Self {
             self.events_health_state_filter = Some(events_health_state_filter);
             self
         }
+        #[doc = "Allows filtering of the partitions health state objects returned in the result of service health query based on their health state.\nThe possible values for this parameter include integer value of one of the following health states.\nOnly partitions that match the filter are returned. All partitions are used to evaluate the aggregated health state.\nIf not specified, all entries are returned. The state values are flag-based enumeration, so the value could be a combination of these value\nobtained using bitwise 'OR' operator. For example, if the provided value is 6 then health state of partitions with HealthState value of OK (2) and Warning (4) will be returned.\n\n- Default - Default value. Matches any HealthState. The value is zero.\n- None - Filter that doesn't match any HealthState value. Used in order to return no results on a given collection of states. The value is 1.\n- Ok - Filter that matches input with HealthState value Ok. The value is 2.\n- Warning - Filter that matches input with HealthState value Warning. The value is 4.\n- Error - Filter that matches input with HealthState value Error. The value is 8.\n- All - Filter that matches input with any HealthState value. The value is 65535."]
         pub fn partitions_health_state_filter(mut self, partitions_health_state_filter: i64) -> Self {
             self.partitions_health_state_filter = Some(partitions_health_state_filter);
             self
         }
+        #[doc = "Describes the health policies used to evaluate the health of an application or one of its children.\nIf not present, the health evaluation uses the health policy from application manifest or the default health policy."]
         pub fn application_health_policy(mut self, application_health_policy: impl Into<models::ApplicationHealthPolicy>) -> Self {
             self.application_health_policy = Some(application_health_policy.into());
             self
         }
+        #[doc = "Indicates whether the health statistics should be returned as part of the query result. False by default.\nThe statistics show the number of children entities in health state Ok, Warning, and Error."]
         pub fn exclude_health_statistics(mut self, exclude_health_statistics: bool) -> Self {
             self.exclude_health_statistics = Some(exclude_health_statistics);
             self
         }
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -8038,10 +8185,12 @@ pub mod report_service_health {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "A flag that indicates whether the report should be sent immediately.\nA health report is sent to a Service Fabric gateway Application, which forwards to the health store.\nIf Immediate is set to true, the report is sent immediately from HTTP Gateway to the health store, regardless of the fabric client settings that the HTTP Gateway Application is using.\nThis is useful for critical reports that should be sent as soon as possible.\nDepending on timing and other conditions, sending the report may still fail, for example if the HTTP Gateway is closed or the message doesn't reach the Gateway.\nIf Immediate is set to false, the report is sent based on the health client settings from the HTTP Gateway. Therefore, it will be batched according to the HealthReportSendInterval configuration.\nThis is the recommended setting because it allows the health client to optimize health reporting messages to health store as well as health report processing.\nBy default, reports are not sent immediately."]
         pub fn immediate(mut self, immediate: bool) -> Self {
             self.immediate = Some(immediate);
             self
         }
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -8097,18 +8246,22 @@ pub mod resolve_service {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "Key type for the partition. This parameter is required if the partition scheme for the service is Int64Range or Named. The possible values are following.\n- None (1) - Indicates that the PartitionKeyValue parameter is not specified. This is valid for the partitions with partitioning scheme as Singleton. This is the default value. The value is 1.\n- Int64Range (2) - Indicates that the PartitionKeyValue parameter is an int64 partition key. This is valid for the partitions with partitioning scheme as Int64Range. The value is 2.\n- Named (3) - Indicates that the PartitionKeyValue parameter is a name of the partition. This is valid for the partitions with partitioning scheme as Named. The value is 3."]
         pub fn partition_key_type(mut self, partition_key_type: i64) -> Self {
             self.partition_key_type = Some(partition_key_type);
             self
         }
+        #[doc = "Partition key. This is required if the partition scheme for the service is Int64Range or Named. \nThis is not the partition ID, but rather, either the integer key value, or the name of the partition ID.\nFor example, if your service is using ranged partitions from 0 to 10, then they PartitionKeyValue would be an\ninteger in that range. Query service description to see the range or name."]
         pub fn partition_key_value(mut self, partition_key_value: impl Into<String>) -> Self {
             self.partition_key_value = Some(partition_key_value.into());
             self
         }
+        #[doc = "The value in the Version field of the response that was received previously. This is required if the user knows that the result that was gotten previously is stale."]
         pub fn previous_rsp_version(mut self, previous_rsp_version: impl Into<String>) -> Self {
             self.previous_rsp_version = Some(previous_rsp_version.into());
             self
         }
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -8182,14 +8335,17 @@ pub mod get_unplaced_replica_information {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The identity of the partition."]
         pub fn partition_id(mut self, partition_id: impl Into<String>) -> Self {
             self.partition_id = Some(partition_id.into());
             self
         }
+        #[doc = "Indicates that unplaced replica information will be queries only for primary replicas."]
         pub fn only_query_primaries(mut self, only_query_primaries: bool) -> Self {
             self.only_query_primaries = Some(only_query_primaries);
             self
         }
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -8255,10 +8411,12 @@ pub mod get_partition_info_list {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The continuation token parameter is used to obtain next set of results. A continuation token with a non-empty value is included in the response of the API when the results from the system do not fit in a single response. When this value is passed to the next API call, the API returns next set of results. If there are no further results, then the continuation token does not contain a value. The value of this parameter should not be URL encoded."]
         pub fn continuation_token(mut self, continuation_token: impl Into<String>) -> Self {
             self.continuation_token = Some(continuation_token.into());
             self
         }
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -8318,6 +8476,7 @@ pub mod get_partition_info {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -8371,6 +8530,7 @@ pub mod get_service_name_info {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -8430,18 +8590,22 @@ pub mod get_partition_health {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "Allows filtering the collection of HealthEvent objects returned based on health state.\nThe possible values for this parameter include integer value of one of the following health states.\nOnly events that match the filter are returned. All events are used to evaluate the aggregated health state.\nIf not specified, all entries are returned. The state values are flag-based enumeration, so the value could be a combination of these values, obtained using the bitwise 'OR' operator. For example, If the provided value is 6 then all of the events with HealthState value of OK (2) and Warning (4) are returned.\n\n- Default - Default value. Matches any HealthState. The value is zero.\n- None - Filter that doesn't match any HealthState value. Used in order to return no results on a given collection of states. The value is 1.\n- Ok - Filter that matches input with HealthState value Ok. The value is 2.\n- Warning - Filter that matches input with HealthState value Warning. The value is 4.\n- Error - Filter that matches input with HealthState value Error. The value is 8.\n- All - Filter that matches input with any HealthState value. The value is 65535."]
         pub fn events_health_state_filter(mut self, events_health_state_filter: i64) -> Self {
             self.events_health_state_filter = Some(events_health_state_filter);
             self
         }
+        #[doc = "Allows filtering the collection of ReplicaHealthState objects on the partition. The value can be obtained from members or bitwise operations on members of HealthStateFilter. Only replicas that match the filter will be returned. All replicas will be used to evaluate the aggregated health state. If not specified, all entries will be returned.The state values are flag-based enumeration, so the value could be a combination of these values obtained using bitwise 'OR' operator. For example, If the provided value is 6 then all of the events with HealthState value of OK (2) and Warning (4) will be returned. The possible values for this parameter include integer value of one of the following health states.\n\n- Default - Default value. Matches any HealthState. The value is zero.\n- None - Filter that doesn't match any HealthState value. Used in order to return no results on a given collection of states. The value is 1.\n- Ok - Filter that matches input with HealthState value Ok. The value is 2.\n- Warning - Filter that matches input with HealthState value Warning. The value is 4.\n- Error - Filter that matches input with HealthState value Error. The value is 8.\n- All - Filter that matches input with any HealthState value. The value is 65535."]
         pub fn replicas_health_state_filter(mut self, replicas_health_state_filter: i64) -> Self {
             self.replicas_health_state_filter = Some(replicas_health_state_filter);
             self
         }
+        #[doc = "Indicates whether the health statistics should be returned as part of the query result. False by default.\nThe statistics show the number of children entities in health state Ok, Warning, and Error."]
         pub fn exclude_health_statistics(mut self, exclude_health_statistics: bool) -> Self {
             self.exclude_health_statistics = Some(exclude_health_statistics);
             self
         }
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -8513,22 +8677,27 @@ pub mod get_partition_health_using_policy {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "Allows filtering the collection of HealthEvent objects returned based on health state.\nThe possible values for this parameter include integer value of one of the following health states.\nOnly events that match the filter are returned. All events are used to evaluate the aggregated health state.\nIf not specified, all entries are returned. The state values are flag-based enumeration, so the value could be a combination of these values, obtained using the bitwise 'OR' operator. For example, If the provided value is 6 then all of the events with HealthState value of OK (2) and Warning (4) are returned.\n\n- Default - Default value. Matches any HealthState. The value is zero.\n- None - Filter that doesn't match any HealthState value. Used in order to return no results on a given collection of states. The value is 1.\n- Ok - Filter that matches input with HealthState value Ok. The value is 2.\n- Warning - Filter that matches input with HealthState value Warning. The value is 4.\n- Error - Filter that matches input with HealthState value Error. The value is 8.\n- All - Filter that matches input with any HealthState value. The value is 65535."]
         pub fn events_health_state_filter(mut self, events_health_state_filter: i64) -> Self {
             self.events_health_state_filter = Some(events_health_state_filter);
             self
         }
+        #[doc = "Allows filtering the collection of ReplicaHealthState objects on the partition. The value can be obtained from members or bitwise operations on members of HealthStateFilter. Only replicas that match the filter will be returned. All replicas will be used to evaluate the aggregated health state. If not specified, all entries will be returned.The state values are flag-based enumeration, so the value could be a combination of these values obtained using bitwise 'OR' operator. For example, If the provided value is 6 then all of the events with HealthState value of OK (2) and Warning (4) will be returned. The possible values for this parameter include integer value of one of the following health states.\n\n- Default - Default value. Matches any HealthState. The value is zero.\n- None - Filter that doesn't match any HealthState value. Used in order to return no results on a given collection of states. The value is 1.\n- Ok - Filter that matches input with HealthState value Ok. The value is 2.\n- Warning - Filter that matches input with HealthState value Warning. The value is 4.\n- Error - Filter that matches input with HealthState value Error. The value is 8.\n- All - Filter that matches input with any HealthState value. The value is 65535."]
         pub fn replicas_health_state_filter(mut self, replicas_health_state_filter: i64) -> Self {
             self.replicas_health_state_filter = Some(replicas_health_state_filter);
             self
         }
+        #[doc = "Describes the health policies used to evaluate the health of an application or one of its children.\nIf not present, the health evaluation uses the health policy from application manifest or the default health policy."]
         pub fn application_health_policy(mut self, application_health_policy: impl Into<models::ApplicationHealthPolicy>) -> Self {
             self.application_health_policy = Some(application_health_policy.into());
             self
         }
+        #[doc = "Indicates whether the health statistics should be returned as part of the query result. False by default.\nThe statistics show the number of children entities in health state Ok, Warning, and Error."]
         pub fn exclude_health_statistics(mut self, exclude_health_statistics: bool) -> Self {
             self.exclude_health_statistics = Some(exclude_health_statistics);
             self
         }
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -8603,10 +8772,12 @@ pub mod report_partition_health {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "A flag that indicates whether the report should be sent immediately.\nA health report is sent to a Service Fabric gateway Application, which forwards to the health store.\nIf Immediate is set to true, the report is sent immediately from HTTP Gateway to the health store, regardless of the fabric client settings that the HTTP Gateway Application is using.\nThis is useful for critical reports that should be sent as soon as possible.\nDepending on timing and other conditions, sending the report may still fail, for example if the HTTP Gateway is closed or the message doesn't reach the Gateway.\nIf Immediate is set to false, the report is sent based on the health client settings from the HTTP Gateway. Therefore, it will be batched according to the HealthReportSendInterval configuration.\nThis is the recommended setting because it allows the health client to optimize health reporting messages to health store as well as health report processing.\nBy default, reports are not sent immediately."]
         pub fn immediate(mut self, immediate: bool) -> Self {
             self.immediate = Some(immediate);
             self
         }
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -8663,6 +8834,7 @@ pub mod get_partition_load_information {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -8719,6 +8891,7 @@ pub mod reset_partition_load {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -8768,6 +8941,7 @@ pub mod recover_partition {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -8817,6 +8991,7 @@ pub mod recover_service_partitions {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -8869,6 +9044,7 @@ pub mod recover_system_partitions {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -8917,6 +9093,7 @@ pub mod recover_all_partitions {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -8968,14 +9145,17 @@ pub mod move_primary_replica {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The name of the node."]
         pub fn node_name(mut self, node_name: impl Into<String>) -> Self {
             self.node_name = Some(node_name.into());
             self
         }
+        #[doc = "Ignore constraints when moving a replica. If this parameter is not specified, all constraints are honored."]
         pub fn ignore_constraints(mut self, ignore_constraints: bool) -> Self {
             self.ignore_constraints = Some(ignore_constraints);
             self
         }
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -9040,14 +9220,17 @@ pub mod move_secondary_replica {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The name of the target node for secondary replica move. If not specified, replica is moved to a random node."]
         pub fn new_node_name(mut self, new_node_name: impl Into<String>) -> Self {
             self.new_node_name = Some(new_node_name.into());
             self
         }
+        #[doc = "Ignore constraints when moving a replica. If this parameter is not specified, all constraints are honored."]
         pub fn ignore_constraints(mut self, ignore_constraints: bool) -> Self {
             self.ignore_constraints = Some(ignore_constraints);
             self
         }
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -9243,14 +9426,17 @@ pub mod get_repair_task_list {
         pub(crate) executor_filter: Option<String>,
     }
     impl Builder {
+        #[doc = "The repair task ID prefix to be matched."]
         pub fn task_id_filter(mut self, task_id_filter: impl Into<String>) -> Self {
             self.task_id_filter = Some(task_id_filter.into());
             self
         }
+        #[doc = "A bitwise-OR of the following values, specifying which task states should be included in the result list.\n\n- 1 - Created\n- 2 - Claimed\n- 4 - Preparing\n- 8 - Approved\n- 16 - Executing\n- 32 - Restoring\n- 64 - Completed"]
         pub fn state_filter(mut self, state_filter: i64) -> Self {
             self.state_filter = Some(state_filter);
             self
         }
+        #[doc = "The name of the repair executor whose claimed tasks should be included in the list."]
         pub fn executor_filter(mut self, executor_filter: impl Into<String>) -> Self {
             self.executor_filter = Some(executor_filter.into());
             self
@@ -9447,10 +9633,12 @@ pub mod get_replica_info_list {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The continuation token parameter is used to obtain next set of results. A continuation token with a non-empty value is included in the response of the API when the results from the system do not fit in a single response. When this value is passed to the next API call, the API returns next set of results. If there are no further results, then the continuation token does not contain a value. The value of this parameter should not be URL encoded."]
         pub fn continuation_token(mut self, continuation_token: impl Into<String>) -> Self {
             self.continuation_token = Some(continuation_token.into());
             self
         }
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -9515,6 +9703,7 @@ pub mod get_replica_info {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -9575,10 +9764,12 @@ pub mod get_replica_health {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "Allows filtering the collection of HealthEvent objects returned based on health state.\nThe possible values for this parameter include integer value of one of the following health states.\nOnly events that match the filter are returned. All events are used to evaluate the aggregated health state.\nIf not specified, all entries are returned. The state values are flag-based enumeration, so the value could be a combination of these values, obtained using the bitwise 'OR' operator. For example, If the provided value is 6 then all of the events with HealthState value of OK (2) and Warning (4) are returned.\n\n- Default - Default value. Matches any HealthState. The value is zero.\n- None - Filter that doesn't match any HealthState value. Used in order to return no results on a given collection of states. The value is 1.\n- Ok - Filter that matches input with HealthState value Ok. The value is 2.\n- Warning - Filter that matches input with HealthState value Warning. The value is 4.\n- Error - Filter that matches input with HealthState value Error. The value is 8.\n- All - Filter that matches input with any HealthState value. The value is 65535."]
         pub fn events_health_state_filter(mut self, events_health_state_filter: i64) -> Self {
             self.events_health_state_filter = Some(events_health_state_filter);
             self
         }
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -9644,14 +9835,17 @@ pub mod get_replica_health_using_policy {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "Allows filtering the collection of HealthEvent objects returned based on health state.\nThe possible values for this parameter include integer value of one of the following health states.\nOnly events that match the filter are returned. All events are used to evaluate the aggregated health state.\nIf not specified, all entries are returned. The state values are flag-based enumeration, so the value could be a combination of these values, obtained using the bitwise 'OR' operator. For example, If the provided value is 6 then all of the events with HealthState value of OK (2) and Warning (4) are returned.\n\n- Default - Default value. Matches any HealthState. The value is zero.\n- None - Filter that doesn't match any HealthState value. Used in order to return no results on a given collection of states. The value is 1.\n- Ok - Filter that matches input with HealthState value Ok. The value is 2.\n- Warning - Filter that matches input with HealthState value Warning. The value is 4.\n- Error - Filter that matches input with HealthState value Error. The value is 8.\n- All - Filter that matches input with any HealthState value. The value is 65535."]
         pub fn events_health_state_filter(mut self, events_health_state_filter: i64) -> Self {
             self.events_health_state_filter = Some(events_health_state_filter);
             self
         }
+        #[doc = "Describes the health policies used to evaluate the health of an application or one of its children.\nIf not present, the health evaluation uses the health policy from application manifest or the default health policy."]
         pub fn application_health_policy(mut self, application_health_policy: impl Into<models::ApplicationHealthPolicy>) -> Self {
             self.application_health_policy = Some(application_health_policy.into());
             self
         }
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -9723,10 +9917,12 @@ pub mod report_replica_health {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "A flag that indicates whether the report should be sent immediately.\nA health report is sent to a Service Fabric gateway Application, which forwards to the health store.\nIf Immediate is set to true, the report is sent immediately from HTTP Gateway to the health store, regardless of the fabric client settings that the HTTP Gateway Application is using.\nThis is useful for critical reports that should be sent as soon as possible.\nDepending on timing and other conditions, sending the report may still fail, for example if the HTTP Gateway is closed or the message doesn't reach the Gateway.\nIf Immediate is set to false, the report is sent based on the health client settings from the HTTP Gateway. Therefore, it will be batched according to the HealthReportSendInterval configuration.\nThis is the recommended setting because it allows the health client to optimize health reporting messages to health store as well as health report processing.\nBy default, reports are not sent immediately."]
         pub fn immediate(mut self, immediate: bool) -> Self {
             self.immediate = Some(immediate);
             self
         }
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -9793,14 +9989,17 @@ pub mod get_deployed_service_replica_info_list {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The identity of the partition."]
         pub fn partition_id(mut self, partition_id: impl Into<String>) -> Self {
             self.partition_id = Some(partition_id.into());
             self
         }
+        #[doc = "The name of a service manifest registered as part of an application type in a Service Fabric cluster."]
         pub fn service_manifest_name(mut self, service_manifest_name: impl Into<String>) -> Self {
             self.service_manifest_name = Some(service_manifest_name.into());
             self
         }
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -9869,6 +10068,7 @@ pub mod get_deployed_service_replica_detail_info {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -9928,6 +10128,7 @@ pub mod get_deployed_service_replica_detail_info_by_partition_id {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -9987,6 +10188,7 @@ pub mod restart_replica {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -10045,10 +10247,12 @@ pub mod remove_replica {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "Remove a Service Fabric application or service forcefully without going through the graceful shutdown sequence. This parameter can be used to forcefully delete an application or service for which delete is timing out due to issues in the service code that prevents graceful close of replicas."]
         pub fn force_remove(mut self, force_remove: bool) -> Self {
             self.force_remove = Some(force_remove);
             self
         }
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -10110,6 +10314,7 @@ pub mod get_deployed_service_package_info_list {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -10173,6 +10378,7 @@ pub mod get_deployed_service_package_info_list_by_name {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -10235,10 +10441,12 @@ pub mod get_deployed_service_package_health {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "Allows filtering the collection of HealthEvent objects returned based on health state.\nThe possible values for this parameter include integer value of one of the following health states.\nOnly events that match the filter are returned. All events are used to evaluate the aggregated health state.\nIf not specified, all entries are returned. The state values are flag-based enumeration, so the value could be a combination of these values, obtained using the bitwise 'OR' operator. For example, If the provided value is 6 then all of the events with HealthState value of OK (2) and Warning (4) are returned.\n\n- Default - Default value. Matches any HealthState. The value is zero.\n- None - Filter that doesn't match any HealthState value. Used in order to return no results on a given collection of states. The value is 1.\n- Ok - Filter that matches input with HealthState value Ok. The value is 2.\n- Warning - Filter that matches input with HealthState value Warning. The value is 4.\n- Error - Filter that matches input with HealthState value Error. The value is 8.\n- All - Filter that matches input with any HealthState value. The value is 65535."]
         pub fn events_health_state_filter(mut self, events_health_state_filter: i64) -> Self {
             self.events_health_state_filter = Some(events_health_state_filter);
             self
         }
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -10306,14 +10514,17 @@ pub mod get_deployed_service_package_health_using_policy {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "Allows filtering the collection of HealthEvent objects returned based on health state.\nThe possible values for this parameter include integer value of one of the following health states.\nOnly events that match the filter are returned. All events are used to evaluate the aggregated health state.\nIf not specified, all entries are returned. The state values are flag-based enumeration, so the value could be a combination of these values, obtained using the bitwise 'OR' operator. For example, If the provided value is 6 then all of the events with HealthState value of OK (2) and Warning (4) are returned.\n\n- Default - Default value. Matches any HealthState. The value is zero.\n- None - Filter that doesn't match any HealthState value. Used in order to return no results on a given collection of states. The value is 1.\n- Ok - Filter that matches input with HealthState value Ok. The value is 2.\n- Warning - Filter that matches input with HealthState value Warning. The value is 4.\n- Error - Filter that matches input with HealthState value Error. The value is 8.\n- All - Filter that matches input with any HealthState value. The value is 65535."]
         pub fn events_health_state_filter(mut self, events_health_state_filter: i64) -> Self {
             self.events_health_state_filter = Some(events_health_state_filter);
             self
         }
+        #[doc = "Describes the health policies used to evaluate the health of an application or one of its children.\nIf not present, the health evaluation uses the health policy from application manifest or the default health policy."]
         pub fn application_health_policy(mut self, application_health_policy: impl Into<models::ApplicationHealthPolicy>) -> Self {
             self.application_health_policy = Some(application_health_policy.into());
             self
         }
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -10386,10 +10597,12 @@ pub mod report_deployed_service_package_health {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "A flag that indicates whether the report should be sent immediately.\nA health report is sent to a Service Fabric gateway Application, which forwards to the health store.\nIf Immediate is set to true, the report is sent immediately from HTTP Gateway to the health store, regardless of the fabric client settings that the HTTP Gateway Application is using.\nThis is useful for critical reports that should be sent as soon as possible.\nDepending on timing and other conditions, sending the report may still fail, for example if the HTTP Gateway is closed or the message doesn't reach the Gateway.\nIf Immediate is set to false, the report is sent based on the health client settings from the HTTP Gateway. Therefore, it will be batched according to the HealthReportSendInterval configuration.\nThis is the recommended setting because it allows the health client to optimize health reporting messages to health store as well as health report processing.\nBy default, reports are not sent immediately."]
         pub fn immediate(mut self, immediate: bool) -> Self {
             self.immediate = Some(immediate);
             self
         }
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -10449,6 +10662,7 @@ pub mod deploy_service_package_to_node {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -10505,14 +10719,17 @@ pub mod get_deployed_code_package_info_list {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The name of a service manifest registered as part of an application type in a Service Fabric cluster."]
         pub fn service_manifest_name(mut self, service_manifest_name: impl Into<String>) -> Self {
             self.service_manifest_name = Some(service_manifest_name.into());
             self
         }
+        #[doc = "The name of code package specified in service manifest registered as part of an application type in a Service Fabric cluster."]
         pub fn code_package_name(mut self, code_package_name: impl Into<String>) -> Self {
             self.code_package_name = Some(code_package_name.into());
             self
         }
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -10580,6 +10797,7 @@ pub mod restart_deployed_code_package {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -10639,14 +10857,17 @@ pub mod get_container_logs_deployed_on_node {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "Number of lines to show from the end of the logs. Default is 100. 'all' to show the complete logs."]
         pub fn tail(mut self, tail: impl Into<String>) -> Self {
             self.tail = Some(tail.into());
             self
         }
+        #[doc = "Specifies whether to get container logs from exited/dead containers of the code package instance."]
         pub fn previous(mut self, previous: bool) -> Self {
             self.previous = Some(previous);
             self
         }
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -10721,6 +10942,7 @@ pub mod invoke_container_api {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -10789,6 +11011,7 @@ pub mod create_compose_deployment {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -10838,6 +11061,7 @@ pub mod get_compose_deployment_status {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -10891,14 +11115,17 @@ pub mod get_compose_deployment_status_list {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The continuation token parameter is used to obtain next set of results. A continuation token with a non-empty value is included in the response of the API when the results from the system do not fit in a single response. When this value is passed to the next API call, the API returns next set of results. If there are no further results, then the continuation token does not contain a value. The value of this parameter should not be URL encoded."]
         pub fn continuation_token(mut self, continuation_token: impl Into<String>) -> Self {
             self.continuation_token = Some(continuation_token.into());
             self
         }
+        #[doc = "The maximum number of results to be returned as part of the paged queries. This parameter defines the upper bound on the number of results returned. The results returned can be less than the specified maximum results if they do not fit in the message as per the max message size restrictions defined in the configuration. If this parameter is zero or not specified, the paged query includes as many results as possible that fit in the return message."]
         pub fn max_results(mut self, max_results: i64) -> Self {
             self.max_results = Some(max_results);
             self
         }
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -10957,6 +11184,7 @@ pub mod get_compose_deployment_upgrade_progress {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -11013,6 +11241,7 @@ pub mod remove_compose_deployment {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -11067,6 +11296,7 @@ pub mod start_compose_deployment_upgrade {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -11120,6 +11350,7 @@ pub mod start_rollback_compose_deployment_upgrade {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -11172,6 +11403,7 @@ pub mod get_chaos {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -11224,6 +11456,7 @@ pub mod start_chaos {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -11272,6 +11505,7 @@ pub mod stop_chaos {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -11324,22 +11558,27 @@ pub mod get_chaos_events {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The continuation token parameter is used to obtain next set of results. A continuation token with a non-empty value is included in the response of the API when the results from the system do not fit in a single response. When this value is passed to the next API call, the API returns next set of results. If there are no further results, then the continuation token does not contain a value. The value of this parameter should not be URL encoded."]
         pub fn continuation_token(mut self, continuation_token: impl Into<String>) -> Self {
             self.continuation_token = Some(continuation_token.into());
             self
         }
+        #[doc = "The Windows file time representing the start time of the time range for which a Chaos report is to be generated. Consult [DateTime.ToFileTimeUtc Method](https://msdn.microsoft.com/library/system.datetime.tofiletimeutc(v=vs.110).aspx) for details."]
         pub fn start_time_utc(mut self, start_time_utc: impl Into<String>) -> Self {
             self.start_time_utc = Some(start_time_utc.into());
             self
         }
+        #[doc = "The Windows file time representing the end time of the time range for which a Chaos report is to be generated. Consult [DateTime.ToFileTimeUtc Method](https://msdn.microsoft.com/library/system.datetime.tofiletimeutc(v=vs.110).aspx) for details."]
         pub fn end_time_utc(mut self, end_time_utc: impl Into<String>) -> Self {
             self.end_time_utc = Some(end_time_utc.into());
             self
         }
+        #[doc = "The maximum number of results to be returned as part of the paged queries. This parameter defines the upper bound on the number of results returned. The results returned can be less than the specified maximum results if they do not fit in the message as per the max message size restrictions defined in the configuration. If this parameter is zero or not specified, the paged query includes as many results as possible that fit in the return message."]
         pub fn max_results(mut self, max_results: i64) -> Self {
             self.max_results = Some(max_results);
             self
         }
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -11403,6 +11642,7 @@ pub mod get_chaos_schedule {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -11455,6 +11695,7 @@ pub mod post_chaos_schedule {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -11504,6 +11745,7 @@ pub mod get_image_store_content {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -11556,6 +11798,7 @@ pub mod upload_file {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -11604,6 +11847,7 @@ pub mod delete_image_store_content {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -11651,6 +11895,7 @@ pub mod get_image_store_root_content {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -11703,6 +11948,7 @@ pub mod copy_image_store_content {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -11752,6 +11998,7 @@ pub mod delete_image_store_upload_session {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -11802,6 +12049,7 @@ pub mod commit_image_store_upload_session {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -11853,6 +12101,7 @@ pub mod get_image_store_upload_session_by_id {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -11907,6 +12156,7 @@ pub mod get_image_store_upload_session_by_path {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -11965,6 +12215,7 @@ pub mod upload_file_chunk {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -12019,6 +12270,7 @@ pub mod get_image_store_root_folder_size {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -12071,6 +12323,7 @@ pub mod get_image_store_folder_size {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -12126,6 +12379,7 @@ pub mod get_image_store_info {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -12179,10 +12433,12 @@ pub mod invoke_infrastructure_command {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The identity of the infrastructure service. This is the full name of the infrastructure service without the 'fabric:' URI scheme. This parameter required only for the cluster that has more than one instance of infrastructure service running."]
         pub fn service_id(mut self, service_id: impl Into<String>) -> Self {
             self.service_id = Some(service_id.into());
             self
         }
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -12242,10 +12498,12 @@ pub mod invoke_infrastructure_query {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The identity of the infrastructure service. This is the full name of the infrastructure service without the 'fabric:' URI scheme. This parameter required only for the cluster that has more than one instance of infrastructure service running."]
         pub fn service_id(mut self, service_id: impl Into<String>) -> Self {
             self.service_id = Some(service_id.into());
             self
         }
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -12306,6 +12564,7 @@ pub mod start_data_loss {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -12366,6 +12625,7 @@ pub mod get_data_loss_progress {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -12429,6 +12689,7 @@ pub mod start_quorum_loss {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -12493,6 +12754,7 @@ pub mod get_quorum_loss_progress {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -12555,6 +12817,7 @@ pub mod start_partition_restart {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -12617,6 +12880,7 @@ pub mod get_partition_restart_progress {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -12680,6 +12944,7 @@ pub mod start_node_transition {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -12746,6 +13011,7 @@ pub mod get_node_transition_progress {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -12805,6 +13071,7 @@ pub mod get_fault_operation_list {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -12864,6 +13131,7 @@ pub mod cancel_operation {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -12917,6 +13185,7 @@ pub mod create_backup_policy {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -12966,6 +13235,7 @@ pub mod delete_backup_policy {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -13020,14 +13290,17 @@ pub mod get_backup_policy_list {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The continuation token parameter is used to obtain next set of results. A continuation token with a non-empty value is included in the response of the API when the results from the system do not fit in a single response. When this value is passed to the next API call, the API returns next set of results. If there are no further results, then the continuation token does not contain a value. The value of this parameter should not be URL encoded."]
         pub fn continuation_token(mut self, continuation_token: impl Into<String>) -> Self {
             self.continuation_token = Some(continuation_token.into());
             self
         }
+        #[doc = "The maximum number of results to be returned as part of the paged queries. This parameter defines the upper bound on the number of results returned. The results returned can be less than the specified maximum results if they do not fit in the message as per the max message size restrictions defined in the configuration. If this parameter is zero or not specified, the paged query includes as many results as possible that fit in the return message."]
         pub fn max_results(mut self, max_results: i64) -> Self {
             self.max_results = Some(max_results);
             self
         }
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -13086,6 +13359,7 @@ pub mod get_backup_policy_by_name {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -13144,14 +13418,17 @@ pub mod get_all_entities_backed_up_by_policy {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The continuation token parameter is used to obtain next set of results. A continuation token with a non-empty value is included in the response of the API when the results from the system do not fit in a single response. When this value is passed to the next API call, the API returns next set of results. If there are no further results, then the continuation token does not contain a value. The value of this parameter should not be URL encoded."]
         pub fn continuation_token(mut self, continuation_token: impl Into<String>) -> Self {
             self.continuation_token = Some(continuation_token.into());
             self
         }
+        #[doc = "The maximum number of results to be returned as part of the paged queries. This parameter defines the upper bound on the number of results returned. The results returned can be less than the specified maximum results if they do not fit in the message as per the max message size restrictions defined in the configuration. If this parameter is zero or not specified, the paged query includes as many results as possible that fit in the return message."]
         pub fn max_results(mut self, max_results: i64) -> Self {
             self.max_results = Some(max_results);
             self
         }
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -13215,6 +13492,7 @@ pub mod update_backup_policy {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -13269,6 +13547,7 @@ pub mod enable_application_backup {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -13323,10 +13602,12 @@ pub mod disable_application_backup {
         pub(crate) disable_backup_description: Option<models::DisableBackupDescription>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
         }
+        #[doc = "Specifies the parameters to disable backup for any backup entity."]
         pub fn disable_backup_description(mut self, disable_backup_description: impl Into<models::DisableBackupDescription>) -> Self {
             self.disable_backup_description = Some(disable_backup_description.into());
             self
@@ -13386,14 +13667,17 @@ pub mod get_application_backup_configuration_info {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The continuation token parameter is used to obtain next set of results. A continuation token with a non-empty value is included in the response of the API when the results from the system do not fit in a single response. When this value is passed to the next API call, the API returns next set of results. If there are no further results, then the continuation token does not contain a value. The value of this parameter should not be URL encoded."]
         pub fn continuation_token(mut self, continuation_token: impl Into<String>) -> Self {
             self.continuation_token = Some(continuation_token.into());
             self
         }
+        #[doc = "The maximum number of results to be returned as part of the paged queries. This parameter defines the upper bound on the number of results returned. The results returned can be less than the specified maximum results if they do not fit in the message as per the max message size restrictions defined in the configuration. If this parameter is zero or not specified, the paged query includes as many results as possible that fit in the return message."]
         pub fn max_results(mut self, max_results: i64) -> Self {
             self.max_results = Some(max_results);
             self
         }
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -13461,26 +13745,32 @@ pub mod get_application_backup_list {
         pub(crate) max_results: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
         }
+        #[doc = "Specifies whether to get only the most recent backup available for a partition for the specified time range."]
         pub fn latest(mut self, latest: bool) -> Self {
             self.latest = Some(latest);
             self
         }
+        #[doc = "Specify the start date time from which to enumerate backups, in datetime format. The date time must be specified in ISO8601 format. This is an optional parameter. If not specified, all backups from the beginning are enumerated."]
         pub fn start_date_time_filter(mut self, start_date_time_filter: impl Into<String>) -> Self {
             self.start_date_time_filter = Some(start_date_time_filter.into());
             self
         }
+        #[doc = "Specify the end date time till which to enumerate backups, in datetime format. The date time must be specified in ISO8601 format. This is an optional parameter. If not specified, enumeration is done till the most recent backup."]
         pub fn end_date_time_filter(mut self, end_date_time_filter: impl Into<String>) -> Self {
             self.end_date_time_filter = Some(end_date_time_filter.into());
             self
         }
+        #[doc = "The continuation token parameter is used to obtain next set of results. A continuation token with a non-empty value is included in the response of the API when the results from the system do not fit in a single response. When this value is passed to the next API call, the API returns next set of results. If there are no further results, then the continuation token does not contain a value. The value of this parameter should not be URL encoded."]
         pub fn continuation_token(mut self, continuation_token: impl Into<String>) -> Self {
             self.continuation_token = Some(continuation_token.into());
             self
         }
+        #[doc = "The maximum number of results to be returned as part of the paged queries. This parameter defines the upper bound on the number of results returned. The results returned can be less than the specified maximum results if they do not fit in the message as per the max message size restrictions defined in the configuration. If this parameter is zero or not specified, the paged query includes as many results as possible that fit in the return message."]
         pub fn max_results(mut self, max_results: i64) -> Self {
             self.max_results = Some(max_results);
             self
@@ -13556,6 +13846,7 @@ pub mod suspend_application_backup {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -13609,6 +13900,7 @@ pub mod resume_application_backup {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -13663,6 +13955,7 @@ pub mod enable_service_backup {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -13713,10 +14006,12 @@ pub mod disable_service_backup {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "Specifies the parameters to disable backup for any backup entity."]
         pub fn disable_backup_description(mut self, disable_backup_description: impl Into<models::DisableBackupDescription>) -> Self {
             self.disable_backup_description = Some(disable_backup_description.into());
             self
         }
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -13772,14 +14067,17 @@ pub mod get_service_backup_configuration_info {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The continuation token parameter is used to obtain next set of results. A continuation token with a non-empty value is included in the response of the API when the results from the system do not fit in a single response. When this value is passed to the next API call, the API returns next set of results. If there are no further results, then the continuation token does not contain a value. The value of this parameter should not be URL encoded."]
         pub fn continuation_token(mut self, continuation_token: impl Into<String>) -> Self {
             self.continuation_token = Some(continuation_token.into());
             self
         }
+        #[doc = "The maximum number of results to be returned as part of the paged queries. This parameter defines the upper bound on the number of results returned. The results returned can be less than the specified maximum results if they do not fit in the message as per the max message size restrictions defined in the configuration. If this parameter is zero or not specified, the paged query includes as many results as possible that fit in the return message."]
         pub fn max_results(mut self, max_results: i64) -> Self {
             self.max_results = Some(max_results);
             self
         }
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -13847,26 +14145,32 @@ pub mod get_service_backup_list {
         pub(crate) max_results: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
         }
+        #[doc = "Specifies whether to get only the most recent backup available for a partition for the specified time range."]
         pub fn latest(mut self, latest: bool) -> Self {
             self.latest = Some(latest);
             self
         }
+        #[doc = "Specify the start date time from which to enumerate backups, in datetime format. The date time must be specified in ISO8601 format. This is an optional parameter. If not specified, all backups from the beginning are enumerated."]
         pub fn start_date_time_filter(mut self, start_date_time_filter: impl Into<String>) -> Self {
             self.start_date_time_filter = Some(start_date_time_filter.into());
             self
         }
+        #[doc = "Specify the end date time till which to enumerate backups, in datetime format. The date time must be specified in ISO8601 format. This is an optional parameter. If not specified, enumeration is done till the most recent backup."]
         pub fn end_date_time_filter(mut self, end_date_time_filter: impl Into<String>) -> Self {
             self.end_date_time_filter = Some(end_date_time_filter.into());
             self
         }
+        #[doc = "The continuation token parameter is used to obtain next set of results. A continuation token with a non-empty value is included in the response of the API when the results from the system do not fit in a single response. When this value is passed to the next API call, the API returns next set of results. If there are no further results, then the continuation token does not contain a value. The value of this parameter should not be URL encoded."]
         pub fn continuation_token(mut self, continuation_token: impl Into<String>) -> Self {
             self.continuation_token = Some(continuation_token.into());
             self
         }
+        #[doc = "The maximum number of results to be returned as part of the paged queries. This parameter defines the upper bound on the number of results returned. The results returned can be less than the specified maximum results if they do not fit in the message as per the max message size restrictions defined in the configuration. If this parameter is zero or not specified, the paged query includes as many results as possible that fit in the return message."]
         pub fn max_results(mut self, max_results: i64) -> Self {
             self.max_results = Some(max_results);
             self
@@ -13938,6 +14242,7 @@ pub mod suspend_service_backup {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -13987,6 +14292,7 @@ pub mod resume_service_backup {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -14037,6 +14343,7 @@ pub mod enable_partition_backup {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -14091,10 +14398,12 @@ pub mod disable_partition_backup {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "Specifies the parameters to disable backup for any backup entity."]
         pub fn disable_backup_description(mut self, disable_backup_description: impl Into<models::DisableBackupDescription>) -> Self {
             self.disable_backup_description = Some(disable_backup_description.into());
             self
         }
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -14152,6 +14461,7 @@ pub mod get_partition_backup_configuration_info {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -14211,18 +14521,22 @@ pub mod get_partition_backup_list {
         pub(crate) end_date_time_filter: Option<String>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
         }
+        #[doc = "Specifies whether to get only the most recent backup available for a partition for the specified time range."]
         pub fn latest(mut self, latest: bool) -> Self {
             self.latest = Some(latest);
             self
         }
+        #[doc = "Specify the start date time from which to enumerate backups, in datetime format. The date time must be specified in ISO8601 format. This is an optional parameter. If not specified, all backups from the beginning are enumerated."]
         pub fn start_date_time_filter(mut self, start_date_time_filter: impl Into<String>) -> Self {
             self.start_date_time_filter = Some(start_date_time_filter.into());
             self
         }
+        #[doc = "Specify the end date time till which to enumerate backups, in datetime format. The date time must be specified in ISO8601 format. This is an optional parameter. If not specified, enumeration is done till the most recent backup."]
         pub fn end_date_time_filter(mut self, end_date_time_filter: impl Into<String>) -> Self {
             self.end_date_time_filter = Some(end_date_time_filter.into());
             self
@@ -14292,6 +14606,7 @@ pub mod suspend_partition_backup {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -14345,6 +14660,7 @@ pub mod resume_partition_backup {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -14400,14 +14716,17 @@ pub mod backup_partition {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "Describes the parameters to backup the partition now. If not present, backup operation uses default parameters from the backup policy current associated with this partition."]
         pub fn backup_partition_description(mut self, backup_partition_description: impl Into<models::BackupPartitionDescription>) -> Self {
             self.backup_partition_description = Some(backup_partition_description.into());
             self
         }
+        #[doc = "Specifies the maximum amount of time, in minutes, to wait for the backup operation to complete. Post that, the operation completes with timeout error. However, in certain corner cases it could be that though the operation returns back timeout, the backup actually goes through. In case of timeout error, its recommended to invoke this operation again with a greater timeout value. The default value for the same is 10 minutes."]
         pub fn backup_timeout(mut self, backup_timeout: i64) -> Self {
             self.backup_timeout = Some(backup_timeout);
             self
         }
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -14466,6 +14785,7 @@ pub mod get_partition_backup_progress {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -14524,10 +14844,12 @@ pub mod restore_partition {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "Specifies the maximum amount of time to wait, in minutes, for the restore operation to complete. Post that, the operation returns back with timeout error. However, in certain corner cases it could be that the restore operation goes through even though it completes with timeout. In case of timeout error, its recommended to invoke this operation again with a greater timeout value. the default value for the same is 10 minutes."]
         pub fn restore_timeout(mut self, restore_timeout: i64) -> Self {
             self.restore_timeout = Some(restore_timeout);
             self
         }
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -14582,6 +14904,7 @@ pub mod get_partition_restore_progress {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -14640,14 +14963,17 @@ pub mod get_backups_from_backup_location {
         pub(crate) max_results: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
         }
+        #[doc = "The continuation token parameter is used to obtain next set of results. A continuation token with a non-empty value is included in the response of the API when the results from the system do not fit in a single response. When this value is passed to the next API call, the API returns next set of results. If there are no further results, then the continuation token does not contain a value. The value of this parameter should not be URL encoded."]
         pub fn continuation_token(mut self, continuation_token: impl Into<String>) -> Self {
             self.continuation_token = Some(continuation_token.into());
             self
         }
+        #[doc = "The maximum number of results to be returned as part of the paged queries. This parameter defines the upper bound on the number of results returned. The results returned can be less than the specified maximum results if they do not fit in the message as per the max message size restrictions defined in the configuration. If this parameter is zero or not specified, the paged query includes as many results as possible that fit in the return message."]
         pub fn max_results(mut self, max_results: i64) -> Self {
             self.max_results = Some(max_results);
             self
@@ -14707,6 +15033,7 @@ pub mod create_name {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -14756,6 +15083,7 @@ pub mod get_name_exists_info {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -14804,6 +15132,7 @@ pub mod delete_name {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -14854,14 +15183,17 @@ pub mod get_sub_name_info_list {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "Allows specifying that the search performed should be recursive."]
         pub fn recursive(mut self, recursive: bool) -> Self {
             self.recursive = Some(recursive);
             self
         }
+        #[doc = "The continuation token parameter is used to obtain next set of results. A continuation token with a non-empty value is included in the response of the API when the results from the system do not fit in a single response. When this value is passed to the next API call, the API returns next set of results. If there are no further results, then the continuation token does not contain a value. The value of this parameter should not be URL encoded."]
         pub fn continuation_token(mut self, continuation_token: impl Into<String>) -> Self {
             self.continuation_token = Some(continuation_token.into());
             self
         }
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -14922,14 +15254,17 @@ pub mod get_property_info_list {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "Allows specifying whether to include the values of the properties returned. True if values should be returned with the metadata; False to return only property metadata."]
         pub fn include_values(mut self, include_values: bool) -> Self {
             self.include_values = Some(include_values);
             self
         }
+        #[doc = "The continuation token parameter is used to obtain next set of results. A continuation token with a non-empty value is included in the response of the API when the results from the system do not fit in a single response. When this value is passed to the next API call, the API returns next set of results. If there are no further results, then the continuation token does not contain a value. The value of this parameter should not be URL encoded."]
         pub fn continuation_token(mut self, continuation_token: impl Into<String>) -> Self {
             self.continuation_token = Some(continuation_token.into());
             self
         }
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -14991,6 +15326,7 @@ pub mod get_property_info {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -15046,6 +15382,7 @@ pub mod put_property {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -15096,6 +15433,7 @@ pub mod delete_property {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -15147,6 +15485,7 @@ pub mod submit_property_batch {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -15208,18 +15547,22 @@ pub mod get_cluster_event_list {
         pub(crate) skip_correlation_lookup: Option<bool>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
         }
+        #[doc = "This is a comma separated string specifying the types of FabricEvents that should only be included in the response."]
         pub fn events_types_filter(mut self, events_types_filter: impl Into<String>) -> Self {
             self.events_types_filter = Some(events_types_filter.into());
             self
         }
+        #[doc = "This param disables the retrieval of AnalysisEvents if true is passed."]
         pub fn exclude_analysis_events(mut self, exclude_analysis_events: bool) -> Self {
             self.exclude_analysis_events = Some(exclude_analysis_events);
             self
         }
+        #[doc = "This param disables the search of CorrelatedEvents information if true is passed. otherwise the CorrelationEvents get processed and HasCorrelatedEvents field in every FabricEvent gets populated."]
         pub fn skip_correlation_lookup(mut self, skip_correlation_lookup: bool) -> Self {
             self.skip_correlation_lookup = Some(skip_correlation_lookup);
             self
@@ -15295,18 +15638,22 @@ pub mod get_containers_event_list {
         pub(crate) skip_correlation_lookup: Option<bool>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
         }
+        #[doc = "This is a comma separated string specifying the types of FabricEvents that should only be included in the response."]
         pub fn events_types_filter(mut self, events_types_filter: impl Into<String>) -> Self {
             self.events_types_filter = Some(events_types_filter.into());
             self
         }
+        #[doc = "This param disables the retrieval of AnalysisEvents if true is passed."]
         pub fn exclude_analysis_events(mut self, exclude_analysis_events: bool) -> Self {
             self.exclude_analysis_events = Some(exclude_analysis_events);
             self
         }
+        #[doc = "This param disables the search of CorrelatedEvents information if true is passed. otherwise the CorrelationEvents get processed and HasCorrelatedEvents field in every FabricEvent gets populated."]
         pub fn skip_correlation_lookup(mut self, skip_correlation_lookup: bool) -> Self {
             self.skip_correlation_lookup = Some(skip_correlation_lookup);
             self
@@ -15383,18 +15730,22 @@ pub mod get_node_event_list {
         pub(crate) skip_correlation_lookup: Option<bool>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
         }
+        #[doc = "This is a comma separated string specifying the types of FabricEvents that should only be included in the response."]
         pub fn events_types_filter(mut self, events_types_filter: impl Into<String>) -> Self {
             self.events_types_filter = Some(events_types_filter.into());
             self
         }
+        #[doc = "This param disables the retrieval of AnalysisEvents if true is passed."]
         pub fn exclude_analysis_events(mut self, exclude_analysis_events: bool) -> Self {
             self.exclude_analysis_events = Some(exclude_analysis_events);
             self
         }
+        #[doc = "This param disables the search of CorrelatedEvents information if true is passed. otherwise the CorrelationEvents get processed and HasCorrelatedEvents field in every FabricEvent gets populated."]
         pub fn skip_correlation_lookup(mut self, skip_correlation_lookup: bool) -> Self {
             self.skip_correlation_lookup = Some(skip_correlation_lookup);
             self
@@ -15474,18 +15825,22 @@ pub mod get_nodes_event_list {
         pub(crate) skip_correlation_lookup: Option<bool>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
         }
+        #[doc = "This is a comma separated string specifying the types of FabricEvents that should only be included in the response."]
         pub fn events_types_filter(mut self, events_types_filter: impl Into<String>) -> Self {
             self.events_types_filter = Some(events_types_filter.into());
             self
         }
+        #[doc = "This param disables the retrieval of AnalysisEvents if true is passed."]
         pub fn exclude_analysis_events(mut self, exclude_analysis_events: bool) -> Self {
             self.exclude_analysis_events = Some(exclude_analysis_events);
             self
         }
+        #[doc = "This param disables the search of CorrelatedEvents information if true is passed. otherwise the CorrelationEvents get processed and HasCorrelatedEvents field in every FabricEvent gets populated."]
         pub fn skip_correlation_lookup(mut self, skip_correlation_lookup: bool) -> Self {
             self.skip_correlation_lookup = Some(skip_correlation_lookup);
             self
@@ -15562,18 +15917,22 @@ pub mod get_application_event_list {
         pub(crate) skip_correlation_lookup: Option<bool>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
         }
+        #[doc = "This is a comma separated string specifying the types of FabricEvents that should only be included in the response."]
         pub fn events_types_filter(mut self, events_types_filter: impl Into<String>) -> Self {
             self.events_types_filter = Some(events_types_filter.into());
             self
         }
+        #[doc = "This param disables the retrieval of AnalysisEvents if true is passed."]
         pub fn exclude_analysis_events(mut self, exclude_analysis_events: bool) -> Self {
             self.exclude_analysis_events = Some(exclude_analysis_events);
             self
         }
+        #[doc = "This param disables the search of CorrelatedEvents information if true is passed. otherwise the CorrelationEvents get processed and HasCorrelatedEvents field in every FabricEvent gets populated."]
         pub fn skip_correlation_lookup(mut self, skip_correlation_lookup: bool) -> Self {
             self.skip_correlation_lookup = Some(skip_correlation_lookup);
             self
@@ -15653,18 +16012,22 @@ pub mod get_applications_event_list {
         pub(crate) skip_correlation_lookup: Option<bool>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
         }
+        #[doc = "This is a comma separated string specifying the types of FabricEvents that should only be included in the response."]
         pub fn events_types_filter(mut self, events_types_filter: impl Into<String>) -> Self {
             self.events_types_filter = Some(events_types_filter.into());
             self
         }
+        #[doc = "This param disables the retrieval of AnalysisEvents if true is passed."]
         pub fn exclude_analysis_events(mut self, exclude_analysis_events: bool) -> Self {
             self.exclude_analysis_events = Some(exclude_analysis_events);
             self
         }
+        #[doc = "This param disables the search of CorrelatedEvents information if true is passed. otherwise the CorrelationEvents get processed and HasCorrelatedEvents field in every FabricEvent gets populated."]
         pub fn skip_correlation_lookup(mut self, skip_correlation_lookup: bool) -> Self {
             self.skip_correlation_lookup = Some(skip_correlation_lookup);
             self
@@ -15741,18 +16104,22 @@ pub mod get_service_event_list {
         pub(crate) skip_correlation_lookup: Option<bool>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
         }
+        #[doc = "This is a comma separated string specifying the types of FabricEvents that should only be included in the response."]
         pub fn events_types_filter(mut self, events_types_filter: impl Into<String>) -> Self {
             self.events_types_filter = Some(events_types_filter.into());
             self
         }
+        #[doc = "This param disables the retrieval of AnalysisEvents if true is passed."]
         pub fn exclude_analysis_events(mut self, exclude_analysis_events: bool) -> Self {
             self.exclude_analysis_events = Some(exclude_analysis_events);
             self
         }
+        #[doc = "This param disables the search of CorrelatedEvents information if true is passed. otherwise the CorrelationEvents get processed and HasCorrelatedEvents field in every FabricEvent gets populated."]
         pub fn skip_correlation_lookup(mut self, skip_correlation_lookup: bool) -> Self {
             self.skip_correlation_lookup = Some(skip_correlation_lookup);
             self
@@ -15832,18 +16199,22 @@ pub mod get_services_event_list {
         pub(crate) skip_correlation_lookup: Option<bool>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
         }
+        #[doc = "This is a comma separated string specifying the types of FabricEvents that should only be included in the response."]
         pub fn events_types_filter(mut self, events_types_filter: impl Into<String>) -> Self {
             self.events_types_filter = Some(events_types_filter.into());
             self
         }
+        #[doc = "This param disables the retrieval of AnalysisEvents if true is passed."]
         pub fn exclude_analysis_events(mut self, exclude_analysis_events: bool) -> Self {
             self.exclude_analysis_events = Some(exclude_analysis_events);
             self
         }
+        #[doc = "This param disables the search of CorrelatedEvents information if true is passed. otherwise the CorrelationEvents get processed and HasCorrelatedEvents field in every FabricEvent gets populated."]
         pub fn skip_correlation_lookup(mut self, skip_correlation_lookup: bool) -> Self {
             self.skip_correlation_lookup = Some(skip_correlation_lookup);
             self
@@ -15920,18 +16291,22 @@ pub mod get_partition_event_list {
         pub(crate) skip_correlation_lookup: Option<bool>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
         }
+        #[doc = "This is a comma separated string specifying the types of FabricEvents that should only be included in the response."]
         pub fn events_types_filter(mut self, events_types_filter: impl Into<String>) -> Self {
             self.events_types_filter = Some(events_types_filter.into());
             self
         }
+        #[doc = "This param disables the retrieval of AnalysisEvents if true is passed."]
         pub fn exclude_analysis_events(mut self, exclude_analysis_events: bool) -> Self {
             self.exclude_analysis_events = Some(exclude_analysis_events);
             self
         }
+        #[doc = "This param disables the search of CorrelatedEvents information if true is passed. otherwise the CorrelationEvents get processed and HasCorrelatedEvents field in every FabricEvent gets populated."]
         pub fn skip_correlation_lookup(mut self, skip_correlation_lookup: bool) -> Self {
             self.skip_correlation_lookup = Some(skip_correlation_lookup);
             self
@@ -16011,18 +16386,22 @@ pub mod get_partitions_event_list {
         pub(crate) skip_correlation_lookup: Option<bool>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
         }
+        #[doc = "This is a comma separated string specifying the types of FabricEvents that should only be included in the response."]
         pub fn events_types_filter(mut self, events_types_filter: impl Into<String>) -> Self {
             self.events_types_filter = Some(events_types_filter.into());
             self
         }
+        #[doc = "This param disables the retrieval of AnalysisEvents if true is passed."]
         pub fn exclude_analysis_events(mut self, exclude_analysis_events: bool) -> Self {
             self.exclude_analysis_events = Some(exclude_analysis_events);
             self
         }
+        #[doc = "This param disables the search of CorrelatedEvents information if true is passed. otherwise the CorrelationEvents get processed and HasCorrelatedEvents field in every FabricEvent gets populated."]
         pub fn skip_correlation_lookup(mut self, skip_correlation_lookup: bool) -> Self {
             self.skip_correlation_lookup = Some(skip_correlation_lookup);
             self
@@ -16100,18 +16479,22 @@ pub mod get_partition_replica_event_list {
         pub(crate) skip_correlation_lookup: Option<bool>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
         }
+        #[doc = "This is a comma separated string specifying the types of FabricEvents that should only be included in the response."]
         pub fn events_types_filter(mut self, events_types_filter: impl Into<String>) -> Self {
             self.events_types_filter = Some(events_types_filter.into());
             self
         }
+        #[doc = "This param disables the retrieval of AnalysisEvents if true is passed."]
         pub fn exclude_analysis_events(mut self, exclude_analysis_events: bool) -> Self {
             self.exclude_analysis_events = Some(exclude_analysis_events);
             self
         }
+        #[doc = "This param disables the search of CorrelatedEvents information if true is passed. otherwise the CorrelationEvents get processed and HasCorrelatedEvents field in every FabricEvent gets populated."]
         pub fn skip_correlation_lookup(mut self, skip_correlation_lookup: bool) -> Self {
             self.skip_correlation_lookup = Some(skip_correlation_lookup);
             self
@@ -16193,18 +16576,22 @@ pub mod get_partition_replicas_event_list {
         pub(crate) skip_correlation_lookup: Option<bool>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
         }
+        #[doc = "This is a comma separated string specifying the types of FabricEvents that should only be included in the response."]
         pub fn events_types_filter(mut self, events_types_filter: impl Into<String>) -> Self {
             self.events_types_filter = Some(events_types_filter.into());
             self
         }
+        #[doc = "This param disables the retrieval of AnalysisEvents if true is passed."]
         pub fn exclude_analysis_events(mut self, exclude_analysis_events: bool) -> Self {
             self.exclude_analysis_events = Some(exclude_analysis_events);
             self
         }
+        #[doc = "This param disables the search of CorrelatedEvents information if true is passed. otherwise the CorrelationEvents get processed and HasCorrelatedEvents field in every FabricEvent gets populated."]
         pub fn skip_correlation_lookup(mut self, skip_correlation_lookup: bool) -> Self {
             self.skip_correlation_lookup = Some(skip_correlation_lookup);
             self
@@ -16280,6 +16667,7 @@ pub mod get_correlated_event_list {
         pub(crate) timeout: Option<i64>,
     }
     impl Builder {
+        #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
             self
@@ -17908,6 +18296,7 @@ pub mod mesh_code_package {
             pub(crate) tail: Option<String>,
         }
         impl Builder {
+            #[doc = "Number of lines to show from the end of the logs. Default is 100. 'all' to show the complete logs."]
             pub fn tail(mut self, tail: impl Into<String>) -> Self {
                 self.tail = Some(tail.into());
                 self

@@ -219,6 +219,7 @@ pub mod legacy_peerings {
             pub(crate) asn: Option<i32>,
         }
         impl Builder {
+            #[doc = "The ASN number associated with a legacy peering."]
             pub fn asn(mut self, asn: i32) -> Self {
                 self.asn = Some(asn);
                 self
@@ -700,6 +701,7 @@ pub mod peering_locations {
             pub(crate) direct_peering_type: Option<String>,
         }
         impl Builder {
+            #[doc = "The type of direct peering."]
             pub fn direct_peering_type(mut self, direct_peering_type: impl Into<String>) -> Self {
                 self.direct_peering_type = Some(direct_peering_type.into());
                 self
@@ -2000,22 +2002,27 @@ pub mod received_routes {
             pub(crate) skip_token: Option<String>,
         }
         impl Builder {
+            #[doc = "The optional prefix that can be used to filter the routes."]
             pub fn prefix(mut self, prefix: impl Into<String>) -> Self {
                 self.prefix = Some(prefix.into());
                 self
             }
+            #[doc = "The optional AS path that can be used to filter the routes."]
             pub fn as_path(mut self, as_path: impl Into<String>) -> Self {
                 self.as_path = Some(as_path.into());
                 self
             }
+            #[doc = "The optional origin AS validation state that can be used to filter the routes."]
             pub fn origin_as_validation_state(mut self, origin_as_validation_state: impl Into<String>) -> Self {
                 self.origin_as_validation_state = Some(origin_as_validation_state.into());
                 self
             }
+            #[doc = "The optional RPKI validation state that can be used to filter the routes."]
             pub fn rpki_validation_state(mut self, rpki_validation_state: impl Into<String>) -> Self {
                 self.rpki_validation_state = Some(rpki_validation_state.into());
                 self
             }
+            #[doc = "The optional page continuation token that is used in the event of paginated result."]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());
                 self
@@ -2223,6 +2230,7 @@ pub mod peering_service_locations {
             pub(crate) country: Option<String>,
         }
         impl Builder {
+            #[doc = "The country of interest, in which the locations are to be present."]
             pub fn country(mut self, country: impl Into<String>) -> Self {
                 self.country = Some(country.into());
                 self
@@ -2404,6 +2412,7 @@ pub mod prefixes {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "The properties to be expanded."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -2585,6 +2594,7 @@ pub mod prefixes {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "The properties to be expanded."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self

@@ -248,14 +248,17 @@ pub mod recommendations {
             pub(crate) skip_token: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply to the recommendations."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "The number of recommendations per page if a paged version of this API is being used."]
             pub fn top(mut self, top: i64) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "The page-continuation token to use with a paged version of this API."]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());
                 self

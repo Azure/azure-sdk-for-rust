@@ -207,10 +207,12 @@ pub mod get_test_result_file {
         pub(crate) continuation_token: Option<String>,
     }
     impl Builder {
+        #[doc = "The success state criteria for the webtest result."]
         pub fn test_successful_criteria(mut self, test_successful_criteria: bool) -> Self {
             self.test_successful_criteria = Some(test_successful_criteria);
             self
         }
+        #[doc = "The continuation token."]
         pub fn continuation_token(mut self, continuation_token: impl Into<String>) -> Self {
             self.continuation_token = Some(continuation_token.into());
             self

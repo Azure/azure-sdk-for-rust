@@ -1772,14 +1772,17 @@ pub mod certificate_orders_diagnostics {
             pub(crate) time_grain: Option<String>,
         }
         impl Builder {
+            #[doc = "The start time for detector response."]
             pub fn start_time(mut self, start_time: impl Into<String>) -> Self {
                 self.start_time = Some(start_time.into());
                 self
             }
+            #[doc = "The end time for the detector response."]
             pub fn end_time(mut self, end_time: impl Into<String>) -> Self {
                 self.end_time = Some(end_time.into());
                 self
             }
+            #[doc = "The time grain for the detector response."]
             pub fn time_grain(mut self, time_grain: impl Into<String>) -> Self {
                 self.time_grain = Some(time_grain.into());
                 self
@@ -2735,6 +2738,7 @@ pub mod domains {
             pub(crate) force_hard_delete_domain: Option<bool>,
         }
         impl Builder {
+            #[doc = "Specify <code>true</code> to delete the domain immediately. The default is <code>false</code> which deletes the domain after 24 hours."]
             pub fn force_hard_delete_domain(mut self, force_hard_delete_domain: bool) -> Self {
                 self.force_hard_delete_domain = Some(force_hard_delete_domain);
                 self
@@ -4714,6 +4718,7 @@ pub mod app_service_environments {
             pub(crate) force_delete: Option<bool>,
         }
         impl Builder {
+            #[doc = "Specify <code>true</code> to force the deletion even if the App Service Environment contains resources. The default is <code>false</code>."]
             pub fn force_delete(mut self, force_delete: bool) -> Self {
                 self.force_delete = Some(force_delete);
                 self
@@ -6461,6 +6466,7 @@ pub mod app_service_environments {
             pub(crate) properties_to_include: Option<String>,
         }
         impl Builder {
+            #[doc = "Comma separated list of app properties to include."]
             pub fn properties_to_include(mut self, properties_to_include: impl Into<String>) -> Self {
                 self.properties_to_include = Some(properties_to_include.into());
                 self
@@ -6646,6 +6652,7 @@ pub mod app_service_environments {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "Return only usages/metrics specified in the filter. Filter conforms to odata syntax. Example: $filter=(name.value eq 'Metric1' or name.value eq 'Metric2') and startTime eq 2014-01-01T00:00:00Z and endTime eq 2014-12-31T23:59:59Z and timeGrain eq duration'[Hour|Minute|Day]'."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -7924,6 +7931,7 @@ pub mod app_service_plans {
             pub(crate) detailed: Option<bool>,
         }
         impl Builder {
+            #[doc = "Specify <code>true</code> to return all App Service plan properties. The default is <code>false</code>, which returns a subset of the properties.\n Retrieval of all properties may increase the API latency."]
             pub fn detailed(mut self, detailed: bool) -> Self {
                 self.detailed = Some(detailed);
                 self
@@ -8718,6 +8726,7 @@ pub mod app_service_plans {
             pub(crate) soft_restart: Option<bool>,
         }
         impl Builder {
+            #[doc = "Specify <code>true</code> to perform a soft restart, applies the configuration settings and restarts the apps if necessary. The default is <code>false</code>, which always restarts and reprovisions the apps"]
             pub fn soft_restart(mut self, soft_restart: bool) -> Self {
                 self.soft_restart = Some(soft_restart);
                 self
@@ -8779,14 +8788,17 @@ pub mod app_service_plans {
             pub(crate) top: Option<String>,
         }
         impl Builder {
+            #[doc = "Skip to a web app in the list of webapps associated with app service plan. If specified, the resulting list will contain web apps starting from (including) the skipToken. Otherwise, the resulting list contains web apps from the start of the list"]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());
                 self
             }
+            #[doc = "Supported filter: $filter=state eq running. Returns only web apps that are currently running"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "List page size. If specified, results are paged."]
             pub fn top(mut self, top: impl Into<String>) -> Self {
                 self.top = Some(top.into());
                 self
@@ -8931,6 +8943,7 @@ pub mod app_service_plans {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "Return only usages/metrics specified in the filter. Filter conforms to odata syntax. Example: $filter=(name.value eq 'Metric1' or name.value eq 'Metric2')."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -9630,6 +9643,7 @@ pub mod certificates {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "Return only information specified in the filter (using OData syntax). For example: $filter=KeyVaultId eq 'KeyVaultId'"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -10906,14 +10920,17 @@ pub mod diagnostics {
             pub(crate) time_grain: Option<String>,
         }
         impl Builder {
+            #[doc = "Start Time"]
             pub fn start_time(mut self, start_time: impl Into<String>) -> Self {
                 self.start_time = Some(start_time.into());
                 self
             }
+            #[doc = "End Time"]
             pub fn end_time(mut self, end_time: impl Into<String>) -> Self {
                 self.end_time = Some(end_time.into());
                 self
             }
+            #[doc = "Time Grain"]
             pub fn time_grain(mut self, time_grain: impl Into<String>) -> Self {
                 self.time_grain = Some(time_grain.into());
                 self
@@ -11062,14 +11079,17 @@ pub mod diagnostics {
             pub(crate) time_grain: Option<String>,
         }
         impl Builder {
+            #[doc = "Start Time"]
             pub fn start_time(mut self, start_time: impl Into<String>) -> Self {
                 self.start_time = Some(start_time.into());
                 self
             }
+            #[doc = "End Time"]
             pub fn end_time(mut self, end_time: impl Into<String>) -> Self {
                 self.end_time = Some(end_time.into());
                 self
             }
+            #[doc = "Time Grain"]
             pub fn time_grain(mut self, time_grain: impl Into<String>) -> Self {
                 self.time_grain = Some(time_grain.into());
                 self
@@ -11409,14 +11429,17 @@ pub mod diagnostics {
             pub(crate) time_grain: Option<String>,
         }
         impl Builder {
+            #[doc = "Start Time"]
             pub fn start_time(mut self, start_time: impl Into<String>) -> Self {
                 self.start_time = Some(start_time.into());
                 self
             }
+            #[doc = "End Time"]
             pub fn end_time(mut self, end_time: impl Into<String>) -> Self {
                 self.end_time = Some(end_time.into());
                 self
             }
+            #[doc = "Time Grain"]
             pub fn time_grain(mut self, time_grain: impl Into<String>) -> Self {
                 self.time_grain = Some(time_grain.into());
                 self
@@ -11626,14 +11649,17 @@ pub mod diagnostics {
             pub(crate) time_grain: Option<String>,
         }
         impl Builder {
+            #[doc = "Start Time"]
             pub fn start_time(mut self, start_time: impl Into<String>) -> Self {
                 self.start_time = Some(start_time.into());
                 self
             }
+            #[doc = "End Time"]
             pub fn end_time(mut self, end_time: impl Into<String>) -> Self {
                 self.end_time = Some(end_time.into());
                 self
             }
+            #[doc = "Time Grain"]
             pub fn time_grain(mut self, time_grain: impl Into<String>) -> Self {
                 self.time_grain = Some(time_grain.into());
                 self
@@ -11787,14 +11813,17 @@ pub mod diagnostics {
             pub(crate) time_grain: Option<String>,
         }
         impl Builder {
+            #[doc = "Start Time"]
             pub fn start_time(mut self, start_time: impl Into<String>) -> Self {
                 self.start_time = Some(start_time.into());
                 self
             }
+            #[doc = "End Time"]
             pub fn end_time(mut self, end_time: impl Into<String>) -> Self {
                 self.end_time = Some(end_time.into());
                 self
             }
+            #[doc = "Time Grain"]
             pub fn time_grain(mut self, time_grain: impl Into<String>) -> Self {
                 self.time_grain = Some(time_grain.into());
                 self
@@ -12144,14 +12173,17 @@ pub mod diagnostics {
             pub(crate) time_grain: Option<String>,
         }
         impl Builder {
+            #[doc = "Start Time"]
             pub fn start_time(mut self, start_time: impl Into<String>) -> Self {
                 self.start_time = Some(start_time.into());
                 self
             }
+            #[doc = "End Time"]
             pub fn end_time(mut self, end_time: impl Into<String>) -> Self {
                 self.end_time = Some(end_time.into());
                 self
             }
+            #[doc = "Time Grain"]
             pub fn time_grain(mut self, time_grain: impl Into<String>) -> Self {
                 self.time_grain = Some(time_grain.into());
                 self
@@ -12358,14 +12390,17 @@ pub mod diagnostics {
             pub(crate) time_grain: Option<String>,
         }
         impl Builder {
+            #[doc = "Start Time"]
             pub fn start_time(mut self, start_time: impl Into<String>) -> Self {
                 self.start_time = Some(start_time.into());
                 self
             }
+            #[doc = "End Time"]
             pub fn end_time(mut self, end_time: impl Into<String>) -> Self {
                 self.end_time = Some(end_time.into());
                 self
             }
+            #[doc = "Time Grain"]
             pub fn time_grain(mut self, time_grain: impl Into<String>) -> Self {
                 self.time_grain = Some(time_grain.into());
                 self
@@ -12781,6 +12816,7 @@ pub mod provider {
             pub(crate) stack_os_type: Option<String>,
         }
         impl Builder {
+            #[doc = "Stack OS Type"]
             pub fn stack_os_type(mut self, stack_os_type: impl Into<String>) -> Self {
                 self.stack_os_type = Some(stack_os_type.into());
                 self
@@ -12860,6 +12896,7 @@ pub mod provider {
             pub(crate) stack_os_type: Option<String>,
         }
         impl Builder {
+            #[doc = "Stack OS Type"]
             pub fn stack_os_type(mut self, stack_os_type: impl Into<String>) -> Self {
                 self.stack_os_type = Some(stack_os_type.into());
                 self
@@ -12942,6 +12979,7 @@ pub mod provider {
             pub(crate) stack_os_type: Option<String>,
         }
         impl Builder {
+            #[doc = "Stack OS Type"]
             pub fn stack_os_type(mut self, stack_os_type: impl Into<String>) -> Self {
                 self.stack_os_type = Some(stack_os_type.into());
                 self
@@ -13092,6 +13130,7 @@ pub mod provider {
             pub(crate) stack_os_type: Option<String>,
         }
         impl Builder {
+            #[doc = "Stack OS Type"]
             pub fn stack_os_type(mut self, stack_os_type: impl Into<String>) -> Self {
                 self.stack_os_type = Some(stack_os_type.into());
                 self
@@ -13570,10 +13609,12 @@ pub mod recommendations {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "Specify <code>true</code> to return only the most critical recommendations. The default is <code>false</code>, which returns all recommendations."]
             pub fn featured(mut self, featured: bool) -> Self {
                 self.featured = Some(featured);
                 self
             }
+            #[doc = "Filter is specified by using OData syntax. Example: $filter=channel eq 'Api' or channel eq 'Notification' and startTime eq 2014-01-01T00:00:00Z and endTime eq 2014-12-31T23:59:59Z and timeGrain eq duration'[PT1H|PT1M|P1D]"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -13754,10 +13795,12 @@ pub mod recommendations {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "Specify <code>false</code> to return all recommendations. The default is <code>true</code>, which returns only expired recommendations."]
             pub fn expired_only(mut self, expired_only: bool) -> Self {
                 self.expired_only = Some(expired_only);
                 self
             }
+            #[doc = "Filter is specified by using OData syntax. Example: $filter=channel eq 'Api' or channel eq 'Notification' and startTime eq 2014-01-01T00:00:00Z and endTime eq 2014-12-31T23:59:59Z and timeGrain eq duration'[PT1H|PT1M|P1D]"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -13850,10 +13893,12 @@ pub mod recommendations {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "Specify <code>true</code> to return only the most critical recommendations. The default is <code>false</code>, which returns all recommendations."]
             pub fn featured(mut self, featured: bool) -> Self {
                 self.featured = Some(featured);
                 self
             }
+            #[doc = "Return only channels specified in the filter. Filter is specified by using OData syntax. Example: $filter=channel eq 'Api' or channel eq 'Notification'"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -14049,10 +14094,12 @@ pub mod recommendations {
             pub(crate) recommendation_id: Option<String>,
         }
         impl Builder {
+            #[doc = "Specify <code>true</code> to update the last-seen timestamp of the recommendation object."]
             pub fn update_seen(mut self, update_seen: bool) -> Self {
                 self.update_seen = Some(update_seen);
                 self
             }
+            #[doc = "The GUID of the recommendation object if you query an expired one. You don't need to specify it to query an active entry."]
             pub fn recommendation_id(mut self, recommendation_id: impl Into<String>) -> Self {
                 self.recommendation_id = Some(recommendation_id.into());
                 self
@@ -14165,10 +14212,12 @@ pub mod recommendations {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "Specify <code>false</code> to return all recommendations. The default is <code>true</code>, which returns only expired recommendations."]
             pub fn expired_only(mut self, expired_only: bool) -> Self {
                 self.expired_only = Some(expired_only);
                 self
             }
+            #[doc = "Filter is specified by using OData syntax. Example: $filter=channel eq 'Api' or channel eq 'Notification' and startTime eq 2014-01-01T00:00:00Z and endTime eq 2014-12-31T23:59:59Z and timeGrain eq duration'[PT1H|PT1M|P1D]"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -14261,10 +14310,12 @@ pub mod recommendations {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "Specify <code>true</code> to return only the most critical recommendations. The default is <code>false</code>, which returns all recommendations."]
             pub fn featured(mut self, featured: bool) -> Self {
                 self.featured = Some(featured);
                 self
             }
+            #[doc = "Return only channels specified in the filter. Filter is specified by using OData syntax. Example: $filter=channel eq 'Api' or channel eq 'Notification'"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -14454,10 +14505,12 @@ pub mod recommendations {
             pub(crate) recommendation_id: Option<String>,
         }
         impl Builder {
+            #[doc = "Specify <code>true</code> to update the last-seen timestamp of the recommendation object."]
             pub fn update_seen(mut self, update_seen: bool) -> Self {
                 self.update_seen = Some(update_seen);
                 self
             }
+            #[doc = "The GUID of the recommendation object if you query an expired one. You don't need to specify it to query an active entry."]
             pub fn recommendation_id(mut self, recommendation_id: impl Into<String>) -> Self {
                 self.recommendation_id = Some(recommendation_id.into());
                 self
@@ -15581,10 +15634,12 @@ pub mod list_billing_meters {
         pub(crate) os_type: Option<String>,
     }
     impl Builder {
+        #[doc = "Azure Location of billable resource"]
         pub fn billing_location(mut self, billing_location: impl Into<String>) -> Self {
             self.billing_location = Some(billing_location.into());
             self
         }
+        #[doc = "App Service OS type meters used for"]
         pub fn os_type(mut self, os_type: impl Into<String>) -> Self {
             self.os_type = Some(os_type.into());
             self
@@ -15771,18 +15826,22 @@ pub mod list_geo_regions {
         pub(crate) linux_dynamic_workers_enabled: Option<bool>,
     }
     impl Builder {
+        #[doc = "Name of SKU used to filter the regions."]
         pub fn sku(mut self, sku: impl Into<String>) -> Self {
             self.sku = Some(sku.into());
             self
         }
+        #[doc = "Specify <code>true</code> if you want to filter to only regions that support Linux workers."]
         pub fn linux_workers_enabled(mut self, linux_workers_enabled: bool) -> Self {
             self.linux_workers_enabled = Some(linux_workers_enabled);
             self
         }
+        #[doc = "Specify <code>true</code> if you want to filter to only regions that support Xenon workers."]
         pub fn xenon_workers_enabled(mut self, xenon_workers_enabled: bool) -> Self {
             self.xenon_workers_enabled = Some(xenon_workers_enabled);
             self
         }
+        #[doc = "Specify <code>true</code> if you want to filter to only regions that support Linux Consumption Workers."]
         pub fn linux_dynamic_workers_enabled(mut self, linux_dynamic_workers_enabled: bool) -> Self {
             self.linux_dynamic_workers_enabled = Some(linux_dynamic_workers_enabled);
             self
@@ -18601,6 +18660,7 @@ pub mod static_sites {
             pub(crate) is_forced: Option<bool>,
         }
         impl Builder {
+            #[doc = "Specify <code>true</code> to force the update of the auth configuration on the function app even if an AzureStaticWebApps provider is already configured on the function app. The default is <code>false</code>."]
             pub fn is_forced(mut self, is_forced: bool) -> Self {
                 self.is_forced = Some(is_forced);
                 self
@@ -20096,6 +20156,7 @@ pub mod static_sites {
             pub(crate) is_forced: Option<bool>,
         }
         impl Builder {
+            #[doc = "Specify <code>true</code> to force the update of the auth configuration on the function app even if an AzureStaticWebApps provider is already configured on the function app. The default is <code>false</code>."]
             pub fn is_forced(mut self, is_forced: bool) -> Self {
                 self.is_forced = Some(is_forced);
                 self
@@ -29644,6 +29705,7 @@ pub mod web_apps {
             pub(crate) include_slots: Option<bool>,
         }
         impl Builder {
+            #[doc = "Specify <strong>true</strong> to include deployment slots in results. The default is false, which only gives you the production slot of all apps."]
             pub fn include_slots(mut self, include_slots: bool) -> Self {
                 self.include_slots = Some(include_slots);
                 self
@@ -29915,10 +29977,12 @@ pub mod web_apps {
             pub(crate) delete_empty_server_farm: Option<bool>,
         }
         impl Builder {
+            #[doc = "If true, web app metrics are also deleted."]
             pub fn delete_metrics(mut self, delete_metrics: bool) -> Self {
                 self.delete_metrics = Some(delete_metrics);
                 self
             }
+            #[doc = "Specify false if you want to keep empty App Service plan. By default, empty App Service plan is deleted."]
             pub fn delete_empty_server_farm(mut self, delete_empty_server_farm: bool) -> Self {
                 self.delete_empty_server_farm = Some(delete_empty_server_farm);
                 self
@@ -29983,6 +30047,7 @@ pub mod web_apps {
             pub(crate) host_name: Option<String>,
         }
         impl Builder {
+            #[doc = "Custom hostname."]
             pub fn host_name(mut self, host_name: impl Into<String>) -> Self {
                 self.host_name = Some(host_name.into());
                 self
@@ -36693,14 +36758,17 @@ pub mod web_apps {
             pub(crate) sas_url: Option<String>,
         }
         impl Builder {
+            #[doc = "The duration to keep capturing in seconds."]
             pub fn duration_in_seconds(mut self, duration_in_seconds: i32) -> Self {
                 self.duration_in_seconds = Some(duration_in_seconds);
                 self
             }
+            #[doc = "The maximum frame length in bytes (Optional)."]
             pub fn max_frame_length(mut self, max_frame_length: i32) -> Self {
                 self.max_frame_length = Some(max_frame_length);
                 self
             }
+            #[doc = "The Blob URL to store capture file."]
             pub fn sas_url(mut self, sas_url: impl Into<String>) -> Self {
                 self.sas_url = Some(sas_url.into());
                 self
@@ -36778,14 +36846,17 @@ pub mod web_apps {
             pub(crate) sas_url: Option<String>,
         }
         impl Builder {
+            #[doc = "The duration to keep capturing in seconds."]
             pub fn duration_in_seconds(mut self, duration_in_seconds: i32) -> Self {
                 self.duration_in_seconds = Some(duration_in_seconds);
                 self
             }
+            #[doc = "The maximum frame length in bytes (Optional)."]
             pub fn max_frame_length(mut self, max_frame_length: i32) -> Self {
                 self.max_frame_length = Some(max_frame_length);
                 self
             }
+            #[doc = "The Blob URL to store capture file."]
             pub fn sas_url(mut self, sas_url: impl Into<String>) -> Self {
                 self.sas_url = Some(sas_url.into());
                 self
@@ -37135,6 +37206,7 @@ pub mod web_apps {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "Return only usages/metrics specified in the filter. Filter conforms to odata syntax. Example: $filter=(startTime eq 2014-01-01T00:00:00Z and endTime eq 2014-12-31T23:59:59Z and timeGrain eq duration'[Hour|Minute|Day]'."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -38766,10 +38838,12 @@ pub mod web_apps {
             pub(crate) synchronous: Option<bool>,
         }
         impl Builder {
+            #[doc = "Specify true to apply the configuration settings and restarts the app only if necessary. By default, the API always restarts and reprovisions the app."]
             pub fn soft_restart(mut self, soft_restart: bool) -> Self {
                 self.soft_restart = Some(soft_restart);
                 self
             }
+            #[doc = "Specify true to block until the app is restarted. By default, it is set to false, and the API responds immediately (asynchronous)."]
             pub fn synchronous(mut self, synchronous: bool) -> Self {
                 self.synchronous = Some(synchronous);
                 self
@@ -39515,10 +39589,12 @@ pub mod web_apps {
             pub(crate) delete_empty_server_farm: Option<bool>,
         }
         impl Builder {
+            #[doc = "If true, web app metrics are also deleted."]
             pub fn delete_metrics(mut self, delete_metrics: bool) -> Self {
                 self.delete_metrics = Some(delete_metrics);
                 self
             }
+            #[doc = "Specify false if you want to keep empty App Service plan. By default, empty App Service plan is deleted."]
             pub fn delete_empty_server_farm(mut self, delete_empty_server_farm: bool) -> Self {
                 self.delete_empty_server_farm = Some(delete_empty_server_farm);
                 self
@@ -39585,6 +39661,7 @@ pub mod web_apps {
             pub(crate) host_name: Option<String>,
         }
         impl Builder {
+            #[doc = "Custom hostname."]
             pub fn host_name(mut self, host_name: impl Into<String>) -> Self {
                 self.host_name = Some(host_name.into());
                 self
@@ -46101,14 +46178,17 @@ pub mod web_apps {
             pub(crate) sas_url: Option<String>,
         }
         impl Builder {
+            #[doc = "The duration to keep capturing in seconds."]
             pub fn duration_in_seconds(mut self, duration_in_seconds: i32) -> Self {
                 self.duration_in_seconds = Some(duration_in_seconds);
                 self
             }
+            #[doc = "The maximum frame length in bytes (Optional)."]
             pub fn max_frame_length(mut self, max_frame_length: i32) -> Self {
                 self.max_frame_length = Some(max_frame_length);
                 self
             }
+            #[doc = "The Blob URL to store capture file."]
             pub fn sas_url(mut self, sas_url: impl Into<String>) -> Self {
                 self.sas_url = Some(sas_url.into());
                 self
@@ -46188,14 +46268,17 @@ pub mod web_apps {
             pub(crate) sas_url: Option<String>,
         }
         impl Builder {
+            #[doc = "The duration to keep capturing in seconds."]
             pub fn duration_in_seconds(mut self, duration_in_seconds: i32) -> Self {
                 self.duration_in_seconds = Some(duration_in_seconds);
                 self
             }
+            #[doc = "The maximum frame length in bytes (Optional)."]
             pub fn max_frame_length(mut self, max_frame_length: i32) -> Self {
                 self.max_frame_length = Some(max_frame_length);
                 self
             }
+            #[doc = "The Blob URL to store capture file."]
             pub fn sas_url(mut self, sas_url: impl Into<String>) -> Self {
                 self.sas_url = Some(sas_url.into());
                 self
@@ -46556,6 +46639,7 @@ pub mod web_apps {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "Return only usages/metrics specified in the filter. Filter conforms to odata syntax. Example: $filter=(startTime eq 2014-01-01T00:00:00Z and endTime eq 2014-12-31T23:59:59Z and timeGrain eq duration'[Hour|Minute|Day]'."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -48241,10 +48325,12 @@ pub mod web_apps {
             pub(crate) synchronous: Option<bool>,
         }
         impl Builder {
+            #[doc = "Specify true to apply the configuration settings and restarts the app only if necessary. By default, the API always restarts and reprovisions the app."]
             pub fn soft_restart(mut self, soft_restart: bool) -> Self {
                 self.soft_restart = Some(soft_restart);
                 self
             }
+            #[doc = "Specify true to block until the app is restarted. By default, it is set to false, and the API responds immediately (asynchronous)."]
             pub fn synchronous(mut self, synchronous: bool) -> Self {
                 self.synchronous = Some(synchronous);
                 self
@@ -49369,14 +49455,17 @@ pub mod web_apps {
             pub(crate) sas_url: Option<String>,
         }
         impl Builder {
+            #[doc = "The duration to keep capturing in seconds."]
             pub fn duration_in_seconds(mut self, duration_in_seconds: i32) -> Self {
                 self.duration_in_seconds = Some(duration_in_seconds);
                 self
             }
+            #[doc = "The maximum frame length in bytes (Optional)."]
             pub fn max_frame_length(mut self, max_frame_length: i32) -> Self {
                 self.max_frame_length = Some(max_frame_length);
                 self
             }
+            #[doc = "The Blob URL to store capture file."]
             pub fn sas_url(mut self, sas_url: impl Into<String>) -> Self {
                 self.sas_url = Some(sas_url.into());
                 self
@@ -50042,6 +50131,7 @@ pub mod web_apps {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "Return only information specified in the filter (using OData syntax). For example: $filter=(name.value eq 'Metric1' or name.value eq 'Metric2') and startTime eq 2014-01-01T00:00:00Z and endTime eq 2014-12-31T23:59:59Z and timeGrain eq duration'[Hour|Minute|Day]'."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -51308,14 +51398,17 @@ pub mod web_apps {
             pub(crate) sas_url: Option<String>,
         }
         impl Builder {
+            #[doc = "The duration to keep capturing in seconds."]
             pub fn duration_in_seconds(mut self, duration_in_seconds: i32) -> Self {
                 self.duration_in_seconds = Some(duration_in_seconds);
                 self
             }
+            #[doc = "The maximum frame length in bytes (Optional)."]
             pub fn max_frame_length(mut self, max_frame_length: i32) -> Self {
                 self.max_frame_length = Some(max_frame_length);
                 self
             }
+            #[doc = "The Blob URL to store capture file."]
             pub fn sas_url(mut self, sas_url: impl Into<String>) -> Self {
                 self.sas_url = Some(sas_url.into());
                 self
@@ -51968,6 +52061,7 @@ pub mod web_apps {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "Return only information specified in the filter (using OData syntax). For example: $filter=(name.value eq 'Metric1' or name.value eq 'Metric2') and startTime eq 2014-01-01T00:00:00Z and endTime eq 2014-12-31T23:59:59Z and timeGrain eq duration'[Hour|Minute|Day]'."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self

@@ -147,10 +147,12 @@ pub mod backup_usage_summaries_crr {
             pub(crate) skip_token: Option<String>,
         }
         impl Builder {
+            #[doc = "OData filter options."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "skipToken Filter."]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());
                 self
@@ -233,6 +235,7 @@ pub mod aad_properties {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "OData filter options."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -476,10 +479,12 @@ pub mod backup_crr_jobs {
             pub(crate) skip_token: Option<String>,
         }
         impl Builder {
+            #[doc = "OData filter options."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "skipToken Filter."]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());
                 self
@@ -1055,6 +1060,7 @@ pub mod recovery_points_crr {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "OData filter options."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -1163,10 +1169,12 @@ pub mod backup_protected_items_crr {
             pub(crate) skip_token: Option<String>,
         }
         impl Builder {
+            #[doc = "OData filter options."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "skipToken Filter."]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());
                 self

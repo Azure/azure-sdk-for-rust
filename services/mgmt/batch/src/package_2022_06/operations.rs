@@ -1322,6 +1322,7 @@ pub mod application_package {
             pub(crate) parameters: Option<models::ApplicationPackage>,
         }
         impl Builder {
+            #[doc = "The parameters for the request."]
             pub fn parameters(mut self, parameters: impl Into<models::ApplicationPackage>) -> Self {
                 self.parameters = Some(parameters.into());
                 self
@@ -1444,6 +1445,7 @@ pub mod application_package {
             pub(crate) maxresults: Option<i32>,
         }
         impl Builder {
+            #[doc = "The maximum number of items to return in the response."]
             pub fn maxresults(mut self, maxresults: i32) -> Self {
                 self.maxresults = Some(maxresults);
                 self
@@ -1704,6 +1706,7 @@ pub mod application {
             pub(crate) parameters: Option<models::Application>,
         }
         impl Builder {
+            #[doc = "The parameters for the request."]
             pub fn parameters(mut self, parameters: impl Into<models::Application>) -> Self {
                 self.parameters = Some(parameters.into());
                 self
@@ -1878,6 +1881,7 @@ pub mod application {
             pub(crate) maxresults: Option<i32>,
         }
         impl Builder {
+            #[doc = "The maximum number of items to return in the response."]
             pub fn maxresults(mut self, maxresults: i32) -> Self {
                 self.maxresults = Some(maxresults);
                 self
@@ -2087,10 +2091,12 @@ pub mod location {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "The maximum number of items to return in the response."]
             pub fn maxresults(mut self, maxresults: i32) -> Self {
                 self.maxresults = Some(maxresults);
                 self
             }
+            #[doc = "OData filter expression. Valid properties for filtering are \"familyName\"."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -2179,10 +2185,12 @@ pub mod location {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "The maximum number of items to return in the response."]
             pub fn maxresults(mut self, maxresults: i32) -> Self {
                 self.maxresults = Some(maxresults);
                 self
             }
+            #[doc = "OData filter expression. Valid properties for filtering are \"familyName\"."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -2552,14 +2560,17 @@ pub mod certificate {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "The maximum number of items to return in the response."]
             pub fn maxresults(mut self, maxresults: i32) -> Self {
                 self.maxresults = Some(maxresults);
                 self
             }
+            #[doc = "Comma separated list of properties that should be returned. e.g. \"properties/provisioningState\". Only top level properties under properties/ are valid for selection."]
             pub fn select(mut self, select: impl Into<String>) -> Self {
                 self.select = Some(select.into());
                 self
             }
+            #[doc = "OData filter expression. Valid properties for filtering are \"properties/provisioningState\", \"properties/provisioningStateTransitionTime\", \"name\"."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -2709,10 +2720,12 @@ pub mod certificate {
             pub(crate) if_none_match: Option<String>,
         }
         impl Builder {
+            #[doc = "The entity state (ETag) version of the certificate to update. A value of \"*\" can be used to apply the operation only if the certificate already exists. If omitted, this operation will always be applied."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
             }
+            #[doc = "Set to '*' to allow a new certificate to be created, but to prevent updating an existing certificate. Other values will be ignored."]
             pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
                 self.if_none_match = Some(if_none_match.into());
                 self
@@ -2780,6 +2793,7 @@ pub mod certificate {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "The entity state (ETag) version of the certificate to update. This value can be omitted or set to \"*\" to apply the operation unconditionally."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -3003,6 +3017,7 @@ pub mod private_link_resource {
             pub(crate) maxresults: Option<i32>,
         }
         impl Builder {
+            #[doc = "The maximum number of items to return in the response."]
             pub fn maxresults(mut self, maxresults: i32) -> Self {
                 self.maxresults = Some(maxresults);
                 self
@@ -3239,6 +3254,7 @@ pub mod private_endpoint_connection {
             pub(crate) maxresults: Option<i32>,
         }
         impl Builder {
+            #[doc = "The maximum number of items to return in the response."]
             pub fn maxresults(mut self, maxresults: i32) -> Self {
                 self.maxresults = Some(maxresults);
                 self
@@ -3379,6 +3395,7 @@ pub mod private_endpoint_connection {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "The state (ETag) version of the private endpoint connection to update. This value can be omitted or set to \"*\" to apply the operation unconditionally."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -3658,14 +3675,17 @@ pub mod pool {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "The maximum number of items to return in the response."]
             pub fn maxresults(mut self, maxresults: i32) -> Self {
                 self.maxresults = Some(maxresults);
                 self
             }
+            #[doc = "Comma separated list of properties that should be returned. e.g. \"properties/provisioningState\". Only top level properties under properties/ are valid for selection."]
             pub fn select(mut self, select: impl Into<String>) -> Self {
                 self.select = Some(select.into());
                 self
             }
+            #[doc = "OData filter expression. Valid properties for filtering are:\n\n name\n properties/allocationState\n properties/allocationStateTransitionTime\n properties/creationTime\n properties/provisioningState\n properties/provisioningStateTransitionTime\n properties/lastModified\n properties/vmSize\n properties/interNodeCommunication\n properties/scaleSettings/autoScale\n properties/scaleSettings/fixedScale"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -3815,10 +3835,12 @@ pub mod pool {
             pub(crate) if_none_match: Option<String>,
         }
         impl Builder {
+            #[doc = "The entity state (ETag) version of the pool to update. A value of \"*\" can be used to apply the operation only if the pool already exists. If omitted, this operation will always be applied."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
             }
+            #[doc = "Set to '*' to allow a new pool to be created, but to prevent updating an existing pool. Other values will be ignored."]
             pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
                 self.if_none_match = Some(if_none_match.into());
                 self
@@ -3886,6 +3908,7 @@ pub mod pool {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "The entity state (ETag) version of the pool to update. This value can be omitted or set to \"*\" to apply the operation unconditionally."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self

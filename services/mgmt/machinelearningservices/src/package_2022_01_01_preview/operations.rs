@@ -666,6 +666,7 @@ pub mod workspaces {
             pub(crate) skip: Option<String>,
         }
         impl Builder {
+            #[doc = "Continuation token for pagination."]
             pub fn skip(mut self, skip: impl Into<String>) -> Self {
                 self.skip = Some(skip.into());
                 self
@@ -755,6 +756,7 @@ pub mod workspaces {
             pub(crate) parameters: Option<models::DiagnoseWorkspaceParameters>,
         }
         impl Builder {
+            #[doc = "The parameter of diagnosing workspace health"]
             pub fn parameters(mut self, parameters: impl Into<models::DiagnoseWorkspaceParameters>) -> Self {
                 self.parameters = Some(parameters.into());
                 self
@@ -925,6 +927,7 @@ pub mod workspaces {
             pub(crate) skip: Option<String>,
         }
         impl Builder {
+            #[doc = "Continuation token for pagination."]
             pub fn skip(mut self, skip: impl Into<String>) -> Self {
                 self.skip = Some(skip.into());
                 self
@@ -1809,6 +1812,7 @@ pub mod compute {
             pub(crate) skip: Option<String>,
         }
         impl Builder {
+            #[doc = "Continuation token for pagination."]
             pub fn skip(mut self, skip: impl Into<String>) -> Self {
                 self.skip = Some(skip.into());
                 self
@@ -2843,10 +2847,12 @@ pub mod workspace_connections {
             pub(crate) category: Option<String>,
         }
         impl Builder {
+            #[doc = "Target of the workspace connection."]
             pub fn target(mut self, target: impl Into<String>) -> Self {
                 self.target = Some(target.into());
                 self
             }
+            #[doc = "Category of the workspace connection."]
             pub fn category(mut self, category: impl Into<String>) -> Self {
                 self.category = Some(category.into());
                 self

@@ -202,6 +202,7 @@ pub mod metadata_policy {
             pub(crate) collection_name: Option<String>,
         }
         impl Builder {
+            #[doc = "The name of an existing collection for which one policy needs to be fetched."]
             pub fn collection_name(mut self, collection_name: impl Into<String>) -> Self {
                 self.collection_name = Some(collection_name.into());
                 self
@@ -324,6 +325,7 @@ pub mod metadata_policy {
             pub(crate) body: Option<models::MetadataPolicy>,
         }
         impl Builder {
+            #[doc = "Policy to be updated."]
             pub fn body(mut self, body: impl Into<models::MetadataPolicy>) -> Self {
                 self.body = Some(body.into());
                 self

@@ -630,6 +630,7 @@ pub mod storage_accounts {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "May be used to expand the properties within account's properties. By default, data is not included when fetching properties. Currently we only support geoReplicationStats and blobRestoreStatus."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -1007,6 +1008,7 @@ pub mod storage_accounts {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "Specifies type of the key to be listed. Possible value is kerb."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -3876,14 +3878,17 @@ pub mod blob_containers {
             pub(crate) include: Option<String>,
         }
         impl Builder {
+            #[doc = "Optional. Specified maximum number of containers that can be included in the list."]
             pub fn maxpagesize(mut self, maxpagesize: impl Into<String>) -> Self {
                 self.maxpagesize = Some(maxpagesize.into());
                 self
             }
+            #[doc = "Optional. When specified, only container names starting with the filter will be listed."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Optional, used to include the properties for soft deleted blob containers."]
             pub fn include(mut self, include: impl Into<String>) -> Self {
                 self.include = Some(include.into());
                 self
@@ -4272,6 +4277,7 @@ pub mod blob_containers {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "The entity state (ETag) version of the immutability policy to update. A value of \"*\" can be used to apply the operation only if the immutability policy already exists. If omitted, this operation will always be applied."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -4329,10 +4335,12 @@ pub mod blob_containers {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "The ImmutabilityPolicy Properties that will be created or updated to a blob container."]
             pub fn parameters(mut self, parameters: impl Into<models::ImmutabilityPolicy>) -> Self {
                 self.parameters = Some(parameters.into());
                 self
             }
+            #[doc = "The entity state (ETag) version of the immutability policy to update. A value of \"*\" can be used to apply the operation only if the immutability policy already exists. If omitted, this operation will always be applied."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -4494,6 +4502,7 @@ pub mod blob_containers {
             pub(crate) parameters: Option<models::ImmutabilityPolicy>,
         }
         impl Builder {
+            #[doc = "The ImmutabilityPolicy Properties that will be extended for a blob container."]
             pub fn parameters(mut self, parameters: impl Into<models::ImmutabilityPolicy>) -> Self {
                 self.parameters = Some(parameters.into());
                 self
@@ -4552,6 +4561,7 @@ pub mod blob_containers {
             pub(crate) parameters: Option<models::LeaseContainerRequest>,
         }
         impl Builder {
+            #[doc = "Lease Container request body."]
             pub fn parameters(mut self, parameters: impl Into<models::LeaseContainerRequest>) -> Self {
                 self.parameters = Some(parameters.into());
                 self
@@ -5069,14 +5079,17 @@ pub mod file_shares {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "Optional. Specified maximum number of shares that can be included in the list."]
             pub fn maxpagesize(mut self, maxpagesize: impl Into<String>) -> Self {
                 self.maxpagesize = Some(maxpagesize.into());
                 self
             }
+            #[doc = "Optional. When specified, only share names starting with the filter will be listed."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Optional, used to expand the properties within share's properties. Valid values are: deleted, snapshots. Should be passed as a string with delimiter ','"]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -5165,10 +5178,12 @@ pub mod file_shares {
             pub(crate) x_ms_snapshot: Option<String>,
         }
         impl Builder {
+            #[doc = "Optional, used to expand the properties within share's properties. Valid values are: stats. Should be passed as a string with delimiter ','."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
             }
+            #[doc = "Optional, used to retrieve properties of a snapshot."]
             pub fn x_ms_snapshot(mut self, x_ms_snapshot: impl Into<String>) -> Self {
                 self.x_ms_snapshot = Some(x_ms_snapshot.into());
                 self
@@ -5232,6 +5247,7 @@ pub mod file_shares {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "Optional, used to expand the properties within share's properties. Valid values are: snapshots. Should be passed as a string with delimiter ','"]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -5347,10 +5363,12 @@ pub mod file_shares {
             pub(crate) include: Option<String>,
         }
         impl Builder {
+            #[doc = "Optional, used to delete a snapshot."]
             pub fn x_ms_snapshot(mut self, x_ms_snapshot: impl Into<String>) -> Self {
                 self.x_ms_snapshot = Some(x_ms_snapshot.into());
                 self
             }
+            #[doc = "Optional. Valid values are: snapshots, leased-snapshots, none. The default value is snapshots. For 'snapshots', the file share is deleted including all of its file share snapshots. If the file share contains leased-snapshots, the deletion fails. For 'leased-snapshots', the file share is deleted included all of its file share snapshots (leased/unleased). For 'none', the file share is deleted if it has no share snapshots. If the file share contains any snapshots (leased or unleased), the deletion fails."]
             pub fn include(mut self, include: impl Into<String>) -> Self {
                 self.include = Some(include.into());
                 self
@@ -5452,10 +5470,12 @@ pub mod file_shares {
             pub(crate) x_ms_snapshot: Option<String>,
         }
         impl Builder {
+            #[doc = "Lease Share request body."]
             pub fn parameters(mut self, parameters: impl Into<models::LeaseShareRequest>) -> Self {
                 self.parameters = Some(parameters.into());
                 self
             }
+            #[doc = "Optional. Specify the snapshot time to lease a snapshot."]
             pub fn x_ms_snapshot(mut self, x_ms_snapshot: impl Into<String>) -> Self {
                 self.x_ms_snapshot = Some(x_ms_snapshot.into());
                 self
@@ -6059,10 +6079,12 @@ pub mod queue {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "Optional, a maximum number of queues that should be included in a list queue response"]
             pub fn maxpagesize(mut self, maxpagesize: impl Into<String>) -> Self {
                 self.maxpagesize = Some(maxpagesize.into());
                 self
             }
+            #[doc = "Optional, When specified, only the queues with a name starting with the given filter will be listed."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self

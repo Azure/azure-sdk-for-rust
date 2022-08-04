@@ -136,6 +136,7 @@ pub mod query {
             pub(crate) timespan: Option<String>,
         }
         impl Builder {
+            #[doc = "Optional. The timespan over which to query data. This is an ISO8601 time period value.  This timespan is applied in addition to any that are specified in the query expression."]
             pub fn timespan(mut self, timespan: impl Into<String>) -> Self {
                 self.timespan = Some(timespan.into());
                 self
@@ -188,6 +189,7 @@ pub mod query {
             pub(crate) prefer: Option<String>,
         }
         impl Builder {
+            #[doc = "Optional. The prefer header to set server timeout, query statistics and visualization information."]
             pub fn prefer(mut self, prefer: impl Into<String>) -> Self {
                 self.prefer = Some(prefer.into());
                 self

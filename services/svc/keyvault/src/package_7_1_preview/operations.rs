@@ -1097,10 +1097,12 @@ pub mod get_certificates {
         pub(crate) include_pending: Option<bool>,
     }
     impl Builder {
+        #[doc = "Maximum number of results to return in a page. If not specified the service will return up to 25 results."]
         pub fn maxresults(mut self, maxresults: i32) -> Self {
             self.maxresults = Some(maxresults);
             self
         }
+        #[doc = "Specifies whether to include certificates which are not completely provisioned."]
         pub fn include_pending(mut self, include_pending: bool) -> Self {
             self.include_pending = Some(include_pending);
             self
@@ -1358,6 +1360,7 @@ pub mod get_certificate_issuers {
         pub(crate) maxresults: Option<i32>,
     }
     impl Builder {
+        #[doc = "Maximum number of results to return in a page. If not specified the service will return up to 25 results."]
         pub fn maxresults(mut self, maxresults: i32) -> Self {
             self.maxresults = Some(maxresults);
             self
@@ -1716,6 +1719,7 @@ pub mod get_certificate_versions {
         pub(crate) maxresults: Option<i32>,
     }
     impl Builder {
+        #[doc = "Maximum number of results to return in a page. If not specified the service will return up to 25 results."]
         pub fn maxresults(mut self, maxresults: i32) -> Self {
             self.maxresults = Some(maxresults);
             self
@@ -2288,10 +2292,12 @@ pub mod get_deleted_certificates {
         pub(crate) include_pending: Option<bool>,
     }
     impl Builder {
+        #[doc = "Maximum number of results to return in a page. If not specified the service will return up to 25 results."]
         pub fn maxresults(mut self, maxresults: i32) -> Self {
             self.maxresults = Some(maxresults);
             self
         }
+        #[doc = "Specifies whether to include certificates which are not completely provisioned."]
         pub fn include_pending(mut self, include_pending: bool) -> Self {
             self.include_pending = Some(include_pending);
             self
@@ -2744,6 +2750,7 @@ pub mod get_key_versions {
         pub(crate) maxresults: Option<i32>,
     }
     impl Builder {
+        #[doc = "Maximum number of results to return in a page. If not specified the service will return up to 25 results."]
         pub fn maxresults(mut self, maxresults: i32) -> Self {
             self.maxresults = Some(maxresults);
             self
@@ -2821,6 +2828,7 @@ pub mod get_keys {
         pub(crate) maxresults: Option<i32>,
     }
     impl Builder {
+        #[doc = "Maximum number of results to return in a page. If not specified the service will return up to 25 results."]
         pub fn maxresults(mut self, maxresults: i32) -> Self {
             self.maxresults = Some(maxresults);
             self
@@ -3300,6 +3308,7 @@ pub mod get_deleted_keys {
         pub(crate) maxresults: Option<i32>,
     }
     impl Builder {
+        #[doc = "Maximum number of results to return in a page. If not specified the service will return up to 25 results."]
         pub fn maxresults(mut self, maxresults: i32) -> Self {
             self.maxresults = Some(maxresults);
             self
@@ -3698,6 +3707,7 @@ pub mod get_secrets {
         pub(crate) maxresults: Option<i32>,
     }
     impl Builder {
+        #[doc = "Maximum number of results to return in a page. If not specified, the service will return up to 25 results."]
         pub fn maxresults(mut self, maxresults: i32) -> Self {
             self.maxresults = Some(maxresults);
             self
@@ -3776,6 +3786,7 @@ pub mod get_secret_versions {
         pub(crate) maxresults: Option<i32>,
     }
     impl Builder {
+        #[doc = "Maximum number of results to return in a page. If not specified, the service will return up to 25 results."]
         pub fn maxresults(mut self, maxresults: i32) -> Self {
             self.maxresults = Some(maxresults);
             self
@@ -3853,6 +3864,7 @@ pub mod get_deleted_secrets {
         pub(crate) maxresults: Option<i32>,
     }
     impl Builder {
+        #[doc = "Maximum number of results to return in a page. If not specified the service will return up to 25 results."]
         pub fn maxresults(mut self, maxresults: i32) -> Self {
             self.maxresults = Some(maxresults);
             self
@@ -4149,6 +4161,7 @@ pub mod get_storage_accounts {
         pub(crate) maxresults: Option<i32>,
     }
     impl Builder {
+        #[doc = "Maximum number of results to return in a page. If not specified the service will return up to 25 results."]
         pub fn maxresults(mut self, maxresults: i32) -> Self {
             self.maxresults = Some(maxresults);
             self
@@ -4226,6 +4239,7 @@ pub mod get_deleted_storage_accounts {
         pub(crate) maxresults: Option<i32>,
     }
     impl Builder {
+        #[doc = "Maximum number of results to return in a page. If not specified the service will return up to 25 results."]
         pub fn maxresults(mut self, maxresults: i32) -> Self {
             self.maxresults = Some(maxresults);
             self
@@ -4757,6 +4771,7 @@ pub mod get_sas_definitions {
         pub(crate) maxresults: Option<i32>,
     }
     impl Builder {
+        #[doc = "Maximum number of results to return in a page. If not specified the service will return up to 25 results."]
         pub fn maxresults(mut self, maxresults: i32) -> Self {
             self.maxresults = Some(maxresults);
             self
@@ -4836,6 +4851,7 @@ pub mod get_deleted_sas_definitions {
         pub(crate) maxresults: Option<i32>,
     }
     impl Builder {
+        #[doc = "Maximum number of results to return in a page. If not specified the service will return up to 25 results."]
         pub fn maxresults(mut self, maxresults: i32) -> Self {
             self.maxresults = Some(maxresults);
             self

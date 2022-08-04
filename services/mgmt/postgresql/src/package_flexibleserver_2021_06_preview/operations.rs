@@ -691,6 +691,7 @@ pub mod servers {
             pub(crate) parameters: Option<models::RestartParameter>,
         }
         impl Builder {
+            #[doc = "The parameters for restarting a server."]
             pub fn parameters(mut self, parameters: impl Into<models::RestartParameter>) -> Self {
                 self.parameters = Some(parameters.into());
                 self
@@ -2473,6 +2474,7 @@ pub mod recommended_actions {
             pub(crate) session_id: Option<String>,
         }
         impl Builder {
+            #[doc = "The recommendation action session identifier."]
             pub fn session_id(mut self, session_id: impl Into<String>) -> Self {
                 self.session_id = Some(session_id.into());
                 self

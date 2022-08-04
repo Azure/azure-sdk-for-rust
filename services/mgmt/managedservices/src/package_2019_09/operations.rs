@@ -457,6 +457,7 @@ pub mod registration_assignments {
             pub(crate) expand_registration_definition: Option<bool>,
         }
         impl Builder {
+            #[doc = "Tells whether to return registration definition details also along with registration assignment details."]
             pub fn expand_registration_definition(mut self, expand_registration_definition: bool) -> Self {
                 self.expand_registration_definition = Some(expand_registration_definition);
                 self
@@ -632,6 +633,7 @@ pub mod registration_assignments {
             pub(crate) expand_registration_definition: Option<bool>,
         }
         impl Builder {
+            #[doc = "Tells whether to return registration definition details also along with registration assignment details."]
             pub fn expand_registration_definition(mut self, expand_registration_definition: bool) -> Self {
                 self.expand_registration_definition = Some(expand_registration_definition);
                 self
@@ -745,6 +747,7 @@ pub mod marketplace_registration_definitions {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter query parameter. Might be used to filter marketplace registration definition by plan identifier, publisher, version etc."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -899,6 +902,7 @@ pub mod marketplace_registration_definitions_without_scope {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter query parameter. Might be used to filter marketplace registration definition by plan identifier, publisher, version etc."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self

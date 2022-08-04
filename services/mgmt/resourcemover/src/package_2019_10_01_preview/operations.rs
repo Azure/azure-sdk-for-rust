@@ -1294,6 +1294,7 @@ pub mod move_resources {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the operation. For example, you can use $filter=Properties/ProvisioningState eq 'Succeeded'."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -1596,14 +1597,17 @@ pub mod unresolved_dependencies {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "Defines the dependency level."]
             pub fn dependency_level(mut self, dependency_level: impl Into<String>) -> Self {
                 self.dependency_level = Some(dependency_level.into());
                 self
             }
+            #[doc = "OData order by query option. For example, you can use $orderby=Count desc."]
             pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
                 self.orderby = Some(orderby.into());
                 self
             }
+            #[doc = "The filter to apply on the operation. For example, $apply=filter(count eq 2)."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self

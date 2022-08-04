@@ -2179,6 +2179,7 @@ pub mod sub_account {
             pub(crate) body: Option<models::VmHostUpdateRequest>,
         }
         impl Builder {
+            #[doc = "Request body to update the collection for agent installed in the given monitor."]
             pub fn body(mut self, body: impl Into<models::VmHostUpdateRequest>) -> Self {
                 self.body = Some(body.into());
                 self
@@ -2828,6 +2829,7 @@ pub mod monitor {
             pub(crate) body: Option<models::VmHostUpdateRequest>,
         }
         impl Builder {
+            #[doc = "Request body to update the collection for agent installed in the given monitor."]
             pub fn body(mut self, body: impl Into<models::VmHostUpdateRequest>) -> Self {
                 self.body = Some(body.into());
                 self

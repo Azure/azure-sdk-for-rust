@@ -122,14 +122,17 @@ pub mod usage_aggregates {
             pub(crate) continuation_token: Option<String>,
         }
         impl Builder {
+            #[doc = "`True` returns usage data in instance-level detail, `false` causes server-side aggregation with fewer details. For example, if you have 3 website instances, by default you will get 3 line items for website consumption. If you specify showDetails = false, the data will be aggregated as a single line item for website consumption within the time period (for the given subscriptionId, meterId, usageStartTime and usageEndTime)."]
             pub fn show_details(mut self, show_details: bool) -> Self {
                 self.show_details = Some(show_details);
                 self
             }
+            #[doc = "`Daily` (default) returns the data in daily granularity, `Hourly` returns the data in hourly granularity."]
             pub fn aggregation_granularity(mut self, aggregation_granularity: impl Into<String>) -> Self {
                 self.aggregation_granularity = Some(aggregation_granularity.into());
                 self
             }
+            #[doc = "Used when a continuation token string is provided in the response body of the previous call, enabling paging through a large result set. If not present, the data is retrieved from the beginning of the day/hour (based on the granularity) passed in. "]
             pub fn continuation_token(mut self, continuation_token: impl Into<String>) -> Self {
                 self.continuation_token = Some(continuation_token.into());
                 self

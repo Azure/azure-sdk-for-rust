@@ -159,22 +159,27 @@ pub mod usage_details {
             pub(crate) metric: Option<String>,
         }
         impl Builder {
+            #[doc = "May be used to expand the properties/additionalInfo or properties/meterDetails within a list of usage details. By default, these fields are not included when listing usage details."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
             }
+            #[doc = "May be used to filter usageDetails by properties/resourceGroup, properties/resourceName, properties/resourceId, properties/chargeType, properties/reservationId or tags. The filter supports 'eq', 'lt', 'gt', 'le', 'ge', and 'and'. It does not currently support 'ne', 'or', or 'not'. Tag filter is a key value pair string where key and value is separated by a colon (:)."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "Skiptoken is only used if a previous operation returned a partial result. If a previous response contains a nextLink element, the value of the nextLink element will include a skiptoken parameter that specifies a starting point to use for subsequent calls."]
             pub fn skiptoken(mut self, skiptoken: impl Into<String>) -> Self {
                 self.skiptoken = Some(skiptoken.into());
                 self
             }
+            #[doc = "May be used to limit the number of results to the most recent N usageDetails."]
             pub fn top(mut self, top: i64) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Allows to select different type of cost/usage records."]
             pub fn metric(mut self, metric: impl Into<String>) -> Self {
                 self.metric = Some(metric.into());
                 self
@@ -273,6 +278,7 @@ pub mod usage_details {
             pub(crate) metric: Option<String>,
         }
         impl Builder {
+            #[doc = "Allows to select different type of cost/usage records."]
             pub fn metric(mut self, metric: impl Into<String>) -> Self {
                 self.metric = Some(metric.into());
                 self
@@ -353,14 +359,17 @@ pub mod marketplaces {
             pub(crate) skiptoken: Option<String>,
         }
         impl Builder {
+            #[doc = "May be used to filter marketplaces by properties/usageEnd (Utc time), properties/usageStart (Utc time), properties/resourceGroup, properties/instanceName or properties/instanceId. The filter supports 'eq', 'lt', 'gt', 'le', 'ge', and 'and'. It does not currently support 'ne', 'or', or 'not'."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "May be used to limit the number of results to the most recent N marketplaces."]
             pub fn top(mut self, top: i64) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Skiptoken is only used if a previous operation returned a partial result. If a previous response contains a nextLink element, the value of the nextLink element will include a skiptoken parameter that specifies a starting point to use for subsequent calls."]
             pub fn skiptoken(mut self, skiptoken: impl Into<String>) -> Self {
                 self.skiptoken = Some(skiptoken.into());
                 self
@@ -820,6 +829,7 @@ pub mod charges {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "May be used to filter charges by properties/usageEnd (Utc time), properties/usageStart (Utc time). The filter supports 'eq', 'lt', 'gt', 'le', 'ge', and 'and'. It does not currently support 'ne', 'or', or 'not'. Tag filter is a key value pair string where key and value is separated by a colon (:)."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -1045,6 +1055,7 @@ pub mod reservations_summaries {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "Required only for daily grain. The properties/UsageDate for start date and end date. The filter supports 'le' and  'ge'"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -1131,6 +1142,7 @@ pub mod reservations_summaries {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "Required only for daily grain. The properties/UsageDate for start date and end date. The filter supports 'le' and  'ge'"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -1420,6 +1432,7 @@ pub mod reservation_recommendations {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "May be used to filter reservationRecommendations by properties/scope and properties/lookBackPeriod."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -1542,14 +1555,17 @@ pub mod price_sheet {
             pub(crate) top: Option<i64>,
         }
         impl Builder {
+            #[doc = "May be used to expand the properties/meterDetails within a price sheet. By default, these fields are not included when returning price sheet."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
             }
+            #[doc = "Skiptoken is only used if a previous operation returned a partial result. If a previous response contains a nextLink element, the value of the nextLink element will include a skiptoken parameter that specifies a starting point to use for subsequent calls."]
             pub fn skiptoken(mut self, skiptoken: impl Into<String>) -> Self {
                 self.skiptoken = Some(skiptoken.into());
                 self
             }
+            #[doc = "May be used to limit the number of results to the top N results."]
             pub fn top(mut self, top: i64) -> Self {
                 self.top = Some(top);
                 self
@@ -1615,14 +1631,17 @@ pub mod price_sheet {
             pub(crate) top: Option<i64>,
         }
         impl Builder {
+            #[doc = "May be used to expand the properties/meterDetails within a price sheet. By default, these fields are not included when returning price sheet."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
             }
+            #[doc = "Skiptoken is only used if a previous operation returned a partial result. If a previous response contains a nextLink element, the value of the nextLink element will include a skiptoken parameter that specifies a starting point to use for subsequent calls."]
             pub fn skiptoken(mut self, skiptoken: impl Into<String>) -> Self {
                 self.skiptoken = Some(skiptoken.into());
                 self
             }
+            #[doc = "May be used to limit the number of results to the top N results."]
             pub fn top(mut self, top: i64) -> Self {
                 self.top = Some(top);
                 self
@@ -1698,6 +1717,7 @@ pub mod forecasts {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "May be used to filter forecasts by properties/usageDate (Utc time), properties/chargeType or properties/grain. The filter supports 'eq', 'lt', 'gt', 'le', 'ge', and 'and'. It does not currently support 'ne', 'or', or 'not'."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -1868,6 +1888,7 @@ pub mod aggregated_cost {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "May be used to filter aggregated cost by properties/usageStart (Utc time), properties/usageEnd (Utc time). The filter supports 'eq', 'lt', 'gt', 'le', 'ge', and 'and'. It does not currently support 'ne', 'or', or 'not'. Tag filter is a key value pair string where key and value is separated by a colon (:)."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self

@@ -167,22 +167,27 @@ pub mod digital_twin_models {
             pub(crate) max_items_per_page: Option<i64>,
         }
         impl Builder {
+            #[doc = "Identifies the request in a distributed tracing system."]
             pub fn traceparent(mut self, traceparent: impl Into<String>) -> Self {
                 self.traceparent = Some(traceparent.into());
                 self
             }
+            #[doc = "Provides vendor-specific trace identification information and is a companion to traceparent."]
             pub fn tracestate(mut self, tracestate: impl Into<String>) -> Self {
                 self.tracestate = Some(tracestate.into());
                 self
             }
+            #[doc = "The set of the models which will have their dependencies retrieved. If omitted, all models are retrieved."]
             pub fn dependencies_for(mut self, dependencies_for: Vec<String>) -> Self {
                 self.dependencies_for = dependencies_for;
                 self
             }
+            #[doc = "When true the model definition will be returned as part of the result."]
             pub fn include_model_definition(mut self, include_model_definition: bool) -> Self {
                 self.include_model_definition = Some(include_model_definition);
                 self
             }
+            #[doc = "The maximum number of items to retrieve per request. The server may choose to return less than the requested number."]
             pub fn max_items_per_page(mut self, max_items_per_page: i64) -> Self {
                 self.max_items_per_page = Some(max_items_per_page);
                 self
@@ -277,10 +282,12 @@ pub mod digital_twin_models {
             pub(crate) tracestate: Option<String>,
         }
         impl Builder {
+            #[doc = "Identifies the request in a distributed tracing system."]
             pub fn traceparent(mut self, traceparent: impl Into<String>) -> Self {
                 self.traceparent = Some(traceparent.into());
                 self
             }
+            #[doc = "Provides vendor-specific trace identification information and is a companion to traceparent."]
             pub fn tracestate(mut self, tracestate: impl Into<String>) -> Self {
                 self.tracestate = Some(tracestate.into());
                 self
@@ -339,14 +346,17 @@ pub mod digital_twin_models {
             pub(crate) include_model_definition: Option<bool>,
         }
         impl Builder {
+            #[doc = "Identifies the request in a distributed tracing system."]
             pub fn traceparent(mut self, traceparent: impl Into<String>) -> Self {
                 self.traceparent = Some(traceparent.into());
                 self
             }
+            #[doc = "Provides vendor-specific trace identification information and is a companion to traceparent."]
             pub fn tracestate(mut self, tracestate: impl Into<String>) -> Self {
                 self.tracestate = Some(tracestate.into());
                 self
             }
+            #[doc = "When true the model definition will be returned as part of the result."]
             pub fn include_model_definition(mut self, include_model_definition: bool) -> Self {
                 self.include_model_definition = Some(include_model_definition);
                 self
@@ -409,10 +419,12 @@ pub mod digital_twin_models {
             pub(crate) tracestate: Option<String>,
         }
         impl Builder {
+            #[doc = "Identifies the request in a distributed tracing system."]
             pub fn traceparent(mut self, traceparent: impl Into<String>) -> Self {
                 self.traceparent = Some(traceparent.into());
                 self
             }
+            #[doc = "Provides vendor-specific trace identification information and is a companion to traceparent."]
             pub fn tracestate(mut self, tracestate: impl Into<String>) -> Self {
                 self.tracestate = Some(tracestate.into());
                 self
@@ -466,10 +478,12 @@ pub mod digital_twin_models {
             pub(crate) tracestate: Option<String>,
         }
         impl Builder {
+            #[doc = "Identifies the request in a distributed tracing system."]
             pub fn traceparent(mut self, traceparent: impl Into<String>) -> Self {
                 self.traceparent = Some(traceparent.into());
                 self
             }
+            #[doc = "Provides vendor-specific trace identification information and is a companion to traceparent."]
             pub fn tracestate(mut self, tracestate: impl Into<String>) -> Self {
                 self.tracestate = Some(tracestate.into());
                 self
@@ -542,14 +556,17 @@ pub mod query {
             pub(crate) max_items_per_page: Option<i64>,
         }
         impl Builder {
+            #[doc = "Identifies the request in a distributed tracing system."]
             pub fn traceparent(mut self, traceparent: impl Into<String>) -> Self {
                 self.traceparent = Some(traceparent.into());
                 self
             }
+            #[doc = "Provides vendor-specific trace identification information and is a companion to traceparent."]
             pub fn tracestate(mut self, tracestate: impl Into<String>) -> Self {
                 self.tracestate = Some(tracestate.into());
                 self
             }
+            #[doc = "The maximum number of items to retrieve per request. The server may choose to return less than the requested number."]
             pub fn max_items_per_page(mut self, max_items_per_page: i64) -> Self {
                 self.max_items_per_page = Some(max_items_per_page);
                 self
@@ -852,10 +869,12 @@ pub mod digital_twins {
             pub(crate) tracestate: Option<String>,
         }
         impl Builder {
+            #[doc = "Identifies the request in a distributed tracing system."]
             pub fn traceparent(mut self, traceparent: impl Into<String>) -> Self {
                 self.traceparent = Some(traceparent.into());
                 self
             }
+            #[doc = "Provides vendor-specific trace identification information and is a companion to traceparent."]
             pub fn tracestate(mut self, tracestate: impl Into<String>) -> Self {
                 self.tracestate = Some(tracestate.into());
                 self
@@ -914,14 +933,17 @@ pub mod digital_twins {
             pub(crate) if_none_match: Option<String>,
         }
         impl Builder {
+            #[doc = "Identifies the request in a distributed tracing system."]
             pub fn traceparent(mut self, traceparent: impl Into<String>) -> Self {
                 self.traceparent = Some(traceparent.into());
                 self
             }
+            #[doc = "Provides vendor-specific trace identification information and is a companion to traceparent."]
             pub fn tracestate(mut self, tracestate: impl Into<String>) -> Self {
                 self.tracestate = Some(tracestate.into());
                 self
             }
+            #[doc = "Only perform the operation if the entity does not already exist."]
             pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
                 self.if_none_match = Some(if_none_match.into());
                 self
@@ -984,14 +1006,17 @@ pub mod digital_twins {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "Identifies the request in a distributed tracing system."]
             pub fn traceparent(mut self, traceparent: impl Into<String>) -> Self {
                 self.traceparent = Some(traceparent.into());
                 self
             }
+            #[doc = "Provides vendor-specific trace identification information and is a companion to traceparent."]
             pub fn tracestate(mut self, tracestate: impl Into<String>) -> Self {
                 self.tracestate = Some(tracestate.into());
                 self
             }
+            #[doc = "Only perform the operation if the entity's etag matches one of the etags provided or * is provided."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -1049,14 +1074,17 @@ pub mod digital_twins {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "Identifies the request in a distributed tracing system."]
             pub fn traceparent(mut self, traceparent: impl Into<String>) -> Self {
                 self.traceparent = Some(traceparent.into());
                 self
             }
+            #[doc = "Provides vendor-specific trace identification information and is a companion to traceparent."]
             pub fn tracestate(mut self, tracestate: impl Into<String>) -> Self {
                 self.tracestate = Some(tracestate.into());
                 self
             }
+            #[doc = "Only perform the operation if the entity's etag matches one of the etags provided or * is provided."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -1113,10 +1141,12 @@ pub mod digital_twins {
             pub(crate) tracestate: Option<String>,
         }
         impl Builder {
+            #[doc = "Identifies the request in a distributed tracing system."]
             pub fn traceparent(mut self, traceparent: impl Into<String>) -> Self {
                 self.traceparent = Some(traceparent.into());
                 self
             }
+            #[doc = "Provides vendor-specific trace identification information and is a companion to traceparent."]
             pub fn tracestate(mut self, tracestate: impl Into<String>) -> Self {
                 self.tracestate = Some(tracestate.into());
                 self
@@ -1181,14 +1211,17 @@ pub mod digital_twins {
             pub(crate) if_none_match: Option<String>,
         }
         impl Builder {
+            #[doc = "Identifies the request in a distributed tracing system."]
             pub fn traceparent(mut self, traceparent: impl Into<String>) -> Self {
                 self.traceparent = Some(traceparent.into());
                 self
             }
+            #[doc = "Provides vendor-specific trace identification information and is a companion to traceparent."]
             pub fn tracestate(mut self, tracestate: impl Into<String>) -> Self {
                 self.tracestate = Some(tracestate.into());
                 self
             }
+            #[doc = "Only perform the operation if the entity does not already exist."]
             pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
                 self.if_none_match = Some(if_none_match.into());
                 self
@@ -1257,14 +1290,17 @@ pub mod digital_twins {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "Identifies the request in a distributed tracing system."]
             pub fn traceparent(mut self, traceparent: impl Into<String>) -> Self {
                 self.traceparent = Some(traceparent.into());
                 self
             }
+            #[doc = "Provides vendor-specific trace identification information and is a companion to traceparent."]
             pub fn tracestate(mut self, tracestate: impl Into<String>) -> Self {
                 self.tracestate = Some(tracestate.into());
                 self
             }
+            #[doc = "Only perform the operation if the entity's etag matches one of the etags provided or * is provided."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -1328,14 +1364,17 @@ pub mod digital_twins {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "Identifies the request in a distributed tracing system."]
             pub fn traceparent(mut self, traceparent: impl Into<String>) -> Self {
                 self.traceparent = Some(traceparent.into());
                 self
             }
+            #[doc = "Provides vendor-specific trace identification information and is a companion to traceparent."]
             pub fn tracestate(mut self, tracestate: impl Into<String>) -> Self {
                 self.tracestate = Some(tracestate.into());
                 self
             }
+            #[doc = "Only perform the operation if the entity's etag matches one of the etags provided or * is provided."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -1397,14 +1436,17 @@ pub mod digital_twins {
             pub(crate) relationship_name: Option<String>,
         }
         impl Builder {
+            #[doc = "Identifies the request in a distributed tracing system."]
             pub fn traceparent(mut self, traceparent: impl Into<String>) -> Self {
                 self.traceparent = Some(traceparent.into());
                 self
             }
+            #[doc = "Provides vendor-specific trace identification information and is a companion to traceparent."]
             pub fn tracestate(mut self, tracestate: impl Into<String>) -> Self {
                 self.tracestate = Some(tracestate.into());
                 self
             }
+            #[doc = "The name of the relationship."]
             pub fn relationship_name(mut self, relationship_name: impl Into<String>) -> Self {
                 self.relationship_name = Some(relationship_name.into());
                 self
@@ -1491,10 +1533,12 @@ pub mod digital_twins {
             pub(crate) tracestate: Option<String>,
         }
         impl Builder {
+            #[doc = "Identifies the request in a distributed tracing system."]
             pub fn traceparent(mut self, traceparent: impl Into<String>) -> Self {
                 self.traceparent = Some(traceparent.into());
                 self
             }
+            #[doc = "Provides vendor-specific trace identification information and is a companion to traceparent."]
             pub fn tracestate(mut self, tracestate: impl Into<String>) -> Self {
                 self.tracestate = Some(tracestate.into());
                 self
@@ -1584,14 +1628,17 @@ pub mod digital_twins {
             pub(crate) telemetry_source_time: Option<String>,
         }
         impl Builder {
+            #[doc = "Identifies the request in a distributed tracing system."]
             pub fn traceparent(mut self, traceparent: impl Into<String>) -> Self {
                 self.traceparent = Some(traceparent.into());
                 self
             }
+            #[doc = "Provides vendor-specific trace identification information and is a companion to traceparent."]
             pub fn tracestate(mut self, tracestate: impl Into<String>) -> Self {
                 self.tracestate = Some(tracestate.into());
                 self
             }
+            #[doc = "An RFC 3339 timestamp that identifies the time the telemetry was measured."]
             pub fn telemetry_source_time(mut self, telemetry_source_time: impl Into<String>) -> Self {
                 self.telemetry_source_time = Some(telemetry_source_time.into());
                 self
@@ -1653,14 +1700,17 @@ pub mod digital_twins {
             pub(crate) telemetry_source_time: Option<String>,
         }
         impl Builder {
+            #[doc = "Identifies the request in a distributed tracing system."]
             pub fn traceparent(mut self, traceparent: impl Into<String>) -> Self {
                 self.traceparent = Some(traceparent.into());
                 self
             }
+            #[doc = "Provides vendor-specific trace identification information and is a companion to traceparent."]
             pub fn tracestate(mut self, tracestate: impl Into<String>) -> Self {
                 self.tracestate = Some(tracestate.into());
                 self
             }
+            #[doc = "An RFC 3339 timestamp that identifies the time the telemetry was measured."]
             pub fn telemetry_source_time(mut self, telemetry_source_time: impl Into<String>) -> Self {
                 self.telemetry_source_time = Some(telemetry_source_time.into());
                 self
@@ -1724,10 +1774,12 @@ pub mod digital_twins {
             pub(crate) tracestate: Option<String>,
         }
         impl Builder {
+            #[doc = "Identifies the request in a distributed tracing system."]
             pub fn traceparent(mut self, traceparent: impl Into<String>) -> Self {
                 self.traceparent = Some(traceparent.into());
                 self
             }
+            #[doc = "Provides vendor-specific trace identification information and is a companion to traceparent."]
             pub fn tracestate(mut self, tracestate: impl Into<String>) -> Self {
                 self.tracestate = Some(tracestate.into());
                 self
@@ -1792,14 +1844,17 @@ pub mod digital_twins {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "Identifies the request in a distributed tracing system."]
             pub fn traceparent(mut self, traceparent: impl Into<String>) -> Self {
                 self.traceparent = Some(traceparent.into());
                 self
             }
+            #[doc = "Provides vendor-specific trace identification information and is a companion to traceparent."]
             pub fn tracestate(mut self, tracestate: impl Into<String>) -> Self {
                 self.tracestate = Some(tracestate.into());
                 self
             }
+            #[doc = "Only perform the operation if the entity's etag matches one of the etags provided or * is provided."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -1914,14 +1969,17 @@ pub mod event_routes {
             pub(crate) max_items_per_page: Option<i64>,
         }
         impl Builder {
+            #[doc = "Identifies the request in a distributed tracing system."]
             pub fn traceparent(mut self, traceparent: impl Into<String>) -> Self {
                 self.traceparent = Some(traceparent.into());
                 self
             }
+            #[doc = "Provides vendor-specific trace identification information and is a companion to traceparent."]
             pub fn tracestate(mut self, tracestate: impl Into<String>) -> Self {
                 self.tracestate = Some(tracestate.into());
                 self
             }
+            #[doc = "The maximum number of items to retrieve per request. The server may choose to return less than the requested number."]
             pub fn max_items_per_page(mut self, max_items_per_page: i64) -> Self {
                 self.max_items_per_page = Some(max_items_per_page);
                 self
@@ -2007,10 +2065,12 @@ pub mod event_routes {
             pub(crate) tracestate: Option<String>,
         }
         impl Builder {
+            #[doc = "Identifies the request in a distributed tracing system."]
             pub fn traceparent(mut self, traceparent: impl Into<String>) -> Self {
                 self.traceparent = Some(traceparent.into());
                 self
             }
+            #[doc = "Provides vendor-specific trace identification information and is a companion to traceparent."]
             pub fn tracestate(mut self, tracestate: impl Into<String>) -> Self {
                 self.tracestate = Some(tracestate.into());
                 self
@@ -2068,10 +2128,12 @@ pub mod event_routes {
             pub(crate) tracestate: Option<String>,
         }
         impl Builder {
+            #[doc = "Identifies the request in a distributed tracing system."]
             pub fn traceparent(mut self, traceparent: impl Into<String>) -> Self {
                 self.traceparent = Some(traceparent.into());
                 self
             }
+            #[doc = "Provides vendor-specific trace identification information and is a companion to traceparent."]
             pub fn tracestate(mut self, tracestate: impl Into<String>) -> Self {
                 self.tracestate = Some(tracestate.into());
                 self
@@ -2125,10 +2187,12 @@ pub mod event_routes {
             pub(crate) tracestate: Option<String>,
         }
         impl Builder {
+            #[doc = "Identifies the request in a distributed tracing system."]
             pub fn traceparent(mut self, traceparent: impl Into<String>) -> Self {
                 self.traceparent = Some(traceparent.into());
                 self
             }
+            #[doc = "Provides vendor-specific trace identification information and is a companion to traceparent."]
             pub fn tracestate(mut self, tracestate: impl Into<String>) -> Self {
                 self.tracestate = Some(tracestate.into());
                 self

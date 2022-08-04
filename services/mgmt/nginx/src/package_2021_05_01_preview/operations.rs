@@ -246,6 +246,7 @@ pub mod certificates {
             pub(crate) body: Option<models::NginxCertificate>,
         }
         impl Builder {
+            #[doc = "The certificate"]
             pub fn body(mut self, body: impl Into<models::NginxCertificate>) -> Self {
                 self.body = Some(body.into());
                 self
@@ -671,6 +672,7 @@ pub mod configurations {
             pub(crate) body: Option<models::NginxConfiguration>,
         }
         impl Builder {
+            #[doc = "The Nginx configuration"]
             pub fn body(mut self, body: impl Into<models::NginxConfiguration>) -> Self {
                 self.body = Some(body.into());
                 self

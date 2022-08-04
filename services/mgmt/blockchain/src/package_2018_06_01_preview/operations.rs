@@ -324,6 +324,7 @@ pub mod blockchain_members {
             pub(crate) blockchain_member: Option<models::BlockchainMember>,
         }
         impl Builder {
+            #[doc = "Payload to create a blockchain member."]
             pub fn blockchain_member(mut self, blockchain_member: impl Into<models::BlockchainMember>) -> Self {
                 self.blockchain_member = Some(blockchain_member.into());
                 self
@@ -392,6 +393,7 @@ pub mod blockchain_members {
             pub(crate) blockchain_member: Option<models::BlockchainMemberUpdate>,
         }
         impl Builder {
+            #[doc = "Payload to update the blockchain member."]
             pub fn blockchain_member(mut self, blockchain_member: impl Into<models::BlockchainMemberUpdate>) -> Self {
                 self.blockchain_member = Some(blockchain_member.into());
                 self
@@ -789,6 +791,7 @@ pub mod blockchain_members {
             pub(crate) api_key: Option<models::ApiKey>,
         }
         impl Builder {
+            #[doc = "api key to be regenerate"]
             pub fn api_key(mut self, api_key: impl Into<models::ApiKey>) -> Self {
                 self.api_key = Some(api_key.into());
                 self
@@ -967,6 +970,7 @@ pub mod locations {
             pub(crate) name_availability_request: Option<models::NameAvailabilityRequest>,
         }
         impl Builder {
+            #[doc = "Name availability request payload."]
             pub fn name_availability_request(mut self, name_availability_request: impl Into<models::NameAvailabilityRequest>) -> Self {
                 self.name_availability_request = Some(name_availability_request.into());
                 self
@@ -1442,6 +1446,7 @@ pub mod transaction_nodes {
             pub(crate) transaction_node: Option<models::TransactionNode>,
         }
         impl Builder {
+            #[doc = "Payload to create the transaction node."]
             pub fn transaction_node(mut self, transaction_node: impl Into<models::TransactionNode>) -> Self {
                 self.transaction_node = Some(transaction_node.into());
                 self
@@ -1512,6 +1517,7 @@ pub mod transaction_nodes {
             pub(crate) transaction_node: Option<models::TransactionNodeUpdate>,
         }
         impl Builder {
+            #[doc = "Payload to create the transaction node."]
             pub fn transaction_node(mut self, transaction_node: impl Into<models::TransactionNodeUpdate>) -> Self {
                 self.transaction_node = Some(transaction_node.into());
                 self
@@ -1758,6 +1764,7 @@ pub mod transaction_nodes {
             pub(crate) api_key: Option<models::ApiKey>,
         }
         impl Builder {
+            #[doc = "api key to be regenerated"]
             pub fn api_key(mut self, api_key: impl Into<models::ApiKey>) -> Self {
                 self.api_key = Some(api_key.into());
                 self

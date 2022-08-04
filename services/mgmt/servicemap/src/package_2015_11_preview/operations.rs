@@ -286,22 +286,27 @@ pub mod machines {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "Specifies whether to return live resources (true) or inventory resources (false). Defaults to **true**. When retrieving live resources, the start time (`startTime`) and end time (`endTime`) of the desired interval should be included. When retrieving inventory resources, an optional timestamp (`timestamp`) parameter can be specified to return the version of each resource closest (not-after) that timestamp."]
             pub fn live(mut self, live: bool) -> Self {
                 self.live = Some(live);
                 self
             }
+            #[doc = "UTC date and time specifying the start time of an interval. When not specified the service uses DateTime.UtcNow - 10m"]
             pub fn start_time(mut self, start_time: impl Into<String>) -> Self {
                 self.start_time = Some(start_time.into());
                 self
             }
+            #[doc = "UTC date and time specifying the end time of an interval. When not specified the service uses DateTime.UtcNow"]
             pub fn end_time(mut self, end_time: impl Into<String>) -> Self {
                 self.end_time = Some(end_time.into());
                 self
             }
+            #[doc = "UTC date and time specifying a time instance relative to which to evaluate each machine resource. Only applies when `live=false`. When not specified, the service uses DateTime.UtcNow."]
             pub fn timestamp(mut self, timestamp: impl Into<String>) -> Self {
                 self.timestamp = Some(timestamp.into());
                 self
             }
+            #[doc = "Page size to use. When not specified, the default page size is 100 records."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -395,6 +400,7 @@ pub mod machines {
             pub(crate) timestamp: Option<String>,
         }
         impl Builder {
+            #[doc = "UTC date and time specifying a time instance relative to which to evaluate the machine resource. When not specified, the service uses DateTime.UtcNow."]
             pub fn timestamp(mut self, timestamp: impl Into<String>) -> Self {
                 self.timestamp = Some(timestamp.into());
                 self
@@ -451,10 +457,12 @@ pub mod machines {
             pub(crate) end_time: Option<String>,
         }
         impl Builder {
+            #[doc = "UTC date and time specifying the start time of an interval. When not specified the service uses DateTime.UtcNow - 10m"]
             pub fn start_time(mut self, start_time: impl Into<String>) -> Self {
                 self.start_time = Some(start_time.into());
                 self
             }
+            #[doc = "UTC date and time specifying the end time of an interval. When not specified the service uses DateTime.UtcNow"]
             pub fn end_time(mut self, end_time: impl Into<String>) -> Self {
                 self.end_time = Some(end_time.into());
                 self
@@ -514,10 +522,12 @@ pub mod machines {
             pub(crate) end_time: Option<String>,
         }
         impl Builder {
+            #[doc = "UTC date and time specifying the start time of an interval. When not specified the service uses DateTime.UtcNow - 10m"]
             pub fn start_time(mut self, start_time: impl Into<String>) -> Self {
                 self.start_time = Some(start_time.into());
                 self
             }
+            #[doc = "UTC date and time specifying the end time of an interval. When not specified the service uses DateTime.UtcNow"]
             pub fn end_time(mut self, end_time: impl Into<String>) -> Self {
                 self.end_time = Some(end_time.into());
                 self
@@ -605,18 +615,22 @@ pub mod machines {
             pub(crate) timestamp: Option<String>,
         }
         impl Builder {
+            #[doc = "Specifies whether to return live resources (true) or inventory resources (false). Defaults to **true**. When retrieving live resources, the start time (`startTime`) and end time (`endTime`) of the desired interval should be included. When retrieving inventory resources, an optional timestamp (`timestamp`) parameter can be specified to return the version of each resource closest (not-after) that timestamp."]
             pub fn live(mut self, live: bool) -> Self {
                 self.live = Some(live);
                 self
             }
+            #[doc = "UTC date and time specifying the start time of an interval. When not specified the service uses DateTime.UtcNow - 10m"]
             pub fn start_time(mut self, start_time: impl Into<String>) -> Self {
                 self.start_time = Some(start_time.into());
                 self
             }
+            #[doc = "UTC date and time specifying the end time of an interval. When not specified the service uses DateTime.UtcNow"]
             pub fn end_time(mut self, end_time: impl Into<String>) -> Self {
                 self.end_time = Some(end_time.into());
                 self
             }
+            #[doc = "UTC date and time specifying a time instance relative to which to evaluate all process resource. Only applies when `live=false`. When not specified, the service uses DateTime.UtcNow."]
             pub fn timestamp(mut self, timestamp: impl Into<String>) -> Self {
                 self.timestamp = Some(timestamp.into());
                 self
@@ -708,10 +722,12 @@ pub mod machines {
             pub(crate) end_time: Option<String>,
         }
         impl Builder {
+            #[doc = "UTC date and time specifying the start time of an interval. When not specified the service uses DateTime.UtcNow - 10m"]
             pub fn start_time(mut self, start_time: impl Into<String>) -> Self {
                 self.start_time = Some(start_time.into());
                 self
             }
+            #[doc = "UTC date and time specifying the end time of an interval. When not specified the service uses DateTime.UtcNow"]
             pub fn end_time(mut self, end_time: impl Into<String>) -> Self {
                 self.end_time = Some(end_time.into());
                 self
@@ -797,10 +813,12 @@ pub mod machines {
             pub(crate) end_time: Option<String>,
         }
         impl Builder {
+            #[doc = "UTC date and time specifying the start time of an interval. When not specified the service uses DateTime.UtcNow - 10m"]
             pub fn start_time(mut self, start_time: impl Into<String>) -> Self {
                 self.start_time = Some(start_time.into());
                 self
             }
+            #[doc = "UTC date and time specifying the end time of an interval. When not specified the service uses DateTime.UtcNow"]
             pub fn end_time(mut self, end_time: impl Into<String>) -> Self {
                 self.end_time = Some(end_time.into());
                 self
@@ -999,6 +1017,7 @@ pub mod processes {
             pub(crate) timestamp: Option<String>,
         }
         impl Builder {
+            #[doc = "UTC date and time specifying a time instance relative to which to evaluate a resource. When not specified, the service uses DateTime.UtcNow."]
             pub fn timestamp(mut self, timestamp: impl Into<String>) -> Self {
                 self.timestamp = Some(timestamp.into());
                 self
@@ -1056,10 +1075,12 @@ pub mod processes {
             pub(crate) end_time: Option<String>,
         }
         impl Builder {
+            #[doc = "UTC date and time specifying the start time of an interval. When not specified the service uses DateTime.UtcNow - 10m"]
             pub fn start_time(mut self, start_time: impl Into<String>) -> Self {
                 self.start_time = Some(start_time.into());
                 self
             }
+            #[doc = "UTC date and time specifying the end time of an interval. When not specified the service uses DateTime.UtcNow"]
             pub fn end_time(mut self, end_time: impl Into<String>) -> Self {
                 self.end_time = Some(end_time.into());
                 self
@@ -1120,10 +1141,12 @@ pub mod processes {
             pub(crate) end_time: Option<String>,
         }
         impl Builder {
+            #[doc = "UTC date and time specifying the start time of an interval. When not specified the service uses DateTime.UtcNow - 10m"]
             pub fn start_time(mut self, start_time: impl Into<String>) -> Self {
                 self.start_time = Some(start_time.into());
                 self
             }
+            #[doc = "UTC date and time specifying the end time of an interval. When not specified the service uses DateTime.UtcNow"]
             pub fn end_time(mut self, end_time: impl Into<String>) -> Self {
                 self.end_time = Some(end_time.into());
                 self
@@ -1210,10 +1233,12 @@ pub mod processes {
             pub(crate) end_time: Option<String>,
         }
         impl Builder {
+            #[doc = "UTC date and time specifying the start time of an interval. When not specified the service uses DateTime.UtcNow - 10m"]
             pub fn start_time(mut self, start_time: impl Into<String>) -> Self {
                 self.start_time = Some(start_time.into());
                 self
             }
+            #[doc = "UTC date and time specifying the end time of an interval. When not specified the service uses DateTime.UtcNow"]
             pub fn end_time(mut self, end_time: impl Into<String>) -> Self {
                 self.end_time = Some(end_time.into());
                 self
@@ -1414,10 +1439,12 @@ pub mod ports {
             pub(crate) end_time: Option<String>,
         }
         impl Builder {
+            #[doc = "UTC date and time specifying the start time of an interval. When not specified the service uses DateTime.UtcNow - 10m"]
             pub fn start_time(mut self, start_time: impl Into<String>) -> Self {
                 self.start_time = Some(start_time.into());
                 self
             }
+            #[doc = "UTC date and time specifying the end time of an interval. When not specified the service uses DateTime.UtcNow"]
             pub fn end_time(mut self, end_time: impl Into<String>) -> Self {
                 self.end_time = Some(end_time.into());
                 self
@@ -1478,10 +1505,12 @@ pub mod ports {
             pub(crate) end_time: Option<String>,
         }
         impl Builder {
+            #[doc = "UTC date and time specifying the start time of an interval. When not specified the service uses DateTime.UtcNow - 10m"]
             pub fn start_time(mut self, start_time: impl Into<String>) -> Self {
                 self.start_time = Some(start_time.into());
                 self
             }
+            #[doc = "UTC date and time specifying the end time of an interval. When not specified the service uses DateTime.UtcNow"]
             pub fn end_time(mut self, end_time: impl Into<String>) -> Self {
                 self.end_time = Some(end_time.into());
                 self
@@ -1542,10 +1571,12 @@ pub mod ports {
             pub(crate) end_time: Option<String>,
         }
         impl Builder {
+            #[doc = "UTC date and time specifying the start time of an interval. When not specified the service uses DateTime.UtcNow - 10m"]
             pub fn start_time(mut self, start_time: impl Into<String>) -> Self {
                 self.start_time = Some(start_time.into());
                 self
             }
+            #[doc = "UTC date and time specifying the end time of an interval. When not specified the service uses DateTime.UtcNow"]
             pub fn end_time(mut self, end_time: impl Into<String>) -> Self {
                 self.end_time = Some(end_time.into());
                 self
@@ -1632,10 +1663,12 @@ pub mod ports {
             pub(crate) end_time: Option<String>,
         }
         impl Builder {
+            #[doc = "UTC date and time specifying the start time of an interval. When not specified the service uses DateTime.UtcNow - 10m"]
             pub fn start_time(mut self, start_time: impl Into<String>) -> Self {
                 self.start_time = Some(start_time.into());
                 self
             }
+            #[doc = "UTC date and time specifying the end time of an interval. When not specified the service uses DateTime.UtcNow"]
             pub fn end_time(mut self, end_time: impl Into<String>) -> Self {
                 self.end_time = Some(end_time.into());
                 self
@@ -1800,10 +1833,12 @@ pub mod client_groups {
             pub(crate) end_time: Option<String>,
         }
         impl Builder {
+            #[doc = "UTC date and time specifying the start time of an interval. When not specified the service uses DateTime.UtcNow - 10m"]
             pub fn start_time(mut self, start_time: impl Into<String>) -> Self {
                 self.start_time = Some(start_time.into());
                 self
             }
+            #[doc = "UTC date and time specifying the end time of an interval. When not specified the service uses DateTime.UtcNow"]
             pub fn end_time(mut self, end_time: impl Into<String>) -> Self {
                 self.end_time = Some(end_time.into());
                 self
@@ -1863,10 +1898,12 @@ pub mod client_groups {
             pub(crate) end_time: Option<String>,
         }
         impl Builder {
+            #[doc = "UTC date and time specifying the start time of an interval. When not specified the service uses DateTime.UtcNow - 10m"]
             pub fn start_time(mut self, start_time: impl Into<String>) -> Self {
                 self.start_time = Some(start_time.into());
                 self
             }
+            #[doc = "UTC date and time specifying the end time of an interval. When not specified the service uses DateTime.UtcNow"]
             pub fn end_time(mut self, end_time: impl Into<String>) -> Self {
                 self.end_time = Some(end_time.into());
                 self
@@ -1927,14 +1964,17 @@ pub mod client_groups {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "UTC date and time specifying the start time of an interval. When not specified the service uses DateTime.UtcNow - 10m"]
             pub fn start_time(mut self, start_time: impl Into<String>) -> Self {
                 self.start_time = Some(start_time.into());
                 self
             }
+            #[doc = "UTC date and time specifying the end time of an interval. When not specified the service uses DateTime.UtcNow"]
             pub fn end_time(mut self, end_time: impl Into<String>) -> Self {
                 self.end_time = Some(end_time.into());
                 self
             }
+            #[doc = "Page size to use. When not specified, the default page size is 100 records."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -2125,10 +2165,12 @@ pub mod summaries {
             pub(crate) end_time: Option<String>,
         }
         impl Builder {
+            #[doc = "UTC date and time specifying the start time of an interval. When not specified the service uses DateTime.UtcNow - 10m"]
             pub fn start_time(mut self, start_time: impl Into<String>) -> Self {
                 self.start_time = Some(start_time.into());
                 self
             }
+            #[doc = "UTC date and time specifying the end time of an interval. When not specified the service uses DateTime.UtcNow"]
             pub fn end_time(mut self, end_time: impl Into<String>) -> Self {
                 self.end_time = Some(end_time.into());
                 self
@@ -2307,10 +2349,12 @@ pub mod machine_groups {
             pub(crate) end_time: Option<String>,
         }
         impl Builder {
+            #[doc = "UTC date and time specifying the start time of an interval. When not specified the service uses DateTime.UtcNow - 10m"]
             pub fn start_time(mut self, start_time: impl Into<String>) -> Self {
                 self.start_time = Some(start_time.into());
                 self
             }
+            #[doc = "UTC date and time specifying the end time of an interval. When not specified the service uses DateTime.UtcNow"]
             pub fn end_time(mut self, end_time: impl Into<String>) -> Self {
                 self.end_time = Some(end_time.into());
                 self
@@ -2444,10 +2488,12 @@ pub mod machine_groups {
             pub(crate) end_time: Option<String>,
         }
         impl Builder {
+            #[doc = "UTC date and time specifying the start time of an interval. When not specified the service uses DateTime.UtcNow - 10m"]
             pub fn start_time(mut self, start_time: impl Into<String>) -> Self {
                 self.start_time = Some(start_time.into());
                 self
             }
+            #[doc = "UTC date and time specifying the end time of an interval. When not specified the service uses DateTime.UtcNow"]
             pub fn end_time(mut self, end_time: impl Into<String>) -> Self {
                 self.end_time = Some(end_time.into());
                 self

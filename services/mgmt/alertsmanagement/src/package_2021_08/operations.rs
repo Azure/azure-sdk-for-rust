@@ -840,70 +840,87 @@ pub mod alerts {
             pub(crate) custom_time_range: Option<String>,
         }
         impl Builder {
+            #[doc = "Filter by target resource( which is full ARM ID) Default value is select all."]
             pub fn target_resource(mut self, target_resource: impl Into<String>) -> Self {
                 self.target_resource = Some(target_resource.into());
                 self
             }
+            #[doc = "Filter by target resource type. Default value is select all."]
             pub fn target_resource_type(mut self, target_resource_type: impl Into<String>) -> Self {
                 self.target_resource_type = Some(target_resource_type.into());
                 self
             }
+            #[doc = "Filter by target resource group name. Default value is select all."]
             pub fn target_resource_group(mut self, target_resource_group: impl Into<String>) -> Self {
                 self.target_resource_group = Some(target_resource_group.into());
                 self
             }
+            #[doc = "Filter by monitor service which generates the alert instance. Default value is select all."]
             pub fn monitor_service(mut self, monitor_service: impl Into<String>) -> Self {
                 self.monitor_service = Some(monitor_service.into());
                 self
             }
+            #[doc = "Filter by monitor condition which is either 'Fired' or 'Resolved'. Default value is to select all."]
             pub fn monitor_condition(mut self, monitor_condition: impl Into<String>) -> Self {
                 self.monitor_condition = Some(monitor_condition.into());
                 self
             }
+            #[doc = "Filter by severity.  Default value is select all."]
             pub fn severity(mut self, severity: impl Into<String>) -> Self {
                 self.severity = Some(severity.into());
                 self
             }
+            #[doc = "Filter by state of the alert instance. Default value is to select all."]
             pub fn alert_state(mut self, alert_state: impl Into<String>) -> Self {
                 self.alert_state = Some(alert_state.into());
                 self
             }
+            #[doc = "Filter by specific alert rule.  Default value is to select all."]
             pub fn alert_rule(mut self, alert_rule: impl Into<String>) -> Self {
                 self.alert_rule = Some(alert_rule.into());
                 self
             }
+            #[doc = "Filter the alerts list by the Smart Group Id. Default value is none."]
             pub fn smart_group_id(mut self, smart_group_id: impl Into<String>) -> Self {
                 self.smart_group_id = Some(smart_group_id.into());
                 self
             }
+            #[doc = "Include context which has contextual data specific to the monitor service. Default value is false'"]
             pub fn include_context(mut self, include_context: bool) -> Self {
                 self.include_context = Some(include_context);
                 self
             }
+            #[doc = "Include egress config which would be used for displaying the content in portal.  Default value is 'false'."]
             pub fn include_egress_config(mut self, include_egress_config: bool) -> Self {
                 self.include_egress_config = Some(include_egress_config);
                 self
             }
+            #[doc = "Determines number of alerts returned per page in response. Permissible value is between 1 to 250. When the \"includeContent\"  filter is selected, maximum value allowed is 25. Default value is 25."]
             pub fn page_count(mut self, page_count: i64) -> Self {
                 self.page_count = Some(page_count);
                 self
             }
+            #[doc = "Sort the query results by input field,  Default value is 'lastModifiedDateTime'."]
             pub fn sort_by(mut self, sort_by: impl Into<String>) -> Self {
                 self.sort_by = Some(sort_by.into());
                 self
             }
+            #[doc = "Sort the query results order in either ascending or descending.  Default value is 'desc' for time fields and 'asc' for others."]
             pub fn sort_order(mut self, sort_order: impl Into<String>) -> Self {
                 self.sort_order = Some(sort_order.into());
                 self
             }
+            #[doc = "This filter allows to selection of the fields(comma separated) which would  be part of the essential section. This would allow to project only the  required fields rather than getting entire content.  Default is to fetch all the fields in the essentials section."]
             pub fn select(mut self, select: impl Into<String>) -> Self {
                 self.select = Some(select.into());
                 self
             }
+            #[doc = "Filter by time range by below listed values. Default value is 1 day."]
             pub fn time_range(mut self, time_range: impl Into<String>) -> Self {
                 self.time_range = Some(time_range.into());
                 self
             }
+            #[doc = "Filter by custom time range in the format <start-time>/<end-time>  where time is in (ISO-8601 format)'. Permissible values is within 30 days from  query time. Either timeRange or customTimeRange could be used but not both. Default is none."]
             pub fn custom_time_range(mut self, custom_time_range: impl Into<String>) -> Self {
                 self.custom_time_range = Some(custom_time_range.into());
                 self
@@ -1094,6 +1111,7 @@ pub mod alerts {
             pub(crate) comment: Option<String>,
         }
         impl Builder {
+            #[doc = "reason of change alert state"]
             pub fn comment(mut self, comment: impl Into<String>) -> Self {
                 self.comment = Some(comment.into());
                 self
@@ -1216,46 +1234,57 @@ pub mod alerts {
             pub(crate) custom_time_range: Option<String>,
         }
         impl Builder {
+            #[doc = "Include count of the SmartGroups as part of the summary. Default value is 'false'."]
             pub fn include_smart_groups_count(mut self, include_smart_groups_count: bool) -> Self {
                 self.include_smart_groups_count = Some(include_smart_groups_count);
                 self
             }
+            #[doc = "Filter by target resource( which is full ARM ID) Default value is select all."]
             pub fn target_resource(mut self, target_resource: impl Into<String>) -> Self {
                 self.target_resource = Some(target_resource.into());
                 self
             }
+            #[doc = "Filter by target resource type. Default value is select all."]
             pub fn target_resource_type(mut self, target_resource_type: impl Into<String>) -> Self {
                 self.target_resource_type = Some(target_resource_type.into());
                 self
             }
+            #[doc = "Filter by target resource group name. Default value is select all."]
             pub fn target_resource_group(mut self, target_resource_group: impl Into<String>) -> Self {
                 self.target_resource_group = Some(target_resource_group.into());
                 self
             }
+            #[doc = "Filter by monitor service which generates the alert instance. Default value is select all."]
             pub fn monitor_service(mut self, monitor_service: impl Into<String>) -> Self {
                 self.monitor_service = Some(monitor_service.into());
                 self
             }
+            #[doc = "Filter by monitor condition which is either 'Fired' or 'Resolved'. Default value is to select all."]
             pub fn monitor_condition(mut self, monitor_condition: impl Into<String>) -> Self {
                 self.monitor_condition = Some(monitor_condition.into());
                 self
             }
+            #[doc = "Filter by severity.  Default value is select all."]
             pub fn severity(mut self, severity: impl Into<String>) -> Self {
                 self.severity = Some(severity.into());
                 self
             }
+            #[doc = "Filter by state of the alert instance. Default value is to select all."]
             pub fn alert_state(mut self, alert_state: impl Into<String>) -> Self {
                 self.alert_state = Some(alert_state.into());
                 self
             }
+            #[doc = "Filter by specific alert rule.  Default value is to select all."]
             pub fn alert_rule(mut self, alert_rule: impl Into<String>) -> Self {
                 self.alert_rule = Some(alert_rule.into());
                 self
             }
+            #[doc = "Filter by time range by below listed values. Default value is 1 day."]
             pub fn time_range(mut self, time_range: impl Into<String>) -> Self {
                 self.time_range = Some(time_range.into());
                 self
             }
+            #[doc = "Filter by custom time range in the format <start-time>/<end-time>  where time is in (ISO-8601 format)'. Permissible values is within 30 days from  query time. Either timeRange or customTimeRange could be used but not both. Default is none."]
             pub fn custom_time_range(mut self, custom_time_range: impl Into<String>) -> Self {
                 self.custom_time_range = Some(custom_time_range.into());
                 self
@@ -1432,46 +1461,57 @@ pub mod smart_groups {
             pub(crate) sort_order: Option<String>,
         }
         impl Builder {
+            #[doc = "Filter by target resource( which is full ARM ID) Default value is select all."]
             pub fn target_resource(mut self, target_resource: impl Into<String>) -> Self {
                 self.target_resource = Some(target_resource.into());
                 self
             }
+            #[doc = "Filter by target resource group name. Default value is select all."]
             pub fn target_resource_group(mut self, target_resource_group: impl Into<String>) -> Self {
                 self.target_resource_group = Some(target_resource_group.into());
                 self
             }
+            #[doc = "Filter by target resource type. Default value is select all."]
             pub fn target_resource_type(mut self, target_resource_type: impl Into<String>) -> Self {
                 self.target_resource_type = Some(target_resource_type.into());
                 self
             }
+            #[doc = "Filter by monitor service which generates the alert instance. Default value is select all."]
             pub fn monitor_service(mut self, monitor_service: impl Into<String>) -> Self {
                 self.monitor_service = Some(monitor_service.into());
                 self
             }
+            #[doc = "Filter by monitor condition which is either 'Fired' or 'Resolved'. Default value is to select all."]
             pub fn monitor_condition(mut self, monitor_condition: impl Into<String>) -> Self {
                 self.monitor_condition = Some(monitor_condition.into());
                 self
             }
+            #[doc = "Filter by severity.  Default value is select all."]
             pub fn severity(mut self, severity: impl Into<String>) -> Self {
                 self.severity = Some(severity.into());
                 self
             }
+            #[doc = "Filter by state of the smart group. Default value is to select all."]
             pub fn smart_group_state(mut self, smart_group_state: impl Into<String>) -> Self {
                 self.smart_group_state = Some(smart_group_state.into());
                 self
             }
+            #[doc = "Filter by time range by below listed values. Default value is 1 day."]
             pub fn time_range(mut self, time_range: impl Into<String>) -> Self {
                 self.time_range = Some(time_range.into());
                 self
             }
+            #[doc = "Determines number of alerts returned per page in response. Permissible value is between 1 to 250. When the \"includeContent\"  filter is selected, maximum value allowed is 25. Default value is 25."]
             pub fn page_count(mut self, page_count: i64) -> Self {
                 self.page_count = Some(page_count);
                 self
             }
+            #[doc = "Sort the query results by input field. Default value is sort by 'lastModifiedDateTime'."]
             pub fn sort_by(mut self, sort_by: impl Into<String>) -> Self {
                 self.sort_by = Some(sort_by.into());
                 self
             }
+            #[doc = "Sort the query results order in either ascending or descending.  Default value is 'desc' for time fields and 'asc' for others."]
             pub fn sort_order(mut self, sort_order: impl Into<String>) -> Self {
                 self.sort_order = Some(sort_order.into());
                 self

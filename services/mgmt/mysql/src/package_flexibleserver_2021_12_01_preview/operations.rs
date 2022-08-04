@@ -657,18 +657,22 @@ pub mod configurations {
             pub(crate) page_size: Option<i32>,
         }
         impl Builder {
+            #[doc = "The tags of the server configuration."]
             pub fn tags(mut self, tags: impl Into<String>) -> Self {
                 self.tags = Some(tags.into());
                 self
             }
+            #[doc = "The keyword of the server configuration."]
             pub fn keyword(mut self, keyword: impl Into<String>) -> Self {
                 self.keyword = Some(keyword.into());
                 self
             }
+            #[doc = "The page of the server configuration."]
             pub fn page(mut self, page: i32) -> Self {
                 self.page = Some(page);
                 self
             }
+            #[doc = "The pageSize of the server configuration."]
             pub fn page_size(mut self, page_size: i32) -> Self {
                 self.page_size = Some(page_size);
                 self

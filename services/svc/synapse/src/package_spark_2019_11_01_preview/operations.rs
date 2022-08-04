@@ -141,14 +141,17 @@ pub mod spark_batch {
             pub(crate) detailed: Option<bool>,
         }
         impl Builder {
+            #[doc = "Optional param specifying which index the list should begin from."]
             pub fn from(mut self, from: i32) -> Self {
                 self.from = Some(from);
                 self
             }
+            #[doc = "Optional param specifying the size of the returned list.\r\n            By default it is 20 and that is the maximum."]
             pub fn size(mut self, size: i32) -> Self {
                 self.size = Some(size);
                 self
             }
+            #[doc = "Optional query param specifying whether detailed response is returned beyond plain livy."]
             pub fn detailed(mut self, detailed: bool) -> Self {
                 self.detailed = Some(detailed);
                 self
@@ -204,6 +207,7 @@ pub mod spark_batch {
             pub(crate) detailed: Option<bool>,
         }
         impl Builder {
+            #[doc = "Optional query param specifying whether detailed response is returned beyond plain livy."]
             pub fn detailed(mut self, detailed: bool) -> Self {
                 self.detailed = Some(detailed);
                 self
@@ -254,6 +258,7 @@ pub mod spark_batch {
             pub(crate) detailed: Option<bool>,
         }
         impl Builder {
+            #[doc = "Optional query param specifying whether detailed response is returned beyond plain livy."]
             pub fn detailed(mut self, detailed: bool) -> Self {
                 self.detailed = Some(detailed);
                 self
@@ -448,14 +453,17 @@ pub mod spark_session {
             pub(crate) detailed: Option<bool>,
         }
         impl Builder {
+            #[doc = "Optional param specifying which index the list should begin from."]
             pub fn from(mut self, from: i32) -> Self {
                 self.from = Some(from);
                 self
             }
+            #[doc = "Optional param specifying the size of the returned list.\r\n            By default it is 20 and that is the maximum."]
             pub fn size(mut self, size: i32) -> Self {
                 self.size = Some(size);
                 self
             }
+            #[doc = "Optional query param specifying whether detailed response is returned beyond plain livy."]
             pub fn detailed(mut self, detailed: bool) -> Self {
                 self.detailed = Some(detailed);
                 self
@@ -511,6 +519,7 @@ pub mod spark_session {
             pub(crate) detailed: Option<bool>,
         }
         impl Builder {
+            #[doc = "Optional query param specifying whether detailed response is returned beyond plain livy."]
             pub fn detailed(mut self, detailed: bool) -> Self {
                 self.detailed = Some(detailed);
                 self
@@ -561,6 +570,7 @@ pub mod spark_session {
             pub(crate) detailed: Option<bool>,
         }
         impl Builder {
+            #[doc = "Optional query param specifying whether detailed response is returned beyond plain livy."]
             pub fn detailed(mut self, detailed: bool) -> Self {
                 self.detailed = Some(detailed);
                 self

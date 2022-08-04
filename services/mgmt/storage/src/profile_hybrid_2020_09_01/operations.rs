@@ -562,6 +562,7 @@ pub mod storage_accounts {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "May be used to expand the properties within account's properties. By default, data is not included when fetching properties. Currently we only support geoReplicationStats and blobRestoreStatus."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -914,6 +915,7 @@ pub mod storage_accounts {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "Specifies type of the key to be listed. Possible value is kerb."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self

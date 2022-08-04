@@ -138,6 +138,7 @@ pub mod subscriptions {
             pub(crate) include_extended_locations: Option<bool>,
         }
         impl Builder {
+            #[doc = "Whether to include extended locations."]
             pub fn include_extended_locations(mut self, include_extended_locations: bool) -> Self {
                 self.include_extended_locations = Some(include_extended_locations);
                 self
@@ -449,6 +450,7 @@ pub mod check_resource_name {
         pub(crate) resource_name_definition: Option<models::ResourceName>,
     }
     impl Builder {
+        #[doc = "Resource object with values for resource name and resource type"]
         pub fn resource_name_definition(mut self, resource_name_definition: impl Into<models::ResourceName>) -> Self {
             self.resource_name_definition = Some(resource_name_definition.into());
             self

@@ -1068,6 +1068,7 @@ pub mod monitors {
             pub(crate) request: Option<models::SsoDetailsRequest>,
         }
         impl Builder {
+            #[doc = "The details of the get sso details request."]
             pub fn request(mut self, request: impl Into<models::SsoDetailsRequest>) -> Self {
                 self.request = Some(request.into());
                 self

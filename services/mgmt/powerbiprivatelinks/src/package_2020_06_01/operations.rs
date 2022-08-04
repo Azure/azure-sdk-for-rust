@@ -548,6 +548,7 @@ pub mod power_bi_resources {
             pub(crate) x_ms_client_tenant_id: Option<String>,
         }
         impl Builder {
+            #[doc = "The client tenant id in header. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
             pub fn x_ms_client_tenant_id(mut self, x_ms_client_tenant_id: impl Into<String>) -> Self {
                 self.x_ms_client_tenant_id = Some(x_ms_client_tenant_id.into());
                 self
@@ -619,6 +620,7 @@ pub mod power_bi_resources {
             pub(crate) x_ms_client_tenant_id: Option<String>,
         }
         impl Builder {
+            #[doc = "The client tenant id in header. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
             pub fn x_ms_client_tenant_id(mut self, x_ms_client_tenant_id: impl Into<String>) -> Self {
                 self.x_ms_client_tenant_id = Some(x_ms_client_tenant_id.into());
                 self

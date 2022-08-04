@@ -610,6 +610,7 @@ pub mod factories {
             pub(crate) if_none_match: Option<String>,
         }
         impl Builder {
+            #[doc = "ETag of the factory entity. Should only be specified for get. If the ETag matches the existing entity tag, or if * was provided, then no content will be returned."]
             pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
                 self.if_none_match = Some(if_none_match.into());
                 self
@@ -671,6 +672,7 @@ pub mod factories {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "ETag of the factory entity. Should only be specified for update, for which it should match existing entity or can be * for unconditional update."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -1649,6 +1651,7 @@ pub mod integration_runtimes {
             pub(crate) if_none_match: Option<String>,
         }
         impl Builder {
+            #[doc = "ETag of the integration runtime entity. Should only be specified for get. If the ETag matches the existing entity tag, or if * was provided, then no content will be returned."]
             pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
                 self.if_none_match = Some(if_none_match.into());
                 self
@@ -1712,6 +1715,7 @@ pub mod integration_runtimes {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "ETag of the integration runtime entity. Should only be specified for update, for which it should match existing entity or can be * for unconditional update."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -2566,6 +2570,7 @@ pub mod integration_runtime_object_metadata {
             pub(crate) get_metadata_request: Option<models::GetSsisObjectMetadataRequest>,
         }
         impl Builder {
+            #[doc = "The parameters for getting a SSIS object metadata."]
             pub fn get_metadata_request(mut self, get_metadata_request: impl Into<models::GetSsisObjectMetadataRequest>) -> Self {
                 self.get_metadata_request = Some(get_metadata_request.into());
                 self
@@ -3102,6 +3107,7 @@ pub mod linked_services {
             pub(crate) if_none_match: Option<String>,
         }
         impl Builder {
+            #[doc = "ETag of the linked service entity. Should only be specified for get. If the ETag matches the existing entity tag, or if * was provided, then no content will be returned."]
             pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
                 self.if_none_match = Some(if_none_match.into());
                 self
@@ -3165,6 +3171,7 @@ pub mod linked_services {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "ETag of the linkedService entity.  Should only be specified for update, for which it should match existing entity or can be * for unconditional update."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -3457,6 +3464,7 @@ pub mod datasets {
             pub(crate) if_none_match: Option<String>,
         }
         impl Builder {
+            #[doc = "ETag of the dataset entity. Should only be specified for get. If the ETag matches the existing entity tag, or if * was provided, then no content will be returned."]
             pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
                 self.if_none_match = Some(if_none_match.into());
                 self
@@ -3520,6 +3528,7 @@ pub mod datasets {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "ETag of the dataset entity.  Should only be specified for update, for which it should match existing entity or can be * for unconditional update."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -3839,6 +3848,7 @@ pub mod pipelines {
             pub(crate) if_none_match: Option<String>,
         }
         impl Builder {
+            #[doc = "ETag of the pipeline entity. Should only be specified for get. If the ETag matches the existing entity tag, or if * was provided, then no content will be returned."]
             pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
                 self.if_none_match = Some(if_none_match.into());
                 self
@@ -3902,6 +3912,7 @@ pub mod pipelines {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "ETag of the pipeline entity.  Should only be specified for update, for which it should match existing entity or can be * for unconditional update."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -4024,22 +4035,27 @@ pub mod pipelines {
             pub(crate) parameters: Option<models::ParameterValueSpecification>,
         }
         impl Builder {
+            #[doc = "The pipeline run identifier. If run ID is specified the parameters of the specified run will be used to create a new run."]
             pub fn reference_pipeline_run_id(mut self, reference_pipeline_run_id: impl Into<String>) -> Self {
                 self.reference_pipeline_run_id = Some(reference_pipeline_run_id.into());
                 self
             }
+            #[doc = "Recovery mode flag. If recovery mode is set to true, the specified referenced pipeline run and the new run will be grouped under the same groupId."]
             pub fn is_recovery(mut self, is_recovery: bool) -> Self {
                 self.is_recovery = Some(is_recovery);
                 self
             }
+            #[doc = "In recovery mode, the rerun will start from this activity. If not specified, all activities will run."]
             pub fn start_activity_name(mut self, start_activity_name: impl Into<String>) -> Self {
                 self.start_activity_name = Some(start_activity_name.into());
                 self
             }
+            #[doc = "In recovery mode, if set to true, the rerun will start from failed activities. The property will be used only if startActivityName is not specified."]
             pub fn start_from_failure(mut self, start_from_failure: bool) -> Self {
                 self.start_from_failure = Some(start_from_failure);
                 self
             }
+            #[doc = "Parameters of the pipeline run. These parameters will be used only if the runId is not specified."]
             pub fn parameters(mut self, parameters: impl Into<models::ParameterValueSpecification>) -> Self {
                 self.parameters = Some(parameters.into());
                 self
@@ -4303,6 +4319,7 @@ pub mod pipeline_runs {
             pub(crate) is_recursive: Option<bool>,
         }
         impl Builder {
+            #[doc = "If true, cancel all the Child pipelines that are triggered by the current pipeline."]
             pub fn is_recursive(mut self, is_recursive: bool) -> Self {
                 self.is_recursive = Some(is_recursive);
                 self
@@ -4804,6 +4821,7 @@ pub mod triggers {
             pub(crate) if_none_match: Option<String>,
         }
         impl Builder {
+            #[doc = "ETag of the trigger entity. Should only be specified for get. If the ETag matches the existing entity tag, or if * was provided, then no content will be returned."]
             pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
                 self.if_none_match = Some(if_none_match.into());
                 self
@@ -4867,6 +4885,7 @@ pub mod triggers {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "ETag of the trigger entity.  Should only be specified for update, for which it should match existing entity or can be * for unconditional update."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -5563,6 +5582,7 @@ pub mod data_flows {
             pub(crate) if_none_match: Option<String>,
         }
         impl Builder {
+            #[doc = "ETag of the data flow entity. Should only be specified for get. If the ETag matches the existing entity tag, or if * was provided, then no content will be returned."]
             pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
                 self.if_none_match = Some(if_none_match.into());
                 self
@@ -5626,6 +5646,7 @@ pub mod data_flows {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "ETag of the data flow entity. Should only be specified for update, for which it should match existing entity or can be * for unconditional update."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -6384,6 +6405,7 @@ pub mod managed_virtual_networks {
             pub(crate) if_none_match: Option<String>,
         }
         impl Builder {
+            #[doc = "ETag of the managed Virtual Network entity. Should only be specified for get. If the ETag matches the existing entity tag, or if * was provided, then no content will be returned."]
             pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
                 self.if_none_match = Some(if_none_match.into());
                 self
@@ -6447,6 +6469,7 @@ pub mod managed_virtual_networks {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "ETag of the managed Virtual Network entity. Should only be specified for update, for which it should match existing entity or can be * for unconditional update."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -6692,6 +6715,7 @@ pub mod managed_private_endpoints {
             pub(crate) if_none_match: Option<String>,
         }
         impl Builder {
+            #[doc = "ETag of the managed private endpoint entity. Should only be specified for get. If the ETag matches the existing entity tag, or if * was provided, then no content will be returned."]
             pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
                 self.if_none_match = Some(if_none_match.into());
                 self
@@ -6749,6 +6773,7 @@ pub mod managed_private_endpoints {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "ETag of the managed private endpoint entity. Should only be specified for update, for which it should match existing entity or can be * for unconditional update."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -7033,6 +7058,7 @@ pub mod private_endpoint_connection {
             pub(crate) if_none_match: Option<String>,
         }
         impl Builder {
+            #[doc = "ETag of the private endpoint connection entity. Should only be specified for get. If the ETag matches the existing entity tag, or if * was provided, then no content will be returned."]
             pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
                 self.if_none_match = Some(if_none_match.into());
                 self
@@ -7089,6 +7115,7 @@ pub mod private_endpoint_connection {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "ETag of the private endpoint connection entity.  Should only be specified for update, for which it should match existing entity or can be * for unconditional update."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self

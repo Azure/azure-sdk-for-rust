@@ -1292,10 +1292,12 @@ pub mod containers {
             pub(crate) timestamps: Option<bool>,
         }
         impl Builder {
+            #[doc = "The number of lines to show from the tail of the container instance log. If not provided, all available logs are shown up to 4mb."]
             pub fn tail(mut self, tail: i32) -> Self {
                 self.tail = Some(tail);
                 self
             }
+            #[doc = "If true, adds a timestamp at the beginning of every line of log output. If not provided, defaults to false."]
             pub fn timestamps(mut self, timestamps: bool) -> Self {
                 self.timestamps = Some(timestamps);
                 self

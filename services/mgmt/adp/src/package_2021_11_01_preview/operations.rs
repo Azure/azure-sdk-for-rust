@@ -559,6 +559,7 @@ pub mod accounts {
             pub(crate) parameters: Option<models::Account>,
         }
         impl Builder {
+            #[doc = "The parameters to provide for the ADP account"]
             pub fn parameters(mut self, parameters: impl Into<models::Account>) -> Self {
                 self.parameters = Some(parameters.into());
                 self
@@ -631,6 +632,7 @@ pub mod accounts {
             pub(crate) parameters: Option<models::AccountPatch>,
         }
         impl Builder {
+            #[doc = "The parameters to provide for the current ADP account"]
             pub fn parameters(mut self, parameters: impl Into<models::AccountPatch>) -> Self {
                 self.parameters = Some(parameters.into());
                 self
@@ -1000,6 +1002,7 @@ pub mod data_pools {
             pub(crate) parameters: Option<models::DataPool>,
         }
         impl Builder {
+            #[doc = "The parameters to provide for the Data Pool"]
             pub fn parameters(mut self, parameters: impl Into<models::DataPool>) -> Self {
                 self.parameters = Some(parameters.into());
                 self
@@ -1067,6 +1070,7 @@ pub mod data_pools {
             pub(crate) parameters: Option<models::DataPoolPatch>,
         }
         impl Builder {
+            #[doc = "The parameters to provide for the Data Pool"]
             pub fn parameters(mut self, parameters: impl Into<models::DataPoolPatch>) -> Self {
                 self.parameters = Some(parameters.into());
                 self

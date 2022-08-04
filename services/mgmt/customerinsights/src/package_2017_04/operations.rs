@@ -828,6 +828,7 @@ pub mod profiles {
             pub(crate) locale_code: Option<String>,
         }
         impl Builder {
+            #[doc = "Locale of profile to retrieve, default is en-us."]
             pub fn locale_code(mut self, locale_code: impl Into<String>) -> Self {
                 self.locale_code = Some(locale_code.into());
                 self
@@ -957,6 +958,7 @@ pub mod profiles {
             pub(crate) locale_code: Option<String>,
         }
         impl Builder {
+            #[doc = "Locale of profile to retrieve, default is en-us."]
             pub fn locale_code(mut self, locale_code: impl Into<String>) -> Self {
                 self.locale_code = Some(locale_code.into());
                 self
@@ -1017,6 +1019,7 @@ pub mod profiles {
             pub(crate) locale_code: Option<String>,
         }
         impl Builder {
+            #[doc = "Locale of profile to retrieve, default is en-us."]
             pub fn locale_code(mut self, locale_code: impl Into<String>) -> Self {
                 self.locale_code = Some(locale_code.into());
                 self
@@ -1248,6 +1251,7 @@ pub mod interactions {
             pub(crate) locale_code: Option<String>,
         }
         impl Builder {
+            #[doc = "Locale of interaction to retrieve, default is en-us."]
             pub fn locale_code(mut self, locale_code: impl Into<String>) -> Self {
                 self.locale_code = Some(locale_code.into());
                 self
@@ -1371,6 +1375,7 @@ pub mod interactions {
             pub(crate) locale_code: Option<String>,
         }
         impl Builder {
+            #[doc = "Locale of interaction to retrieve, default is en-us."]
             pub fn locale_code(mut self, locale_code: impl Into<String>) -> Self {
                 self.locale_code = Some(locale_code.into());
                 self

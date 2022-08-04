@@ -219,6 +219,7 @@ pub mod machines {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "The expand expression to apply on the operation."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -946,6 +947,7 @@ pub mod machine_extensions {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "The expand expression to apply on the operation."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self

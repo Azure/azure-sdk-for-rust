@@ -495,6 +495,7 @@ pub mod storage_sync_services {
             pub(crate) parameters: Option<models::StorageSyncServiceUpdateParameters>,
         }
         impl Builder {
+            #[doc = "Storage Sync Service resource."]
             pub fn parameters(mut self, parameters: impl Into<models::StorageSyncServiceUpdateParameters>) -> Self {
                 self.parameters = Some(parameters.into());
                 self
@@ -2446,6 +2447,7 @@ pub mod server_endpoints {
             pub(crate) parameters: Option<models::ServerEndpointUpdateParameters>,
         }
         impl Builder {
+            #[doc = "Any of the properties applicable in PUT request."]
             pub fn parameters(mut self, parameters: impl Into<models::ServerEndpointUpdateParameters>) -> Self {
                 self.parameters = Some(parameters.into());
                 self

@@ -1297,6 +1297,7 @@ pub mod applications {
             pub(crate) parameters: Option<models::ApplicationPatchable>,
         }
         impl Builder {
+            #[doc = "Parameters supplied to update an existing managed application."]
             pub fn parameters(mut self, parameters: impl Into<models::ApplicationPatchable>) -> Self {
                 self.parameters = Some(parameters.into());
                 self
@@ -1672,6 +1673,7 @@ pub mod applications {
             pub(crate) parameters: Option<models::ApplicationPatchable>,
         }
         impl Builder {
+            #[doc = "Parameters supplied to update an existing managed application."]
             pub fn parameters(mut self, parameters: impl Into<models::ApplicationPatchable>) -> Self {
                 self.parameters = Some(parameters.into());
                 self

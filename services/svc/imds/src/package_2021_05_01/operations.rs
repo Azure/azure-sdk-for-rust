@@ -171,6 +171,7 @@ pub mod attested {
             pub(crate) nonce: Option<String>,
         }
         impl Builder {
+            #[doc = "This is a string of up to 32 random alphanumeric characters."]
             pub fn nonce(mut self, nonce: impl Into<String>) -> Self {
                 self.nonce = Some(nonce.into());
                 self
@@ -262,22 +263,27 @@ pub mod identity {
             pub(crate) bypass_cache: Option<String>,
         }
         impl Builder {
+            #[doc = "This identifies, by Azure AD client id, a specific explicit identity to use when authenticating to Azure AD. Mutually exclusive with object_id and msi_res_id."]
             pub fn client_id(mut self, client_id: impl Into<String>) -> Self {
                 self.client_id = Some(client_id.into());
                 self
             }
+            #[doc = "This identifies, by Azure AD object id, a specific explicit identity to use when authenticating to Azure AD. Mutually exclusive with client_id and msi_res_id."]
             pub fn object_id(mut self, object_id: impl Into<String>) -> Self {
                 self.object_id = Some(object_id.into());
                 self
             }
+            #[doc = "This identifies, by urlencoded ARM resource id, a specific explicit identity to use when authenticating to Azure AD. Mutually exclusive with client_id and object_id."]
             pub fn msi_res_id(mut self, msi_res_id: impl Into<String>) -> Self {
                 self.msi_res_id = Some(msi_res_id.into());
                 self
             }
+            #[doc = "This indicates the authority to request AAD tokens from. Defaults to the known authority of the identity to be used."]
             pub fn authority(mut self, authority: impl Into<String>) -> Self {
                 self.authority = Some(authority.into());
                 self
             }
+            #[doc = "If provided, the value must be 'true'. This indicates to the server that the token must be retrieved from Azure AD and cannot be retrieved from an internal cache."]
             pub fn bypass_cache(mut self, bypass_cache: impl Into<String>) -> Self {
                 self.bypass_cache = Some(bypass_cache.into());
                 self

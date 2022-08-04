@@ -376,6 +376,7 @@ pub mod jobs {
             pub(crate) skip_token: Option<String>,
         }
         impl Builder {
+            #[doc = "$skipToken is supported on Get list of jobs, which provides the next page in the list of jobs."]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());
                 self
@@ -509,6 +510,7 @@ pub mod jobs {
             pub(crate) skip_token: Option<String>,
         }
         impl Builder {
+            #[doc = "$skipToken is supported on Get list of jobs, which provides the next page in the list of jobs."]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());
                 self
@@ -594,6 +596,7 @@ pub mod jobs {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "$expand is supported on details parameter for job, which provides details on the job stages."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -719,6 +722,7 @@ pub mod jobs {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "Defines the If-Match condition. The patch will be performed only if the ETag of the job on the server matches this value."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self

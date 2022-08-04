@@ -381,10 +381,12 @@ pub mod get_repositories {
         pub(crate) n: Option<String>,
     }
     impl Builder {
+        #[doc = "query parameter for the last item in previous query"]
         pub fn last(mut self, last: impl Into<String>) -> Self {
             self.last = Some(last.into());
             self
         }
+        #[doc = "query parameter for max number of items"]
         pub fn n(mut self, n: impl Into<String>) -> Self {
             self.n = Some(n.into());
             self
@@ -437,10 +439,12 @@ pub mod get_acr_repositories {
         pub(crate) n: Option<String>,
     }
     impl Builder {
+        #[doc = "query parameter for the last item in previous query"]
         pub fn last(mut self, last: impl Into<String>) -> Self {
             self.last = Some(last.into());
             self
         }
+        #[doc = "query parameter for max number of items"]
         pub fn n(mut self, n: impl Into<String>) -> Self {
             self.n = Some(n.into());
             self
@@ -534,6 +538,7 @@ pub mod update_acr_repository_attributes {
         pub(crate) value: Option<models::ChangeableAttributes>,
     }
     impl Builder {
+        #[doc = "Repository attribute value"]
         pub fn value(mut self, value: impl Into<models::ChangeableAttributes>) -> Self {
             self.value = Some(value.into());
             self
@@ -625,18 +630,22 @@ pub mod get_acr_tags {
         pub(crate) digest: Option<String>,
     }
     impl Builder {
+        #[doc = "query parameter for the last item in previous query"]
         pub fn last(mut self, last: impl Into<String>) -> Self {
             self.last = Some(last.into());
             self
         }
+        #[doc = "query parameter for max number of items"]
         pub fn n(mut self, n: impl Into<String>) -> Self {
             self.n = Some(n.into());
             self
         }
+        #[doc = "orderby query parameter"]
         pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
             self.orderby = Some(orderby.into());
             self
         }
+        #[doc = "filter by digest"]
         pub fn digest(mut self, digest: impl Into<String>) -> Self {
             self.digest = Some(digest.into());
             self
@@ -743,6 +752,7 @@ pub mod update_acr_tag_attributes {
         pub(crate) value: Option<models::ChangeableAttributes>,
     }
     impl Builder {
+        #[doc = "Changeable attribute value"]
         pub fn value(mut self, value: impl Into<models::ChangeableAttributes>) -> Self {
             self.value = Some(value.into());
             self
@@ -840,14 +850,17 @@ pub mod get_acr_manifests {
         pub(crate) orderby: Option<String>,
     }
     impl Builder {
+        #[doc = "query parameter for the last item in previous query"]
         pub fn last(mut self, last: impl Into<String>) -> Self {
             self.last = Some(last.into());
             self
         }
+        #[doc = "query parameter for max number of items"]
         pub fn n(mut self, n: impl Into<String>) -> Self {
             self.n = Some(n.into());
             self
         }
+        #[doc = "orderby query parameter"]
         pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
             self.orderby = Some(orderby.into());
             self
@@ -951,6 +964,7 @@ pub mod update_acr_manifest_attributes {
         pub(crate) value: Option<models::ChangeableAttributes>,
     }
     impl Builder {
+        #[doc = "Changeable attribute value"]
         pub fn value(mut self, value: impl Into<models::ChangeableAttributes>) -> Self {
             self.value = Some(value.into());
             self

@@ -160,14 +160,17 @@ pub mod database_instances {
             pub(crate) accept_language: Option<String>,
         }
         impl Builder {
+            #[doc = "The continuation token."]
             pub fn continuation_token(mut self, continuation_token: impl Into<String>) -> Self {
                 self.continuation_token = Some(continuation_token.into());
                 self
             }
+            #[doc = "The number of items to be returned in a single page. This value is honored only if it is less than the 100."]
             pub fn page_size(mut self, page_size: i64) -> Self {
                 self.page_size = Some(page_size);
                 self
             }
+            #[doc = "Standard request header. Used by service to respond to client in appropriate language."]
             pub fn accept_language(mut self, accept_language: impl Into<String>) -> Self {
                 self.accept_language = Some(accept_language.into());
                 self
@@ -235,6 +238,7 @@ pub mod database_instances {
             pub(crate) accept_language: Option<String>,
         }
         impl Builder {
+            #[doc = "Standard request header. Used by service to respond to client in appropriate language."]
             pub fn accept_language(mut self, accept_language: impl Into<String>) -> Self {
                 self.accept_language = Some(accept_language.into());
                 self
@@ -349,14 +353,17 @@ pub mod databases {
             pub(crate) accept_language: Option<String>,
         }
         impl Builder {
+            #[doc = "The continuation token."]
             pub fn continuation_token(mut self, continuation_token: impl Into<String>) -> Self {
                 self.continuation_token = Some(continuation_token.into());
                 self
             }
+            #[doc = "The number of items to be returned in a single page. This value is honored only if it is less than the 100."]
             pub fn page_size(mut self, page_size: i64) -> Self {
                 self.page_size = Some(page_size);
                 self
             }
+            #[doc = "Standard request header. Used by service to respond to client in appropriate language."]
             pub fn accept_language(mut self, accept_language: impl Into<String>) -> Self {
                 self.accept_language = Some(accept_language.into());
                 self
@@ -424,6 +431,7 @@ pub mod databases {
             pub(crate) accept_language: Option<String>,
         }
         impl Builder {
+            #[doc = "Standard request header. Used by service to respond to client in appropriate language."]
             pub fn accept_language(mut self, accept_language: impl Into<String>) -> Self {
                 self.accept_language = Some(accept_language.into());
                 self
@@ -560,14 +568,17 @@ pub mod events {
             pub(crate) accept_language: Option<String>,
         }
         impl Builder {
+            #[doc = "The continuation token."]
             pub fn continuation_token(mut self, continuation_token: impl Into<String>) -> Self {
                 self.continuation_token = Some(continuation_token.into());
                 self
             }
+            #[doc = "The number of items to be returned in a single page. This value is honored only if it is less than the 100."]
             pub fn page_size(mut self, page_size: i64) -> Self {
                 self.page_size = Some(page_size);
                 self
             }
+            #[doc = "Standard request header. Used by service to respond to client in appropriate language."]
             pub fn accept_language(mut self, accept_language: impl Into<String>) -> Self {
                 self.accept_language = Some(accept_language.into());
                 self
@@ -788,10 +799,12 @@ pub mod machines {
             pub(crate) page_size: Option<i64>,
         }
         impl Builder {
+            #[doc = "The continuation token."]
             pub fn continuation_token(mut self, continuation_token: impl Into<String>) -> Self {
                 self.continuation_token = Some(continuation_token.into());
                 self
             }
+            #[doc = "The number of items to be returned in a single page. This value is honored only if it is less than the 100."]
             pub fn page_size(mut self, page_size: i64) -> Self {
                 self.page_size = Some(page_size);
                 self
@@ -1104,6 +1117,7 @@ pub mod migrate_projects {
             pub(crate) accept_language: Option<String>,
         }
         impl Builder {
+            #[doc = "Standard request header. Used by service to respond to client in appropriate language."]
             pub fn accept_language(mut self, accept_language: impl Into<String>) -> Self {
                 self.accept_language = Some(accept_language.into());
                 self
@@ -1171,6 +1185,7 @@ pub mod migrate_projects {
             pub(crate) accept_language: Option<String>,
         }
         impl Builder {
+            #[doc = "Standard request header. Used by service to respond to client in appropriate language."]
             pub fn accept_language(mut self, accept_language: impl Into<String>) -> Self {
                 self.accept_language = Some(accept_language.into());
                 self
@@ -1232,6 +1247,7 @@ pub mod migrate_projects {
             pub(crate) accept_language: Option<String>,
         }
         impl Builder {
+            #[doc = "Standard request header. Used by service to respond to client in appropriate language."]
             pub fn accept_language(mut self, accept_language: impl Into<String>) -> Self {
                 self.accept_language = Some(accept_language.into());
                 self
@@ -1289,6 +1305,7 @@ pub mod migrate_projects {
             pub(crate) accept_language: Option<String>,
         }
         impl Builder {
+            #[doc = "Standard request header. Used by service to respond to client in appropriate language."]
             pub fn accept_language(mut self, accept_language: impl Into<String>) -> Self {
                 self.accept_language = Some(accept_language.into());
                 self
@@ -1746,6 +1763,7 @@ pub mod solutions {
             pub(crate) accept_language: Option<String>,
         }
         impl Builder {
+            #[doc = "Standard request header. Used by service to respond to client in appropriate language."]
             pub fn accept_language(mut self, accept_language: impl Into<String>) -> Self {
                 self.accept_language = Some(accept_language.into());
                 self

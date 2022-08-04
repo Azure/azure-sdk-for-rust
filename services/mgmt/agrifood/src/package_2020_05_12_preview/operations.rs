@@ -438,18 +438,22 @@ pub mod extensions {
             pub(crate) skip_token: Option<String>,
         }
         impl Builder {
+            #[doc = "Installed extension ids."]
             pub fn extension_ids(mut self, extension_ids: Vec<String>) -> Self {
                 self.extension_ids = extension_ids;
                 self
             }
+            #[doc = "Installed extension categories."]
             pub fn extension_categories(mut self, extension_categories: Vec<String>) -> Self {
                 self.extension_categories = extension_categories;
                 self
             }
+            #[doc = "Maximum number of items needed (inclusive).\r\nMinimum = 10, Maximum = 1000, Default value = 50."]
             pub fn max_page_size(mut self, max_page_size: i32) -> Self {
                 self.max_page_size = Some(max_page_size);
                 self
             }
+            #[doc = "Skip token for getting next set of results."]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());
                 self
@@ -577,22 +581,27 @@ pub mod farm_beats_extensions {
             pub(crate) max_page_size: Option<i32>,
         }
         impl Builder {
+            #[doc = "FarmBeatsExtension ids."]
             pub fn farm_beats_extension_ids(mut self, farm_beats_extension_ids: Vec<String>) -> Self {
                 self.farm_beats_extension_ids = farm_beats_extension_ids;
                 self
             }
+            #[doc = "FarmBeats extension names."]
             pub fn farm_beats_extension_names(mut self, farm_beats_extension_names: Vec<String>) -> Self {
                 self.farm_beats_extension_names = farm_beats_extension_names;
                 self
             }
+            #[doc = "Extension categories."]
             pub fn extension_categories(mut self, extension_categories: Vec<String>) -> Self {
                 self.extension_categories = extension_categories;
                 self
             }
+            #[doc = "Publisher ids."]
             pub fn publisher_ids(mut self, publisher_ids: Vec<String>) -> Self {
                 self.publisher_ids = publisher_ids;
                 self
             }
+            #[doc = "Maximum number of items needed (inclusive).\r\nMinimum = 10, Maximum = 1000, Default value = 50."]
             pub fn max_page_size(mut self, max_page_size: i32) -> Self {
                 self.max_page_size = Some(max_page_size);
                 self
@@ -1081,10 +1090,12 @@ pub mod farm_beats_models {
             pub(crate) skip_token: Option<String>,
         }
         impl Builder {
+            #[doc = "Maximum number of items needed (inclusive).\r\nMinimum = 10, Maximum = 1000, Default value = 50."]
             pub fn max_page_size(mut self, max_page_size: i32) -> Self {
                 self.max_page_size = Some(max_page_size);
                 self
             }
+            #[doc = "Skip token for getting next set of results."]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());
                 self
@@ -1174,10 +1185,12 @@ pub mod farm_beats_models {
             pub(crate) skip_token: Option<String>,
         }
         impl Builder {
+            #[doc = "Maximum number of items needed (inclusive).\r\nMinimum = 10, Maximum = 1000, Default value = 50."]
             pub fn max_page_size(mut self, max_page_size: i32) -> Self {
                 self.max_page_size = Some(max_page_size);
                 self
             }
+            #[doc = "Continuation token for getting next set of results."]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());
                 self

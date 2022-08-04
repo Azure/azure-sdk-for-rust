@@ -380,6 +380,7 @@ pub mod resource_pools {
             pub(crate) body: Option<models::ResourcePool>,
         }
         impl Builder {
+            #[doc = "Request payload."]
             pub fn body(mut self, body: impl Into<models::ResourcePool>) -> Self {
                 self.body = Some(body.into());
                 self
@@ -448,6 +449,7 @@ pub mod resource_pools {
             pub(crate) body: Option<models::ResourcePatch>,
         }
         impl Builder {
+            #[doc = "Resource properties to update."]
             pub fn body(mut self, body: impl Into<models::ResourcePatch>) -> Self {
                 self.body = Some(body.into());
                 self
@@ -515,6 +517,7 @@ pub mod resource_pools {
             pub(crate) force: Option<bool>,
         }
         impl Builder {
+            #[doc = "Whether force delete was specified."]
             pub fn force(mut self, force: bool) -> Self {
                 self.force = Some(force);
                 self
@@ -897,6 +900,7 @@ pub mod clusters {
             pub(crate) body: Option<models::Cluster>,
         }
         impl Builder {
+            #[doc = "Request payload."]
             pub fn body(mut self, body: impl Into<models::Cluster>) -> Self {
                 self.body = Some(body.into());
                 self
@@ -965,6 +969,7 @@ pub mod clusters {
             pub(crate) body: Option<models::ResourcePatch>,
         }
         impl Builder {
+            #[doc = "Resource properties to update."]
             pub fn body(mut self, body: impl Into<models::ResourcePatch>) -> Self {
                 self.body = Some(body.into());
                 self
@@ -1032,6 +1037,7 @@ pub mod clusters {
             pub(crate) force: Option<bool>,
         }
         impl Builder {
+            #[doc = "Whether force delete was specified."]
             pub fn force(mut self, force: bool) -> Self {
                 self.force = Some(force);
                 self
@@ -1414,6 +1420,7 @@ pub mod hosts {
             pub(crate) body: Option<models::Host>,
         }
         impl Builder {
+            #[doc = "Request payload."]
             pub fn body(mut self, body: impl Into<models::Host>) -> Self {
                 self.body = Some(body.into());
                 self
@@ -1482,6 +1489,7 @@ pub mod hosts {
             pub(crate) body: Option<models::ResourcePatch>,
         }
         impl Builder {
+            #[doc = "Resource properties to update."]
             pub fn body(mut self, body: impl Into<models::ResourcePatch>) -> Self {
                 self.body = Some(body.into());
                 self
@@ -1549,6 +1557,7 @@ pub mod hosts {
             pub(crate) force: Option<bool>,
         }
         impl Builder {
+            #[doc = "Whether force delete was specified."]
             pub fn force(mut self, force: bool) -> Self {
                 self.force = Some(force);
                 self
@@ -1931,6 +1940,7 @@ pub mod datastores {
             pub(crate) body: Option<models::Datastore>,
         }
         impl Builder {
+            #[doc = "Request payload."]
             pub fn body(mut self, body: impl Into<models::Datastore>) -> Self {
                 self.body = Some(body.into());
                 self
@@ -1999,6 +2009,7 @@ pub mod datastores {
             pub(crate) body: Option<models::ResourcePatch>,
         }
         impl Builder {
+            #[doc = "Resource properties to update."]
             pub fn body(mut self, body: impl Into<models::ResourcePatch>) -> Self {
                 self.body = Some(body.into());
                 self
@@ -2066,6 +2077,7 @@ pub mod datastores {
             pub(crate) force: Option<bool>,
         }
         impl Builder {
+            #[doc = "Whether force delete was specified."]
             pub fn force(mut self, force: bool) -> Self {
                 self.force = Some(force);
                 self
@@ -2448,6 +2460,7 @@ pub mod v_centers {
             pub(crate) body: Option<models::VCenter>,
         }
         impl Builder {
+            #[doc = "Request payload."]
             pub fn body(mut self, body: impl Into<models::VCenter>) -> Self {
                 self.body = Some(body.into());
                 self
@@ -2516,6 +2529,7 @@ pub mod v_centers {
             pub(crate) body: Option<models::ResourcePatch>,
         }
         impl Builder {
+            #[doc = "Resource properties to update."]
             pub fn body(mut self, body: impl Into<models::ResourcePatch>) -> Self {
                 self.body = Some(body.into());
                 self
@@ -2583,6 +2597,7 @@ pub mod v_centers {
             pub(crate) force: Option<bool>,
         }
         impl Builder {
+            #[doc = "Whether force delete was specified."]
             pub fn force(mut self, force: bool) -> Self {
                 self.force = Some(force);
                 self
@@ -3026,6 +3041,7 @@ pub mod virtual_machines {
             pub(crate) body: Option<models::VirtualMachine>,
         }
         impl Builder {
+            #[doc = "Request payload."]
             pub fn body(mut self, body: impl Into<models::VirtualMachine>) -> Self {
                 self.body = Some(body.into());
                 self
@@ -3099,6 +3115,7 @@ pub mod virtual_machines {
             pub(crate) body: Option<models::VirtualMachineUpdate>,
         }
         impl Builder {
+            #[doc = "Resource properties to update."]
             pub fn body(mut self, body: impl Into<models::VirtualMachineUpdate>) -> Self {
                 self.body = Some(body.into());
                 self
@@ -3173,6 +3190,7 @@ pub mod virtual_machines {
             pub(crate) force: Option<bool>,
         }
         impl Builder {
+            #[doc = "Whether force delete was specified."]
             pub fn force(mut self, force: bool) -> Self {
                 self.force = Some(force);
                 self
@@ -3236,6 +3254,7 @@ pub mod virtual_machines {
             pub(crate) body: Option<models::StopVirtualMachineOptions>,
         }
         impl Builder {
+            #[doc = "Virtualmachine stop action payload."]
             pub fn body(mut self, body: impl Into<models::StopVirtualMachineOptions>) -> Self {
                 self.body = Some(body.into());
                 self
@@ -3729,6 +3748,7 @@ pub mod virtual_machine_templates {
             pub(crate) body: Option<models::VirtualMachineTemplate>,
         }
         impl Builder {
+            #[doc = "Request payload."]
             pub fn body(mut self, body: impl Into<models::VirtualMachineTemplate>) -> Self {
                 self.body = Some(body.into());
                 self
@@ -3797,6 +3817,7 @@ pub mod virtual_machine_templates {
             pub(crate) body: Option<models::ResourcePatch>,
         }
         impl Builder {
+            #[doc = "Resource properties to update."]
             pub fn body(mut self, body: impl Into<models::ResourcePatch>) -> Self {
                 self.body = Some(body.into());
                 self
@@ -3864,6 +3885,7 @@ pub mod virtual_machine_templates {
             pub(crate) force: Option<bool>,
         }
         impl Builder {
+            #[doc = "Whether force delete was specified."]
             pub fn force(mut self, force: bool) -> Self {
                 self.force = Some(force);
                 self
@@ -4246,6 +4268,7 @@ pub mod virtual_networks {
             pub(crate) body: Option<models::VirtualNetwork>,
         }
         impl Builder {
+            #[doc = "Request payload."]
             pub fn body(mut self, body: impl Into<models::VirtualNetwork>) -> Self {
                 self.body = Some(body.into());
                 self
@@ -4314,6 +4337,7 @@ pub mod virtual_networks {
             pub(crate) body: Option<models::ResourcePatch>,
         }
         impl Builder {
+            #[doc = "Resource properties to update."]
             pub fn body(mut self, body: impl Into<models::ResourcePatch>) -> Self {
                 self.body = Some(body.into());
                 self
@@ -4381,6 +4405,7 @@ pub mod virtual_networks {
             pub(crate) force: Option<bool>,
         }
         impl Builder {
+            #[doc = "Whether force delete was specified."]
             pub fn force(mut self, force: bool) -> Self {
                 self.force = Some(force);
                 self
@@ -4734,6 +4759,7 @@ pub mod inventory_items {
             pub(crate) body: Option<models::InventoryItem>,
         }
         impl Builder {
+            #[doc = "Request payload."]
             pub fn body(mut self, body: impl Into<models::InventoryItem>) -> Self {
                 self.body = Some(body.into());
                 self
@@ -5060,6 +5086,7 @@ pub mod hybrid_identity_metadata {
             pub(crate) body: Option<models::HybridIdentityMetadata>,
         }
         impl Builder {
+            #[doc = "Request payload."]
             pub fn body(mut self, body: impl Into<models::HybridIdentityMetadata>) -> Self {
                 self.body = Some(body.into());
                 self
@@ -5572,6 +5599,7 @@ pub mod machine_extensions {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "The expand expression to apply on the operation."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -5800,6 +5828,7 @@ pub mod guest_agents {
             pub(crate) body: Option<models::GuestAgent>,
         }
         impl Builder {
+            #[doc = "Request payload."]
             pub fn body(mut self, body: impl Into<models::GuestAgent>) -> Self {
                 self.body = Some(body.into());
                 self

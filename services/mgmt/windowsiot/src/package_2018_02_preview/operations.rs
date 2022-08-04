@@ -359,6 +359,7 @@ pub mod services {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "ETag of the Windows IoT Device Service. Do not specify for creating a new Windows IoT Device Service. Required to update an existing Windows IoT Device Service."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -421,6 +422,7 @@ pub mod services {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "ETag of the Windows IoT Device Service. Do not specify for creating a brand new Windows IoT Device Service. Required to update an existing Windows IoT Device Service."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self

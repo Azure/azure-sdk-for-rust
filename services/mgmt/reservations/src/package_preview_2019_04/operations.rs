@@ -473,6 +473,7 @@ pub mod reservation {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "Supported value of this query is renewProperties"]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -786,6 +787,7 @@ pub mod get_catalog {
         pub(crate) location: Option<String>,
     }
     impl Builder {
+        #[doc = "Filters the skus based on the location specified in this parameter. This can be an azure region or global"]
         pub fn location(mut self, location: impl Into<String>) -> Self {
             self.location = Some(location.into());
             self
@@ -1058,6 +1060,7 @@ pub mod reservation_order {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "May be used to expand the planInformation."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self

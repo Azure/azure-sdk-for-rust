@@ -214,6 +214,7 @@ pub mod individual_enrollment {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "The ETag of the enrollment record."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -267,6 +268,7 @@ pub mod individual_enrollment {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "The ETag of the enrollment record."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -316,10 +318,12 @@ pub mod individual_enrollment {
             pub(crate) x_ms_continuation: Option<String>,
         }
         impl Builder {
+            #[doc = "Page size"]
             pub fn x_ms_max_item_count(mut self, x_ms_max_item_count: i32) -> Self {
                 self.x_ms_max_item_count = Some(x_ms_max_item_count);
                 self
             }
+            #[doc = "Continuation token"]
             pub fn x_ms_continuation(mut self, x_ms_continuation: impl Into<String>) -> Self {
                 self.x_ms_continuation = Some(x_ms_continuation.into());
                 self
@@ -588,6 +592,7 @@ pub mod enrollment_group {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "The ETag of the enrollment record."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -641,6 +646,7 @@ pub mod enrollment_group {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "The ETag of the enrollment group record."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -690,10 +696,12 @@ pub mod enrollment_group {
             pub(crate) x_ms_continuation: Option<String>,
         }
         impl Builder {
+            #[doc = "Page size"]
             pub fn x_ms_max_item_count(mut self, x_ms_max_item_count: i32) -> Self {
                 self.x_ms_max_item_count = Some(x_ms_max_item_count);
                 self
             }
+            #[doc = "Continuation token"]
             pub fn x_ms_continuation(mut self, x_ms_continuation: impl Into<String>) -> Self {
                 self.x_ms_continuation = Some(x_ms_continuation.into());
                 self
@@ -927,6 +935,7 @@ pub mod device_registration_state {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "The ETag of the registration status record."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -976,10 +985,12 @@ pub mod device_registration_state {
             pub(crate) x_ms_continuation: Option<String>,
         }
         impl Builder {
+            #[doc = "pageSize"]
             pub fn x_ms_max_item_count(mut self, x_ms_max_item_count: i32) -> Self {
                 self.x_ms_max_item_count = Some(x_ms_max_item_count);
                 self
             }
+            #[doc = "continuation token"]
             pub fn x_ms_continuation(mut self, x_ms_continuation: impl Into<String>) -> Self {
                 self.x_ms_continuation = Some(x_ms_continuation.into());
                 self

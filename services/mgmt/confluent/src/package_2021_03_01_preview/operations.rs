@@ -197,6 +197,7 @@ pub mod marketplace_agreements {
             pub(crate) body: Option<models::ConfluentAgreementResource>,
         }
         impl Builder {
+            #[doc = "Confluent Marketplace Agreement resource"]
             pub fn body(mut self, body: impl Into<models::ConfluentAgreementResource>) -> Self {
                 self.body = Some(body.into());
                 self
@@ -653,6 +654,7 @@ pub mod organization {
             pub(crate) body: Option<models::OrganizationResource>,
         }
         impl Builder {
+            #[doc = "Organization resource model"]
             pub fn body(mut self, body: impl Into<models::OrganizationResource>) -> Self {
                 self.body = Some(body.into());
                 self
@@ -721,6 +723,7 @@ pub mod organization {
             pub(crate) body: Option<models::OrganizationResourceUpdate>,
         }
         impl Builder {
+            #[doc = "Updated Organization resource"]
             pub fn body(mut self, body: impl Into<models::OrganizationResourceUpdate>) -> Self {
                 self.body = Some(body.into());
                 self

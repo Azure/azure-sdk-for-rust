@@ -2033,10 +2033,12 @@ pub mod event_hubs {
             pub(crate) top: Option<i64>,
         }
         impl Builder {
+            #[doc = "Skip is only used if a previous operation returned a partial result. If a previous response contains a nextLink element, the value of the nextLink element will include a skip parameter that specifies a starting point to use for subsequent calls."]
             pub fn skip(mut self, skip: i64) -> Self {
                 self.skip = Some(skip);
                 self
             }
+            #[doc = "May be used to limit the number of results to the most recent N usageDetails."]
             pub fn top(mut self, top: i64) -> Self {
                 self.top = Some(top);
                 self
@@ -3648,10 +3650,12 @@ pub mod consumer_groups {
             pub(crate) top: Option<i64>,
         }
         impl Builder {
+            #[doc = "Skip is only used if a previous operation returned a partial result. If a previous response contains a nextLink element, the value of the nextLink element will include a skip parameter that specifies a starting point to use for subsequent calls."]
             pub fn skip(mut self, skip: i64) -> Self {
                 self.skip = Some(skip);
                 self
             }
+            #[doc = "May be used to limit the number of results to the most recent N usageDetails."]
             pub fn top(mut self, top: i64) -> Self {
                 self.top = Some(top);
                 self

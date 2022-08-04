@@ -3063,10 +3063,12 @@ pub mod reports {
             pub(crate) country: Option<String>,
         }
         impl Builder {
+            #[doc = "The end DateTime of the Latency Scorecard in UTC"]
             pub fn end_date_time_utc(mut self, end_date_time_utc: impl Into<String>) -> Self {
                 self.end_date_time_utc = Some(end_date_time_utc.into());
                 self
             }
+            #[doc = "The country associated with the Latency Scorecard. Values are country ISO codes as specified here- https://www.iso.org/iso-3166-country-codes.html"]
             pub fn country(mut self, country: impl Into<String>) -> Self {
                 self.country = Some(country.into());
                 self
@@ -3134,10 +3136,12 @@ pub mod reports {
             pub(crate) country: Option<String>,
         }
         impl Builder {
+            #[doc = "The specific endpoint"]
             pub fn endpoint(mut self, endpoint: impl Into<String>) -> Self {
                 self.endpoint = Some(endpoint.into());
                 self
             }
+            #[doc = "The country associated with the Timeseries. Values are country ISO codes as specified here- https://www.iso.org/iso-3166-country-codes.html"]
             pub fn country(mut self, country: impl Into<String>) -> Self {
                 self.country = Some(country.into());
                 self

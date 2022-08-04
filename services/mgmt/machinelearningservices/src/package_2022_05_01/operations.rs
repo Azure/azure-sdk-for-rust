@@ -717,6 +717,7 @@ pub mod workspaces {
             pub(crate) skip: Option<String>,
         }
         impl Builder {
+            #[doc = "Continuation token for pagination."]
             pub fn skip(mut self, skip: impl Into<String>) -> Self {
                 self.skip = Some(skip.into());
                 self
@@ -806,6 +807,7 @@ pub mod workspaces {
             pub(crate) parameters: Option<models::DiagnoseWorkspaceParameters>,
         }
         impl Builder {
+            #[doc = "The parameter of diagnosing workspace health"]
             pub fn parameters(mut self, parameters: impl Into<models::DiagnoseWorkspaceParameters>) -> Self {
                 self.parameters = Some(parameters.into());
                 self
@@ -976,6 +978,7 @@ pub mod workspaces {
             pub(crate) skip: Option<String>,
         }
         impl Builder {
+            #[doc = "Continuation token for pagination."]
             pub fn skip(mut self, skip: impl Into<String>) -> Self {
                 self.skip = Some(skip.into());
                 self
@@ -1860,6 +1863,7 @@ pub mod compute {
             pub(crate) skip: Option<String>,
         }
         impl Builder {
+            #[doc = "Continuation token for pagination."]
             pub fn skip(mut self, skip: impl Into<String>) -> Self {
                 self.skip = Some(skip.into());
                 self
@@ -3032,10 +3036,12 @@ pub mod workspace_connections {
             pub(crate) category: Option<String>,
         }
         impl Builder {
+            #[doc = "Target of the workspace connection."]
             pub fn target(mut self, target: impl Into<String>) -> Self {
                 self.target = Some(target.into());
                 self
             }
+            #[doc = "Category of the workspace connection."]
             pub fn category(mut self, category: impl Into<String>) -> Self {
                 self.category = Some(category.into());
                 self
@@ -3270,10 +3276,12 @@ pub mod batch_endpoints {
             pub(crate) skip: Option<String>,
         }
         impl Builder {
+            #[doc = "Number of endpoints to be retrieved in a page of results."]
             pub fn count(mut self, count: i32) -> Self {
                 self.count = Some(count);
                 self
             }
+            #[doc = "Continuation token for pagination."]
             pub fn skip(mut self, skip: impl Into<String>) -> Self {
                 self.skip = Some(skip.into());
                 self
@@ -3757,14 +3765,17 @@ pub mod batch_deployments {
             pub(crate) skip: Option<String>,
         }
         impl Builder {
+            #[doc = "Ordering of list."]
             pub fn order_by(mut self, order_by: impl Into<String>) -> Self {
                 self.order_by = Some(order_by.into());
                 self
             }
+            #[doc = "Top of list."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Continuation token for pagination."]
             pub fn skip(mut self, skip: impl Into<String>) -> Self {
                 self.skip = Some(skip.into());
                 self
@@ -4163,6 +4174,7 @@ pub mod code_containers {
             pub(crate) skip: Option<String>,
         }
         impl Builder {
+            #[doc = "Continuation token for pagination."]
             pub fn skip(mut self, skip: impl Into<String>) -> Self {
                 self.skip = Some(skip.into());
                 self
@@ -4535,14 +4547,17 @@ pub mod code_versions {
             pub(crate) skip: Option<String>,
         }
         impl Builder {
+            #[doc = "Ordering of list."]
             pub fn order_by(mut self, order_by: impl Into<String>) -> Self {
                 self.order_by = Some(order_by.into());
                 self
             }
+            #[doc = "Maximum number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Continuation token for pagination."]
             pub fn skip(mut self, skip: impl Into<String>) -> Self {
                 self.skip = Some(skip.into());
                 self
@@ -4882,10 +4897,12 @@ pub mod component_containers {
             pub(crate) list_view_type: Option<String>,
         }
         impl Builder {
+            #[doc = "Continuation token for pagination."]
             pub fn skip(mut self, skip: impl Into<String>) -> Self {
                 self.skip = Some(skip.into());
                 self
             }
+            #[doc = "View type for including/excluding (for example) archived entities."]
             pub fn list_view_type(mut self, list_view_type: impl Into<String>) -> Self {
                 self.list_view_type = Some(list_view_type.into());
                 self
@@ -5263,18 +5280,22 @@ pub mod component_versions {
             pub(crate) list_view_type: Option<String>,
         }
         impl Builder {
+            #[doc = "Ordering of list."]
             pub fn order_by(mut self, order_by: impl Into<String>) -> Self {
                 self.order_by = Some(order_by.into());
                 self
             }
+            #[doc = "Maximum number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Continuation token for pagination."]
             pub fn skip(mut self, skip: impl Into<String>) -> Self {
                 self.skip = Some(skip.into());
                 self
             }
+            #[doc = "View type for including/excluding (for example) archived entities."]
             pub fn list_view_type(mut self, list_view_type: impl Into<String>) -> Self {
                 self.list_view_type = Some(list_view_type.into());
                 self
@@ -5617,10 +5638,12 @@ pub mod data_containers {
             pub(crate) list_view_type: Option<String>,
         }
         impl Builder {
+            #[doc = "Continuation token for pagination."]
             pub fn skip(mut self, skip: impl Into<String>) -> Self {
                 self.skip = Some(skip.into());
                 self
             }
+            #[doc = "View type for including/excluding (for example) archived entities."]
             pub fn list_view_type(mut self, list_view_type: impl Into<String>) -> Self {
                 self.list_view_type = Some(list_view_type.into());
                 self
@@ -6000,22 +6023,27 @@ pub mod data_versions {
             pub(crate) list_view_type: Option<String>,
         }
         impl Builder {
+            #[doc = "Please choose OrderBy value from ['createdtime', 'modifiedtime']"]
             pub fn order_by(mut self, order_by: impl Into<String>) -> Self {
                 self.order_by = Some(order_by.into());
                 self
             }
+            #[doc = "Top count of results, top count cannot be greater than the page size.\r\n                              If topCount > page size, results with be default page size count will be returned"]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Continuation token for pagination."]
             pub fn skip(mut self, skip: impl Into<String>) -> Self {
                 self.skip = Some(skip.into());
                 self
             }
+            #[doc = "Comma-separated list of tag names (and optionally values). Example: tag1,tag2=value2"]
             pub fn tags(mut self, tags: impl Into<String>) -> Self {
                 self.tags = Some(tags.into());
                 self
             }
+            #[doc = "[ListViewType.ActiveOnly, ListViewType.ArchivedOnly, ListViewType.All]View type for including/excluding (for example) archived entities."]
             pub fn list_view_type(mut self, list_view_type: impl Into<String>) -> Self {
                 self.list_view_type = Some(list_view_type.into());
                 self
@@ -6394,30 +6422,37 @@ pub mod datastores {
             pub(crate) order_by_asc: Option<bool>,
         }
         impl Builder {
+            #[doc = "Continuation token for pagination."]
             pub fn skip(mut self, skip: impl Into<String>) -> Self {
                 self.skip = Some(skip.into());
                 self
             }
+            #[doc = "Maximum number of results to return."]
             pub fn count(mut self, count: i32) -> Self {
                 self.count = Some(count);
                 self
             }
+            #[doc = "Filter down to the workspace default datastore."]
             pub fn is_default(mut self, is_default: bool) -> Self {
                 self.is_default = Some(is_default);
                 self
             }
+            #[doc = "Names of datastores to return."]
             pub fn names(mut self, names: Vec<String>) -> Self {
                 self.names = names;
                 self
             }
+            #[doc = "Text to search for in the datastore names."]
             pub fn search_text(mut self, search_text: impl Into<String>) -> Self {
                 self.search_text = Some(search_text.into());
                 self
             }
+            #[doc = "Order by property (createdtime | modifiedtime | name)."]
             pub fn order_by(mut self, order_by: impl Into<String>) -> Self {
                 self.order_by = Some(order_by.into());
                 self
             }
+            #[doc = "Order by property in ascending order."]
             pub fn order_by_asc(mut self, order_by_asc: bool) -> Self {
                 self.order_by_asc = Some(order_by_asc);
                 self
@@ -6579,6 +6614,7 @@ pub mod datastores {
             pub(crate) skip_validation: Option<bool>,
         }
         impl Builder {
+            #[doc = "Flag to skip validation."]
             pub fn skip_validation(mut self, skip_validation: bool) -> Self {
                 self.skip_validation = Some(skip_validation);
                 self
@@ -6848,10 +6884,12 @@ pub mod environment_containers {
             pub(crate) list_view_type: Option<String>,
         }
         impl Builder {
+            #[doc = "Continuation token for pagination."]
             pub fn skip(mut self, skip: impl Into<String>) -> Self {
                 self.skip = Some(skip.into());
                 self
             }
+            #[doc = "View type for including/excluding (for example) archived entities."]
             pub fn list_view_type(mut self, list_view_type: impl Into<String>) -> Self {
                 self.list_view_type = Some(list_view_type.into());
                 self
@@ -7208,18 +7246,22 @@ pub mod environment_versions {
             pub(crate) list_view_type: Option<String>,
         }
         impl Builder {
+            #[doc = "Ordering of list."]
             pub fn order_by(mut self, order_by: impl Into<String>) -> Self {
                 self.order_by = Some(order_by.into());
                 self
             }
+            #[doc = "Maximum number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Continuation token for pagination."]
             pub fn skip(mut self, skip: impl Into<String>) -> Self {
                 self.skip = Some(skip.into());
                 self
             }
+            #[doc = "View type for including/excluding (for example) archived entities."]
             pub fn list_view_type(mut self, list_view_type: impl Into<String>) -> Self {
                 self.list_view_type = Some(list_view_type.into());
                 self
@@ -7588,18 +7630,22 @@ pub mod jobs {
             pub(crate) list_view_type: Option<String>,
         }
         impl Builder {
+            #[doc = "Continuation token for pagination."]
             pub fn skip(mut self, skip: impl Into<String>) -> Self {
                 self.skip = Some(skip.into());
                 self
             }
+            #[doc = "Type of job to be returned."]
             pub fn job_type(mut self, job_type: impl Into<String>) -> Self {
                 self.job_type = Some(job_type.into());
                 self
             }
+            #[doc = "Jobs returned will have this tag key."]
             pub fn tag(mut self, tag: impl Into<String>) -> Self {
                 self.tag = Some(tag.into());
                 self
             }
+            #[doc = "View type for including/excluding (for example) archived entities."]
             pub fn list_view_type(mut self, list_view_type: impl Into<String>) -> Self {
                 self.list_view_type = Some(list_view_type.into());
                 self
@@ -8021,14 +8067,17 @@ pub mod model_containers {
             pub(crate) list_view_type: Option<String>,
         }
         impl Builder {
+            #[doc = "Continuation token for pagination."]
             pub fn skip(mut self, skip: impl Into<String>) -> Self {
                 self.skip = Some(skip.into());
                 self
             }
+            #[doc = "Maximum number of results to return."]
             pub fn count(mut self, count: i32) -> Self {
                 self.count = Some(count);
                 self
             }
+            #[doc = "View type for including/excluding (for example) archived entities."]
             pub fn list_view_type(mut self, list_view_type: impl Into<String>) -> Self {
                 self.list_view_type = Some(list_view_type.into());
                 self
@@ -8421,42 +8470,52 @@ pub mod model_versions {
             pub(crate) list_view_type: Option<String>,
         }
         impl Builder {
+            #[doc = "Continuation token for pagination."]
             pub fn skip(mut self, skip: impl Into<String>) -> Self {
                 self.skip = Some(skip.into());
                 self
             }
+            #[doc = "Ordering of list."]
             pub fn order_by(mut self, order_by: impl Into<String>) -> Self {
                 self.order_by = Some(order_by.into());
                 self
             }
+            #[doc = "Maximum number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Model version."]
             pub fn version(mut self, version: impl Into<String>) -> Self {
                 self.version = Some(version.into());
                 self
             }
+            #[doc = "Model description."]
             pub fn description(mut self, description: impl Into<String>) -> Self {
                 self.description = Some(description.into());
                 self
             }
+            #[doc = "Number of initial results to skip."]
             pub fn offset(mut self, offset: i32) -> Self {
                 self.offset = Some(offset);
                 self
             }
+            #[doc = "Comma-separated list of tag names (and optionally values). Example: tag1,tag2=value2"]
             pub fn tags(mut self, tags: impl Into<String>) -> Self {
                 self.tags = Some(tags.into());
                 self
             }
+            #[doc = "Comma-separated list of property names (and optionally values). Example: prop1,prop2=value2"]
             pub fn properties(mut self, properties: impl Into<String>) -> Self {
                 self.properties = Some(properties.into());
                 self
             }
+            #[doc = "Name of the feed."]
             pub fn feed(mut self, feed: impl Into<String>) -> Self {
                 self.feed = Some(feed.into());
                 self
             }
+            #[doc = "View type for including/excluding (for example) archived entities."]
             pub fn list_view_type(mut self, list_view_type: impl Into<String>) -> Self {
                 self.list_view_type = Some(list_view_type.into());
                 self
@@ -8921,30 +8980,37 @@ pub mod online_endpoints {
             pub(crate) order_by: Option<String>,
         }
         impl Builder {
+            #[doc = "Name of the endpoint."]
             pub fn name(mut self, name: impl Into<String>) -> Self {
                 self.name = Some(name.into());
                 self
             }
+            #[doc = "Number of endpoints to be retrieved in a page of results."]
             pub fn count(mut self, count: i32) -> Self {
                 self.count = Some(count);
                 self
             }
+            #[doc = "EndpointComputeType to be filtered by."]
             pub fn compute_type(mut self, compute_type: impl Into<String>) -> Self {
                 self.compute_type = Some(compute_type.into());
                 self
             }
+            #[doc = "Continuation token for pagination."]
             pub fn skip(mut self, skip: impl Into<String>) -> Self {
                 self.skip = Some(skip.into());
                 self
             }
+            #[doc = "A set of tags with which to filter the returned models. It is a comma separated string of tags key or tags key=value. Example: tagKey1,tagKey2,tagKey3=value3 ."]
             pub fn tags(mut self, tags: impl Into<String>) -> Self {
                 self.tags = Some(tags.into());
                 self
             }
+            #[doc = "A set of properties with which to filter the returned models. It is a comma separated string of properties key and/or properties key=value Example: propKey1,propKey2,propKey3=value3 ."]
             pub fn properties(mut self, properties: impl Into<String>) -> Self {
                 self.properties = Some(properties.into());
                 self
             }
+            #[doc = "The option to order the response."]
             pub fn order_by(mut self, order_by: impl Into<String>) -> Self {
                 self.order_by = Some(order_by.into());
                 self
@@ -9597,14 +9663,17 @@ pub mod online_deployments {
             pub(crate) skip: Option<String>,
         }
         impl Builder {
+            #[doc = "Ordering of list."]
             pub fn order_by(mut self, order_by: impl Into<String>) -> Self {
                 self.order_by = Some(order_by.into());
                 self
             }
+            #[doc = "Top of list."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Continuation token for pagination."]
             pub fn skip(mut self, skip: impl Into<String>) -> Self {
                 self.skip = Some(skip.into());
                 self
@@ -9961,10 +10030,12 @@ pub mod online_deployments {
             pub(crate) skip: Option<String>,
         }
         impl Builder {
+            #[doc = "Number of Skus to be retrieved in a page of results."]
             pub fn count(mut self, count: i32) -> Self {
                 self.count = Some(count);
                 self
             }
+            #[doc = "Continuation token for pagination."]
             pub fn skip(mut self, skip: impl Into<String>) -> Self {
                 self.skip = Some(skip.into());
                 self

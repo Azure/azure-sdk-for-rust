@@ -447,6 +447,7 @@ pub mod governance_rules {
             pub(crate) execute_governance_rule_params: Option<models::ExecuteGovernanceRuleParams>,
         }
         impl Builder {
+            #[doc = "GovernanceRule over a subscription scope"]
             pub fn execute_governance_rule_params(
                 mut self,
                 execute_governance_rule_params: impl Into<models::ExecuteGovernanceRuleParams>,
@@ -509,6 +510,7 @@ pub mod governance_rules {
             pub(crate) execute_governance_rule_params: Option<models::ExecuteGovernanceRuleParams>,
         }
         impl Builder {
+            #[doc = "GovernanceRule over a subscription scope"]
             pub fn execute_governance_rule_params(
                 mut self,
                 execute_governance_rule_params: impl Into<models::ExecuteGovernanceRuleParams>,

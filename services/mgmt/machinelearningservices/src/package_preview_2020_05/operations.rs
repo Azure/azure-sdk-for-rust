@@ -557,6 +557,7 @@ pub mod workspaces {
             pub(crate) skiptoken: Option<String>,
         }
         impl Builder {
+            #[doc = "Continuation token for pagination."]
             pub fn skiptoken(mut self, skiptoken: impl Into<String>) -> Self {
                 self.skiptoken = Some(skiptoken.into());
                 self
@@ -742,6 +743,7 @@ pub mod workspaces {
             pub(crate) skiptoken: Option<String>,
         }
         impl Builder {
+            #[doc = "Continuation token for pagination."]
             pub fn skiptoken(mut self, skiptoken: impl Into<String>) -> Self {
                 self.skiptoken = Some(skiptoken.into());
                 self
@@ -1423,6 +1425,7 @@ pub mod machine_learning_compute {
             pub(crate) skiptoken: Option<String>,
         }
         impl Builder {
+            #[doc = "Continuation token for pagination."]
             pub fn skiptoken(mut self, skiptoken: impl Into<String>) -> Self {
                 self.skiptoken = Some(skiptoken.into());
                 self
@@ -2615,38 +2618,47 @@ pub mod machine_learning_service {
             pub(crate) orderby: Option<String>,
         }
         impl Builder {
+            #[doc = "Continuation token for pagination."]
             pub fn skiptoken(mut self, skiptoken: impl Into<String>) -> Self {
                 self.skiptoken = Some(skiptoken.into());
                 self
             }
+            #[doc = "The Model Id."]
             pub fn model_id(mut self, model_id: impl Into<String>) -> Self {
                 self.model_id = Some(model_id.into());
                 self
             }
+            #[doc = "The Model name."]
             pub fn model_name(mut self, model_name: impl Into<String>) -> Self {
                 self.model_name = Some(model_name.into());
                 self
             }
+            #[doc = "The object tag."]
             pub fn tag(mut self, tag: impl Into<String>) -> Self {
                 self.tag = Some(tag.into());
                 self
             }
+            #[doc = "A set of tags with which to filter the returned services. It is a comma separated string of tags key or tags key=value Example: tagKey1,tagKey2,tagKey3=value3 ."]
             pub fn tags(mut self, tags: impl Into<String>) -> Self {
                 self.tags = Some(tags.into());
                 self
             }
+            #[doc = "A set of properties with which to filter the returned services. It is a comma separated string of properties key and/or properties key=value Example: propKey1,propKey2,propKey3=value3 ."]
             pub fn properties(mut self, properties: impl Into<String>) -> Self {
                 self.properties = Some(properties.into());
                 self
             }
+            #[doc = "runId for model associated with service."]
             pub fn run_id(mut self, run_id: impl Into<String>) -> Self {
                 self.run_id = Some(run_id.into());
                 self
             }
+            #[doc = "Set to True to include Model details."]
             pub fn expand(mut self, expand: bool) -> Self {
                 self.expand = Some(expand);
                 self
             }
+            #[doc = "The option to order the response."]
             pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
                 self.orderby = Some(orderby.into());
                 self
@@ -2758,6 +2770,7 @@ pub mod machine_learning_service {
             pub(crate) expand: Option<bool>,
         }
         impl Builder {
+            #[doc = "Set to True to include Model details."]
             pub fn expand(mut self, expand: bool) -> Self {
                 self.expand = Some(expand);
                 self

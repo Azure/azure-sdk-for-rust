@@ -1730,6 +1730,7 @@ pub mod apps {
             pub(crate) sync_status: Option<String>,
         }
         impl Builder {
+            #[doc = "Indicates whether sync status"]
             pub fn sync_status(mut self, sync_status: impl Into<String>) -> Self {
                 self.sync_status = Some(sync_status.into());
                 self
@@ -3990,6 +3991,7 @@ pub mod deployments {
             pub(crate) version: Vec<String>,
         }
         impl Builder {
+            #[doc = "Version of the deployments to be listed"]
             pub fn version(mut self, version: Vec<String>) -> Self {
                 self.version = version;
                 self
@@ -4078,6 +4080,7 @@ pub mod deployments {
             pub(crate) version: Vec<String>,
         }
         impl Builder {
+            #[doc = "Version of the deployments to be listed"]
             pub fn version(mut self, version: Vec<String>) -> Self {
                 self.version = version;
                 self

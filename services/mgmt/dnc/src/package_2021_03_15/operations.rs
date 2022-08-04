@@ -887,6 +887,7 @@ pub mod orchestrator_instance_service {
             pub(crate) force_delete: Option<bool>,
         }
         impl Builder {
+            #[doc = "Force delete resource"]
             pub fn force_delete(mut self, force_delete: bool) -> Self {
                 self.force_delete = Some(force_delete);
                 self
@@ -1389,6 +1390,7 @@ pub mod delegated_subnet_service {
             pub(crate) force_delete: Option<bool>,
         }
         impl Builder {
+            #[doc = "Force delete resource"]
             pub fn force_delete(mut self, force_delete: bool) -> Self {
                 self.force_delete = Some(force_delete);
                 self

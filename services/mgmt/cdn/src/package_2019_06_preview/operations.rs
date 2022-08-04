@@ -2604,6 +2604,7 @@ pub mod custom_domains {
             pub(crate) custom_domain_https_parameters: Option<models::CustomDomainHttpsParameters>,
         }
         impl Builder {
+            #[doc = "The configuration specifying how to enable HTTPS for the custom domain - using CDN managed certificate or user's own certificate. If not specified, enabling ssl uses CDN managed certificate by default."]
             pub fn custom_domain_https_parameters(
                 mut self,
                 custom_domain_https_parameters: impl Into<models::CustomDomainHttpsParameters>,

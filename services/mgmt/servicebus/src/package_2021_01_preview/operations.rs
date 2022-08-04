@@ -2458,6 +2458,7 @@ pub mod disaster_recovery_configs {
             pub(crate) parameters: Option<models::FailoverProperties>,
         }
         impl Builder {
+            #[doc = "Parameters required to create an Alias(Disaster Recovery configuration)"]
             pub fn parameters(mut self, parameters: impl Into<models::FailoverProperties>) -> Self {
                 self.parameters = Some(parameters.into());
                 self
@@ -3724,10 +3725,12 @@ pub mod queues {
             pub(crate) top: Option<i64>,
         }
         impl Builder {
+            #[doc = "Skip is only used if a previous operation returned a partial result. If a previous response contains a nextLink element, the value of the nextLink element will include a skip parameter that specifies a starting point to use for subsequent calls."]
             pub fn skip(mut self, skip: i64) -> Self {
                 self.skip = Some(skip);
                 self
             }
+            #[doc = "May be used to limit the number of results to the most recent N usageDetails."]
             pub fn top(mut self, top: i64) -> Self {
                 self.top = Some(top);
                 self
@@ -4551,10 +4554,12 @@ pub mod topics {
             pub(crate) top: Option<i64>,
         }
         impl Builder {
+            #[doc = "Skip is only used if a previous operation returned a partial result. If a previous response contains a nextLink element, the value of the nextLink element will include a skip parameter that specifies a starting point to use for subsequent calls."]
             pub fn skip(mut self, skip: i64) -> Self {
                 self.skip = Some(skip);
                 self
             }
+            #[doc = "May be used to limit the number of results to the most recent N usageDetails."]
             pub fn top(mut self, top: i64) -> Self {
                 self.top = Some(top);
                 self
@@ -4932,10 +4937,12 @@ pub mod rules {
             pub(crate) top: Option<i64>,
         }
         impl Builder {
+            #[doc = "Skip is only used if a previous operation returned a partial result. If a previous response contains a nextLink element, the value of the nextLink element will include a skip parameter that specifies a starting point to use for subsequent calls."]
             pub fn skip(mut self, skip: i64) -> Self {
                 self.skip = Some(skip);
                 self
             }
+            #[doc = "May be used to limit the number of results to the most recent N usageDetails."]
             pub fn top(mut self, top: i64) -> Self {
                 self.top = Some(top);
                 self
@@ -5279,10 +5286,12 @@ pub mod subscriptions {
             pub(crate) top: Option<i64>,
         }
         impl Builder {
+            #[doc = "Skip is only used if a previous operation returned a partial result. If a previous response contains a nextLink element, the value of the nextLink element will include a skip parameter that specifies a starting point to use for subsequent calls."]
             pub fn skip(mut self, skip: i64) -> Self {
                 self.skip = Some(skip);
                 self
             }
+            #[doc = "May be used to limit the number of results to the most recent N usageDetails."]
             pub fn top(mut self, top: i64) -> Self {
                 self.top = Some(top);
                 self

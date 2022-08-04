@@ -916,10 +916,12 @@ pub mod backup_protection_intent {
             pub(crate) skip_token: Option<String>,
         }
         impl Builder {
+            #[doc = "OData filter options."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "skipToken Filter."]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());
                 self
@@ -1037,10 +1039,12 @@ pub mod backup_usage_summaries {
             pub(crate) skip_token: Option<String>,
         }
         impl Builder {
+            #[doc = "OData filter options."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "skipToken Filter."]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());
                 self
@@ -2333,6 +2337,7 @@ pub mod protected_items {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "OData filter options."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -2658,6 +2663,7 @@ pub mod recovery_points {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "OData filter options."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -2903,6 +2909,7 @@ pub mod backup_policies {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "OData filter options."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -3342,10 +3349,12 @@ pub mod backup_jobs {
             pub(crate) skip_token: Option<String>,
         }
         impl Builder {
+            #[doc = "OData filter options."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "skipToken Filter."]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());
                 self
@@ -3788,6 +3797,7 @@ pub mod jobs {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "OData filter options."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -3873,10 +3883,12 @@ pub mod backup_protected_items {
             pub(crate) skip_token: Option<String>,
         }
         impl Builder {
+            #[doc = "OData filter options."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "skipToken Filter."]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());
                 self
@@ -4328,10 +4340,12 @@ pub mod backup_engines {
             pub(crate) skip_token: Option<String>,
         }
         impl Builder {
+            #[doc = "OData filter options."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "skipToken Filter."]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());
                 self
@@ -4423,10 +4437,12 @@ pub mod backup_engines {
             pub(crate) skip_token: Option<String>,
         }
         impl Builder {
+            #[doc = "OData filter options."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "skipToken Filter."]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());
                 self
@@ -4600,6 +4616,7 @@ pub mod protectable_containers {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "OData filter options."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -4970,6 +4987,7 @@ pub mod protection_containers {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "OData filter options."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -5022,6 +5040,7 @@ pub mod protection_containers {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "OData filter options."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -5109,10 +5128,12 @@ pub mod backup_workload_items {
             pub(crate) skip_token: Option<String>,
         }
         impl Builder {
+            #[doc = "OData filter options."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "skipToken Filter."]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());
                 self
@@ -5890,10 +5911,12 @@ pub mod backup_protectable_items {
             pub(crate) skip_token: Option<String>,
         }
         impl Builder {
+            #[doc = "OData filter options."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "skipToken Filter."]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());
                 self
@@ -6009,6 +6032,7 @@ pub mod backup_protection_containers {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "OData filter options."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -6115,6 +6139,7 @@ pub mod security_pi_ns {
             pub(crate) parameters: Option<models::SecurityPinBase>,
         }
         impl Builder {
+            #[doc = "security pin request"]
             pub fn parameters(mut self, parameters: impl Into<models::SecurityPinBase>) -> Self {
                 self.parameters = Some(parameters.into());
                 self

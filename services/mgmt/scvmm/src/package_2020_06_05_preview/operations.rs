@@ -418,6 +418,7 @@ pub mod vmm_servers {
             pub(crate) force: Option<bool>,
         }
         impl Builder {
+            #[doc = "Forces the resource to be deleted from azure. The corresponding CR would be attempted to be deleted too."]
             pub fn force(mut self, force: bool) -> Self {
                 self.force = Some(force);
                 self
@@ -1014,6 +1015,7 @@ pub mod clouds {
             pub(crate) force: Option<bool>,
         }
         impl Builder {
+            #[doc = "Forces the resource to be deleted from azure. The corresponding CR would be attempted to be deleted too."]
             pub fn force(mut self, force: bool) -> Self {
                 self.force = Some(force);
                 self
@@ -1531,6 +1533,7 @@ pub mod virtual_networks {
             pub(crate) force: Option<bool>,
         }
         impl Builder {
+            #[doc = "Forces the resource to be deleted from azure. The corresponding CR would be attempted to be deleted too."]
             pub fn force(mut self, force: bool) -> Self {
                 self.force = Some(force);
                 self
@@ -2174,10 +2177,12 @@ pub mod virtual_machines {
             pub(crate) force: Option<bool>,
         }
         impl Builder {
+            #[doc = "Whether to just disable the VM from azure and retain the VM in the VMM."]
             pub fn retain(mut self, retain: bool) -> Self {
                 self.retain = Some(retain);
                 self
             }
+            #[doc = "Forces the resource to be deleted from azure. The corresponding CR would be attempted to be deleted too."]
             pub fn force(mut self, force: bool) -> Self {
                 self.force = Some(force);
                 self
@@ -2244,6 +2249,7 @@ pub mod virtual_machines {
             pub(crate) body: Option<models::StopVirtualMachineOptions>,
         }
         impl Builder {
+            #[doc = "Virtualmachine stop action payload."]
             pub fn body(mut self, body: impl Into<models::StopVirtualMachineOptions>) -> Self {
                 self.body = Some(body.into());
                 self
@@ -2418,6 +2424,7 @@ pub mod virtual_machines {
             pub(crate) body: Option<models::VirtualMachineCreateCheckpoint>,
         }
         impl Builder {
+            #[doc = "Virtualmachine create checkpoint action payload."]
             pub fn body(mut self, body: impl Into<models::VirtualMachineCreateCheckpoint>) -> Self {
                 self.body = Some(body.into());
                 self
@@ -2482,6 +2489,7 @@ pub mod virtual_machines {
             pub(crate) body: Option<models::VirtualMachineDeleteCheckpoint>,
         }
         impl Builder {
+            #[doc = "Virtualmachine delete checkpoint action payload."]
             pub fn body(mut self, body: impl Into<models::VirtualMachineDeleteCheckpoint>) -> Self {
                 self.body = Some(body.into());
                 self
@@ -2546,6 +2554,7 @@ pub mod virtual_machines {
             pub(crate) body: Option<models::VirtualMachineRestoreCheckpoint>,
         }
         impl Builder {
+            #[doc = "Virtualmachine restore checkpoint action payload."]
             pub fn body(mut self, body: impl Into<models::VirtualMachineRestoreCheckpoint>) -> Self {
                 self.body = Some(body.into());
                 self
@@ -3064,6 +3073,7 @@ pub mod virtual_machine_templates {
             pub(crate) force: Option<bool>,
         }
         impl Builder {
+            #[doc = "Forces the resource to be deleted from azure. The corresponding CR would be attempted to be deleted too."]
             pub fn force(mut self, force: bool) -> Self {
                 self.force = Some(force);
                 self
@@ -3581,6 +3591,7 @@ pub mod availability_sets {
             pub(crate) force: Option<bool>,
         }
         impl Builder {
+            #[doc = "Forces the resource to be deleted from azure. The corresponding CR would be attempted to be deleted too."]
             pub fn force(mut self, force: bool) -> Self {
                 self.force = Some(force);
                 self
@@ -3941,6 +3952,7 @@ pub mod inventory_items {
             pub(crate) body: Option<models::InventoryItem>,
         }
         impl Builder {
+            #[doc = "Request payload."]
             pub fn body(mut self, body: impl Into<models::InventoryItem>) -> Self {
                 self.body = Some(body.into());
                 self

@@ -492,6 +492,7 @@ pub mod requests {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "The $filter OData query parameter. Only filter by request status is supported, e.g $filter=properties/status eq 'Pending'"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self

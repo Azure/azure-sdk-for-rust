@@ -628,6 +628,7 @@ pub mod services {
             pub(crate) delete_running_tasks: Option<bool>,
         }
         impl Builder {
+            #[doc = "Delete the resource even if it contains running tasks"]
             pub fn delete_running_tasks(mut self, delete_running_tasks: bool) -> Self {
                 self.delete_running_tasks = Some(delete_running_tasks);
                 self
@@ -1384,6 +1385,7 @@ pub mod tasks {
             pub(crate) task_type: Option<String>,
         }
         impl Builder {
+            #[doc = "Filter tasks by task type"]
             pub fn task_type(mut self, task_type: impl Into<String>) -> Self {
                 self.task_type = Some(task_type.into());
                 self
@@ -1473,6 +1475,7 @@ pub mod tasks {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "Expand the response"]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -1666,6 +1669,7 @@ pub mod tasks {
             pub(crate) delete_running_tasks: Option<bool>,
         }
         impl Builder {
+            #[doc = "Delete the resource even if it contains running tasks"]
             pub fn delete_running_tasks(mut self, delete_running_tasks: bool) -> Self {
                 self.delete_running_tasks = Some(delete_running_tasks);
                 self
@@ -1976,6 +1980,7 @@ pub mod service_tasks {
             pub(crate) task_type: Option<String>,
         }
         impl Builder {
+            #[doc = "Filter tasks by task type"]
             pub fn task_type(mut self, task_type: impl Into<String>) -> Self {
                 self.task_type = Some(task_type.into());
                 self
@@ -2063,6 +2068,7 @@ pub mod service_tasks {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "Expand the response"]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -2250,6 +2256,7 @@ pub mod service_tasks {
             pub(crate) delete_running_tasks: Option<bool>,
         }
         impl Builder {
+            #[doc = "Delete the resource even if it contains running tasks"]
             pub fn delete_running_tasks(mut self, delete_running_tasks: bool) -> Self {
                 self.delete_running_tasks = Some(delete_running_tasks);
                 self
@@ -2748,6 +2755,7 @@ pub mod projects {
             pub(crate) delete_running_tasks: Option<bool>,
         }
         impl Builder {
+            #[doc = "Delete the resource even if it contains running tasks"]
             pub fn delete_running_tasks(mut self, delete_running_tasks: bool) -> Self {
                 self.delete_running_tasks = Some(delete_running_tasks);
                 self

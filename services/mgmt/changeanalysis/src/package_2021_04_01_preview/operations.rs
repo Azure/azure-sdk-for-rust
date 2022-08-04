@@ -108,6 +108,7 @@ pub mod operations {
             pub(crate) skip_token: Option<String>,
         }
         impl Builder {
+            #[doc = "A skip token is used to continue retrieving items after an operation returns a partial result. If a previous response contains a nextLink element, the value of the nextLink element will include a skipToken parameter that specifies a starting point to use for subsequent calls."]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());
                 self
@@ -212,10 +213,12 @@ pub mod resource_changes {
             pub(crate) scan_latest: Option<bool>,
         }
         impl Builder {
+            #[doc = "A skip token is used to continue retrieving items after an operation returns a partial result. If a previous response contains a nextLink element, the value of the nextLink element will include a skipToken parameter that specifies a starting point to use for subsequent calls."]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());
                 self
             }
+            #[doc = "Specifies whether to scan latest"]
             pub fn scan_latest(mut self, scan_latest: bool) -> Self {
                 self.scan_latest = Some(scan_latest);
                 self
@@ -361,10 +364,12 @@ pub mod changes {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "A skip token is used to continue retrieving items after an operation returns a partial result. If a previous response contains a nextLink element, the value of the nextLink element will include a skipToken parameter that specifies a starting point to use for subsequent calls."]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());
                 self
             }
+            #[doc = "Reduces the set of data collected.<br>This argument is not required. Only accepts 'resourceId' and 'resourceType' and only accepts the following patterns. <br>- *List changes for a resource type*: $filter=resourceType eq 'microsoft.web/sites'.<br>- *List changes for multiple resource types:* $filter=resourceType eq 'microsoft.web/sites,microsoft.compute/virtualmachines'.<br> - *List changes for a resource Id*: $filter=resourceId eq '{resourceId}'.<br>- *List changes for multiple resource Ids:* $filter=resourceId eq '{resourceId1},{resourceId2}}'."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -458,10 +463,12 @@ pub mod changes {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "A skip token is used to continue retrieving items after an operation returns a partial result. If a previous response contains a nextLink element, the value of the nextLink element will include a skipToken parameter that specifies a starting point to use for subsequent calls."]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());
                 self
             }
+            #[doc = "Reduces the set of data collected.<br>This argument is not required. Only accepts 'resourceId' and 'resourceType' and only accepts the following patterns. <br>- *List changes for a resource type*: $filter=resourceType eq 'microsoft.web/sites'.<br>- *List changes for multiple resource types:* $filter=resourceType eq 'microsoft.web/sites,microsoft.compute/virtualmachines'.<br> - *List changes for a resource Id*: $filter=resourceId eq '{resourceId}'.<br>- *List changes for multiple resource Ids:* $filter=resourceId eq '{resourceId1},{resourceId2}}'."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self

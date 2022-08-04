@@ -418,6 +418,7 @@ pub mod web_pub_sub {
             pub(crate) excluded: Vec<String>,
         }
         impl Builder {
+            #[doc = "Excluded connection Ids."]
             pub fn excluded(mut self, excluded: Vec<String>) -> Self {
                 self.excluded = excluded;
                 self
@@ -469,6 +470,7 @@ pub mod web_pub_sub {
             pub(crate) reason: Option<String>,
         }
         impl Builder {
+            #[doc = "The reason closing the client connection."]
             pub fn reason(mut self, reason: impl Into<String>) -> Self {
                 self.reason = Some(reason.into());
                 self
@@ -660,6 +662,7 @@ pub mod web_pub_sub {
             pub(crate) excluded: Vec<String>,
         }
         impl Builder {
+            #[doc = "Excluded connection Ids"]
             pub fn excluded(mut self, excluded: Vec<String>) -> Self {
                 self.excluded = excluded;
                 self
@@ -1049,6 +1052,7 @@ pub mod web_pub_sub {
             pub(crate) target_name: Option<String>,
         }
         impl Builder {
+            #[doc = "The meaning of the target depends on the specific permission. For joinLeaveGroup and sendToGroup, targetName is a required parameter standing for the group name."]
             pub fn target_name(mut self, target_name: impl Into<String>) -> Self {
                 self.target_name = Some(target_name.into());
                 self
@@ -1105,6 +1109,7 @@ pub mod web_pub_sub {
             pub(crate) target_name: Option<String>,
         }
         impl Builder {
+            #[doc = "The meaning of the target depends on the specific permission. For joinLeaveGroup and sendToGroup, targetName is a required parameter standing for the group name."]
             pub fn target_name(mut self, target_name: impl Into<String>) -> Self {
                 self.target_name = Some(target_name.into());
                 self
@@ -1161,6 +1166,7 @@ pub mod web_pub_sub {
             pub(crate) target_name: Option<String>,
         }
         impl Builder {
+            #[doc = "The meaning of the target depends on the specific permission. For joinLeaveGroup and sendToGroup, targetName is a required parameter standing for the group name."]
             pub fn target_name(mut self, target_name: impl Into<String>) -> Self {
                 self.target_name = Some(target_name.into());
                 self

@@ -2195,6 +2195,7 @@ pub mod volumes {
             pub(crate) body: Option<models::BreakReplicationRequest>,
         }
         impl Builder {
+            #[doc = "Optional body to force break the replication."]
             pub fn body(mut self, body: impl Into<models::BreakReplicationRequest>) -> Self {
                 self.body = Some(body.into());
                 self
@@ -3926,6 +3927,7 @@ pub mod backups {
             pub(crate) body: Option<models::BackupPatch>,
         }
         impl Builder {
+            #[doc = "Backup object supplied in the body of the operation."]
             pub fn body(mut self, body: impl Into<models::BackupPatch>) -> Self {
                 self.body = Some(body.into());
                 self

@@ -537,6 +537,7 @@ pub mod energy_services {
             pub(crate) body: Option<models::EnergyService>,
         }
         impl Builder {
+            #[doc = "Request body."]
             pub fn body(mut self, body: impl Into<models::EnergyService>) -> Self {
                 self.body = Some(body.into());
                 self
@@ -720,6 +721,7 @@ pub mod energy_services {
             pub(crate) body: Option<models::DataPartitionAddOrRemoveRequest>,
         }
         impl Builder {
+            #[doc = "add partition action payload"]
             pub fn body(mut self, body: impl Into<models::DataPartitionAddOrRemoveRequest>) -> Self {
                 self.body = Some(body.into());
                 self
@@ -783,6 +785,7 @@ pub mod energy_services {
             pub(crate) body: Option<models::DataPartitionAddOrRemoveRequest>,
         }
         impl Builder {
+            #[doc = "remove partition action payload"]
             pub fn body(mut self, body: impl Into<models::DataPartitionAddOrRemoveRequest>) -> Self {
                 self.body = Some(body.into());
                 self

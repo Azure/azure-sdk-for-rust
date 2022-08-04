@@ -238,6 +238,7 @@ pub mod capabilities {
             pub(crate) continuation_token: Option<String>,
         }
         impl Builder {
+            #[doc = "String that sets the continuation token."]
             pub fn continuation_token(mut self, continuation_token: impl Into<String>) -> Self {
                 self.continuation_token = Some(continuation_token.into());
                 self
@@ -721,10 +722,12 @@ pub mod experiments {
             pub(crate) continuation_token: Option<String>,
         }
         impl Builder {
+            #[doc = "Optional value that indicates whether to filter results based on if the Experiment is currently running. If null, then the results will not be filtered."]
             pub fn running(mut self, running: bool) -> Self {
                 self.running = Some(running);
                 self
             }
+            #[doc = "String that sets the continuation token."]
             pub fn continuation_token(mut self, continuation_token: impl Into<String>) -> Self {
                 self.continuation_token = Some(continuation_token.into());
                 self
@@ -812,10 +815,12 @@ pub mod experiments {
             pub(crate) continuation_token: Option<String>,
         }
         impl Builder {
+            #[doc = "Optional value that indicates whether to filter results based on if the Experiment is currently running. If null, then the results will not be filtered."]
             pub fn running(mut self, running: bool) -> Self {
                 self.running = Some(running);
                 self
             }
+            #[doc = "String that sets the continuation token."]
             pub fn continuation_token(mut self, continuation_token: impl Into<String>) -> Self {
                 self.continuation_token = Some(continuation_token.into());
                 self
@@ -1633,6 +1638,7 @@ pub mod targets {
             pub(crate) continuation_token: Option<String>,
         }
         impl Builder {
+            #[doc = "String that sets the continuation token."]
             pub fn continuation_token(mut self, continuation_token: impl Into<String>) -> Self {
                 self.continuation_token = Some(continuation_token.into());
                 self
@@ -1935,6 +1941,7 @@ pub mod target_types {
             pub(crate) continuation_token: Option<String>,
         }
         impl Builder {
+            #[doc = "String that sets the continuation token."]
             pub fn continuation_token(mut self, continuation_token: impl Into<String>) -> Self {
                 self.continuation_token = Some(continuation_token.into());
                 self
@@ -2120,6 +2127,7 @@ pub mod capability_types {
             pub(crate) continuation_token: Option<String>,
         }
         impl Builder {
+            #[doc = "String that sets the continuation token."]
             pub fn continuation_token(mut self, continuation_token: impl Into<String>) -> Self {
                 self.continuation_token = Some(continuation_token.into());
                 self

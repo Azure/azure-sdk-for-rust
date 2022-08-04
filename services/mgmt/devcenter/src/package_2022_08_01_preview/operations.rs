@@ -251,6 +251,7 @@ pub mod dev_centers {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The maximum number of resources to return from the operation. Example: '$top=10'."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -334,6 +335,7 @@ pub mod dev_centers {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The maximum number of resources to return from the operation. Example: '$top=10'."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -765,6 +767,7 @@ pub mod projects {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The maximum number of resources to return from the operation. Example: '$top=10'."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -848,6 +851,7 @@ pub mod projects {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The maximum number of resources to return from the operation. Example: '$top=10'."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -1302,6 +1306,7 @@ pub mod attached_networks {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The maximum number of resources to return from the operation. Example: '$top=10'."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -1442,6 +1447,7 @@ pub mod attached_networks {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The maximum number of resources to return from the operation. Example: '$top=10'."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -1792,6 +1798,7 @@ pub mod galleries {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The maximum number of resources to return from the operation. Example: '$top=10'."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -2121,6 +2128,7 @@ pub mod images {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The maximum number of resources to return from the operation. Example: '$top=10'."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -2208,6 +2216,7 @@ pub mod images {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The maximum number of resources to return from the operation. Example: '$top=10'."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -2675,6 +2684,7 @@ pub mod catalogs {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The maximum number of resources to return from the operation. Example: '$top=10'."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -3164,6 +3174,7 @@ pub mod environment_types {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The maximum number of resources to return from the operation. Example: '$top=10'."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -3591,6 +3602,7 @@ pub mod project_environment_types {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The maximum number of resources to return from the operation. Example: '$top=10'."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -4060,6 +4072,7 @@ pub mod dev_box_definitions {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The maximum number of resources to return from the operation. Example: '$top=10'."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -4386,6 +4399,7 @@ pub mod dev_box_definitions {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The maximum number of resources to return from the operation. Example: '$top=10'."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -4802,6 +4816,7 @@ pub mod skus {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The maximum number of resources to return from the operation. Example: '$top=10'."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -5006,6 +5021,7 @@ pub mod pools {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The maximum number of resources to return from the operation. Example: '$top=10'."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -5472,6 +5488,7 @@ pub mod schedules {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The maximum number of resources to return from the operation. Example: '$top=10'."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -5561,6 +5578,7 @@ pub mod schedules {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The maximum number of resources to return from the operation. Example: '$top=10'."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -5626,6 +5644,7 @@ pub mod schedules {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The maximum number of resources to return from the operation. Example: '$top=10'."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -5693,6 +5712,7 @@ pub mod schedules {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The maximum number of resources to return from the operation. Example: '$top=10'."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -5760,6 +5780,7 @@ pub mod schedules {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The maximum number of resources to return from the operation. Example: '$top=10'."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -5993,6 +6014,7 @@ pub mod network_connections {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The maximum number of resources to return from the operation. Example: '$top=10'."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -6076,6 +6098,7 @@ pub mod network_connections {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The maximum number of resources to return from the operation. Example: '$top=10'."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -6393,6 +6416,7 @@ pub mod network_connections {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "The maximum number of resources to return from the operation. Example: '$top=10'."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self

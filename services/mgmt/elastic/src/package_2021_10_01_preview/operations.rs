@@ -515,6 +515,7 @@ pub mod monitors {
             pub(crate) body: Option<models::ElasticMonitorResource>,
         }
         impl Builder {
+            #[doc = "Elastic monitor resource model"]
             pub fn body(mut self, body: impl Into<models::ElasticMonitorResource>) -> Self {
                 self.body = Some(body.into());
                 self
@@ -583,6 +584,7 @@ pub mod monitors {
             pub(crate) body: Option<models::ElasticMonitorResourceUpdateParameters>,
         }
         impl Builder {
+            #[doc = "Elastic resource model update parameters."]
             pub fn body(mut self, body: impl Into<models::ElasticMonitorResourceUpdateParameters>) -> Self {
                 self.body = Some(body.into());
                 self
@@ -909,6 +911,7 @@ pub mod external_user {
             pub(crate) body: Option<models::ExternalUserInfo>,
         }
         impl Builder {
+            #[doc = "Elastic External User Creation Parameters"]
             pub fn body(mut self, body: impl Into<models::ExternalUserInfo>) -> Self {
                 self.body = Some(body.into());
                 self
@@ -1196,6 +1199,7 @@ pub mod tag_rules {
             pub(crate) body: Option<models::MonitoringTagRules>,
         }
         impl Builder {
+            #[doc = "request body of MonitoringTagRules"]
             pub fn body(mut self, body: impl Into<models::MonitoringTagRules>) -> Self {
                 self.body = Some(body.into());
                 self
@@ -1525,6 +1529,7 @@ pub mod vm_collection {
             pub(crate) body: Option<models::VmCollectionUpdate>,
         }
         impl Builder {
+            #[doc = "VM resource Id"]
             pub fn body(mut self, body: impl Into<models::VmCollectionUpdate>) -> Self {
                 self.body = Some(body.into());
                 self
@@ -1687,6 +1692,7 @@ pub mod monitor {
             pub(crate) body: Option<models::ElasticMonitorUpgrade>,
         }
         impl Builder {
+            #[doc = "Elastic Monitor Upgrade Parameters"]
             pub fn body(mut self, body: impl Into<models::ElasticMonitorUpgrade>) -> Self {
                 self.body = Some(body.into());
                 self

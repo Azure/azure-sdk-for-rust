@@ -2996,6 +2996,7 @@ pub mod databases {
             pub(crate) replica_type: Option<String>,
         }
         impl Builder {
+            #[doc = "The type of replica to be failed over."]
             pub fn replica_type(mut self, replica_type: impl Into<String>) -> Self {
                 self.replica_type = Some(replica_type.into());
                 self
@@ -3545,6 +3546,7 @@ pub mod elastic_pools {
             pub(crate) skip: Option<i64>,
         }
         impl Builder {
+            #[doc = "The number of elements in the collection to skip."]
             pub fn skip(mut self, skip: i64) -> Self {
                 self.skip = Some(skip);
                 self
@@ -11476,30 +11478,37 @@ pub mod job_executions {
             pub(crate) top: Option<i64>,
         }
         impl Builder {
+            #[doc = "If specified, only job executions created at or after the specified time are included."]
             pub fn create_time_min(mut self, create_time_min: impl Into<String>) -> Self {
                 self.create_time_min = Some(create_time_min.into());
                 self
             }
+            #[doc = "If specified, only job executions created before the specified time are included."]
             pub fn create_time_max(mut self, create_time_max: impl Into<String>) -> Self {
                 self.create_time_max = Some(create_time_max.into());
                 self
             }
+            #[doc = "If specified, only job executions completed at or after the specified time are included."]
             pub fn end_time_min(mut self, end_time_min: impl Into<String>) -> Self {
                 self.end_time_min = Some(end_time_min.into());
                 self
             }
+            #[doc = "If specified, only job executions completed before the specified time are included."]
             pub fn end_time_max(mut self, end_time_max: impl Into<String>) -> Self {
                 self.end_time_max = Some(end_time_max.into());
                 self
             }
+            #[doc = "If specified, only active or only completed job executions are included."]
             pub fn is_active(mut self, is_active: bool) -> Self {
                 self.is_active = Some(is_active);
                 self
             }
+            #[doc = "The number of elements in the collection to skip."]
             pub fn skip(mut self, skip: i64) -> Self {
                 self.skip = Some(skip);
                 self
             }
+            #[doc = "The number of elements to return from the collection."]
             pub fn top(mut self, top: i64) -> Self {
                 self.top = Some(top);
                 self
@@ -11722,30 +11731,37 @@ pub mod job_executions {
             pub(crate) top: Option<i64>,
         }
         impl Builder {
+            #[doc = "If specified, only job executions created at or after the specified time are included."]
             pub fn create_time_min(mut self, create_time_min: impl Into<String>) -> Self {
                 self.create_time_min = Some(create_time_min.into());
                 self
             }
+            #[doc = "If specified, only job executions created before the specified time are included."]
             pub fn create_time_max(mut self, create_time_max: impl Into<String>) -> Self {
                 self.create_time_max = Some(create_time_max.into());
                 self
             }
+            #[doc = "If specified, only job executions completed at or after the specified time are included."]
             pub fn end_time_min(mut self, end_time_min: impl Into<String>) -> Self {
                 self.end_time_min = Some(end_time_min.into());
                 self
             }
+            #[doc = "If specified, only job executions completed before the specified time are included."]
             pub fn end_time_max(mut self, end_time_max: impl Into<String>) -> Self {
                 self.end_time_max = Some(end_time_max.into());
                 self
             }
+            #[doc = "If specified, only active or only completed job executions are included."]
             pub fn is_active(mut self, is_active: bool) -> Self {
                 self.is_active = Some(is_active);
                 self
             }
+            #[doc = "The number of elements in the collection to skip."]
             pub fn skip(mut self, skip: i64) -> Self {
                 self.skip = Some(skip);
                 self
             }
+            #[doc = "The number of elements to return from the collection."]
             pub fn top(mut self, top: i64) -> Self {
                 self.top = Some(top);
                 self
@@ -12427,30 +12443,37 @@ pub mod job_step_executions {
             pub(crate) top: Option<i64>,
         }
         impl Builder {
+            #[doc = "If specified, only job executions created at or after the specified time are included."]
             pub fn create_time_min(mut self, create_time_min: impl Into<String>) -> Self {
                 self.create_time_min = Some(create_time_min.into());
                 self
             }
+            #[doc = "If specified, only job executions created before the specified time are included."]
             pub fn create_time_max(mut self, create_time_max: impl Into<String>) -> Self {
                 self.create_time_max = Some(create_time_max.into());
                 self
             }
+            #[doc = "If specified, only job executions completed at or after the specified time are included."]
             pub fn end_time_min(mut self, end_time_min: impl Into<String>) -> Self {
                 self.end_time_min = Some(end_time_min.into());
                 self
             }
+            #[doc = "If specified, only job executions completed before the specified time are included."]
             pub fn end_time_max(mut self, end_time_max: impl Into<String>) -> Self {
                 self.end_time_max = Some(end_time_max.into());
                 self
             }
+            #[doc = "If specified, only active or only completed job executions are included."]
             pub fn is_active(mut self, is_active: bool) -> Self {
                 self.is_active = Some(is_active);
                 self
             }
+            #[doc = "The number of elements in the collection to skip."]
             pub fn skip(mut self, skip: i64) -> Self {
                 self.skip = Some(skip);
                 self
             }
+            #[doc = "The number of elements to return from the collection."]
             pub fn top(mut self, top: i64) -> Self {
                 self.top = Some(top);
                 self
@@ -13291,30 +13314,37 @@ pub mod job_target_executions {
             pub(crate) top: Option<i64>,
         }
         impl Builder {
+            #[doc = "If specified, only job executions created at or after the specified time are included."]
             pub fn create_time_min(mut self, create_time_min: impl Into<String>) -> Self {
                 self.create_time_min = Some(create_time_min.into());
                 self
             }
+            #[doc = "If specified, only job executions created before the specified time are included."]
             pub fn create_time_max(mut self, create_time_max: impl Into<String>) -> Self {
                 self.create_time_max = Some(create_time_max.into());
                 self
             }
+            #[doc = "If specified, only job executions completed at or after the specified time are included."]
             pub fn end_time_min(mut self, end_time_min: impl Into<String>) -> Self {
                 self.end_time_min = Some(end_time_min.into());
                 self
             }
+            #[doc = "If specified, only job executions completed before the specified time are included."]
             pub fn end_time_max(mut self, end_time_max: impl Into<String>) -> Self {
                 self.end_time_max = Some(end_time_max.into());
                 self
             }
+            #[doc = "If specified, only active or only completed job executions are included."]
             pub fn is_active(mut self, is_active: bool) -> Self {
                 self.is_active = Some(is_active);
                 self
             }
+            #[doc = "The number of elements in the collection to skip."]
             pub fn skip(mut self, skip: i64) -> Self {
                 self.skip = Some(skip);
                 self
             }
+            #[doc = "The number of elements to return from the collection."]
             pub fn top(mut self, top: i64) -> Self {
                 self.top = Some(top);
                 self
@@ -13423,30 +13453,37 @@ pub mod job_target_executions {
             pub(crate) top: Option<i64>,
         }
         impl Builder {
+            #[doc = "If specified, only job executions created at or after the specified time are included."]
             pub fn create_time_min(mut self, create_time_min: impl Into<String>) -> Self {
                 self.create_time_min = Some(create_time_min.into());
                 self
             }
+            #[doc = "If specified, only job executions created before the specified time are included."]
             pub fn create_time_max(mut self, create_time_max: impl Into<String>) -> Self {
                 self.create_time_max = Some(create_time_max.into());
                 self
             }
+            #[doc = "If specified, only job executions completed at or after the specified time are included."]
             pub fn end_time_min(mut self, end_time_min: impl Into<String>) -> Self {
                 self.end_time_min = Some(end_time_min.into());
                 self
             }
+            #[doc = "If specified, only job executions completed before the specified time are included."]
             pub fn end_time_max(mut self, end_time_max: impl Into<String>) -> Self {
                 self.end_time_max = Some(end_time_max.into());
                 self
             }
+            #[doc = "If specified, only active or only completed job executions are included."]
             pub fn is_active(mut self, is_active: bool) -> Self {
                 self.is_active = Some(is_active);
                 self
             }
+            #[doc = "The number of elements in the collection to skip."]
             pub fn skip(mut self, skip: i64) -> Self {
                 self.skip = Some(skip);
                 self
             }
+            #[doc = "The number of elements to return from the collection."]
             pub fn top(mut self, top: i64) -> Self {
                 self.top = Some(top);
                 self
@@ -16947,6 +16984,7 @@ pub mod sensitivity_labels {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "An OData filter expression that filters elements in the collection."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -17030,6 +17068,7 @@ pub mod sensitivity_labels {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "Specifies whether to include disabled recommendations or not."]
             pub fn include_disabled_recommendations(mut self, include_disabled_recommendations: bool) -> Self {
                 self.include_disabled_recommendations = Some(include_disabled_recommendations);
                 self
@@ -17038,6 +17077,7 @@ pub mod sensitivity_labels {
                 self.skip_token = Some(skip_token.into());
                 self
             }
+            #[doc = "An OData filter expression that filters elements in the collection."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -20154,6 +20194,7 @@ pub mod managed_instance_keys {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "An OData filter expression that filters elements in the collection."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -22443,6 +22484,7 @@ pub mod managed_database_sensitivity_labels {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "An OData filter expression that filters elements in the collection."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -22526,6 +22568,7 @@ pub mod managed_database_sensitivity_labels {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "Specifies whether to include disabled recommendations or not."]
             pub fn include_disabled_recommendations(mut self, include_disabled_recommendations: bool) -> Self {
                 self.include_disabled_recommendations = Some(include_disabled_recommendations);
                 self
@@ -22534,6 +22577,7 @@ pub mod managed_database_sensitivity_labels {
                 self.skip_token = Some(skip_token.into());
                 self
             }
+            #[doc = "An OData filter expression that filters elements in the collection."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -23146,6 +23190,7 @@ pub mod usages {
             pub(crate) expand_children: Option<bool>,
         }
         impl Builder {
+            #[doc = "Optional request parameter to include managed instance usages within the instance pool."]
             pub fn expand_children(mut self, expand_children: bool) -> Self {
                 self.expand_children = Some(expand_children);
                 self
@@ -24077,6 +24122,7 @@ pub mod capabilities {
             pub(crate) include: Option<String>,
         }
         impl Builder {
+            #[doc = "If specified, restricts the response to only include the selected item."]
             pub fn include(mut self, include: impl Into<String>) -> Self {
                 self.include = Some(include.into());
                 self
@@ -24479,10 +24525,12 @@ pub mod long_term_retention_managed_instance_backups {
             pub(crate) database_state: Option<String>,
         }
         impl Builder {
+            #[doc = "Whether or not to only get the latest backup for each database."]
             pub fn only_latest_per_database(mut self, only_latest_per_database: bool) -> Self {
                 self.only_latest_per_database = Some(only_latest_per_database);
                 self
             }
+            #[doc = "Whether to query against just live databases, just deleted databases, or all databases."]
             pub fn database_state(mut self, database_state: impl Into<String>) -> Self {
                 self.database_state = Some(database_state.into());
                 self
@@ -24570,10 +24618,12 @@ pub mod long_term_retention_managed_instance_backups {
             pub(crate) database_state: Option<String>,
         }
         impl Builder {
+            #[doc = "Whether or not to only get the latest backup for each database."]
             pub fn only_latest_per_database(mut self, only_latest_per_database: bool) -> Self {
                 self.only_latest_per_database = Some(only_latest_per_database);
                 self
             }
+            #[doc = "Whether to query against just live databases, just deleted databases, or all databases."]
             pub fn database_state(mut self, database_state: impl Into<String>) -> Self {
                 self.database_state = Some(database_state.into());
                 self
@@ -24660,10 +24710,12 @@ pub mod long_term_retention_managed_instance_backups {
             pub(crate) database_state: Option<String>,
         }
         impl Builder {
+            #[doc = "Whether or not to only get the latest backup for each database."]
             pub fn only_latest_per_database(mut self, only_latest_per_database: bool) -> Self {
                 self.only_latest_per_database = Some(only_latest_per_database);
                 self
             }
+            #[doc = "Whether to query against just live databases, just deleted databases, or all databases."]
             pub fn database_state(mut self, database_state: impl Into<String>) -> Self {
                 self.database_state = Some(database_state.into());
                 self
@@ -24858,10 +24910,12 @@ pub mod long_term_retention_managed_instance_backups {
             pub(crate) database_state: Option<String>,
         }
         impl Builder {
+            #[doc = "Whether or not to only get the latest backup for each database."]
             pub fn only_latest_per_database(mut self, only_latest_per_database: bool) -> Self {
                 self.only_latest_per_database = Some(only_latest_per_database);
                 self
             }
+            #[doc = "Whether to query against just live databases, just deleted databases, or all databases."]
             pub fn database_state(mut self, database_state: impl Into<String>) -> Self {
                 self.database_state = Some(database_state.into());
                 self
@@ -24950,10 +25004,12 @@ pub mod long_term_retention_managed_instance_backups {
             pub(crate) database_state: Option<String>,
         }
         impl Builder {
+            #[doc = "Whether or not to only get the latest backup for each database."]
             pub fn only_latest_per_database(mut self, only_latest_per_database: bool) -> Self {
                 self.only_latest_per_database = Some(only_latest_per_database);
                 self
             }
+            #[doc = "Whether to query against just live databases, just deleted databases, or all databases."]
             pub fn database_state(mut self, database_state: impl Into<String>) -> Self {
                 self.database_state = Some(database_state.into());
                 self
@@ -25041,10 +25097,12 @@ pub mod long_term_retention_managed_instance_backups {
             pub(crate) database_state: Option<String>,
         }
         impl Builder {
+            #[doc = "Whether or not to only get the latest backup for each database."]
             pub fn only_latest_per_database(mut self, only_latest_per_database: bool) -> Self {
                 self.only_latest_per_database = Some(only_latest_per_database);
                 self
             }
+            #[doc = "Whether to query against just live databases, just deleted databases, or all databases."]
             pub fn database_state(mut self, database_state: impl Into<String>) -> Self {
                 self.database_state = Some(database_state.into());
                 self
@@ -27212,6 +27270,7 @@ pub mod sync_groups {
             pub(crate) continuation_token: Option<String>,
         }
         impl Builder {
+            #[doc = "The continuation token for this operation."]
             pub fn continuation_token(mut self, continuation_token: impl Into<String>) -> Self {
                 self.continuation_token = Some(continuation_token.into());
                 self
@@ -30057,30 +30116,37 @@ pub mod managed_instances {
             pub(crate) observation_metric: Option<String>,
         }
         impl Builder {
+            #[doc = "How many 'top queries' to return. Default is 5."]
             pub fn number_of_queries(mut self, number_of_queries: i32) -> Self {
                 self.number_of_queries = Some(number_of_queries);
                 self
             }
+            #[doc = "Comma separated list of databases to be included into search. All DB's are included if this parameter is not specified."]
             pub fn databases(mut self, databases: impl Into<String>) -> Self {
                 self.databases = Some(databases.into());
                 self
             }
+            #[doc = "Start time for observed period."]
             pub fn start_time(mut self, start_time: impl Into<String>) -> Self {
                 self.start_time = Some(start_time.into());
                 self
             }
+            #[doc = "End time for observed period."]
             pub fn end_time(mut self, end_time: impl Into<String>) -> Self {
                 self.end_time = Some(end_time.into());
                 self
             }
+            #[doc = "The time step to be used to summarize the metric values. Default value is PT1H"]
             pub fn interval(mut self, interval: impl Into<String>) -> Self {
                 self.interval = Some(interval.into());
                 self
             }
+            #[doc = "Aggregation function to be used, default value is 'sum'"]
             pub fn aggregation_function(mut self, aggregation_function: impl Into<String>) -> Self {
                 self.aggregation_function = Some(aggregation_function.into());
                 self
             }
+            #[doc = "Metric to be used for ranking top queries. Default is 'cpu'"]
             pub fn observation_metric(mut self, observation_metric: impl Into<String>) -> Self {
                 self.observation_metric = Some(observation_metric.into());
                 self
@@ -30193,6 +30259,7 @@ pub mod managed_instances {
             pub(crate) replica_type: Option<String>,
         }
         impl Builder {
+            #[doc = "The type of replica to be failed over."]
             pub fn replica_type(mut self, replica_type: impl Into<String>) -> Self {
                 self.replica_type = Some(replica_type.into());
                 self
@@ -31945,10 +32012,12 @@ pub mod long_term_retention_backups {
             pub(crate) database_state: Option<String>,
         }
         impl Builder {
+            #[doc = "Whether or not to only get the latest backup for each database."]
             pub fn only_latest_per_database(mut self, only_latest_per_database: bool) -> Self {
                 self.only_latest_per_database = Some(only_latest_per_database);
                 self
             }
+            #[doc = "Whether to query against just live databases, just deleted databases, or all databases."]
             pub fn database_state(mut self, database_state: impl Into<String>) -> Self {
                 self.database_state = Some(database_state.into());
                 self
@@ -32034,10 +32103,12 @@ pub mod long_term_retention_backups {
             pub(crate) database_state: Option<String>,
         }
         impl Builder {
+            #[doc = "Whether or not to only get the latest backup for each database."]
             pub fn only_latest_per_database(mut self, only_latest_per_database: bool) -> Self {
                 self.only_latest_per_database = Some(only_latest_per_database);
                 self
             }
+            #[doc = "Whether to query against just live databases, just deleted databases, or all databases."]
             pub fn database_state(mut self, database_state: impl Into<String>) -> Self {
                 self.database_state = Some(database_state.into());
                 self
@@ -32129,10 +32200,12 @@ pub mod long_term_retention_backups {
             pub(crate) database_state: Option<String>,
         }
         impl Builder {
+            #[doc = "Whether or not to only get the latest backup for each database."]
             pub fn only_latest_per_database(mut self, only_latest_per_database: bool) -> Self {
                 self.only_latest_per_database = Some(only_latest_per_database);
                 self
             }
+            #[doc = "Whether to query against just live databases, just deleted databases, or all databases."]
             pub fn database_state(mut self, database_state: impl Into<String>) -> Self {
                 self.database_state = Some(database_state.into());
                 self
@@ -32441,10 +32514,12 @@ pub mod long_term_retention_backups {
             pub(crate) database_state: Option<String>,
         }
         impl Builder {
+            #[doc = "Whether or not to only get the latest backup for each database."]
             pub fn only_latest_per_database(mut self, only_latest_per_database: bool) -> Self {
                 self.only_latest_per_database = Some(only_latest_per_database);
                 self
             }
+            #[doc = "Whether to query against just live databases, just deleted databases, or all databases."]
             pub fn database_state(mut self, database_state: impl Into<String>) -> Self {
                 self.database_state = Some(database_state.into());
                 self
@@ -32531,10 +32606,12 @@ pub mod long_term_retention_backups {
             pub(crate) database_state: Option<String>,
         }
         impl Builder {
+            #[doc = "Whether or not to only get the latest backup for each database."]
             pub fn only_latest_per_database(mut self, only_latest_per_database: bool) -> Self {
                 self.only_latest_per_database = Some(only_latest_per_database);
                 self
             }
+            #[doc = "Whether to query against just live databases, just deleted databases, or all databases."]
             pub fn database_state(mut self, database_state: impl Into<String>) -> Self {
                 self.database_state = Some(database_state.into());
                 self
@@ -32628,10 +32705,12 @@ pub mod long_term_retention_backups {
             pub(crate) database_state: Option<String>,
         }
         impl Builder {
+            #[doc = "Whether or not to only get the latest backup for each database."]
             pub fn only_latest_per_database(mut self, only_latest_per_database: bool) -> Self {
                 self.only_latest_per_database = Some(only_latest_per_database);
                 self
             }
+            #[doc = "Whether to query against just live databases, just deleted databases, or all databases."]
             pub fn database_state(mut self, database_state: impl Into<String>) -> Self {
                 self.database_state = Some(database_state.into());
                 self

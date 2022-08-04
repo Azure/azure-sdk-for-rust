@@ -1190,6 +1190,7 @@ pub mod application_gateways {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "Expands BackendAddressPool and BackendHttpSettings referenced in backend health."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -1258,6 +1259,7 @@ pub mod application_gateways {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "Expands BackendAddressPool and BackendHttpSettings referenced in backend health."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -2434,6 +2436,7 @@ pub mod network_interfaces {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "Expands referenced resources."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -3083,6 +3086,7 @@ pub mod network_interfaces {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "Expands referenced resources."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -3284,6 +3288,7 @@ pub mod network_interfaces {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "Expands referenced resources."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -3340,6 +3345,7 @@ pub mod network_interfaces {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "Expands referenced resources."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -3423,6 +3429,7 @@ pub mod network_interfaces {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "Expands referenced resources."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -4754,6 +4761,7 @@ pub mod load_balancers {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "Expands referenced resources."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -5947,6 +5955,7 @@ pub mod inbound_nat_rules {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "Expands referenced resources."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -6924,6 +6933,7 @@ pub mod virtual_networks {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "Expands referenced resources."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -7581,6 +7591,7 @@ pub mod subnets {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "Expands referenced resources."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -8244,6 +8255,7 @@ pub mod virtual_network_peerings {
             pub(crate) sync_remote_address_space: Option<String>,
         }
         impl Builder {
+            #[doc = "Parameter indicates the intention to sync the peering with the current address space on the remote vNet after it's updated."]
             pub fn sync_remote_address_space(mut self, sync_remote_address_space: impl Into<String>) -> Self {
                 self.sync_remote_address_space = Some(sync_remote_address_space.into());
                 self
@@ -8547,6 +8559,7 @@ pub mod network_security_groups {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "Expands referenced resources."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -12101,6 +12114,7 @@ pub mod connection_monitors {
             pub(crate) migrate: Option<String>,
         }
         impl Builder {
+            #[doc = "Value indicating whether connection monitor V1 should be migrated to V2 format."]
             pub fn migrate(mut self, migrate: impl Into<String>) -> Self {
                 self.migrate = Some(migrate.into());
                 self
@@ -13032,6 +13046,7 @@ pub mod route_tables {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "Expands referenced resources."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -13881,6 +13896,7 @@ pub mod service_endpoint_policies {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "Expands referenced resources."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -14677,6 +14693,7 @@ pub mod private_endpoints {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "Expands referenced resources."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -15802,6 +15819,7 @@ pub mod private_link_services {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "Expands referenced resources."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -16133,6 +16151,7 @@ pub mod private_link_services {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "Expands referenced resources."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -16730,6 +16749,7 @@ pub mod network_profiles {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "Expands referenced resources."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -17382,6 +17402,7 @@ pub mod public_ip_addresses {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "Expands referenced resources."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -17923,6 +17944,7 @@ pub mod public_ip_addresses {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "Expands referenced resources."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -18128,6 +18150,7 @@ pub mod public_ip_addresses {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "Expands referenced resources."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -18293,6 +18316,7 @@ pub mod nat_gateways {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "Expands referenced resources."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -19677,6 +19701,7 @@ pub mod web_categories {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "Expands resourceIds back referenced by the azureWebCategory resource."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -21154,6 +21179,7 @@ pub mod custom_ip_prefixes {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "Expands referenced resources."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -27593,6 +27619,7 @@ pub mod virtual_hubs {
             pub(crate) effective_routes_parameters: Option<models::EffectiveRoutesParameters>,
         }
         impl Builder {
+            #[doc = "Parameters supplied to get the effective routes for a specific resource."]
             pub fn effective_routes_parameters(
                 mut self,
                 effective_routes_parameters: impl Into<models::EffectiveRoutesParameters>,
@@ -28453,6 +28480,7 @@ pub mod vpn_gateways {
             pub(crate) parameters: Option<models::VpnGatewayPacketCaptureStartParameters>,
         }
         impl Builder {
+            #[doc = "Vpn gateway packet capture parameters supplied to start packet capture on vpn gateway."]
             pub fn parameters(mut self, parameters: impl Into<models::VpnGatewayPacketCaptureStartParameters>) -> Self {
                 self.parameters = Some(parameters.into());
                 self
@@ -28521,6 +28549,7 @@ pub mod vpn_gateways {
             pub(crate) parameters: Option<models::VpnGatewayPacketCaptureStopParameters>,
         }
         impl Builder {
+            #[doc = "Vpn gateway packet capture parameters supplied to stop packet capture on vpn gateway."]
             pub fn parameters(mut self, parameters: impl Into<models::VpnGatewayPacketCaptureStopParameters>) -> Self {
                 self.parameters = Some(parameters.into());
                 self
@@ -29310,6 +29339,7 @@ pub mod vpn_connections {
             pub(crate) parameters: Option<models::VpnConnectionPacketCaptureStartParameters>,
         }
         impl Builder {
+            #[doc = "Vpn Connection packet capture parameters supplied to start packet capture on gateway connection."]
             pub fn parameters(mut self, parameters: impl Into<models::VpnConnectionPacketCaptureStartParameters>) -> Self {
                 self.parameters = Some(parameters.into());
                 self
@@ -29373,6 +29403,7 @@ pub mod vpn_connections {
             pub(crate) parameters: Option<models::VpnConnectionPacketCaptureStopParameters>,
         }
         impl Builder {
+            #[doc = "Vpn Connection packet capture parameters supplied to stop packet capture on gateway connection."]
             pub fn parameters(mut self, parameters: impl Into<models::VpnConnectionPacketCaptureStopParameters>) -> Self {
                 self.parameters = Some(parameters.into());
                 self
@@ -34390,6 +34421,7 @@ pub mod virtual_network_gateways {
             pub(crate) gateway_vip: Option<String>,
         }
         impl Builder {
+            #[doc = "Virtual network gateway vip address supplied to the begin reset of the active-active feature enabled gateway."]
             pub fn gateway_vip(mut self, gateway_vip: impl Into<String>) -> Self {
                 self.gateway_vip = Some(gateway_vip.into());
                 self
@@ -34667,6 +34699,7 @@ pub mod virtual_network_gateways {
             pub(crate) peer: Option<String>,
         }
         impl Builder {
+            #[doc = "The IP address of the peer to retrieve the status of."]
             pub fn peer(mut self, peer: impl Into<String>) -> Self {
                 self.peer = Some(peer.into());
                 self
@@ -35052,6 +35085,7 @@ pub mod virtual_network_gateways {
             pub(crate) parameters: Option<models::VpnPacketCaptureStartParameters>,
         }
         impl Builder {
+            #[doc = "Virtual network gateway packet capture parameters supplied to start packet capture on gateway."]
             pub fn parameters(mut self, parameters: impl Into<models::VpnPacketCaptureStartParameters>) -> Self {
                 self.parameters = Some(parameters.into());
                 self
@@ -36004,6 +36038,7 @@ pub mod virtual_network_gateway_connections {
             pub(crate) parameters: Option<models::VpnPacketCaptureStartParameters>,
         }
         impl Builder {
+            #[doc = "Virtual network gateway packet capture parameters supplied to start packet capture on gateway connection."]
             pub fn parameters(mut self, parameters: impl Into<models::VpnPacketCaptureStartParameters>) -> Self {
                 self.parameters = Some(parameters.into());
                 self
@@ -39344,6 +39379,7 @@ pub mod firewall_policies {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "Expands referenced resources."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -40637,6 +40673,7 @@ pub mod ip_allocations {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "Expands referenced resources."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -41136,6 +41173,7 @@ pub mod ip_groups {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "Expands resourceIds (of Firewalls/Network Security Groups etc.) back referenced by the IpGroups resource."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -41635,6 +41673,7 @@ pub mod network_virtual_appliances {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "Expands referenced resources."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -42775,6 +42814,7 @@ pub mod public_ip_prefixes {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "Expands referenced resources."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -43274,6 +43314,7 @@ pub mod route_filters {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "Expands referenced express route bgp peering resources."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
@@ -44676,10 +44717,12 @@ pub mod service_tag_information {
             pub(crate) tag_name: Option<String>,
         }
         impl Builder {
+            #[doc = "Do not return address prefixes for the tag(s)."]
             pub fn no_address_prefixes(mut self, no_address_prefixes: bool) -> Self {
                 self.no_address_prefixes = Some(no_address_prefixes);
                 self
             }
+            #[doc = "Return tag information for a particular tag."]
             pub fn tag_name(mut self, tag_name: impl Into<String>) -> Self {
                 self.tag_name = Some(tag_name.into());
                 self
@@ -44957,6 +45000,7 @@ pub mod virtual_routers {
             pub(crate) expand: Option<String>,
         }
         impl Builder {
+            #[doc = "Expands referenced resources."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self

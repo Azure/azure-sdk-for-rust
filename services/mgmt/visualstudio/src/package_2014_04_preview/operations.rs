@@ -1220,6 +1220,7 @@ pub mod projects {
             pub(crate) validating: Option<String>,
         }
         impl Builder {
+            #[doc = "This parameter is ignored and should be set to an empty string."]
             pub fn validating(mut self, validating: impl Into<String>) -> Self {
                 self.validating = Some(validating.into());
                 self
@@ -1347,6 +1348,7 @@ pub mod projects {
             pub(crate) job_id: Option<String>,
         }
         impl Builder {
+            #[doc = "The job identifier."]
             pub fn job_id(mut self, job_id: impl Into<String>) -> Self {
                 self.job_id = Some(job_id.into());
                 self

@@ -702,6 +702,7 @@ pub mod subscription_feature_registrations {
             pub(crate) subscription_feature_registration_type: Option<models::SubscriptionFeatureRegistration>,
         }
         impl Builder {
+            #[doc = "Subscription Feature Registration Type details."]
             pub fn subscription_feature_registration_type(
                 mut self,
                 subscription_feature_registration_type: impl Into<models::SubscriptionFeatureRegistration>,

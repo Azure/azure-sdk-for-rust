@@ -553,6 +553,7 @@ pub mod accounts {
             pub(crate) parameters: Option<models::Account>,
         }
         impl Builder {
+            #[doc = "The parameters to provide for the Azure Video Analyzer for Media account."]
             pub fn parameters(mut self, parameters: impl Into<models::Account>) -> Self {
                 self.parameters = Some(parameters.into());
                 self
@@ -615,6 +616,7 @@ pub mod accounts {
             pub(crate) parameters: Option<models::AccountPatch>,
         }
         impl Builder {
+            #[doc = "The parameters to provide for the current Azure Video Analyzer for Media account."]
             pub fn parameters(mut self, parameters: impl Into<models::AccountPatch>) -> Self {
                 self.parameters = Some(parameters.into());
                 self
@@ -758,6 +760,7 @@ pub mod generate {
             pub(crate) parameters: Option<models::GenerateAccessTokenParameters>,
         }
         impl Builder {
+            #[doc = "The parameters for generating access token"]
             pub fn parameters(mut self, parameters: impl Into<models::GenerateAccessTokenParameters>) -> Self {
                 self.parameters = Some(parameters.into());
                 self

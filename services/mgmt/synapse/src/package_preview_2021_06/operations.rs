@@ -474,6 +474,7 @@ pub mod big_data_pools {
             pub(crate) force: Option<bool>,
         }
         impl Builder {
+            #[doc = "Whether to stop any running jobs in the Big Data pool"]
             pub fn force(mut self, force: bool) -> Self {
                 self.force = Some(force);
                 self
@@ -1718,6 +1719,7 @@ pub mod integration_runtimes {
             pub(crate) if_none_match: Option<String>,
         }
         impl Builder {
+            #[doc = "ETag of the integration runtime entity. Should only be specified for get. If the ETag matches the existing entity tag, or if * was provided, then no content will be returned."]
             pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
                 self.if_none_match = Some(if_none_match.into());
                 self
@@ -1785,6 +1787,7 @@ pub mod integration_runtimes {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "ETag of the integration runtime entity. Should only be specified for update, for which it should match existing entity or can be * for unconditional update."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -2486,6 +2489,7 @@ pub mod integration_runtime_object_metadata {
             pub(crate) get_metadata_request: Option<models::GetSsisObjectMetadataRequest>,
         }
         impl Builder {
+            #[doc = "The parameters for getting a SSIS object metadata."]
             pub fn get_metadata_request(mut self, get_metadata_request: impl Into<models::GetSsisObjectMetadataRequest>) -> Self {
                 self.get_metadata_request = Some(get_metadata_request.into());
                 self
@@ -8253,6 +8257,7 @@ pub mod sql_pool_sensitivity_labels {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "An OData filter expression that filters elements in the collection."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -8381,14 +8386,17 @@ pub mod sql_pool_sensitivity_labels {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "Specifies whether to include disabled recommendations or not."]
             pub fn include_disabled_recommendations(mut self, include_disabled_recommendations: bool) -> Self {
                 self.include_disabled_recommendations = Some(include_disabled_recommendations);
                 self
             }
+            #[doc = "An OData query option to indicate how many elements to skip in the collection."]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());
                 self
             }
+            #[doc = "An OData filter expression that filters elements in the collection."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -8869,6 +8877,7 @@ pub mod sql_pool_schemas {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "An OData filter expression that filters elements in the collection."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -9075,6 +9084,7 @@ pub mod sql_pool_tables {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "An OData filter expression that filters elements in the collection."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -9251,6 +9261,7 @@ pub mod sql_pool_table_columns {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "An OData filter expression that filters elements in the collection."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self

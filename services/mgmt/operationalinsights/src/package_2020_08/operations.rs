@@ -735,6 +735,7 @@ pub mod data_sources {
             pub(crate) skiptoken: Option<String>,
         }
         impl Builder {
+            #[doc = "Starting point of the collection of data source instances."]
             pub fn skiptoken(mut self, skiptoken: impl Into<String>) -> Self {
                 self.skiptoken = Some(skiptoken.into());
                 self
@@ -2494,6 +2495,7 @@ pub mod workspaces {
             pub(crate) force: Option<bool>,
         }
         impl Builder {
+            #[doc = "Deletes the workspace without the recovery option. A workspace that was deleted with this flag cannot be recovered."]
             pub fn force(mut self, force: bool) -> Self {
                 self.force = Some(force);
                 self

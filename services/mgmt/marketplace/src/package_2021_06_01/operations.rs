@@ -341,6 +341,7 @@ pub mod private_store {
             pub(crate) use_cache: Option<String>,
         }
         impl Builder {
+            #[doc = "Determines if to use cache or DB for serving this request"]
             pub fn use_cache(mut self, use_cache: impl Into<String>) -> Self {
                 self.use_cache = Some(use_cache.into());
                 self

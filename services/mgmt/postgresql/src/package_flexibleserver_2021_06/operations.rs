@@ -673,6 +673,7 @@ pub mod servers {
             pub(crate) parameters: Option<models::RestartParameter>,
         }
         impl Builder {
+            #[doc = "The parameters for restarting a server."]
             pub fn parameters(mut self, parameters: impl Into<models::RestartParameter>) -> Self {
                 self.parameters = Some(parameters.into());
                 self

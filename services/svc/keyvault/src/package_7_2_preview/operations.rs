@@ -1151,10 +1151,12 @@ pub mod get_certificates {
         pub(crate) include_pending: Option<bool>,
     }
     impl Builder {
+        #[doc = "Maximum number of results to return in a page. If not specified the service will return up to 25 results."]
         pub fn maxresults(mut self, maxresults: i32) -> Self {
             self.maxresults = Some(maxresults);
             self
         }
+        #[doc = "Specifies whether to include certificates which are not completely provisioned."]
         pub fn include_pending(mut self, include_pending: bool) -> Self {
             self.include_pending = Some(include_pending);
             self
@@ -1412,6 +1414,7 @@ pub mod get_certificate_issuers {
         pub(crate) maxresults: Option<i32>,
     }
     impl Builder {
+        #[doc = "Maximum number of results to return in a page. If not specified the service will return up to 25 results."]
         pub fn maxresults(mut self, maxresults: i32) -> Self {
             self.maxresults = Some(maxresults);
             self
@@ -1770,6 +1773,7 @@ pub mod get_certificate_versions {
         pub(crate) maxresults: Option<i32>,
     }
     impl Builder {
+        #[doc = "Maximum number of results to return in a page. If not specified the service will return up to 25 results."]
         pub fn maxresults(mut self, maxresults: i32) -> Self {
             self.maxresults = Some(maxresults);
             self
@@ -2342,10 +2346,12 @@ pub mod get_deleted_certificates {
         pub(crate) include_pending: Option<bool>,
     }
     impl Builder {
+        #[doc = "Maximum number of results to return in a page. If not specified the service will return up to 25 results."]
         pub fn maxresults(mut self, maxresults: i32) -> Self {
             self.maxresults = Some(maxresults);
             self
         }
+        #[doc = "Specifies whether to include certificates which are not completely provisioned."]
         pub fn include_pending(mut self, include_pending: bool) -> Self {
             self.include_pending = Some(include_pending);
             self
@@ -2798,6 +2804,7 @@ pub mod get_key_versions {
         pub(crate) maxresults: Option<i32>,
     }
     impl Builder {
+        #[doc = "Maximum number of results to return in a page. If not specified the service will return up to 25 results."]
         pub fn maxresults(mut self, maxresults: i32) -> Self {
             self.maxresults = Some(maxresults);
             self
@@ -2875,6 +2882,7 @@ pub mod get_keys {
         pub(crate) maxresults: Option<i32>,
     }
     impl Builder {
+        #[doc = "Maximum number of results to return in a page. If not specified the service will return up to 25 results."]
         pub fn maxresults(mut self, maxresults: i32) -> Self {
             self.maxresults = Some(maxresults);
             self
@@ -3354,6 +3362,7 @@ pub mod get_deleted_keys {
         pub(crate) maxresults: Option<i32>,
     }
     impl Builder {
+        #[doc = "Maximum number of results to return in a page. If not specified the service will return up to 25 results."]
         pub fn maxresults(mut self, maxresults: i32) -> Self {
             self.maxresults = Some(maxresults);
             self
@@ -3752,6 +3761,7 @@ pub mod get_secrets {
         pub(crate) maxresults: Option<i32>,
     }
     impl Builder {
+        #[doc = "Maximum number of results to return in a page. If not specified, the service will return up to 25 results."]
         pub fn maxresults(mut self, maxresults: i32) -> Self {
             self.maxresults = Some(maxresults);
             self
@@ -3830,6 +3840,7 @@ pub mod get_secret_versions {
         pub(crate) maxresults: Option<i32>,
     }
     impl Builder {
+        #[doc = "Maximum number of results to return in a page. If not specified, the service will return up to 25 results."]
         pub fn maxresults(mut self, maxresults: i32) -> Self {
             self.maxresults = Some(maxresults);
             self
@@ -3907,6 +3918,7 @@ pub mod get_deleted_secrets {
         pub(crate) maxresults: Option<i32>,
     }
     impl Builder {
+        #[doc = "Maximum number of results to return in a page. If not specified the service will return up to 25 results."]
         pub fn maxresults(mut self, maxresults: i32) -> Self {
             self.maxresults = Some(maxresults);
             self
@@ -4203,6 +4215,7 @@ pub mod get_storage_accounts {
         pub(crate) maxresults: Option<i32>,
     }
     impl Builder {
+        #[doc = "Maximum number of results to return in a page. If not specified the service will return up to 25 results."]
         pub fn maxresults(mut self, maxresults: i32) -> Self {
             self.maxresults = Some(maxresults);
             self
@@ -4280,6 +4293,7 @@ pub mod get_deleted_storage_accounts {
         pub(crate) maxresults: Option<i32>,
     }
     impl Builder {
+        #[doc = "Maximum number of results to return in a page. If not specified the service will return up to 25 results."]
         pub fn maxresults(mut self, maxresults: i32) -> Self {
             self.maxresults = Some(maxresults);
             self
@@ -4811,6 +4825,7 @@ pub mod get_sas_definitions {
         pub(crate) maxresults: Option<i32>,
     }
     impl Builder {
+        #[doc = "Maximum number of results to return in a page. If not specified the service will return up to 25 results."]
         pub fn maxresults(mut self, maxresults: i32) -> Self {
             self.maxresults = Some(maxresults);
             self
@@ -4890,6 +4905,7 @@ pub mod get_deleted_sas_definitions {
         pub(crate) maxresults: Option<i32>,
     }
     impl Builder {
+        #[doc = "Maximum number of results to return in a page. If not specified the service will return up to 25 results."]
         pub fn maxresults(mut self, maxresults: i32) -> Self {
             self.maxresults = Some(maxresults);
             self
@@ -5276,6 +5292,7 @@ pub mod full_backup {
         pub(crate) azure_storage_blob_container_uri: Option<models::SasTokenParameter>,
     }
     impl Builder {
+        #[doc = "Azure blob shared access signature token pointing to a valid Azure blob container where full backup needs to be stored. This token needs to be valid for at least next 24 hours from the time of making this call"]
         pub fn azure_storage_blob_container_uri(mut self, azure_storage_blob_container_uri: impl Into<models::SasTokenParameter>) -> Self {
             self.azure_storage_blob_container_uri = Some(azure_storage_blob_container_uri.into());
             self
@@ -5374,6 +5391,7 @@ pub mod full_restore_operation {
         pub(crate) restore_blob_details: Option<models::RestoreOperationParameters>,
     }
     impl Builder {
+        #[doc = "The Azure blob SAS token pointing to a folder where the previous successful full backup was stored"]
         pub fn restore_blob_details(mut self, restore_blob_details: impl Into<models::RestoreOperationParameters>) -> Self {
             self.restore_blob_details = Some(restore_blob_details.into());
             self
@@ -5473,6 +5491,7 @@ pub mod selective_key_restore_operation {
         pub(crate) restore_blob_details: Option<models::SelectiveKeyRestoreOperationParameters>,
     }
     impl Builder {
+        #[doc = "The Azure blob SAS token pointing to a folder where the previous successful full backup was stored"]
         pub fn restore_blob_details(mut self, restore_blob_details: impl Into<models::SelectiveKeyRestoreOperationParameters>) -> Self {
             self.restore_blob_details = Some(restore_blob_details.into());
             self
@@ -5739,6 +5758,7 @@ pub mod role_definitions {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the operation. Use atScopeAndBelow filter to search below the given scope as well."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -6033,6 +6053,7 @@ pub mod role_assignments {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "The filter to apply on the operation. Use $filter=atScope() to return all role assignments at or above the scope. Use $filter=principalId eq {id} to return all role assignments at, above or below the scope for the specified principal."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self

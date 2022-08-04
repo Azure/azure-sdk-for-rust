@@ -192,10 +192,12 @@ pub mod policy_tracked_resources {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "Maximum number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "OData filter expression."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -286,10 +288,12 @@ pub mod policy_tracked_resources {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "Maximum number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "OData filter expression."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -380,10 +384,12 @@ pub mod policy_tracked_resources {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "Maximum number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "OData filter expression."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -468,10 +474,12 @@ pub mod policy_tracked_resources {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "Maximum number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "OData filter expression."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -989,6 +997,7 @@ pub mod remediations {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "Maximum number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -1129,10 +1138,12 @@ pub mod remediations {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "Maximum number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "OData filter expression."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -1392,6 +1403,7 @@ pub mod remediations {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "Maximum number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -1528,10 +1540,12 @@ pub mod remediations {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "Maximum number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "OData filter expression."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -1785,6 +1799,7 @@ pub mod remediations {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "Maximum number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -1925,10 +1940,12 @@ pub mod remediations {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "Maximum number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "OData filter expression."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -2188,6 +2205,7 @@ pub mod remediations {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "Maximum number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
@@ -2324,10 +2342,12 @@ pub mod remediations {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "Maximum number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "OData filter expression."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -2822,6 +2842,7 @@ pub mod policy_events {
             pub(crate) skiptoken: Option<String>,
         }
         impl Builder {
+            #[doc = "Skiptoken is only provided if a previous response returned a partial result as a part of nextLink element."]
             pub fn skiptoken(mut self, skiptoken: impl Into<String>) -> Self {
                 self.skiptoken = Some(skiptoken.into());
                 self
@@ -2888,34 +2909,42 @@ pub mod policy_events {
             pub(crate) skiptoken: Option<String>,
         }
         impl Builder {
+            #[doc = "Maximum number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Ordering expression using OData notation. One or more comma-separated column names with an optional \"desc\" (the default) or \"asc\", e.g. \"$orderby=PolicyAssignmentId, ResourceId asc\"."]
             pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
                 self.orderby = Some(orderby.into());
                 self
             }
+            #[doc = "Select expression using OData notation. Limits the columns on each record to just those requested, e.g. \"$select=PolicyAssignmentId, ResourceId\"."]
             pub fn select(mut self, select: impl Into<String>) -> Self {
                 self.select = Some(select.into());
                 self
             }
+            #[doc = "ISO 8601 formatted timestamp specifying the start time of the interval to query. When not specified, the service uses ($to - 1-day)."]
             pub fn from(mut self, from: impl Into<String>) -> Self {
                 self.from = Some(from.into());
                 self
             }
+            #[doc = "ISO 8601 formatted timestamp specifying the end time of the interval to query. When not specified, the service uses request time."]
             pub fn to(mut self, to: impl Into<String>) -> Self {
                 self.to = Some(to.into());
                 self
             }
+            #[doc = "OData filter expression."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "OData apply expression for aggregations."]
             pub fn apply(mut self, apply: impl Into<String>) -> Self {
                 self.apply = Some(apply.into());
                 self
             }
+            #[doc = "Skiptoken is only provided if a previous response returned a partial result as a part of nextLink element."]
             pub fn skiptoken(mut self, skiptoken: impl Into<String>) -> Self {
                 self.skiptoken = Some(skiptoken.into());
                 self
@@ -3030,34 +3059,42 @@ pub mod policy_events {
             pub(crate) skiptoken: Option<String>,
         }
         impl Builder {
+            #[doc = "Maximum number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Ordering expression using OData notation. One or more comma-separated column names with an optional \"desc\" (the default) or \"asc\", e.g. \"$orderby=PolicyAssignmentId, ResourceId asc\"."]
             pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
                 self.orderby = Some(orderby.into());
                 self
             }
+            #[doc = "Select expression using OData notation. Limits the columns on each record to just those requested, e.g. \"$select=PolicyAssignmentId, ResourceId\"."]
             pub fn select(mut self, select: impl Into<String>) -> Self {
                 self.select = Some(select.into());
                 self
             }
+            #[doc = "ISO 8601 formatted timestamp specifying the start time of the interval to query. When not specified, the service uses ($to - 1-day)."]
             pub fn from(mut self, from: impl Into<String>) -> Self {
                 self.from = Some(from.into());
                 self
             }
+            #[doc = "ISO 8601 formatted timestamp specifying the end time of the interval to query. When not specified, the service uses request time."]
             pub fn to(mut self, to: impl Into<String>) -> Self {
                 self.to = Some(to.into());
                 self
             }
+            #[doc = "OData filter expression."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "OData apply expression for aggregations."]
             pub fn apply(mut self, apply: impl Into<String>) -> Self {
                 self.apply = Some(apply.into());
                 self
             }
+            #[doc = "Skiptoken is only provided if a previous response returned a partial result as a part of nextLink element."]
             pub fn skiptoken(mut self, skiptoken: impl Into<String>) -> Self {
                 self.skiptoken = Some(skiptoken.into());
                 self
@@ -3172,34 +3209,42 @@ pub mod policy_events {
             pub(crate) skiptoken: Option<String>,
         }
         impl Builder {
+            #[doc = "Maximum number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Ordering expression using OData notation. One or more comma-separated column names with an optional \"desc\" (the default) or \"asc\", e.g. \"$orderby=PolicyAssignmentId, ResourceId asc\"."]
             pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
                 self.orderby = Some(orderby.into());
                 self
             }
+            #[doc = "Select expression using OData notation. Limits the columns on each record to just those requested, e.g. \"$select=PolicyAssignmentId, ResourceId\"."]
             pub fn select(mut self, select: impl Into<String>) -> Self {
                 self.select = Some(select.into());
                 self
             }
+            #[doc = "ISO 8601 formatted timestamp specifying the start time of the interval to query. When not specified, the service uses ($to - 1-day)."]
             pub fn from(mut self, from: impl Into<String>) -> Self {
                 self.from = Some(from.into());
                 self
             }
+            #[doc = "ISO 8601 formatted timestamp specifying the end time of the interval to query. When not specified, the service uses request time."]
             pub fn to(mut self, to: impl Into<String>) -> Self {
                 self.to = Some(to.into());
                 self
             }
+            #[doc = "OData filter expression."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "OData apply expression for aggregations."]
             pub fn apply(mut self, apply: impl Into<String>) -> Self {
                 self.apply = Some(apply.into());
                 self
             }
+            #[doc = "Skiptoken is only provided if a previous response returned a partial result as a part of nextLink element."]
             pub fn skiptoken(mut self, skiptoken: impl Into<String>) -> Self {
                 self.skiptoken = Some(skiptoken.into());
                 self
@@ -3315,38 +3360,47 @@ pub mod policy_events {
             pub(crate) skiptoken: Option<String>,
         }
         impl Builder {
+            #[doc = "Maximum number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Ordering expression using OData notation. One or more comma-separated column names with an optional \"desc\" (the default) or \"asc\", e.g. \"$orderby=PolicyAssignmentId, ResourceId asc\"."]
             pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
                 self.orderby = Some(orderby.into());
                 self
             }
+            #[doc = "Select expression using OData notation. Limits the columns on each record to just those requested, e.g. \"$select=PolicyAssignmentId, ResourceId\"."]
             pub fn select(mut self, select: impl Into<String>) -> Self {
                 self.select = Some(select.into());
                 self
             }
+            #[doc = "ISO 8601 formatted timestamp specifying the start time of the interval to query. When not specified, the service uses ($to - 1-day)."]
             pub fn from(mut self, from: impl Into<String>) -> Self {
                 self.from = Some(from.into());
                 self
             }
+            #[doc = "ISO 8601 formatted timestamp specifying the end time of the interval to query. When not specified, the service uses request time."]
             pub fn to(mut self, to: impl Into<String>) -> Self {
                 self.to = Some(to.into());
                 self
             }
+            #[doc = "OData filter expression."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "OData apply expression for aggregations."]
             pub fn apply(mut self, apply: impl Into<String>) -> Self {
                 self.apply = Some(apply.into());
                 self
             }
+            #[doc = "The $expand query parameter. For example, to expand components use $expand=components"]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
             }
+            #[doc = "Skiptoken is only provided if a previous response returned a partial result as a part of nextLink element."]
             pub fn skiptoken(mut self, skiptoken: impl Into<String>) -> Self {
                 self.skiptoken = Some(skiptoken.into());
                 self
@@ -3465,34 +3519,42 @@ pub mod policy_events {
             pub(crate) skiptoken: Option<String>,
         }
         impl Builder {
+            #[doc = "Maximum number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Ordering expression using OData notation. One or more comma-separated column names with an optional \"desc\" (the default) or \"asc\", e.g. \"$orderby=PolicyAssignmentId, ResourceId asc\"."]
             pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
                 self.orderby = Some(orderby.into());
                 self
             }
+            #[doc = "Select expression using OData notation. Limits the columns on each record to just those requested, e.g. \"$select=PolicyAssignmentId, ResourceId\"."]
             pub fn select(mut self, select: impl Into<String>) -> Self {
                 self.select = Some(select.into());
                 self
             }
+            #[doc = "ISO 8601 formatted timestamp specifying the start time of the interval to query. When not specified, the service uses ($to - 1-day)."]
             pub fn from(mut self, from: impl Into<String>) -> Self {
                 self.from = Some(from.into());
                 self
             }
+            #[doc = "ISO 8601 formatted timestamp specifying the end time of the interval to query. When not specified, the service uses request time."]
             pub fn to(mut self, to: impl Into<String>) -> Self {
                 self.to = Some(to.into());
                 self
             }
+            #[doc = "OData filter expression."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "OData apply expression for aggregations."]
             pub fn apply(mut self, apply: impl Into<String>) -> Self {
                 self.apply = Some(apply.into());
                 self
             }
+            #[doc = "Skiptoken is only provided if a previous response returned a partial result as a part of nextLink element."]
             pub fn skiptoken(mut self, skiptoken: impl Into<String>) -> Self {
                 self.skiptoken = Some(skiptoken.into());
                 self
@@ -3603,34 +3665,42 @@ pub mod policy_events {
             pub(crate) skiptoken: Option<String>,
         }
         impl Builder {
+            #[doc = "Maximum number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Ordering expression using OData notation. One or more comma-separated column names with an optional \"desc\" (the default) or \"asc\", e.g. \"$orderby=PolicyAssignmentId, ResourceId asc\"."]
             pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
                 self.orderby = Some(orderby.into());
                 self
             }
+            #[doc = "Select expression using OData notation. Limits the columns on each record to just those requested, e.g. \"$select=PolicyAssignmentId, ResourceId\"."]
             pub fn select(mut self, select: impl Into<String>) -> Self {
                 self.select = Some(select.into());
                 self
             }
+            #[doc = "ISO 8601 formatted timestamp specifying the start time of the interval to query. When not specified, the service uses ($to - 1-day)."]
             pub fn from(mut self, from: impl Into<String>) -> Self {
                 self.from = Some(from.into());
                 self
             }
+            #[doc = "ISO 8601 formatted timestamp specifying the end time of the interval to query. When not specified, the service uses request time."]
             pub fn to(mut self, to: impl Into<String>) -> Self {
                 self.to = Some(to.into());
                 self
             }
+            #[doc = "OData filter expression."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "OData apply expression for aggregations."]
             pub fn apply(mut self, apply: impl Into<String>) -> Self {
                 self.apply = Some(apply.into());
                 self
             }
+            #[doc = "Skiptoken is only provided if a previous response returned a partial result as a part of nextLink element."]
             pub fn skiptoken(mut self, skiptoken: impl Into<String>) -> Self {
                 self.skiptoken = Some(skiptoken.into());
                 self
@@ -3741,34 +3811,42 @@ pub mod policy_events {
             pub(crate) skiptoken: Option<String>,
         }
         impl Builder {
+            #[doc = "Maximum number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Ordering expression using OData notation. One or more comma-separated column names with an optional \"desc\" (the default) or \"asc\", e.g. \"$orderby=PolicyAssignmentId, ResourceId asc\"."]
             pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
                 self.orderby = Some(orderby.into());
                 self
             }
+            #[doc = "Select expression using OData notation. Limits the columns on each record to just those requested, e.g. \"$select=PolicyAssignmentId, ResourceId\"."]
             pub fn select(mut self, select: impl Into<String>) -> Self {
                 self.select = Some(select.into());
                 self
             }
+            #[doc = "ISO 8601 formatted timestamp specifying the start time of the interval to query. When not specified, the service uses ($to - 1-day)."]
             pub fn from(mut self, from: impl Into<String>) -> Self {
                 self.from = Some(from.into());
                 self
             }
+            #[doc = "ISO 8601 formatted timestamp specifying the end time of the interval to query. When not specified, the service uses request time."]
             pub fn to(mut self, to: impl Into<String>) -> Self {
                 self.to = Some(to.into());
                 self
             }
+            #[doc = "OData filter expression."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "OData apply expression for aggregations."]
             pub fn apply(mut self, apply: impl Into<String>) -> Self {
                 self.apply = Some(apply.into());
                 self
             }
+            #[doc = "Skiptoken is only provided if a previous response returned a partial result as a part of nextLink element."]
             pub fn skiptoken(mut self, skiptoken: impl Into<String>) -> Self {
                 self.skiptoken = Some(skiptoken.into());
                 self
@@ -3880,34 +3958,42 @@ pub mod policy_events {
             pub(crate) skiptoken: Option<String>,
         }
         impl Builder {
+            #[doc = "Maximum number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Ordering expression using OData notation. One or more comma-separated column names with an optional \"desc\" (the default) or \"asc\", e.g. \"$orderby=PolicyAssignmentId, ResourceId asc\"."]
             pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
                 self.orderby = Some(orderby.into());
                 self
             }
+            #[doc = "Select expression using OData notation. Limits the columns on each record to just those requested, e.g. \"$select=PolicyAssignmentId, ResourceId\"."]
             pub fn select(mut self, select: impl Into<String>) -> Self {
                 self.select = Some(select.into());
                 self
             }
+            #[doc = "ISO 8601 formatted timestamp specifying the start time of the interval to query. When not specified, the service uses ($to - 1-day)."]
             pub fn from(mut self, from: impl Into<String>) -> Self {
                 self.from = Some(from.into());
                 self
             }
+            #[doc = "ISO 8601 formatted timestamp specifying the end time of the interval to query. When not specified, the service uses request time."]
             pub fn to(mut self, to: impl Into<String>) -> Self {
                 self.to = Some(to.into());
                 self
             }
+            #[doc = "OData filter expression."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "OData apply expression for aggregations."]
             pub fn apply(mut self, apply: impl Into<String>) -> Self {
                 self.apply = Some(apply.into());
                 self
             }
+            #[doc = "Skiptoken is only provided if a previous response returned a partial result as a part of nextLink element."]
             pub fn skiptoken(mut self, skiptoken: impl Into<String>) -> Self {
                 self.skiptoken = Some(skiptoken.into());
                 self
@@ -4470,6 +4556,7 @@ pub mod policy_states {
             pub(crate) skiptoken: Option<String>,
         }
         impl Builder {
+            #[doc = "Skiptoken is only provided if a previous response returned a partial result as a part of nextLink element."]
             pub fn skiptoken(mut self, skiptoken: impl Into<String>) -> Self {
                 self.skiptoken = Some(skiptoken.into());
                 self
@@ -4536,34 +4623,42 @@ pub mod policy_states {
             pub(crate) skiptoken: Option<String>,
         }
         impl Builder {
+            #[doc = "Maximum number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Ordering expression using OData notation. One or more comma-separated column names with an optional \"desc\" (the default) or \"asc\", e.g. \"$orderby=PolicyAssignmentId, ResourceId asc\"."]
             pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
                 self.orderby = Some(orderby.into());
                 self
             }
+            #[doc = "Select expression using OData notation. Limits the columns on each record to just those requested, e.g. \"$select=PolicyAssignmentId, ResourceId\"."]
             pub fn select(mut self, select: impl Into<String>) -> Self {
                 self.select = Some(select.into());
                 self
             }
+            #[doc = "ISO 8601 formatted timestamp specifying the start time of the interval to query. When not specified, the service uses ($to - 1-day)."]
             pub fn from(mut self, from: impl Into<String>) -> Self {
                 self.from = Some(from.into());
                 self
             }
+            #[doc = "ISO 8601 formatted timestamp specifying the end time of the interval to query. When not specified, the service uses request time."]
             pub fn to(mut self, to: impl Into<String>) -> Self {
                 self.to = Some(to.into());
                 self
             }
+            #[doc = "OData filter expression."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "OData apply expression for aggregations."]
             pub fn apply(mut self, apply: impl Into<String>) -> Self {
                 self.apply = Some(apply.into());
                 self
             }
+            #[doc = "Skiptoken is only provided if a previous response returned a partial result as a part of nextLink element."]
             pub fn skiptoken(mut self, skiptoken: impl Into<String>) -> Self {
                 self.skiptoken = Some(skiptoken.into());
                 self
@@ -4675,18 +4770,22 @@ pub mod policy_states {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "Maximum number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "ISO 8601 formatted timestamp specifying the start time of the interval to query. When not specified, the service uses ($to - 1-day)."]
             pub fn from(mut self, from: impl Into<String>) -> Self {
                 self.from = Some(from.into());
                 self
             }
+            #[doc = "ISO 8601 formatted timestamp specifying the end time of the interval to query. When not specified, the service uses request time."]
             pub fn to(mut self, to: impl Into<String>) -> Self {
                 self.to = Some(to.into());
                 self
             }
+            #[doc = "OData filter expression."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -4763,34 +4862,42 @@ pub mod policy_states {
             pub(crate) skiptoken: Option<String>,
         }
         impl Builder {
+            #[doc = "Maximum number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Ordering expression using OData notation. One or more comma-separated column names with an optional \"desc\" (the default) or \"asc\", e.g. \"$orderby=PolicyAssignmentId, ResourceId asc\"."]
             pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
                 self.orderby = Some(orderby.into());
                 self
             }
+            #[doc = "Select expression using OData notation. Limits the columns on each record to just those requested, e.g. \"$select=PolicyAssignmentId, ResourceId\"."]
             pub fn select(mut self, select: impl Into<String>) -> Self {
                 self.select = Some(select.into());
                 self
             }
+            #[doc = "ISO 8601 formatted timestamp specifying the start time of the interval to query. When not specified, the service uses ($to - 1-day)."]
             pub fn from(mut self, from: impl Into<String>) -> Self {
                 self.from = Some(from.into());
                 self
             }
+            #[doc = "ISO 8601 formatted timestamp specifying the end time of the interval to query. When not specified, the service uses request time."]
             pub fn to(mut self, to: impl Into<String>) -> Self {
                 self.to = Some(to.into());
                 self
             }
+            #[doc = "OData filter expression."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "OData apply expression for aggregations."]
             pub fn apply(mut self, apply: impl Into<String>) -> Self {
                 self.apply = Some(apply.into());
                 self
             }
+            #[doc = "Skiptoken is only provided if a previous response returned a partial result as a part of nextLink element."]
             pub fn skiptoken(mut self, skiptoken: impl Into<String>) -> Self {
                 self.skiptoken = Some(skiptoken.into());
                 self
@@ -4900,18 +5007,22 @@ pub mod policy_states {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "Maximum number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "ISO 8601 formatted timestamp specifying the start time of the interval to query. When not specified, the service uses ($to - 1-day)."]
             pub fn from(mut self, from: impl Into<String>) -> Self {
                 self.from = Some(from.into());
                 self
             }
+            #[doc = "ISO 8601 formatted timestamp specifying the end time of the interval to query. When not specified, the service uses request time."]
             pub fn to(mut self, to: impl Into<String>) -> Self {
                 self.to = Some(to.into());
                 self
             }
+            #[doc = "OData filter expression."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -4988,34 +5099,42 @@ pub mod policy_states {
             pub(crate) skiptoken: Option<String>,
         }
         impl Builder {
+            #[doc = "Maximum number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Ordering expression using OData notation. One or more comma-separated column names with an optional \"desc\" (the default) or \"asc\", e.g. \"$orderby=PolicyAssignmentId, ResourceId asc\"."]
             pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
                 self.orderby = Some(orderby.into());
                 self
             }
+            #[doc = "Select expression using OData notation. Limits the columns on each record to just those requested, e.g. \"$select=PolicyAssignmentId, ResourceId\"."]
             pub fn select(mut self, select: impl Into<String>) -> Self {
                 self.select = Some(select.into());
                 self
             }
+            #[doc = "ISO 8601 formatted timestamp specifying the start time of the interval to query. When not specified, the service uses ($to - 1-day)."]
             pub fn from(mut self, from: impl Into<String>) -> Self {
                 self.from = Some(from.into());
                 self
             }
+            #[doc = "ISO 8601 formatted timestamp specifying the end time of the interval to query. When not specified, the service uses request time."]
             pub fn to(mut self, to: impl Into<String>) -> Self {
                 self.to = Some(to.into());
                 self
             }
+            #[doc = "OData filter expression."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "OData apply expression for aggregations."]
             pub fn apply(mut self, apply: impl Into<String>) -> Self {
                 self.apply = Some(apply.into());
                 self
             }
+            #[doc = "Skiptoken is only provided if a previous response returned a partial result as a part of nextLink element."]
             pub fn skiptoken(mut self, skiptoken: impl Into<String>) -> Self {
                 self.skiptoken = Some(skiptoken.into());
                 self
@@ -5127,18 +5246,22 @@ pub mod policy_states {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "Maximum number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "ISO 8601 formatted timestamp specifying the start time of the interval to query. When not specified, the service uses ($to - 1-day)."]
             pub fn from(mut self, from: impl Into<String>) -> Self {
                 self.from = Some(from.into());
                 self
             }
+            #[doc = "ISO 8601 formatted timestamp specifying the end time of the interval to query. When not specified, the service uses request time."]
             pub fn to(mut self, to: impl Into<String>) -> Self {
                 self.to = Some(to.into());
                 self
             }
+            #[doc = "OData filter expression."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -5216,38 +5339,47 @@ pub mod policy_states {
             pub(crate) skiptoken: Option<String>,
         }
         impl Builder {
+            #[doc = "Maximum number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Ordering expression using OData notation. One or more comma-separated column names with an optional \"desc\" (the default) or \"asc\", e.g. \"$orderby=PolicyAssignmentId, ResourceId asc\"."]
             pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
                 self.orderby = Some(orderby.into());
                 self
             }
+            #[doc = "Select expression using OData notation. Limits the columns on each record to just those requested, e.g. \"$select=PolicyAssignmentId, ResourceId\"."]
             pub fn select(mut self, select: impl Into<String>) -> Self {
                 self.select = Some(select.into());
                 self
             }
+            #[doc = "ISO 8601 formatted timestamp specifying the start time of the interval to query. When not specified, the service uses ($to - 1-day)."]
             pub fn from(mut self, from: impl Into<String>) -> Self {
                 self.from = Some(from.into());
                 self
             }
+            #[doc = "ISO 8601 formatted timestamp specifying the end time of the interval to query. When not specified, the service uses request time."]
             pub fn to(mut self, to: impl Into<String>) -> Self {
                 self.to = Some(to.into());
                 self
             }
+            #[doc = "OData filter expression."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "OData apply expression for aggregations."]
             pub fn apply(mut self, apply: impl Into<String>) -> Self {
                 self.apply = Some(apply.into());
                 self
             }
+            #[doc = "The $expand query parameter. For example, to expand components use $expand=components"]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
                 self
             }
+            #[doc = "Skiptoken is only provided if a previous response returned a partial result as a part of nextLink element."]
             pub fn skiptoken(mut self, skiptoken: impl Into<String>) -> Self {
                 self.skiptoken = Some(skiptoken.into());
                 self
@@ -5360,18 +5492,22 @@ pub mod policy_states {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "Maximum number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "ISO 8601 formatted timestamp specifying the start time of the interval to query. When not specified, the service uses ($to - 1-day)."]
             pub fn from(mut self, from: impl Into<String>) -> Self {
                 self.from = Some(from.into());
                 self
             }
+            #[doc = "ISO 8601 formatted timestamp specifying the end time of the interval to query. When not specified, the service uses request time."]
             pub fn to(mut self, to: impl Into<String>) -> Self {
                 self.to = Some(to.into());
                 self
             }
+            #[doc = "OData filter expression."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -5548,34 +5684,42 @@ pub mod policy_states {
             pub(crate) skiptoken: Option<String>,
         }
         impl Builder {
+            #[doc = "Maximum number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Ordering expression using OData notation. One or more comma-separated column names with an optional \"desc\" (the default) or \"asc\", e.g. \"$orderby=PolicyAssignmentId, ResourceId asc\"."]
             pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
                 self.orderby = Some(orderby.into());
                 self
             }
+            #[doc = "Select expression using OData notation. Limits the columns on each record to just those requested, e.g. \"$select=PolicyAssignmentId, ResourceId\"."]
             pub fn select(mut self, select: impl Into<String>) -> Self {
                 self.select = Some(select.into());
                 self
             }
+            #[doc = "ISO 8601 formatted timestamp specifying the start time of the interval to query. When not specified, the service uses ($to - 1-day)."]
             pub fn from(mut self, from: impl Into<String>) -> Self {
                 self.from = Some(from.into());
                 self
             }
+            #[doc = "ISO 8601 formatted timestamp specifying the end time of the interval to query. When not specified, the service uses request time."]
             pub fn to(mut self, to: impl Into<String>) -> Self {
                 self.to = Some(to.into());
                 self
             }
+            #[doc = "OData filter expression."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "OData apply expression for aggregations."]
             pub fn apply(mut self, apply: impl Into<String>) -> Self {
                 self.apply = Some(apply.into());
                 self
             }
+            #[doc = "Skiptoken is only provided if a previous response returned a partial result as a part of nextLink element."]
             pub fn skiptoken(mut self, skiptoken: impl Into<String>) -> Self {
                 self.skiptoken = Some(skiptoken.into());
                 self
@@ -5682,18 +5826,22 @@ pub mod policy_states {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "Maximum number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "ISO 8601 formatted timestamp specifying the start time of the interval to query. When not specified, the service uses ($to - 1-day)."]
             pub fn from(mut self, from: impl Into<String>) -> Self {
                 self.from = Some(from.into());
                 self
             }
+            #[doc = "ISO 8601 formatted timestamp specifying the end time of the interval to query. When not specified, the service uses request time."]
             pub fn to(mut self, to: impl Into<String>) -> Self {
                 self.to = Some(to.into());
                 self
             }
+            #[doc = "OData filter expression."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -5766,34 +5914,42 @@ pub mod policy_states {
             pub(crate) skiptoken: Option<String>,
         }
         impl Builder {
+            #[doc = "Maximum number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Ordering expression using OData notation. One or more comma-separated column names with an optional \"desc\" (the default) or \"asc\", e.g. \"$orderby=PolicyAssignmentId, ResourceId asc\"."]
             pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
                 self.orderby = Some(orderby.into());
                 self
             }
+            #[doc = "Select expression using OData notation. Limits the columns on each record to just those requested, e.g. \"$select=PolicyAssignmentId, ResourceId\"."]
             pub fn select(mut self, select: impl Into<String>) -> Self {
                 self.select = Some(select.into());
                 self
             }
+            #[doc = "ISO 8601 formatted timestamp specifying the start time of the interval to query. When not specified, the service uses ($to - 1-day)."]
             pub fn from(mut self, from: impl Into<String>) -> Self {
                 self.from = Some(from.into());
                 self
             }
+            #[doc = "ISO 8601 formatted timestamp specifying the end time of the interval to query. When not specified, the service uses request time."]
             pub fn to(mut self, to: impl Into<String>) -> Self {
                 self.to = Some(to.into());
                 self
             }
+            #[doc = "OData filter expression."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "OData apply expression for aggregations."]
             pub fn apply(mut self, apply: impl Into<String>) -> Self {
                 self.apply = Some(apply.into());
                 self
             }
+            #[doc = "Skiptoken is only provided if a previous response returned a partial result as a part of nextLink element."]
             pub fn skiptoken(mut self, skiptoken: impl Into<String>) -> Self {
                 self.skiptoken = Some(skiptoken.into());
                 self
@@ -5900,18 +6056,22 @@ pub mod policy_states {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "Maximum number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "ISO 8601 formatted timestamp specifying the start time of the interval to query. When not specified, the service uses ($to - 1-day)."]
             pub fn from(mut self, from: impl Into<String>) -> Self {
                 self.from = Some(from.into());
                 self
             }
+            #[doc = "ISO 8601 formatted timestamp specifying the end time of the interval to query. When not specified, the service uses request time."]
             pub fn to(mut self, to: impl Into<String>) -> Self {
                 self.to = Some(to.into());
                 self
             }
+            #[doc = "OData filter expression."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -5984,34 +6144,42 @@ pub mod policy_states {
             pub(crate) skiptoken: Option<String>,
         }
         impl Builder {
+            #[doc = "Maximum number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Ordering expression using OData notation. One or more comma-separated column names with an optional \"desc\" (the default) or \"asc\", e.g. \"$orderby=PolicyAssignmentId, ResourceId asc\"."]
             pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
                 self.orderby = Some(orderby.into());
                 self
             }
+            #[doc = "Select expression using OData notation. Limits the columns on each record to just those requested, e.g. \"$select=PolicyAssignmentId, ResourceId\"."]
             pub fn select(mut self, select: impl Into<String>) -> Self {
                 self.select = Some(select.into());
                 self
             }
+            #[doc = "ISO 8601 formatted timestamp specifying the start time of the interval to query. When not specified, the service uses ($to - 1-day)."]
             pub fn from(mut self, from: impl Into<String>) -> Self {
                 self.from = Some(from.into());
                 self
             }
+            #[doc = "ISO 8601 formatted timestamp specifying the end time of the interval to query. When not specified, the service uses request time."]
             pub fn to(mut self, to: impl Into<String>) -> Self {
                 self.to = Some(to.into());
                 self
             }
+            #[doc = "OData filter expression."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "OData apply expression for aggregations."]
             pub fn apply(mut self, apply: impl Into<String>) -> Self {
                 self.apply = Some(apply.into());
                 self
             }
+            #[doc = "Skiptoken is only provided if a previous response returned a partial result as a part of nextLink element."]
             pub fn skiptoken(mut self, skiptoken: impl Into<String>) -> Self {
                 self.skiptoken = Some(skiptoken.into());
                 self
@@ -6118,18 +6286,22 @@ pub mod policy_states {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "Maximum number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "ISO 8601 formatted timestamp specifying the start time of the interval to query. When not specified, the service uses ($to - 1-day)."]
             pub fn from(mut self, from: impl Into<String>) -> Self {
                 self.from = Some(from.into());
                 self
             }
+            #[doc = "ISO 8601 formatted timestamp specifying the end time of the interval to query. When not specified, the service uses request time."]
             pub fn to(mut self, to: impl Into<String>) -> Self {
                 self.to = Some(to.into());
                 self
             }
+            #[doc = "OData filter expression."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -6203,34 +6375,42 @@ pub mod policy_states {
             pub(crate) skiptoken: Option<String>,
         }
         impl Builder {
+            #[doc = "Maximum number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "Ordering expression using OData notation. One or more comma-separated column names with an optional \"desc\" (the default) or \"asc\", e.g. \"$orderby=PolicyAssignmentId, ResourceId asc\"."]
             pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
                 self.orderby = Some(orderby.into());
                 self
             }
+            #[doc = "Select expression using OData notation. Limits the columns on each record to just those requested, e.g. \"$select=PolicyAssignmentId, ResourceId\"."]
             pub fn select(mut self, select: impl Into<String>) -> Self {
                 self.select = Some(select.into());
                 self
             }
+            #[doc = "ISO 8601 formatted timestamp specifying the start time of the interval to query. When not specified, the service uses ($to - 1-day)."]
             pub fn from(mut self, from: impl Into<String>) -> Self {
                 self.from = Some(from.into());
                 self
             }
+            #[doc = "ISO 8601 formatted timestamp specifying the end time of the interval to query. When not specified, the service uses request time."]
             pub fn to(mut self, to: impl Into<String>) -> Self {
                 self.to = Some(to.into());
                 self
             }
+            #[doc = "OData filter expression."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
+            #[doc = "OData apply expression for aggregations."]
             pub fn apply(mut self, apply: impl Into<String>) -> Self {
                 self.apply = Some(apply.into());
                 self
             }
+            #[doc = "Skiptoken is only provided if a previous response returned a partial result as a part of nextLink element."]
             pub fn skiptoken(mut self, skiptoken: impl Into<String>) -> Self {
                 self.skiptoken = Some(skiptoken.into());
                 self
@@ -6338,18 +6518,22 @@ pub mod policy_states {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "Maximum number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
+            #[doc = "ISO 8601 formatted timestamp specifying the start time of the interval to query. When not specified, the service uses ($to - 1-day)."]
             pub fn from(mut self, from: impl Into<String>) -> Self {
                 self.from = Some(from.into());
                 self
             }
+            #[doc = "ISO 8601 formatted timestamp specifying the end time of the interval to query. When not specified, the service uses request time."]
             pub fn to(mut self, to: impl Into<String>) -> Self {
                 self.to = Some(to.into());
                 self
             }
+            #[doc = "OData filter expression."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -6536,6 +6720,7 @@ pub mod policy_metadata {
             pub(crate) top: Option<i32>,
         }
         impl Builder {
+            #[doc = "Maximum number of records to return."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self

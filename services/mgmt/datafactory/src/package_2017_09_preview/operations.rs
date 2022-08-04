@@ -1271,6 +1271,7 @@ pub mod integration_runtimes {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "ETag of the integration runtime entity. Should only be specified for update, for which it should match existing entity or can be * for unconditional update."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -2388,6 +2389,7 @@ pub mod linked_services {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "ETag of the linkedService entity.  Should only be specified for update, for which it should match existing entity or can be * for unconditional update."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -2734,6 +2736,7 @@ pub mod datasets {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "ETag of the dataset entity.  Should only be specified for update, for which it should match existing entity or can be * for unconditional update."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -3103,6 +3106,7 @@ pub mod pipelines {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "ETag of the pipeline entity.  Should only be specified for update, for which it should match existing entity or can be * for unconditional update."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self
@@ -3221,6 +3225,7 @@ pub mod pipelines {
             pub(crate) parameters: Option<models::ParameterValueSpecification>,
         }
         impl Builder {
+            #[doc = "Parameters of the pipeline run."]
             pub fn parameters(mut self, parameters: impl Into<models::ParameterValueSpecification>) -> Self {
                 self.parameters = Some(parameters.into());
                 self
@@ -3484,14 +3489,17 @@ pub mod activity_runs {
             pub(crate) linked_service_name: Option<String>,
         }
         impl Builder {
+            #[doc = "The status of the pipeline run."]
             pub fn status(mut self, status: impl Into<String>) -> Self {
                 self.status = Some(status.into());
                 self
             }
+            #[doc = "The name of the activity."]
             pub fn activity_name(mut self, activity_name: impl Into<String>) -> Self {
                 self.activity_name = Some(activity_name.into());
                 self
             }
+            #[doc = "The linked service name."]
             pub fn linked_service_name(mut self, linked_service_name: impl Into<String>) -> Self {
                 self.linked_service_name = Some(linked_service_name.into());
                 self
@@ -3885,6 +3893,7 @@ pub mod triggers {
             pub(crate) if_match: Option<String>,
         }
         impl Builder {
+            #[doc = "ETag of the trigger entity.  Should only be specified for update, for which it should match existing entity or can be * for unconditional update."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
                 self

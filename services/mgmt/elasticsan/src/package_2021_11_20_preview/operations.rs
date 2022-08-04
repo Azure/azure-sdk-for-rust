@@ -166,6 +166,7 @@ pub mod skus {
             pub(crate) filter: Option<String>,
         }
         impl Builder {
+            #[doc = "Specify $filter='location eq <location>' to filter on location."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self

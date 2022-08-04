@@ -584,6 +584,7 @@ pub mod charges_by_billing_account {
             pub(crate) apply: Option<String>,
         }
         impl Builder {
+            #[doc = "May be used to group charges by properties/billingProfileId, or properties/invoiceSectionId."]
             pub fn apply(mut self, apply: impl Into<String>) -> Self {
                 self.apply = Some(apply.into());
                 self
@@ -760,6 +761,7 @@ pub mod charges_by_invoice_section {
             pub(crate) apply: Option<String>,
         }
         impl Builder {
+            #[doc = "May be used to group charges by properties/productName."]
             pub fn apply(mut self, apply: impl Into<String>) -> Self {
                 self.apply = Some(apply.into());
                 self
