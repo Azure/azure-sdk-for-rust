@@ -40,3 +40,14 @@ impl std::convert::TryFrom<crate::service::CollectedResponse> for ModuleIdentity
         Ok(module_identity_response)
     }
 }
+
+/// Response for CreateOrUpdateModuleIdentity
+pub type CreateOrUpdateModuleIdentityResponse = ModuleIdentityResponse;
+
+impl CreateOrUpdateModuleIdentityResponse {
+    pub(crate) async fn try_from(response: azure_core::Response) -> azure_core::Result<Self> {
+        let collected = azure_core::CollectedResponse::from_response(response).await?;
+        let body = collected.body();
+        Ok(serde_json::from_slice(body)?)
+    }
+}

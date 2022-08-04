@@ -13,9 +13,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .expect("Please pass the device id as the first parameter");
 
     println!("Getting device twin for device '{}'", device_id);
-    let http_client = azure_core::new_http_client();
-    let service_client =
-        ServiceClient::from_connection_string(http_client, iot_hub_connection_string, 3600)?;
+    let service_client = ServiceClient::new_connection_string(iot_hub_connection_string, 3600)?;
     let device = service_client
         .create_device_identity(
             &device_id,
@@ -27,6 +25,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         )
         .into_future()
         .await?;
+    let device: DeviceIdentityResponse = device.try_into()?;
 
     println!("Successfully created a new device '{}'", device.device_id);
 

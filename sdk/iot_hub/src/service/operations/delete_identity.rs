@@ -13,7 +13,7 @@ azure_core::operation! {
 
 impl DeleteIdentityBuilder {
     /// Execute the request to delete the module or device identity.
-    pub fn into_future(self) -> DeleteIdentity {
+    pub fn into_future(mut self) -> DeleteIdentity {
         Box::pin(async move {
             let uri = match &self.module_id {
                 Some(module_id) => format!(
@@ -31,10 +31,7 @@ impl DeleteIdentityBuilder {
 
             request.set_body(azure_core::EMPTY_BODY);
 
-            self.client
-                .http_client()
-                .execute_request_check_status(&request)
-                .await?;
+            self.client.send(&mut self.context, &mut request).await?;
             Ok(())
         })
     }

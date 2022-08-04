@@ -4,14 +4,13 @@ use crate::shared_access_signature::account_sas::{
     AccountSasPermissions, AccountSasResource, AccountSasResourceType, AccountSharedAccessSignature,
 };
 use crate::ConnectionString;
-use crate::TimeoutPolicy;
 use azure_core::date;
 use azure_core::{
     auth::TokenCredential,
     error::{Error, ErrorKind, ResultExt},
     headers::*,
     prelude::Timeout,
-    Body, ClientOptions, Context, Method, Pipeline, Request, Response,
+    Body, ClientOptions, Context, Method, Pipeline, Request, Response, TimeoutPolicy,
 };
 use std::sync::Arc;
 use time::OffsetDateTime;
@@ -514,7 +513,7 @@ fn get_endpoint_uri(
     })
 }
 
-/// Create a Pipeline from CosmosOptions
+/// Create a Pipeline from StorageOptions
 fn new_pipeline_from_options(options: StorageOptions, credentials: StorageCredentials) -> Pipeline {
     let auth_policy: Arc<dyn azure_core::Policy> = Arc::new(AuthorizationPolicy::new(credentials));
 

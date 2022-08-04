@@ -1,6 +1,6 @@
+use crate::request_options::Timeout;
+use crate::{AppendToUrlQuery, Context, Policy, PolicyResult, Request};
 use std::sync::Arc;
-
-use azure_core::{prelude::*, Context, Policy, PolicyResult, Request};
 
 #[derive(Debug, Clone, Default)]
 pub struct TimeoutPolicy {

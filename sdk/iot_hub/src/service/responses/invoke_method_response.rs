@@ -1,4 +1,3 @@
-use azure_core::error::Error;
 use serde::Deserialize;
 
 /// The DirectMethodResponse struct contains the response
@@ -11,14 +10,10 @@ pub struct InvokeMethodResponse {
     pub payload: Option<serde_json::Value>,
 }
 
-impl std::convert::TryFrom<crate::service::CollectedResponse> for InvokeMethodResponse {
-    type Error = Error;
-
-    fn try_from(response: crate::service::CollectedResponse) -> azure_core::Result<Self> {
-        let body = response.body();
-
-        let invoke_method_response: InvokeMethodResponse = serde_json::from_slice(body)?;
-
-        Ok(invoke_method_response)
+impl InvokeMethodResponse {
+    pub(crate) async fn try_from(response: azure_core::Response) -> azure_core::Result<Self> {
+        let collected = azure_core::CollectedResponse::from_response(response).await?;
+        let body = collected.body();
+        Ok(serde_json::from_slice(body)?)
     }
 }

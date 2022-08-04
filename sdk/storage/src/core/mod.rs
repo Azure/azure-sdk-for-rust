@@ -7,7 +7,6 @@ pub mod hmac;
 mod macros;
 pub mod prelude;
 pub mod shared_access_signature;
-mod timeout_policy;
 
 pub use self::connection_string::{ConnectionString, EndpointProtocol};
 pub use self::connection_string_builder::ConnectionStringBuilder;
@@ -19,7 +18,6 @@ pub mod storage_shared_key_credential;
 mod stored_access_policy;
 pub use azure_core::error::{Error, ErrorKind, ResultExt};
 pub mod xml;
-pub use timeout_policy::TimeoutPolicy;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct IPRange {

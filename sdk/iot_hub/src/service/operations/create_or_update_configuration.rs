@@ -2,7 +2,6 @@ use azure_core::headers;
 use azure_core::Method;
 use serde::Serialize;
 use std::collections::HashMap;
-use std::convert::TryInto;
 
 use crate::service::resources::{ConfigurationContent, ConfigurationMetrics};
 use crate::service::responses::ConfigurationResponse;
@@ -70,7 +69,7 @@ impl CreateOrUpdateConfigurationBuilder {
     }
 
     /// Performs the create or update request on the device identity
-    pub fn into_future(self) -> CreateOrUpdateConfiguration {
+    pub fn into_future(mut self) -> CreateOrUpdateConfiguration {
         Box::pin(async move {
             let uri = format!(
                 "https://{}.azure-devices.net/configurations/{}?api-version={}",
@@ -102,11 +101,9 @@ impl CreateOrUpdateConfigurationBuilder {
             let body = azure_core::to_json(&body)?;
             request.set_body(body);
 
-            self.client
-                .http_client()
-                .execute_request_check_status(&request)
-                .await?
-                .try_into()
+            let response = self.client.send(&mut self.context, &mut request).await?;
+
+            CreateOrUpdateConfigurationResponse::try_from(response).await
         })
     }
 }
