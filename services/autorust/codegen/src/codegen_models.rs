@@ -633,6 +633,7 @@ fn create_struct(cg: &CodeGen, schema: &SchemaGen, struct_name: &str, pageable: 
         if field_name != property_name {
             serde_attrs.push(quote! { rename = #property_name });
         }
+        #[allow(clippy::collapsible_else_if)]
         if is_required {
             if type_name.is_date_time() {
                 serde_attrs.push(quote! { with = "azure_core::date::rfc3339"});

@@ -859,12 +859,6 @@ impl FunctionParam {
     fn is_string(&self) -> bool {
         self.type_name.is_string()
     }
-    fn is_date_time(&self) -> bool {
-        self.type_name.is_date_time()
-    }
-    fn is_date_time_rfc1123(&self) -> bool {
-        self.type_name.is_date_time_rfc1123()
-    }
 }
 
 #[derive(Clone)]
