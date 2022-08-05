@@ -473,7 +473,8 @@ mod tests {
 
     #[test]
     fn test_tp_string() -> Result<()> {
-        let tp = TypeNameCode::from(tp_string());
+        let mut tp = TypeNameCode::from(tp_string());
+        tp.type_name = Some(TypeName::String);
         assert!(tp.is_string());
         Ok(())
     }
