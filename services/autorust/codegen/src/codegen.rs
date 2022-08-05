@@ -86,7 +86,7 @@ fn id_models() -> Ident {
 }
 
 pub fn type_name_gen(type_name: &TypeName) -> Result<TypeNameCode> {
-    Ok(match type_name {
+    let mut type_name_code = match type_name {
         TypeName::Reference(name) => {
             let idt = parse_ident(&name.to_pascal_case())?;
             TypeNameCode::from(idt).allow_qualify_models(true)
@@ -100,7 +100,11 @@ pub fn type_name_gen(type_name: &TypeName) -> Result<TypeNameCode> {
         TypeName::Float64 => TypeNameCode::from(tp_f64()).allow_impl_into(false),
         TypeName::Boolean => TypeNameCode::from(tp_bool()).allow_impl_into(false),
         TypeName::String => TypeNameCode::from(tp_string()),
-    })
+        TypeName::DateTime => TypeNameCode::from(tp_date_time()),
+        TypeName::DateTimeRfc1123 => TypeNameCode::from(tp_date_time()),
+    };
+    type_name_code.type_name = Some(type_name.clone());
+    Ok(type_name_code)
 }
 
 pub fn create_mod() -> TokenStream {
@@ -145,15 +149,23 @@ pub struct TypeNameCode {
     boxed: bool,
     qualify_models: bool,
     allow_qualify_models: bool,
+    type_name: Option<TypeName>,
 }
 
 impl TypeNameCode {
     pub fn is_string(&self) -> bool {
-        self.type_path.to_token_stream().to_string() == TP_STRING
+        self.type_name == Some(TypeName::String)
+    }
+    pub fn is_date_time(&self) -> bool {
+        self.type_name == Some(TypeName::DateTime)
+    }
+    pub fn is_date_time_rfc1123(&self) -> bool {
+        self.type_name == Some(TypeName::DateTimeRfc1123)
     }
     pub fn is_vec(&self) -> bool {
         self.vec_count > 0 && !self.force_value
     }
+    /// Forces the type to be `serde_json::Value`
     pub fn force_value(mut self, force_value: bool) -> Self {
         self.force_value = force_value;
         self
@@ -272,6 +284,7 @@ impl From<TypePath> for TypeNameCode {
             boxed: false,
             qualify_models: false,
             allow_qualify_models: false,
+            type_name: None,
         }
     }
 }
@@ -372,13 +385,16 @@ fn tp_bool() -> TypePath {
     parse_type_path("bool").unwrap()
 }
 
-const TP_STRING: &str = "String";
 fn tp_string() -> TypePath {
-    parse_type_path(TP_STRING).unwrap() // std::string::String
+    parse_type_path("String").unwrap() // std::string::String
 }
 
 fn tp_box() -> TypePath {
     parse_type_path("Box").unwrap() // std::boxed::Box
+}
+
+fn tp_date_time() -> TypePath {
+    parse_type_path("time::OffsetDateTime").unwrap()
 }
 
 #[cfg(test)]
@@ -457,7 +473,8 @@ mod tests {
 
     #[test]
     fn test_tp_string() -> Result<()> {
-        let tp = TypeNameCode::from(tp_string());
+        let mut tp = TypeNameCode::from(tp_string());
+        tp.type_name = Some(TypeName::String);
         assert!(tp.is_string());
         Ok(())
     }

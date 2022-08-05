@@ -19,11 +19,17 @@ pub struct Conversion {
     #[doc = "The status of the conversion. Terminal states are 'Cancelled', 'Failed', and 'Succeeded'."]
     pub status: ConversionStatus,
     #[doc = "The time when the conversion was created. Date and time in ISO 8601 format."]
-    #[serde(rename = "creationTime")]
-    pub creation_time: String,
+    #[serde(rename = "creationTime", with = "azure_core::date::rfc3339")]
+    pub creation_time: time::OffsetDateTime,
 }
 impl Conversion {
-    pub fn new(id: String, settings: ConversionSettings, error: Error, status: ConversionStatus, creation_time: String) -> Self {
+    pub fn new(
+        id: String,
+        settings: ConversionSettings,
+        error: Error,
+        status: ConversionStatus,
+        creation_time: time::OffsetDateTime,
+    ) -> Self {
         Self {
             id,
             settings,
@@ -289,8 +295,8 @@ pub struct SessionProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<Error>,
     #[doc = "The time when the rendering session was created. Date and time in ISO 8601 format."]
-    #[serde(rename = "creationTime", default, skip_serializing_if = "Option::is_none")]
-    pub creation_time: Option<String>,
+    #[serde(rename = "creationTime", with = "azure_core::date::rfc3339::option")]
+    pub creation_time: Option<time::OffsetDateTime>,
 }
 impl SessionProperties {
     pub fn new(id: String, size: SessionSize, status: SessionStatus) -> Self {

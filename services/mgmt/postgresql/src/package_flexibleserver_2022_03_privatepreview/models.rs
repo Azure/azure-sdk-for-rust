@@ -14,8 +14,8 @@ pub struct Backup {
     #[serde(rename = "geoRedundantBackup", default, skip_serializing_if = "Option::is_none")]
     pub geo_redundant_backup: Option<backup::GeoRedundantBackup>,
     #[doc = "The earliest restore point time (ISO8601 format) for server."]
-    #[serde(rename = "earliestRestoreDate", default, skip_serializing_if = "Option::is_none")]
-    pub earliest_restore_date: Option<String>,
+    #[serde(rename = "earliestRestoreDate", with = "azure_core::date::rfc3339::option")]
+    pub earliest_restore_date: Option<time::OffsetDateTime>,
 }
 impl Backup {
     pub fn new() -> Self {
@@ -1047,8 +1047,8 @@ pub struct ServerBackupProperties {
     #[serde(rename = "backupType", default, skip_serializing_if = "Option::is_none")]
     pub backup_type: Option<String>,
     #[doc = "Backup completed time (ISO8601 format)."]
-    #[serde(rename = "completedTime", default, skip_serializing_if = "Option::is_none")]
-    pub completed_time: Option<String>,
+    #[serde(rename = "completedTime", with = "azure_core::date::rfc3339::option")]
+    pub completed_time: Option<time::OffsetDateTime>,
     #[doc = "Backup source"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub source: Option<String>,
@@ -1139,8 +1139,8 @@ pub struct ServerProperties {
     #[serde(rename = "sourceServerResourceId", default, skip_serializing_if = "Option::is_none")]
     pub source_server_resource_id: Option<String>,
     #[doc = "Restore point creation time (ISO8601 format), specifying the time to restore from. It's required when 'createMode' is 'PointInTimeRestore'."]
-    #[serde(rename = "pointInTimeUTC", default, skip_serializing_if = "Option::is_none")]
-    pub point_in_time_utc: Option<String>,
+    #[serde(rename = "pointInTimeUTC", with = "azure_core::date::rfc3339::option")]
+    pub point_in_time_utc: Option<time::OffsetDateTime>,
     #[doc = "availability zone information of the server."]
     #[serde(rename = "availabilityZone", default, skip_serializing_if = "Option::is_none")]
     pub availability_zone: Option<String>,
@@ -1560,8 +1560,8 @@ pub struct SystemData {
     #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
-    #[serde(rename = "createdAt", default, skip_serializing_if = "Option::is_none")]
-    pub created_at: Option<String>,
+    #[serde(rename = "createdAt", with = "azure_core::date::rfc3339::option")]
+    pub created_at: Option<time::OffsetDateTime>,
     #[doc = "The identity that last modified the resource."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
@@ -1569,8 +1569,8 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
-    #[serde(rename = "lastModifiedAt", default, skip_serializing_if = "Option::is_none")]
-    pub last_modified_at: Option<String>,
+    #[serde(rename = "lastModifiedAt", with = "azure_core::date::rfc3339::option")]
+    pub last_modified_at: Option<time::OffsetDateTime>,
 }
 impl SystemData {
     pub fn new() -> Self {

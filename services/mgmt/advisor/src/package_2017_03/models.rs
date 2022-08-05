@@ -77,8 +77,8 @@ pub struct RecommendationProperties {
     #[serde(rename = "impactedValue", default, skip_serializing_if = "Option::is_none")]
     pub impacted_value: Option<String>,
     #[doc = "The most recent time that Advisor checked the validity of the recommendation."]
-    #[serde(rename = "lastUpdated", default, skip_serializing_if = "Option::is_none")]
-    pub last_updated: Option<String>,
+    #[serde(rename = "lastUpdated", with = "azure_core::date::rfc3339::option")]
+    pub last_updated: Option<time::OffsetDateTime>,
     #[doc = "The recommendation metadata."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub metadata: Option<serde_json::Value>,

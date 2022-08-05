@@ -724,17 +724,17 @@ pub mod pipeline {
         #[derive(Clone)]
         pub struct Builder {
             pub(crate) client: super::super::Client,
-            pub(crate) start_date_time: Option<String>,
-            pub(crate) end_date_time: Option<String>,
+            pub(crate) start_date_time: Option<time::OffsetDateTime>,
+            pub(crate) end_date_time: Option<time::OffsetDateTime>,
         }
         impl Builder {
             #[doc = "The start date for when to get the list of pipelines. The startDateTime and endDateTime can be no more than 30 days apart."]
-            pub fn start_date_time(mut self, start_date_time: impl Into<String>) -> Self {
+            pub fn start_date_time(mut self, start_date_time: impl Into<time::OffsetDateTime>) -> Self {
                 self.start_date_time = Some(start_date_time.into());
                 self
             }
             #[doc = "The end date for when to get the list of pipelines. The startDateTime and endDateTime can be no more than 30 days apart."]
-            pub fn end_date_time(mut self, end_date_time: impl Into<String>) -> Self {
+            pub fn end_date_time(mut self, end_date_time: impl Into<time::OffsetDateTime>) -> Self {
                 self.end_date_time = Some(end_date_time.into());
                 self
             }
@@ -777,10 +777,14 @@ pub mod pipeline {
                                     .query_pairs_mut()
                                     .append_pair(azure_core::query_param::API_VERSION, "2017-09-01-preview");
                                 if let Some(start_date_time) = &this.start_date_time {
-                                    req.url_mut().query_pairs_mut().append_pair("startDateTime", start_date_time);
+                                    req.url_mut()
+                                        .query_pairs_mut()
+                                        .append_pair("startDateTime", &start_date_time.to_string());
                                 }
                                 if let Some(end_date_time) = &this.end_date_time {
-                                    req.url_mut().query_pairs_mut().append_pair("endDateTime", end_date_time);
+                                    req.url_mut()
+                                        .query_pairs_mut()
+                                        .append_pair("endDateTime", &end_date_time.to_string());
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -812,17 +816,17 @@ pub mod pipeline {
         pub struct Builder {
             pub(crate) client: super::super::Client,
             pub(crate) pipeline_identity: String,
-            pub(crate) start_date_time: Option<String>,
-            pub(crate) end_date_time: Option<String>,
+            pub(crate) start_date_time: Option<time::OffsetDateTime>,
+            pub(crate) end_date_time: Option<time::OffsetDateTime>,
         }
         impl Builder {
             #[doc = "The start date for when to get the pipeline and aggregate its data. The startDateTime and endDateTime can be no more than 30 days apart."]
-            pub fn start_date_time(mut self, start_date_time: impl Into<String>) -> Self {
+            pub fn start_date_time(mut self, start_date_time: impl Into<time::OffsetDateTime>) -> Self {
                 self.start_date_time = Some(start_date_time.into());
                 self
             }
             #[doc = "The end date for when to get the pipeline and aggregate its data. The startDateTime and endDateTime can be no more than 30 days apart."]
-            pub fn end_date_time(mut self, end_date_time: impl Into<String>) -> Self {
+            pub fn end_date_time(mut self, end_date_time: impl Into<time::OffsetDateTime>) -> Self {
                 self.end_date_time = Some(end_date_time.into());
                 self
             }
@@ -842,10 +846,14 @@ pub mod pipeline {
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2017-09-01-preview");
                         if let Some(start_date_time) = &this.start_date_time {
-                            req.url_mut().query_pairs_mut().append_pair("startDateTime", start_date_time);
+                            req.url_mut()
+                                .query_pairs_mut()
+                                .append_pair("startDateTime", &start_date_time.to_string());
                         }
                         if let Some(end_date_time) = &this.end_date_time {
-                            req.url_mut().query_pairs_mut().append_pair("endDateTime", end_date_time);
+                            req.url_mut()
+                                .query_pairs_mut()
+                                .append_pair("endDateTime", &end_date_time.to_string());
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
@@ -899,17 +907,17 @@ pub mod recurrence {
         #[derive(Clone)]
         pub struct Builder {
             pub(crate) client: super::super::Client,
-            pub(crate) start_date_time: Option<String>,
-            pub(crate) end_date_time: Option<String>,
+            pub(crate) start_date_time: Option<time::OffsetDateTime>,
+            pub(crate) end_date_time: Option<time::OffsetDateTime>,
         }
         impl Builder {
             #[doc = "The start date for when to get the list of recurrences. The startDateTime and endDateTime can be no more than 30 days apart."]
-            pub fn start_date_time(mut self, start_date_time: impl Into<String>) -> Self {
+            pub fn start_date_time(mut self, start_date_time: impl Into<time::OffsetDateTime>) -> Self {
                 self.start_date_time = Some(start_date_time.into());
                 self
             }
             #[doc = "The end date for when to get the list of recurrences. The startDateTime and endDateTime can be no more than 30 days apart."]
-            pub fn end_date_time(mut self, end_date_time: impl Into<String>) -> Self {
+            pub fn end_date_time(mut self, end_date_time: impl Into<time::OffsetDateTime>) -> Self {
                 self.end_date_time = Some(end_date_time.into());
                 self
             }
@@ -952,10 +960,14 @@ pub mod recurrence {
                                     .query_pairs_mut()
                                     .append_pair(azure_core::query_param::API_VERSION, "2017-09-01-preview");
                                 if let Some(start_date_time) = &this.start_date_time {
-                                    req.url_mut().query_pairs_mut().append_pair("startDateTime", start_date_time);
+                                    req.url_mut()
+                                        .query_pairs_mut()
+                                        .append_pair("startDateTime", &start_date_time.to_string());
                                 }
                                 if let Some(end_date_time) = &this.end_date_time {
-                                    req.url_mut().query_pairs_mut().append_pair("endDateTime", end_date_time);
+                                    req.url_mut()
+                                        .query_pairs_mut()
+                                        .append_pair("endDateTime", &end_date_time.to_string());
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -987,17 +999,17 @@ pub mod recurrence {
         pub struct Builder {
             pub(crate) client: super::super::Client,
             pub(crate) recurrence_identity: String,
-            pub(crate) start_date_time: Option<String>,
-            pub(crate) end_date_time: Option<String>,
+            pub(crate) start_date_time: Option<time::OffsetDateTime>,
+            pub(crate) end_date_time: Option<time::OffsetDateTime>,
         }
         impl Builder {
             #[doc = "The start date for when to get the recurrence and aggregate its data. The startDateTime and endDateTime can be no more than 30 days apart."]
-            pub fn start_date_time(mut self, start_date_time: impl Into<String>) -> Self {
+            pub fn start_date_time(mut self, start_date_time: impl Into<time::OffsetDateTime>) -> Self {
                 self.start_date_time = Some(start_date_time.into());
                 self
             }
             #[doc = "The end date for when to get recurrence and aggregate its data. The startDateTime and endDateTime can be no more than 30 days apart."]
-            pub fn end_date_time(mut self, end_date_time: impl Into<String>) -> Self {
+            pub fn end_date_time(mut self, end_date_time: impl Into<time::OffsetDateTime>) -> Self {
                 self.end_date_time = Some(end_date_time.into());
                 self
             }
@@ -1017,10 +1029,14 @@ pub mod recurrence {
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2017-09-01-preview");
                         if let Some(start_date_time) = &this.start_date_time {
-                            req.url_mut().query_pairs_mut().append_pair("startDateTime", start_date_time);
+                            req.url_mut()
+                                .query_pairs_mut()
+                                .append_pair("startDateTime", &start_date_time.to_string());
                         }
                         if let Some(end_date_time) = &this.end_date_time {
-                            req.url_mut().query_pairs_mut().append_pair("endDateTime", end_date_time);
+                            req.url_mut()
+                                .query_pairs_mut()
+                                .append_pair("endDateTime", &end_date_time.to_string());
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);

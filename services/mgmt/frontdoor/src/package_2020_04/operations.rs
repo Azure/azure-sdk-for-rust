@@ -1205,8 +1205,8 @@ pub mod reports {
             resource_group_name: impl Into<String>,
             profile_name: impl Into<String>,
             experiment_name: impl Into<String>,
-            start_date_time_utc: impl Into<String>,
-            end_date_time_utc: impl Into<String>,
+            start_date_time_utc: impl Into<time::OffsetDateTime>,
+            end_date_time_utc: impl Into<time::OffsetDateTime>,
             aggregation_interval: impl Into<String>,
             timeseries_type: impl Into<String>,
         ) -> get_timeseries::Builder {
@@ -1305,8 +1305,8 @@ pub mod reports {
             pub(crate) resource_group_name: String,
             pub(crate) profile_name: String,
             pub(crate) experiment_name: String,
-            pub(crate) start_date_time_utc: String,
-            pub(crate) end_date_time_utc: String,
+            pub(crate) start_date_time_utc: time::OffsetDateTime,
+            pub(crate) end_date_time_utc: time::OffsetDateTime,
             pub(crate) aggregation_interval: String,
             pub(crate) timeseries_type: String,
             pub(crate) endpoint: Option<String>,
@@ -1339,9 +1339,13 @@ pub mod reports {
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2019-11-01");
                         let start_date_time_utc = &this.start_date_time_utc;
-                        req.url_mut().query_pairs_mut().append_pair("startDateTimeUTC", start_date_time_utc);
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair("startDateTimeUTC", &start_date_time_utc.to_string());
                         let end_date_time_utc = &this.end_date_time_utc;
-                        req.url_mut().query_pairs_mut().append_pair("endDateTimeUTC", end_date_time_utc);
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair("endDateTimeUTC", &end_date_time_utc.to_string());
                         let aggregation_interval = &this.aggregation_interval;
                         req.url_mut()
                             .query_pairs_mut()

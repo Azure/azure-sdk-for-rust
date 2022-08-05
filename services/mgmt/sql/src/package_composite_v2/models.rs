@@ -829,8 +829,8 @@ pub struct DatabaseOperationProperties {
     #[serde(rename = "serverName", default, skip_serializing_if = "Option::is_none")]
     pub server_name: Option<String>,
     #[doc = "The operation start time."]
-    #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
-    pub start_time: Option<String>,
+    #[serde(rename = "startTime", with = "azure_core::date::rfc3339::option")]
+    pub start_time: Option<time::OffsetDateTime>,
     #[doc = "The operation state."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<database_operation_properties::State>,
@@ -847,8 +847,8 @@ pub struct DatabaseOperationProperties {
     #[serde(rename = "isUserError", default, skip_serializing_if = "Option::is_none")]
     pub is_user_error: Option<bool>,
     #[doc = "The estimated completion time of the operation."]
-    #[serde(rename = "estimatedCompletionTime", default, skip_serializing_if = "Option::is_none")]
-    pub estimated_completion_time: Option<String>,
+    #[serde(rename = "estimatedCompletionTime", with = "azure_core::date::rfc3339::option")]
+    pub estimated_completion_time: Option<time::OffsetDateTime>,
     #[doc = "The operation description."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
@@ -916,8 +916,8 @@ pub struct DatabaseProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub collation: Option<String>,
     #[doc = "The creation date of the database (ISO8601 format)."]
-    #[serde(rename = "creationDate", default, skip_serializing_if = "Option::is_none")]
-    pub creation_date: Option<String>,
+    #[serde(rename = "creationDate", with = "azure_core::date::rfc3339::option")]
+    pub creation_date: Option<time::OffsetDateTime>,
     #[doc = "The containment state of the database."]
     #[serde(rename = "containmentState", default, skip_serializing_if = "Option::is_none")]
     pub containment_state: Option<i64>,
@@ -928,8 +928,8 @@ pub struct DatabaseProperties {
     #[serde(rename = "databaseId", default, skip_serializing_if = "Option::is_none")]
     pub database_id: Option<String>,
     #[doc = "This records the earliest start date and time that restore is available for this database (ISO8601 format)."]
-    #[serde(rename = "earliestRestoreDate", default, skip_serializing_if = "Option::is_none")]
-    pub earliest_restore_date: Option<String>,
+    #[serde(rename = "earliestRestoreDate", with = "azure_core::date::rfc3339::option")]
+    pub earliest_restore_date: Option<time::OffsetDateTime>,
     #[doc = "Specifies the mode of database creation.\n\nDefault: regular database creation.\n\nCopy: creates a database as a copy of an existing database. sourceDatabaseId must be specified as the resource ID of the source database.\n\nOnlineSecondary/NonReadableSecondary: creates a database as a (readable or nonreadable) secondary replica of an existing database. sourceDatabaseId must be specified as the resource ID of the existing primary database.\n\nPointInTimeRestore: Creates a database by restoring a point in time backup of an existing database. sourceDatabaseId must be specified as the resource ID of the existing database, and restorePointInTime must be specified.\n\nRecovery: Creates a database by restoring a geo-replicated backup. sourceDatabaseId must be specified as the recoverable database resource ID to restore.\n\nRestore: Creates a database by restoring a backup of a deleted database. sourceDatabaseId must be specified. If sourceDatabaseId is the database's original resource ID, then sourceDatabaseDeletionDate must be specified. Otherwise sourceDatabaseId must be the restorable dropped database resource ID and sourceDatabaseDeletionDate is ignored. restorePointInTime may also be specified to restore from an earlier point in time.\n\nRestoreLongTermRetentionBackup: Creates a database by restoring from a long term retention vault. recoveryServicesRecoveryPointResourceId must be specified as the recovery point resource ID.\n\nCopy, NonReadableSecondary, OnlineSecondary and RestoreLongTermRetentionBackup are not supported for DataWarehouse edition."]
     #[serde(rename = "createMode", default, skip_serializing_if = "Option::is_none")]
     pub create_mode: Option<database_properties::CreateMode>,
@@ -937,11 +937,11 @@ pub struct DatabaseProperties {
     #[serde(rename = "sourceDatabaseId", default, skip_serializing_if = "Option::is_none")]
     pub source_database_id: Option<String>,
     #[doc = "Conditional. If createMode is Restore and sourceDatabaseId is the deleted database's original resource id when it existed (as opposed to its current restorable dropped database id), then this value is required. Specifies the time that the database was deleted."]
-    #[serde(rename = "sourceDatabaseDeletionDate", default, skip_serializing_if = "Option::is_none")]
-    pub source_database_deletion_date: Option<String>,
+    #[serde(rename = "sourceDatabaseDeletionDate", with = "azure_core::date::rfc3339::option")]
+    pub source_database_deletion_date: Option<time::OffsetDateTime>,
     #[doc = "Conditional. If createMode is PointInTimeRestore, this value is required. If createMode is Restore, this value is optional. Specifies the point in time (ISO8601 format) of the source database that will be restored to create the new database. Must be greater than or equal to the source database's earliestRestoreDate value."]
-    #[serde(rename = "restorePointInTime", default, skip_serializing_if = "Option::is_none")]
-    pub restore_point_in_time: Option<String>,
+    #[serde(rename = "restorePointInTime", with = "azure_core::date::rfc3339::option")]
+    pub restore_point_in_time: Option<time::OffsetDateTime>,
     #[doc = "Conditional. If createMode is RestoreLongTermRetentionBackup, then this value is required. Specifies the resource ID of the recovery point to restore from."]
     #[serde(
         rename = "recoveryServicesRecoveryPointResourceId",
@@ -1680,8 +1680,8 @@ pub struct DatabaseUsage {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub unit: Option<String>,
     #[doc = "The next reset time for the usage metric (ISO8601 format)."]
-    #[serde(rename = "nextResetTime", default, skip_serializing_if = "Option::is_none")]
-    pub next_reset_time: Option<String>,
+    #[serde(rename = "nextResetTime", with = "azure_core::date::rfc3339::option")]
+    pub next_reset_time: Option<time::OffsetDateTime>,
 }
 impl DatabaseUsage {
     pub fn new() -> Self {
@@ -1904,8 +1904,8 @@ impl ElasticPoolActivityListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ElasticPoolActivityProperties {
     #[doc = "The time the operation finished (ISO8601 format)."]
-    #[serde(rename = "endTime", default, skip_serializing_if = "Option::is_none")]
-    pub end_time: Option<String>,
+    #[serde(rename = "endTime", with = "azure_core::date::rfc3339::option")]
+    pub end_time: Option<time::OffsetDateTime>,
     #[doc = "The error code if available."]
     #[serde(rename = "errorCode", default, skip_serializing_if = "Option::is_none")]
     pub error_code: Option<i32>,
@@ -1946,8 +1946,8 @@ pub struct ElasticPoolActivityProperties {
     #[serde(rename = "serverName", default, skip_serializing_if = "Option::is_none")]
     pub server_name: Option<String>,
     #[doc = "The time the operation started (ISO8601 format)."]
-    #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
-    pub start_time: Option<String>,
+    #[serde(rename = "startTime", with = "azure_core::date::rfc3339::option")]
+    pub start_time: Option<time::OffsetDateTime>,
     #[doc = "The current state of the operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<String>,
@@ -2010,8 +2010,8 @@ pub struct ElasticPoolDatabaseActivityProperties {
     #[serde(rename = "databaseName", default, skip_serializing_if = "Option::is_none")]
     pub database_name: Option<String>,
     #[doc = "The time the operation finished (ISO8601 format)."]
-    #[serde(rename = "endTime", default, skip_serializing_if = "Option::is_none")]
-    pub end_time: Option<String>,
+    #[serde(rename = "endTime", with = "azure_core::date::rfc3339::option")]
+    pub end_time: Option<time::OffsetDateTime>,
     #[doc = "The error code if available."]
     #[serde(rename = "errorCode", default, skip_serializing_if = "Option::is_none")]
     pub error_code: Option<i32>,
@@ -2046,8 +2046,8 @@ pub struct ElasticPoolDatabaseActivityProperties {
     #[serde(rename = "serverName", default, skip_serializing_if = "Option::is_none")]
     pub server_name: Option<String>,
     #[doc = "The time the operation started (ISO8601 format)."]
-    #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
-    pub start_time: Option<String>,
+    #[serde(rename = "startTime", with = "azure_core::date::rfc3339::option")]
+    pub start_time: Option<time::OffsetDateTime>,
     #[doc = "The current state of the operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<String>,
@@ -2179,8 +2179,8 @@ pub struct ElasticPoolOperationProperties {
     #[serde(rename = "serverName", default, skip_serializing_if = "Option::is_none")]
     pub server_name: Option<String>,
     #[doc = "The operation start time."]
-    #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
-    pub start_time: Option<String>,
+    #[serde(rename = "startTime", with = "azure_core::date::rfc3339::option")]
+    pub start_time: Option<time::OffsetDateTime>,
     #[doc = "The operation state."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<String>,
@@ -2197,8 +2197,8 @@ pub struct ElasticPoolOperationProperties {
     #[serde(rename = "isUserError", default, skip_serializing_if = "Option::is_none")]
     pub is_user_error: Option<bool>,
     #[doc = "The estimated completion time of the operation."]
-    #[serde(rename = "estimatedCompletionTime", default, skip_serializing_if = "Option::is_none")]
-    pub estimated_completion_time: Option<String>,
+    #[serde(rename = "estimatedCompletionTime", with = "azure_core::date::rfc3339::option")]
+    pub estimated_completion_time: Option<time::OffsetDateTime>,
     #[doc = "The operation description."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
@@ -2248,8 +2248,8 @@ impl ElasticPoolPerDatabaseMinDtuCapability {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ElasticPoolProperties {
     #[doc = "The creation date of the elastic pool (ISO8601 format)."]
-    #[serde(rename = "creationDate", default, skip_serializing_if = "Option::is_none")]
-    pub creation_date: Option<String>,
+    #[serde(rename = "creationDate", with = "azure_core::date::rfc3339::option")]
+    pub creation_date: Option<time::OffsetDateTime>,
     #[doc = "The state of the elastic pool."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<elastic_pool_properties::State>,
@@ -4093,20 +4093,20 @@ pub struct JobExecutionProperties {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<job_execution_properties::ProvisioningState>,
     #[doc = "The time that the job execution was created."]
-    #[serde(rename = "createTime", default, skip_serializing_if = "Option::is_none")]
-    pub create_time: Option<String>,
+    #[serde(rename = "createTime", with = "azure_core::date::rfc3339::option")]
+    pub create_time: Option<time::OffsetDateTime>,
     #[doc = "The time that the job execution started."]
-    #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
-    pub start_time: Option<String>,
+    #[serde(rename = "startTime", with = "azure_core::date::rfc3339::option")]
+    pub start_time: Option<time::OffsetDateTime>,
     #[doc = "The time that the job execution completed."]
-    #[serde(rename = "endTime", default, skip_serializing_if = "Option::is_none")]
-    pub end_time: Option<String>,
+    #[serde(rename = "endTime", with = "azure_core::date::rfc3339::option")]
+    pub end_time: Option<time::OffsetDateTime>,
     #[doc = "Number of times the job execution has been attempted."]
     #[serde(rename = "currentAttempts", default, skip_serializing_if = "Option::is_none")]
     pub current_attempts: Option<i32>,
     #[doc = "Start time of the current attempt."]
-    #[serde(rename = "currentAttemptStartTime", default, skip_serializing_if = "Option::is_none")]
-    pub current_attempt_start_time: Option<String>,
+    #[serde(rename = "currentAttemptStartTime", with = "azure_core::date::rfc3339::option")]
+    pub current_attempt_start_time: Option<time::OffsetDateTime>,
     #[doc = "The last status or error message."]
     #[serde(rename = "lastMessage", default, skip_serializing_if = "Option::is_none")]
     pub last_message: Option<String>,
@@ -4325,11 +4325,11 @@ impl JobProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobSchedule {
     #[doc = "Schedule start time."]
-    #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
-    pub start_time: Option<String>,
+    #[serde(rename = "startTime", with = "azure_core::date::rfc3339::option")]
+    pub start_time: Option<time::OffsetDateTime>,
     #[doc = "Schedule end time."]
-    #[serde(rename = "endTime", default, skip_serializing_if = "Option::is_none")]
-    pub end_time: Option<String>,
+    #[serde(rename = "endTime", with = "azure_core::date::rfc3339::option")]
+    pub end_time: Option<time::OffsetDateTime>,
     #[doc = "Schedule interval type"]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<job_schedule::Type>,
@@ -4892,20 +4892,20 @@ pub struct LongTermRetentionBackupProperties {
     #[serde(rename = "serverName", default, skip_serializing_if = "Option::is_none")]
     pub server_name: Option<String>,
     #[doc = "The create time of the server."]
-    #[serde(rename = "serverCreateTime", default, skip_serializing_if = "Option::is_none")]
-    pub server_create_time: Option<String>,
+    #[serde(rename = "serverCreateTime", with = "azure_core::date::rfc3339::option")]
+    pub server_create_time: Option<time::OffsetDateTime>,
     #[doc = "The name of the database the backup belong to"]
     #[serde(rename = "databaseName", default, skip_serializing_if = "Option::is_none")]
     pub database_name: Option<String>,
     #[doc = "The delete time of the database"]
-    #[serde(rename = "databaseDeletionTime", default, skip_serializing_if = "Option::is_none")]
-    pub database_deletion_time: Option<String>,
+    #[serde(rename = "databaseDeletionTime", with = "azure_core::date::rfc3339::option")]
+    pub database_deletion_time: Option<time::OffsetDateTime>,
     #[doc = "The time the backup was taken"]
-    #[serde(rename = "backupTime", default, skip_serializing_if = "Option::is_none")]
-    pub backup_time: Option<String>,
+    #[serde(rename = "backupTime", with = "azure_core::date::rfc3339::option")]
+    pub backup_time: Option<time::OffsetDateTime>,
     #[doc = "The time the long term retention backup will expire."]
-    #[serde(rename = "backupExpirationTime", default, skip_serializing_if = "Option::is_none")]
-    pub backup_expiration_time: Option<String>,
+    #[serde(rename = "backupExpirationTime", with = "azure_core::date::rfc3339::option")]
+    pub backup_expiration_time: Option<time::OffsetDateTime>,
 }
 impl LongTermRetentionBackupProperties {
     pub fn new() -> Self {
@@ -5028,14 +5028,14 @@ pub struct ManagedDatabaseProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<managed_database_properties::Status>,
     #[doc = "Creation date of the database."]
-    #[serde(rename = "creationDate", default, skip_serializing_if = "Option::is_none")]
-    pub creation_date: Option<String>,
+    #[serde(rename = "creationDate", with = "azure_core::date::rfc3339::option")]
+    pub creation_date: Option<time::OffsetDateTime>,
     #[doc = "Earliest restore point in time for point in time restore."]
-    #[serde(rename = "earliestRestorePoint", default, skip_serializing_if = "Option::is_none")]
-    pub earliest_restore_point: Option<String>,
+    #[serde(rename = "earliestRestorePoint", with = "azure_core::date::rfc3339::option")]
+    pub earliest_restore_point: Option<time::OffsetDateTime>,
     #[doc = "Conditional. If createMode is PointInTimeRestore, this value is required. Specifies the point in time (ISO8601 format) of the source database that will be restored to create the new database."]
-    #[serde(rename = "restorePointInTime", default, skip_serializing_if = "Option::is_none")]
-    pub restore_point_in_time: Option<String>,
+    #[serde(rename = "restorePointInTime", with = "azure_core::date::rfc3339::option")]
+    pub restore_point_in_time: Option<time::OffsetDateTime>,
     #[doc = "Geo paired region."]
     #[serde(rename = "defaultSecondaryLocation", default, skip_serializing_if = "Option::is_none")]
     pub default_secondary_location: Option<String>,
@@ -5590,8 +5590,8 @@ pub struct ManagedInstanceKeyProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub thumbprint: Option<String>,
     #[doc = "The key creation date."]
-    #[serde(rename = "creationDate", default, skip_serializing_if = "Option::is_none")]
-    pub creation_date: Option<String>,
+    #[serde(rename = "creationDate", with = "azure_core::date::rfc3339::option")]
+    pub creation_date: Option<time::OffsetDateTime>,
 }
 impl ManagedInstanceKeyProperties {
     pub fn new(server_key_type: managed_instance_key_properties::ServerKeyType) -> Self {
@@ -5706,20 +5706,20 @@ pub struct ManagedInstanceLongTermRetentionBackupProperties {
     #[serde(rename = "managedInstanceName", default, skip_serializing_if = "Option::is_none")]
     pub managed_instance_name: Option<String>,
     #[doc = "The create time of the instance."]
-    #[serde(rename = "managedInstanceCreateTime", default, skip_serializing_if = "Option::is_none")]
-    pub managed_instance_create_time: Option<String>,
+    #[serde(rename = "managedInstanceCreateTime", with = "azure_core::date::rfc3339::option")]
+    pub managed_instance_create_time: Option<time::OffsetDateTime>,
     #[doc = "The name of the database the backup belong to"]
     #[serde(rename = "databaseName", default, skip_serializing_if = "Option::is_none")]
     pub database_name: Option<String>,
     #[doc = "The delete time of the database"]
-    #[serde(rename = "databaseDeletionTime", default, skip_serializing_if = "Option::is_none")]
-    pub database_deletion_time: Option<String>,
+    #[serde(rename = "databaseDeletionTime", with = "azure_core::date::rfc3339::option")]
+    pub database_deletion_time: Option<time::OffsetDateTime>,
     #[doc = "The time the backup was taken"]
-    #[serde(rename = "backupTime", default, skip_serializing_if = "Option::is_none")]
-    pub backup_time: Option<String>,
+    #[serde(rename = "backupTime", with = "azure_core::date::rfc3339::option")]
+    pub backup_time: Option<time::OffsetDateTime>,
     #[doc = "The time the long term retention backup will expire."]
-    #[serde(rename = "backupExpirationTime", default, skip_serializing_if = "Option::is_none")]
-    pub backup_expiration_time: Option<String>,
+    #[serde(rename = "backupExpirationTime", with = "azure_core::date::rfc3339::option")]
+    pub backup_expiration_time: Option<time::OffsetDateTime>,
 }
 impl ManagedInstanceLongTermRetentionBackupProperties {
     pub fn new() -> Self {
@@ -5885,8 +5885,8 @@ pub struct ManagedInstanceProperties {
     #[serde(rename = "sourceManagedInstanceId", default, skip_serializing_if = "Option::is_none")]
     pub source_managed_instance_id: Option<String>,
     #[doc = "Specifies the point in time (ISO8601 format) of the source database that will be restored to create the new database."]
-    #[serde(rename = "restorePointInTime", default, skip_serializing_if = "Option::is_none")]
-    pub restore_point_in_time: Option<String>,
+    #[serde(rename = "restorePointInTime", with = "azure_core::date::rfc3339::option")]
+    pub restore_point_in_time: Option<time::OffsetDateTime>,
     #[doc = "Connection type used for connecting to the instance."]
     #[serde(rename = "proxyOverride", default, skip_serializing_if = "Option::is_none")]
     pub proxy_override: Option<managed_instance_properties::ProxyOverride>,
@@ -6234,11 +6234,11 @@ pub mod max_size_capability {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Metric {
     #[doc = "The start time for the metric (ISO-8601 format)."]
-    #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
-    pub start_time: Option<String>,
+    #[serde(rename = "startTime", with = "azure_core::date::rfc3339::option")]
+    pub start_time: Option<time::OffsetDateTime>,
     #[doc = "The end time for the metric (ISO-8601 format)."]
-    #[serde(rename = "endTime", default, skip_serializing_if = "Option::is_none")]
-    pub end_time: Option<String>,
+    #[serde(rename = "endTime", with = "azure_core::date::rfc3339::option")]
+    pub end_time: Option<time::OffsetDateTime>,
     #[doc = "The time step to be used to summarize the metric values."]
     #[serde(rename = "timeGrain", default, skip_serializing_if = "Option::is_none")]
     pub time_grain: Option<String>,
@@ -6508,8 +6508,8 @@ pub struct MetricValue {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub minimum: Option<f64>,
     #[doc = "The metric timestamp (ISO-8601 format)."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub timestamp: Option<String>,
+    #[serde(with = "azure_core::date::rfc3339::option")]
+    pub timestamp: Option<time::OffsetDateTime>,
     #[doc = "The total value of the metric."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub total: Option<f64>,
@@ -7290,8 +7290,8 @@ impl RecommendedElasticPoolListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RecommendedElasticPoolMetric {
     #[doc = "The time of metric (ISO8601 format)."]
-    #[serde(rename = "dateTime", default, skip_serializing_if = "Option::is_none")]
-    pub date_time: Option<String>,
+    #[serde(rename = "dateTime", with = "azure_core::date::rfc3339::option")]
+    pub date_time: Option<time::OffsetDateTime>,
     #[doc = "Gets or sets the DTUs (Database Transaction Units). See https://azure.microsoft.com/documentation/articles/sql-database-what-is-a-dtu/"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub dtu: Option<f64>,
@@ -7323,11 +7323,11 @@ pub struct RecommendedElasticPoolProperties {
     #[serde(rename = "storageMB", default, skip_serializing_if = "Option::is_none")]
     pub storage_mb: Option<f64>,
     #[doc = "The observation period start (ISO8601 format)."]
-    #[serde(rename = "observationPeriodStart", default, skip_serializing_if = "Option::is_none")]
-    pub observation_period_start: Option<String>,
+    #[serde(rename = "observationPeriodStart", with = "azure_core::date::rfc3339::option")]
+    pub observation_period_start: Option<time::OffsetDateTime>,
     #[doc = "The observation period start (ISO8601 format)."]
-    #[serde(rename = "observationPeriodEnd", default, skip_serializing_if = "Option::is_none")]
-    pub observation_period_end: Option<String>,
+    #[serde(rename = "observationPeriodEnd", with = "azure_core::date::rfc3339::option")]
+    pub observation_period_end: Option<time::OffsetDateTime>,
     #[doc = "Gets maximum observed DTU."]
     #[serde(rename = "maxObservedDtu", default, skip_serializing_if = "Option::is_none")]
     pub max_observed_dtu: Option<f64>,
@@ -7416,11 +7416,11 @@ pub struct RecommendedIndexProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<recommended_index_properties::State>,
     #[doc = "The UTC datetime showing when this resource was created (ISO8601 format)."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub created: Option<String>,
+    #[serde(with = "azure_core::date::rfc3339::option")]
+    pub created: Option<time::OffsetDateTime>,
     #[doc = "The UTC datetime of when was this resource last changed (ISO8601 format)."]
-    #[serde(rename = "lastModified", default, skip_serializing_if = "Option::is_none")]
-    pub last_modified: Option<String>,
+    #[serde(rename = "lastModified", with = "azure_core::date::rfc3339::option")]
+    pub last_modified: Option<time::OffsetDateTime>,
     #[doc = "The type of index (CLUSTERED, NONCLUSTERED, COLUMNSTORE, CLUSTERED COLUMNSTORE)"]
     #[serde(rename = "indexType", default, skip_serializing_if = "Option::is_none")]
     pub index_type: Option<recommended_index_properties::IndexType>,
@@ -7533,8 +7533,8 @@ pub struct RecoverableDatabaseProperties {
     #[serde(rename = "elasticPoolName", default, skip_serializing_if = "Option::is_none")]
     pub elastic_pool_name: Option<String>,
     #[doc = "The last available backup date of the database (ISO8601 format)"]
-    #[serde(rename = "lastAvailableBackupDate", default, skip_serializing_if = "Option::is_none")]
-    pub last_available_backup_date: Option<String>,
+    #[serde(rename = "lastAvailableBackupDate", with = "azure_core::date::rfc3339::option")]
+    pub last_available_backup_date: Option<time::OffsetDateTime>,
 }
 impl RecoverableDatabaseProperties {
     pub fn new() -> Self {
@@ -7651,8 +7651,8 @@ pub struct ReplicationLinkProperties {
     #[serde(rename = "partnerRole", default, skip_serializing_if = "Option::is_none")]
     pub partner_role: Option<replication_link_properties::PartnerRole>,
     #[doc = "The start time for the replication link."]
-    #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
-    pub start_time: Option<String>,
+    #[serde(rename = "startTime", with = "azure_core::date::rfc3339::option")]
+    pub start_time: Option<time::OffsetDateTime>,
     #[doc = "The percentage of seeding complete for the replication link."]
     #[serde(rename = "percentComplete", default, skip_serializing_if = "Option::is_none")]
     pub percent_complete: Option<i32>,
@@ -7876,14 +7876,14 @@ pub struct RestorableDroppedDatabaseProperties {
     #[serde(rename = "elasticPoolName", default, skip_serializing_if = "Option::is_none")]
     pub elastic_pool_name: Option<String>,
     #[doc = "The creation date of the database (ISO8601 format)"]
-    #[serde(rename = "creationDate", default, skip_serializing_if = "Option::is_none")]
-    pub creation_date: Option<String>,
+    #[serde(rename = "creationDate", with = "azure_core::date::rfc3339::option")]
+    pub creation_date: Option<time::OffsetDateTime>,
     #[doc = "The deletion date of the database (ISO8601 format)"]
-    #[serde(rename = "deletionDate", default, skip_serializing_if = "Option::is_none")]
-    pub deletion_date: Option<String>,
+    #[serde(rename = "deletionDate", with = "azure_core::date::rfc3339::option")]
+    pub deletion_date: Option<time::OffsetDateTime>,
     #[doc = "The earliest restore date of the database (ISO8601 format)"]
-    #[serde(rename = "earliestRestoreDate", default, skip_serializing_if = "Option::is_none")]
-    pub earliest_restore_date: Option<String>,
+    #[serde(rename = "earliestRestoreDate", with = "azure_core::date::rfc3339::option")]
+    pub earliest_restore_date: Option<time::OffsetDateTime>,
 }
 impl RestorableDroppedDatabaseProperties {
     pub fn new() -> Self {
@@ -7935,14 +7935,14 @@ pub struct RestorableDroppedManagedDatabaseProperties {
     #[serde(rename = "databaseName", default, skip_serializing_if = "Option::is_none")]
     pub database_name: Option<String>,
     #[doc = "The creation date of the database (ISO8601 format)."]
-    #[serde(rename = "creationDate", default, skip_serializing_if = "Option::is_none")]
-    pub creation_date: Option<String>,
+    #[serde(rename = "creationDate", with = "azure_core::date::rfc3339::option")]
+    pub creation_date: Option<time::OffsetDateTime>,
     #[doc = "The deletion date of the database (ISO8601 format)."]
-    #[serde(rename = "deletionDate", default, skip_serializing_if = "Option::is_none")]
-    pub deletion_date: Option<String>,
+    #[serde(rename = "deletionDate", with = "azure_core::date::rfc3339::option")]
+    pub deletion_date: Option<time::OffsetDateTime>,
     #[doc = "The earliest restore date of the database (ISO8601 format)."]
-    #[serde(rename = "earliestRestoreDate", default, skip_serializing_if = "Option::is_none")]
-    pub earliest_restore_date: Option<String>,
+    #[serde(rename = "earliestRestoreDate", with = "azure_core::date::rfc3339::option")]
+    pub earliest_restore_date: Option<time::OffsetDateTime>,
 }
 impl RestorableDroppedManagedDatabaseProperties {
     pub fn new() -> Self {
@@ -7994,11 +7994,11 @@ pub struct RestorePointProperties {
     #[serde(rename = "restorePointType", default, skip_serializing_if = "Option::is_none")]
     pub restore_point_type: Option<restore_point_properties::RestorePointType>,
     #[doc = "The earliest time to which this database can be restored"]
-    #[serde(rename = "earliestRestoreDate", default, skip_serializing_if = "Option::is_none")]
-    pub earliest_restore_date: Option<String>,
+    #[serde(rename = "earliestRestoreDate", with = "azure_core::date::rfc3339::option")]
+    pub earliest_restore_date: Option<time::OffsetDateTime>,
     #[doc = "The time the backup was taken"]
-    #[serde(rename = "restorePointCreationDate", default, skip_serializing_if = "Option::is_none")]
-    pub restore_point_creation_date: Option<String>,
+    #[serde(rename = "restorePointCreationDate", with = "azure_core::date::rfc3339::option")]
+    pub restore_point_creation_date: Option<time::OffsetDateTime>,
     #[doc = "The label of restore point for backup request by user"]
     #[serde(rename = "restorePointLabel", default, skip_serializing_if = "Option::is_none")]
     pub restore_point_label: Option<String>,
@@ -8043,8 +8043,8 @@ pub struct SecurityAlertPolicyProperties {
     #[serde(rename = "retentionDays", default, skip_serializing_if = "Option::is_none")]
     pub retention_days: Option<i32>,
     #[doc = "Specifies the UTC creation time of the policy."]
-    #[serde(rename = "creationTime", default, skip_serializing_if = "Option::is_none")]
-    pub creation_time: Option<String>,
+    #[serde(rename = "creationTime", with = "azure_core::date::rfc3339::option")]
+    pub creation_time: Option<time::OffsetDateTime>,
 }
 impl SecurityAlertPolicyProperties {
     pub fn new(state: security_alert_policy_properties::State) -> Self {
@@ -8524,8 +8524,8 @@ pub struct ServerKeyProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub thumbprint: Option<String>,
     #[doc = "The server key creation date."]
-    #[serde(rename = "creationDate", default, skip_serializing_if = "Option::is_none")]
-    pub creation_date: Option<String>,
+    #[serde(rename = "creationDate", with = "azure_core::date::rfc3339::option")]
+    pub creation_date: Option<time::OffsetDateTime>,
 }
 impl ServerKeyProperties {
     pub fn new(server_key_type: server_key_properties::ServerKeyType) -> Self {
@@ -8791,8 +8791,8 @@ pub struct ServerUsage {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub unit: Option<String>,
     #[doc = "The next reset time for the metric (ISO8601 format)."]
-    #[serde(rename = "nextResetTime", default, skip_serializing_if = "Option::is_none")]
-    pub next_reset_time: Option<String>,
+    #[serde(rename = "nextResetTime", with = "azure_core::date::rfc3339::option")]
+    pub next_reset_time: Option<time::OffsetDateTime>,
 }
 impl ServerUsage {
     pub fn new() -> Self {
@@ -9015,11 +9015,11 @@ impl ServiceTierAdvisorListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServiceTierAdvisorProperties {
     #[doc = "The observation period start (ISO8601 format)."]
-    #[serde(rename = "observationPeriodStart", default, skip_serializing_if = "Option::is_none")]
-    pub observation_period_start: Option<String>,
+    #[serde(rename = "observationPeriodStart", with = "azure_core::date::rfc3339::option")]
+    pub observation_period_start: Option<time::OffsetDateTime>,
     #[doc = "The observation period start (ISO8601 format)."]
-    #[serde(rename = "observationPeriodEnd", default, skip_serializing_if = "Option::is_none")]
-    pub observation_period_end: Option<String>,
+    #[serde(rename = "observationPeriodEnd", with = "azure_core::date::rfc3339::option")]
+    pub observation_period_end: Option<time::OffsetDateTime>,
     #[doc = "The activeTimeRatio for service tier advisor."]
     #[serde(rename = "activeTimeRatio", default, skip_serializing_if = "Option::is_none")]
     pub active_time_ratio: Option<f64>,
@@ -9574,8 +9574,8 @@ pub struct SyncAgentProperties {
     #[serde(rename = "syncDatabaseId", default, skip_serializing_if = "Option::is_none")]
     pub sync_database_id: Option<String>,
     #[doc = "Last alive time of the sync agent."]
-    #[serde(rename = "lastAliveTime", default, skip_serializing_if = "Option::is_none")]
-    pub last_alive_time: Option<String>,
+    #[serde(rename = "lastAliveTime", with = "azure_core::date::rfc3339::option")]
+    pub last_alive_time: Option<time::OffsetDateTime>,
     #[doc = "State of the sync agent."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<sync_agent_properties::State>,
@@ -9583,8 +9583,8 @@ pub struct SyncAgentProperties {
     #[serde(rename = "isUpToDate", default, skip_serializing_if = "Option::is_none")]
     pub is_up_to_date: Option<bool>,
     #[doc = "Expiration time of the sync agent version."]
-    #[serde(rename = "expiryTime", default, skip_serializing_if = "Option::is_none")]
-    pub expiry_time: Option<String>,
+    #[serde(rename = "expiryTime", with = "azure_core::date::rfc3339::option")]
+    pub expiry_time: Option<time::OffsetDateTime>,
     #[doc = "Version of the sync agent."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
@@ -9676,8 +9676,8 @@ pub struct SyncFullSchemaProperties {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub tables: Vec<SyncFullSchemaTable>,
     #[doc = "Last update time of the database schema."]
-    #[serde(rename = "lastUpdateTime", default, skip_serializing_if = "Option::is_none")]
-    pub last_update_time: Option<String>,
+    #[serde(rename = "lastUpdateTime", with = "azure_core::date::rfc3339::option")]
+    pub last_update_time: Option<time::OffsetDateTime>,
 }
 impl SyncFullSchemaProperties {
     pub fn new() -> Self {
@@ -9819,8 +9819,8 @@ impl SyncGroupLogListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SyncGroupLogProperties {
     #[doc = "Timestamp of the sync group log."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub timestamp: Option<String>,
+    #[serde(with = "azure_core::date::rfc3339::option")]
+    pub timestamp: Option<time::OffsetDateTime>,
     #[doc = "Type of the sync group log."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<sync_group_log_properties::Type>,
@@ -9893,8 +9893,8 @@ pub struct SyncGroupProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub interval: Option<i32>,
     #[doc = "Last sync time of the sync group."]
-    #[serde(rename = "lastSyncTime", default, skip_serializing_if = "Option::is_none")]
-    pub last_sync_time: Option<String>,
+    #[serde(rename = "lastSyncTime", with = "azure_core::date::rfc3339::option")]
+    pub last_sync_time: Option<time::OffsetDateTime>,
     #[doc = "Conflict resolution policy of the sync group."]
     #[serde(rename = "conflictResolutionPolicy", default, skip_serializing_if = "Option::is_none")]
     pub conflict_resolution_policy: Option<sync_group_properties::ConflictResolutionPolicy>,
@@ -10873,11 +10873,11 @@ pub struct VulnerabilityAssessmentScanRecordProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<vulnerability_assessment_scan_record_properties::State>,
     #[doc = "The scan start time (UTC)."]
-    #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
-    pub start_time: Option<String>,
+    #[serde(rename = "startTime", with = "azure_core::date::rfc3339::option")]
+    pub start_time: Option<time::OffsetDateTime>,
     #[doc = "The scan end time (UTC)."]
-    #[serde(rename = "endTime", default, skip_serializing_if = "Option::is_none")]
-    pub end_time: Option<String>,
+    #[serde(rename = "endTime", with = "azure_core::date::rfc3339::option")]
+    pub end_time: Option<time::OffsetDateTime>,
     #[doc = "The scan errors."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub errors: Vec<VulnerabilityAssessmentScanError>,

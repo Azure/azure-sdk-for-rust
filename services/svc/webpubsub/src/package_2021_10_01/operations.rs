@@ -507,7 +507,7 @@ pub mod web_pub_sub {
                         }
                         let role = &this.role;
                         for value in &this.role {
-                            req.url_mut().query_pairs_mut().append_pair("role", value);
+                            req.url_mut().query_pairs_mut().append_pair("role", &value.to_string());
                         }
                         if let Some(minutes_to_expire) = &this.minutes_to_expire {
                             req.url_mut()
@@ -573,7 +573,7 @@ pub mod web_pub_sub {
                             .append_pair(azure_core::query_param::API_VERSION, "2021-10-01");
                         let excluded = &this.excluded;
                         for value in &this.excluded {
-                            req.url_mut().query_pairs_mut().append_pair("excluded", value);
+                            req.url_mut().query_pairs_mut().append_pair("excluded", &value.to_string());
                         }
                         if let Some(reason) = &this.reason {
                             req.url_mut().query_pairs_mut().append_pair("reason", reason);
@@ -628,7 +628,7 @@ pub mod web_pub_sub {
                             .append_pair(azure_core::query_param::API_VERSION, "2021-10-01");
                         let excluded = &this.excluded;
                         for value in &this.excluded {
-                            req.url_mut().query_pairs_mut().append_pair("excluded", value);
+                            req.url_mut().query_pairs_mut().append_pair("excluded", &value.to_string());
                         }
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.message)?;
@@ -882,7 +882,7 @@ pub mod web_pub_sub {
                             .append_pair(azure_core::query_param::API_VERSION, "2021-10-01");
                         let excluded = &this.excluded;
                         for value in &this.excluded {
-                            req.url_mut().query_pairs_mut().append_pair("excluded", value);
+                            req.url_mut().query_pairs_mut().append_pair("excluded", &value.to_string());
                         }
                         if let Some(reason) = &this.reason {
                             req.url_mut().query_pairs_mut().append_pair("reason", reason);
@@ -943,7 +943,7 @@ pub mod web_pub_sub {
                             .append_pair(azure_core::query_param::API_VERSION, "2021-10-01");
                         let excluded = &this.excluded;
                         for value in &this.excluded {
-                            req.url_mut().query_pairs_mut().append_pair("excluded", value);
+                            req.url_mut().query_pairs_mut().append_pair("excluded", &value.to_string());
                         }
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.message)?;
@@ -1148,7 +1148,7 @@ pub mod web_pub_sub {
                             .append_pair(azure_core::query_param::API_VERSION, "2021-10-01");
                         let excluded = &this.excluded;
                         for value in &this.excluded {
-                            req.url_mut().query_pairs_mut().append_pair("excluded", value);
+                            req.url_mut().query_pairs_mut().append_pair("excluded", &value.to_string());
                         }
                         if let Some(reason) = &this.reason {
                             req.url_mut().query_pairs_mut().append_pair("reason", reason);

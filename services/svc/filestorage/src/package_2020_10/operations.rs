@@ -1951,8 +1951,8 @@ pub mod directory {
             directory: impl Into<String>,
             x_ms_version: impl Into<String>,
             x_ms_file_attributes: impl Into<String>,
-            x_ms_file_creation_time: impl Into<String>,
-            x_ms_file_last_write_time: impl Into<String>,
+            x_ms_file_creation_time: impl Into<time::OffsetDateTime>,
+            x_ms_file_last_write_time: impl Into<time::OffsetDateTime>,
         ) -> create::Builder {
             create::Builder {
                 client: self.0.clone(),
@@ -2003,8 +2003,8 @@ pub mod directory {
             directory: impl Into<String>,
             x_ms_version: impl Into<String>,
             x_ms_file_attributes: impl Into<String>,
-            x_ms_file_creation_time: impl Into<String>,
-            x_ms_file_last_write_time: impl Into<String>,
+            x_ms_file_creation_time: impl Into<time::OffsetDateTime>,
+            x_ms_file_last_write_time: impl Into<time::OffsetDateTime>,
         ) -> set_properties::Builder {
             set_properties::Builder {
                 client: self.0.clone(),
@@ -2190,8 +2190,8 @@ pub mod directory {
             pub(crate) directory: String,
             pub(crate) x_ms_version: String,
             pub(crate) x_ms_file_attributes: String,
-            pub(crate) x_ms_file_creation_time: String,
-            pub(crate) x_ms_file_last_write_time: String,
+            pub(crate) x_ms_file_creation_time: time::OffsetDateTime,
+            pub(crate) x_ms_file_last_write_time: time::OffsetDateTime,
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_meta: Option<String>,
             pub(crate) x_ms_file_permission: Option<String>,
@@ -2249,8 +2249,8 @@ pub mod directory {
                             req.insert_header("x-ms-file-permission-key", x_ms_file_permission_key);
                         }
                         req.insert_header("x-ms-file-attributes", &this.x_ms_file_attributes);
-                        req.insert_header("x-ms-file-creation-time", &this.x_ms_file_creation_time);
-                        req.insert_header("x-ms-file-last-write-time", &this.x_ms_file_last_write_time);
+                        req.insert_header("x-ms-file-creation-time", &this.x_ms_file_creation_time.to_string());
+                        req.insert_header("x-ms-file-last-write-time", &this.x_ms_file_last_write_time.to_string());
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -2331,8 +2331,8 @@ pub mod directory {
             pub(crate) directory: String,
             pub(crate) x_ms_version: String,
             pub(crate) x_ms_file_attributes: String,
-            pub(crate) x_ms_file_creation_time: String,
-            pub(crate) x_ms_file_last_write_time: String,
+            pub(crate) x_ms_file_creation_time: time::OffsetDateTime,
+            pub(crate) x_ms_file_last_write_time: time::OffsetDateTime,
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_file_permission: Option<String>,
             pub(crate) x_ms_file_permission_key: Option<String>,
@@ -2381,8 +2381,8 @@ pub mod directory {
                             req.insert_header("x-ms-file-permission-key", x_ms_file_permission_key);
                         }
                         req.insert_header("x-ms-file-attributes", &this.x_ms_file_attributes);
-                        req.insert_header("x-ms-file-creation-time", &this.x_ms_file_creation_time);
-                        req.insert_header("x-ms-file-last-write-time", &this.x_ms_file_last_write_time);
+                        req.insert_header("x-ms-file-creation-time", &this.x_ms_file_creation_time.to_string());
+                        req.insert_header("x-ms-file-last-write-time", &this.x_ms_file_last_write_time.to_string());
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         let rsp = this.client.send(&mut req).await?;
@@ -2819,8 +2819,8 @@ pub mod file {
             x_ms_content_length: i64,
             x_ms_type: impl Into<String>,
             x_ms_file_attributes: impl Into<String>,
-            x_ms_file_creation_time: impl Into<String>,
-            x_ms_file_last_write_time: impl Into<String>,
+            x_ms_file_creation_time: impl Into<time::OffsetDateTime>,
+            x_ms_file_last_write_time: impl Into<time::OffsetDateTime>,
         ) -> create::Builder {
             create::Builder {
                 client: self.0.clone(),
@@ -2912,8 +2912,8 @@ pub mod file {
             file_name: impl Into<String>,
             x_ms_version: impl Into<String>,
             x_ms_file_attributes: impl Into<String>,
-            x_ms_file_creation_time: impl Into<String>,
-            x_ms_file_last_write_time: impl Into<String>,
+            x_ms_file_creation_time: impl Into<time::OffsetDateTime>,
+            x_ms_file_last_write_time: impl Into<time::OffsetDateTime>,
         ) -> set_http_headers::Builder {
             set_http_headers::Builder {
                 client: self.0.clone(),
@@ -3410,8 +3410,8 @@ pub mod file {
             pub(crate) x_ms_content_length: i64,
             pub(crate) x_ms_type: String,
             pub(crate) x_ms_file_attributes: String,
-            pub(crate) x_ms_file_creation_time: String,
-            pub(crate) x_ms_file_last_write_time: String,
+            pub(crate) x_ms_file_creation_time: time::OffsetDateTime,
+            pub(crate) x_ms_file_last_write_time: time::OffsetDateTime,
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_content_type: Option<String>,
             pub(crate) x_ms_content_encoding: Option<String>,
@@ -3532,8 +3532,8 @@ pub mod file {
                             req.insert_header("x-ms-file-permission-key", x_ms_file_permission_key);
                         }
                         req.insert_header("x-ms-file-attributes", &this.x_ms_file_attributes);
-                        req.insert_header("x-ms-file-creation-time", &this.x_ms_file_creation_time);
-                        req.insert_header("x-ms-file-last-write-time", &this.x_ms_file_last_write_time);
+                        req.insert_header("x-ms-file-creation-time", &this.x_ms_file_creation_time.to_string());
+                        req.insert_header("x-ms-file-last-write-time", &this.x_ms_file_last_write_time.to_string());
                         if let Some(x_ms_lease_id) = &this.x_ms_lease_id {
                             req.insert_header("x-ms-lease-id", x_ms_lease_id);
                         }
@@ -3703,8 +3703,8 @@ pub mod file {
             pub(crate) file_name: String,
             pub(crate) x_ms_version: String,
             pub(crate) x_ms_file_attributes: String,
-            pub(crate) x_ms_file_creation_time: String,
-            pub(crate) x_ms_file_last_write_time: String,
+            pub(crate) x_ms_file_creation_time: time::OffsetDateTime,
+            pub(crate) x_ms_file_last_write_time: time::OffsetDateTime,
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_content_length: Option<i64>,
             pub(crate) x_ms_content_type: Option<String>,
@@ -3823,8 +3823,8 @@ pub mod file {
                             req.insert_header("x-ms-file-permission-key", x_ms_file_permission_key);
                         }
                         req.insert_header("x-ms-file-attributes", &this.x_ms_file_attributes);
-                        req.insert_header("x-ms-file-creation-time", &this.x_ms_file_creation_time);
-                        req.insert_header("x-ms-file-last-write-time", &this.x_ms_file_last_write_time);
+                        req.insert_header("x-ms-file-creation-time", &this.x_ms_file_creation_time.to_string());
+                        req.insert_header("x-ms-file-last-write-time", &this.x_ms_file_last_write_time.to_string());
                         if let Some(x_ms_lease_id) = &this.x_ms_lease_id {
                             req.insert_header("x-ms-lease-id", x_ms_lease_id);
                         }

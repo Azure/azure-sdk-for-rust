@@ -67,8 +67,8 @@ pub struct AccountProperties {
     #[serde(rename = "discoveryUri", default, skip_serializing_if = "Option::is_none")]
     pub discovery_uri: Option<String>,
     #[doc = "The creation date of the machine learning team account in ISO8601 format."]
-    #[serde(rename = "creationDate", default, skip_serializing_if = "Option::is_none")]
-    pub creation_date: Option<String>,
+    #[serde(rename = "creationDate", with = "azure_core::date::rfc3339::option")]
+    pub creation_date: Option<time::OffsetDateTime>,
     #[doc = "The properties of a storage account for a machine learning team account."]
     #[serde(rename = "storageAccount")]
     pub storage_account: StorageAccountProperties,
@@ -276,8 +276,8 @@ pub struct ProjectProperties {
     #[serde(rename = "friendlyName")]
     pub friendly_name: String,
     #[doc = "The creation date of the project in ISO8601 format."]
-    #[serde(rename = "creationDate", default, skip_serializing_if = "Option::is_none")]
-    pub creation_date: Option<String>,
+    #[serde(rename = "creationDate", with = "azure_core::date::rfc3339::option")]
+    pub creation_date: Option<time::OffsetDateTime>,
     #[doc = "The current deployment state of project resource. The provisioningState is to indicate states for resource provisioning."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<project_properties::ProvisioningState>,
@@ -442,8 +442,8 @@ pub struct WorkspaceProperties {
     #[serde(rename = "friendlyName")]
     pub friendly_name: String,
     #[doc = "The creation date of the machine learning workspace in ISO8601 format."]
-    #[serde(rename = "creationDate", default, skip_serializing_if = "Option::is_none")]
-    pub creation_date: Option<String>,
+    #[serde(rename = "creationDate", with = "azure_core::date::rfc3339::option")]
+    pub creation_date: Option<time::OffsetDateTime>,
     #[doc = "The current deployment state of team account workspace resource. The provisioningState is to indicate states for resource provisioning."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<workspace_properties::ProvisioningState>,

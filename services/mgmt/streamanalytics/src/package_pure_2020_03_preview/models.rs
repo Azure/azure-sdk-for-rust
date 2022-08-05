@@ -88,8 +88,8 @@ impl ClusterListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ClusterProperties {
     #[doc = "The date this cluster was created."]
-    #[serde(rename = "createdDate", default, skip_serializing_if = "Option::is_none")]
-    pub created_date: Option<String>,
+    #[serde(rename = "createdDate", with = "azure_core::date::rfc3339::option")]
+    pub created_date: Option<time::OffsetDateTime>,
     #[doc = "Unique identifier for the cluster."]
     #[serde(rename = "clusterId", default, skip_serializing_if = "Option::is_none")]
     pub cluster_id: Option<String>,

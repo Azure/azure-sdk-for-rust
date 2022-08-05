@@ -1326,8 +1326,8 @@ pub struct UpgradeNotification {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[doc = "Timestamp when upgrade notification occurred."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub timestamp: Option<String>,
+    #[serde(with = "azure_core::date::rfc3339::option")]
+    pub timestamp: Option<time::OffsetDateTime>,
     #[doc = "Details about this upgrade notification"]
     #[serde(rename = "upsellNotification", default, skip_serializing_if = "Option::is_none")]
     pub upsell_notification: Option<serde_json::Value>,

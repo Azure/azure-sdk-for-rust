@@ -569,8 +569,8 @@ pub struct StageDetails {
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
     #[doc = "Stage start time"]
-    #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
-    pub start_time: Option<String>,
+    #[serde(rename = "startTime", with = "azure_core::date::rfc3339::option")]
+    pub start_time: Option<time::OffsetDateTime>,
 }
 impl StageDetails {
     pub fn new() -> Self {

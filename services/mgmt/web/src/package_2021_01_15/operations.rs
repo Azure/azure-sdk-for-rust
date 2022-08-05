@@ -1767,18 +1767,18 @@ pub mod certificate_orders_diagnostics {
             pub(crate) certificate_order_name: String,
             pub(crate) detector_name: String,
             pub(crate) subscription_id: String,
-            pub(crate) start_time: Option<String>,
-            pub(crate) end_time: Option<String>,
+            pub(crate) start_time: Option<time::OffsetDateTime>,
+            pub(crate) end_time: Option<time::OffsetDateTime>,
             pub(crate) time_grain: Option<String>,
         }
         impl Builder {
             #[doc = "The start time for detector response."]
-            pub fn start_time(mut self, start_time: impl Into<String>) -> Self {
+            pub fn start_time(mut self, start_time: impl Into<time::OffsetDateTime>) -> Self {
                 self.start_time = Some(start_time.into());
                 self
             }
             #[doc = "The end time for the detector response."]
-            pub fn end_time(mut self, end_time: impl Into<String>) -> Self {
+            pub fn end_time(mut self, end_time: impl Into<time::OffsetDateTime>) -> Self {
                 self.end_time = Some(end_time.into());
                 self
             }
@@ -1803,10 +1803,10 @@ pub mod certificate_orders_diagnostics {
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2021-01-15");
                         if let Some(start_time) = &this.start_time {
-                            req.url_mut().query_pairs_mut().append_pair("startTime", start_time);
+                            req.url_mut().query_pairs_mut().append_pair("startTime", &start_time.to_string());
                         }
                         if let Some(end_time) = &this.end_time {
-                            req.url_mut().query_pairs_mut().append_pair("endTime", end_time);
+                            req.url_mut().query_pairs_mut().append_pair("endTime", &end_time.to_string());
                         }
                         if let Some(time_grain) = &this.time_grain {
                             req.url_mut().query_pairs_mut().append_pair("timeGrain", time_grain);
@@ -10915,18 +10915,18 @@ pub mod diagnostics {
             pub(crate) name: String,
             pub(crate) detector_name: String,
             pub(crate) subscription_id: String,
-            pub(crate) start_time: Option<String>,
-            pub(crate) end_time: Option<String>,
+            pub(crate) start_time: Option<time::OffsetDateTime>,
+            pub(crate) end_time: Option<time::OffsetDateTime>,
             pub(crate) time_grain: Option<String>,
         }
         impl Builder {
             #[doc = "Start Time"]
-            pub fn start_time(mut self, start_time: impl Into<String>) -> Self {
+            pub fn start_time(mut self, start_time: impl Into<time::OffsetDateTime>) -> Self {
                 self.start_time = Some(start_time.into());
                 self
             }
             #[doc = "End Time"]
-            pub fn end_time(mut self, end_time: impl Into<String>) -> Self {
+            pub fn end_time(mut self, end_time: impl Into<time::OffsetDateTime>) -> Self {
                 self.end_time = Some(end_time.into());
                 self
             }
@@ -10958,10 +10958,10 @@ pub mod diagnostics {
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2021-01-15");
                         if let Some(start_time) = &this.start_time {
-                            req.url_mut().query_pairs_mut().append_pair("startTime", start_time);
+                            req.url_mut().query_pairs_mut().append_pair("startTime", &start_time.to_string());
                         }
                         if let Some(end_time) = &this.end_time {
-                            req.url_mut().query_pairs_mut().append_pair("endTime", end_time);
+                            req.url_mut().query_pairs_mut().append_pair("endTime", &end_time.to_string());
                         }
                         if let Some(time_grain) = &this.time_grain {
                             req.url_mut().query_pairs_mut().append_pair("timeGrain", time_grain);
@@ -11074,18 +11074,18 @@ pub mod diagnostics {
             pub(crate) site_name: String,
             pub(crate) detector_name: String,
             pub(crate) subscription_id: String,
-            pub(crate) start_time: Option<String>,
-            pub(crate) end_time: Option<String>,
+            pub(crate) start_time: Option<time::OffsetDateTime>,
+            pub(crate) end_time: Option<time::OffsetDateTime>,
             pub(crate) time_grain: Option<String>,
         }
         impl Builder {
             #[doc = "Start Time"]
-            pub fn start_time(mut self, start_time: impl Into<String>) -> Self {
+            pub fn start_time(mut self, start_time: impl Into<time::OffsetDateTime>) -> Self {
                 self.start_time = Some(start_time.into());
                 self
             }
             #[doc = "End Time"]
-            pub fn end_time(mut self, end_time: impl Into<String>) -> Self {
+            pub fn end_time(mut self, end_time: impl Into<time::OffsetDateTime>) -> Self {
                 self.end_time = Some(end_time.into());
                 self
             }
@@ -11117,10 +11117,10 @@ pub mod diagnostics {
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2021-01-15");
                         if let Some(start_time) = &this.start_time {
-                            req.url_mut().query_pairs_mut().append_pair("startTime", start_time);
+                            req.url_mut().query_pairs_mut().append_pair("startTime", &start_time.to_string());
                         }
                         if let Some(end_time) = &this.end_time {
-                            req.url_mut().query_pairs_mut().append_pair("endTime", end_time);
+                            req.url_mut().query_pairs_mut().append_pair("endTime", &end_time.to_string());
                         }
                         if let Some(time_grain) = &this.time_grain {
                             req.url_mut().query_pairs_mut().append_pair("timeGrain", time_grain);
@@ -11424,18 +11424,18 @@ pub mod diagnostics {
             pub(crate) diagnostic_category: String,
             pub(crate) analysis_name: String,
             pub(crate) subscription_id: String,
-            pub(crate) start_time: Option<String>,
-            pub(crate) end_time: Option<String>,
+            pub(crate) start_time: Option<time::OffsetDateTime>,
+            pub(crate) end_time: Option<time::OffsetDateTime>,
             pub(crate) time_grain: Option<String>,
         }
         impl Builder {
             #[doc = "Start Time"]
-            pub fn start_time(mut self, start_time: impl Into<String>) -> Self {
+            pub fn start_time(mut self, start_time: impl Into<time::OffsetDateTime>) -> Self {
                 self.start_time = Some(start_time.into());
                 self
             }
             #[doc = "End Time"]
-            pub fn end_time(mut self, end_time: impl Into<String>) -> Self {
+            pub fn end_time(mut self, end_time: impl Into<time::OffsetDateTime>) -> Self {
                 self.end_time = Some(end_time.into());
                 self
             }
@@ -11468,10 +11468,10 @@ pub mod diagnostics {
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2021-01-15");
                         if let Some(start_time) = &this.start_time {
-                            req.url_mut().query_pairs_mut().append_pair("startTime", start_time);
+                            req.url_mut().query_pairs_mut().append_pair("startTime", &start_time.to_string());
                         }
                         if let Some(end_time) = &this.end_time {
-                            req.url_mut().query_pairs_mut().append_pair("endTime", end_time);
+                            req.url_mut().query_pairs_mut().append_pair("endTime", &end_time.to_string());
                         }
                         if let Some(time_grain) = &this.time_grain {
                             req.url_mut().query_pairs_mut().append_pair("timeGrain", time_grain);
@@ -11644,18 +11644,18 @@ pub mod diagnostics {
             pub(crate) detector_name: String,
             pub(crate) diagnostic_category: String,
             pub(crate) subscription_id: String,
-            pub(crate) start_time: Option<String>,
-            pub(crate) end_time: Option<String>,
+            pub(crate) start_time: Option<time::OffsetDateTime>,
+            pub(crate) end_time: Option<time::OffsetDateTime>,
             pub(crate) time_grain: Option<String>,
         }
         impl Builder {
             #[doc = "Start Time"]
-            pub fn start_time(mut self, start_time: impl Into<String>) -> Self {
+            pub fn start_time(mut self, start_time: impl Into<time::OffsetDateTime>) -> Self {
                 self.start_time = Some(start_time.into());
                 self
             }
             #[doc = "End Time"]
-            pub fn end_time(mut self, end_time: impl Into<String>) -> Self {
+            pub fn end_time(mut self, end_time: impl Into<time::OffsetDateTime>) -> Self {
                 self.end_time = Some(end_time.into());
                 self
             }
@@ -11688,10 +11688,10 @@ pub mod diagnostics {
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2021-01-15");
                         if let Some(start_time) = &this.start_time {
-                            req.url_mut().query_pairs_mut().append_pair("startTime", start_time);
+                            req.url_mut().query_pairs_mut().append_pair("startTime", &start_time.to_string());
                         }
                         if let Some(end_time) = &this.end_time {
-                            req.url_mut().query_pairs_mut().append_pair("endTime", end_time);
+                            req.url_mut().query_pairs_mut().append_pair("endTime", &end_time.to_string());
                         }
                         if let Some(time_grain) = &this.time_grain {
                             req.url_mut().query_pairs_mut().append_pair("timeGrain", time_grain);
@@ -11808,18 +11808,18 @@ pub mod diagnostics {
             pub(crate) detector_name: String,
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
-            pub(crate) start_time: Option<String>,
-            pub(crate) end_time: Option<String>,
+            pub(crate) start_time: Option<time::OffsetDateTime>,
+            pub(crate) end_time: Option<time::OffsetDateTime>,
             pub(crate) time_grain: Option<String>,
         }
         impl Builder {
             #[doc = "Start Time"]
-            pub fn start_time(mut self, start_time: impl Into<String>) -> Self {
+            pub fn start_time(mut self, start_time: impl Into<time::OffsetDateTime>) -> Self {
                 self.start_time = Some(start_time.into());
                 self
             }
             #[doc = "End Time"]
-            pub fn end_time(mut self, end_time: impl Into<String>) -> Self {
+            pub fn end_time(mut self, end_time: impl Into<time::OffsetDateTime>) -> Self {
                 self.end_time = Some(end_time.into());
                 self
             }
@@ -11852,10 +11852,10 @@ pub mod diagnostics {
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2021-01-15");
                         if let Some(start_time) = &this.start_time {
-                            req.url_mut().query_pairs_mut().append_pair("startTime", start_time);
+                            req.url_mut().query_pairs_mut().append_pair("startTime", &start_time.to_string());
                         }
                         if let Some(end_time) = &this.end_time {
-                            req.url_mut().query_pairs_mut().append_pair("endTime", end_time);
+                            req.url_mut().query_pairs_mut().append_pair("endTime", &end_time.to_string());
                         }
                         if let Some(time_grain) = &this.time_grain {
                             req.url_mut().query_pairs_mut().append_pair("timeGrain", time_grain);
@@ -12168,18 +12168,18 @@ pub mod diagnostics {
             pub(crate) analysis_name: String,
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
-            pub(crate) start_time: Option<String>,
-            pub(crate) end_time: Option<String>,
+            pub(crate) start_time: Option<time::OffsetDateTime>,
+            pub(crate) end_time: Option<time::OffsetDateTime>,
             pub(crate) time_grain: Option<String>,
         }
         impl Builder {
             #[doc = "Start Time"]
-            pub fn start_time(mut self, start_time: impl Into<String>) -> Self {
+            pub fn start_time(mut self, start_time: impl Into<time::OffsetDateTime>) -> Self {
                 self.start_time = Some(start_time.into());
                 self
             }
             #[doc = "End Time"]
-            pub fn end_time(mut self, end_time: impl Into<String>) -> Self {
+            pub fn end_time(mut self, end_time: impl Into<time::OffsetDateTime>) -> Self {
                 self.end_time = Some(end_time.into());
                 self
             }
@@ -12204,10 +12204,10 @@ pub mod diagnostics {
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2021-01-15");
                         if let Some(start_time) = &this.start_time {
-                            req.url_mut().query_pairs_mut().append_pair("startTime", start_time);
+                            req.url_mut().query_pairs_mut().append_pair("startTime", &start_time.to_string());
                         }
                         if let Some(end_time) = &this.end_time {
-                            req.url_mut().query_pairs_mut().append_pair("endTime", end_time);
+                            req.url_mut().query_pairs_mut().append_pair("endTime", &end_time.to_string());
                         }
                         if let Some(time_grain) = &this.time_grain {
                             req.url_mut().query_pairs_mut().append_pair("timeGrain", time_grain);
@@ -12385,18 +12385,18 @@ pub mod diagnostics {
             pub(crate) diagnostic_category: String,
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
-            pub(crate) start_time: Option<String>,
-            pub(crate) end_time: Option<String>,
+            pub(crate) start_time: Option<time::OffsetDateTime>,
+            pub(crate) end_time: Option<time::OffsetDateTime>,
             pub(crate) time_grain: Option<String>,
         }
         impl Builder {
             #[doc = "Start Time"]
-            pub fn start_time(mut self, start_time: impl Into<String>) -> Self {
+            pub fn start_time(mut self, start_time: impl Into<time::OffsetDateTime>) -> Self {
                 self.start_time = Some(start_time.into());
                 self
             }
             #[doc = "End Time"]
-            pub fn end_time(mut self, end_time: impl Into<String>) -> Self {
+            pub fn end_time(mut self, end_time: impl Into<time::OffsetDateTime>) -> Self {
                 self.end_time = Some(end_time.into());
                 self
             }
@@ -12421,10 +12421,10 @@ pub mod diagnostics {
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2021-01-15");
                         if let Some(start_time) = &this.start_time {
-                            req.url_mut().query_pairs_mut().append_pair("startTime", start_time);
+                            req.url_mut().query_pairs_mut().append_pair("startTime", &start_time.to_string());
                         }
                         if let Some(end_time) = &this.end_time {
-                            req.url_mut().query_pairs_mut().append_pair("endTime", end_time);
+                            req.url_mut().query_pairs_mut().append_pair("endTime", &end_time.to_string());
                         }
                         if let Some(time_grain) = &this.time_grain {
                             req.url_mut().query_pairs_mut().append_pair("timeGrain", time_grain);

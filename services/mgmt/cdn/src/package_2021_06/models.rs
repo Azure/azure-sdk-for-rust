@@ -4701,10 +4701,10 @@ impl MetricSpecification {
 #[doc = "Metrics Response"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MetricsResponse {
-    #[serde(rename = "dateTimeBegin", default, skip_serializing_if = "Option::is_none")]
-    pub date_time_begin: Option<String>,
-    #[serde(rename = "dateTimeEnd", default, skip_serializing_if = "Option::is_none")]
-    pub date_time_end: Option<String>,
+    #[serde(rename = "dateTimeBegin", with = "azure_core::date::rfc3339::option")]
+    pub date_time_begin: Option<time::OffsetDateTime>,
+    #[serde(rename = "dateTimeEnd", with = "azure_core::date::rfc3339::option")]
+    pub date_time_end: Option<time::OffsetDateTime>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub granularity: Option<metrics_response::Granularity>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -5769,10 +5769,10 @@ pub mod query_string_match_condition_parameters {
 #[doc = "Rankings Response"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RankingsResponse {
-    #[serde(rename = "dateTimeBegin", default, skip_serializing_if = "Option::is_none")]
-    pub date_time_begin: Option<String>,
-    #[serde(rename = "dateTimeEnd", default, skip_serializing_if = "Option::is_none")]
-    pub date_time_end: Option<String>,
+    #[serde(rename = "dateTimeBegin", with = "azure_core::date::rfc3339::option")]
+    pub date_time_begin: Option<time::OffsetDateTime>,
+    #[serde(rename = "dateTimeEnd", with = "azure_core::date::rfc3339::option")]
+    pub date_time_end: Option<time::OffsetDateTime>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub tables: Vec<serde_json::Value>,
 }
@@ -7679,8 +7679,8 @@ pub struct SystemData {
     #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
     pub created_by_type: Option<IdentityType>,
     #[doc = "The timestamp of resource creation (UTC)"]
-    #[serde(rename = "createdAt", default, skip_serializing_if = "Option::is_none")]
-    pub created_at: Option<String>,
+    #[serde(rename = "createdAt", with = "azure_core::date::rfc3339::option")]
+    pub created_at: Option<time::OffsetDateTime>,
     #[doc = "An identifier for the identity that last modified the resource"]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
@@ -7688,8 +7688,8 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by_type: Option<IdentityType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
-    #[serde(rename = "lastModifiedAt", default, skip_serializing_if = "Option::is_none")]
-    pub last_modified_at: Option<String>,
+    #[serde(rename = "lastModifiedAt", with = "azure_core::date::rfc3339::option")]
+    pub last_modified_at: Option<time::OffsetDateTime>,
 }
 impl SystemData {
     pub fn new() -> Self {
@@ -8679,10 +8679,10 @@ impl ValidationToken {
 #[doc = "Waf Metrics Response"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WafMetricsResponse {
-    #[serde(rename = "dateTimeBegin", default, skip_serializing_if = "Option::is_none")]
-    pub date_time_begin: Option<String>,
-    #[serde(rename = "dateTimeEnd", default, skip_serializing_if = "Option::is_none")]
-    pub date_time_end: Option<String>,
+    #[serde(rename = "dateTimeBegin", with = "azure_core::date::rfc3339::option")]
+    pub date_time_begin: Option<time::OffsetDateTime>,
+    #[serde(rename = "dateTimeEnd", with = "azure_core::date::rfc3339::option")]
+    pub date_time_end: Option<time::OffsetDateTime>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub granularity: Option<waf_metrics_response::Granularity>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -8708,10 +8708,10 @@ pub mod waf_metrics_response {
 #[doc = "Waf Rankings Response"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WafRankingsResponse {
-    #[serde(rename = "dateTimeBegin", default, skip_serializing_if = "Option::is_none")]
-    pub date_time_begin: Option<String>,
-    #[serde(rename = "dateTimeEnd", default, skip_serializing_if = "Option::is_none")]
-    pub date_time_end: Option<String>,
+    #[serde(rename = "dateTimeBegin", with = "azure_core::date::rfc3339::option")]
+    pub date_time_begin: Option<time::OffsetDateTime>,
+    #[serde(rename = "dateTimeEnd", with = "azure_core::date::rfc3339::option")]
+    pub date_time_end: Option<time::OffsetDateTime>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub groups: Vec<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]

@@ -613,7 +613,7 @@ pub mod entity {
                         );
                         let guid = &this.guid;
                         for value in &this.guid {
-                            req.url_mut().query_pairs_mut().append_pair("guid", value);
+                            req.url_mut().query_pairs_mut().append_pair("guid", &value.to_string());
                         }
                         if let Some(min_ext_info) = &this.min_ext_info {
                             req.url_mut().query_pairs_mut().append_pair("minExtInfo", &min_ext_info.to_string());
@@ -625,7 +625,9 @@ pub mod entity {
                         }
                         let exclude_relationship_types = &this.exclude_relationship_types;
                         for value in &this.exclude_relationship_types {
-                            req.url_mut().query_pairs_mut().append_pair("excludeRelationshipTypes", value);
+                            req.url_mut()
+                                .query_pairs_mut()
+                                .append_pair("excludeRelationshipTypes", &value.to_string());
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
@@ -712,7 +714,7 @@ pub mod entity {
                         );
                         let guid = &this.guid;
                         for value in &this.guid {
-                            req.url_mut().query_pairs_mut().append_pair("guid", value);
+                            req.url_mut().query_pairs_mut().append_pair("guid", &value.to_string());
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
@@ -3374,7 +3376,9 @@ pub mod glossary {
                         }
                         let exclude_relationship_types = &this.exclude_relationship_types;
                         for value in &this.exclude_relationship_types {
-                            req.url_mut().query_pairs_mut().append_pair("excludeRelationshipTypes", value);
+                            req.url_mut()
+                                .query_pairs_mut()
+                                .append_pair("excludeRelationshipTypes", &value.to_string());
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
