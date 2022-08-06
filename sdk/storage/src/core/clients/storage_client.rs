@@ -336,7 +336,6 @@ impl StorageClient {
         }
     }
 
-    #[cfg(feature = "mock_transport_framework")]
     /// Create a new instance of `StorageClient` using a mock backend. The
     /// transaction name is used to look up which files to read to validate the
     /// request and mock the response.
@@ -346,7 +345,9 @@ impl StorageClient {
         transaction_name: impl Into<String>,
     ) -> Self {
         let account = account.into();
-        let options = ClientOptions::new_with_transaction_name(transaction_name.into());
+        let options = ClientOptions::new(azure_core::TransportOptions::new_custom_policy(
+            azure_core::mock::new_mock_transport(transaction_name.into()),
+        ));
         let pipeline = new_pipeline_from_options(
             StorageOptions {
                 options,

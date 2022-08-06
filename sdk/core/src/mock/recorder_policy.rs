@@ -2,22 +2,22 @@ use super::mock_response::MockResponse;
 use super::MockTransaction;
 use crate::error::ResultExt;
 use crate::policies::{Policy, PolicyResult};
-use crate::{Context, Request, TransportOptions};
+use crate::{Context, HttpClient, Request};
 use std::io::Write;
 use std::sync::Arc;
 
 #[derive(Debug, Clone)]
 pub struct MockTransportRecorderPolicy {
-    pub(crate) transport_options: TransportOptions,
     transaction: MockTransaction,
+    http_client: Arc<dyn HttpClient>,
 }
 
 impl MockTransportRecorderPolicy {
-    pub fn new(transport_options: TransportOptions) -> Self {
-        let transaction = MockTransaction::new(transport_options.transaction_name.clone());
+    pub fn new(transaction_name: String, http_client: Arc<dyn HttpClient>) -> Self {
+        let transaction = MockTransaction::new(transaction_name);
         Self {
-            transport_options,
             transaction,
+            http_client,
         }
     }
 }
@@ -53,11 +53,7 @@ impl Policy for MockTransportRecorderPolicy {
                 )?;
         }
 
-        let response = self
-            .transport_options
-            .http_client
-            .execute_request(request)
-            .await?;
+        let response = self.http_client.execute_request(request).await?;
 
         // we need to duplicate the response because we are about to consume the response stream.
         // We replace the HTTP stream with a memory-backed stream.

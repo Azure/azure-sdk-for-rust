@@ -1,15 +1,13 @@
-#![cfg(feature = "mock_transport_framework")]
-
 use azure_data_cosmos::resources::collection::*;
 use futures::StreamExt;
 
-mod setup;
+mod setup_mock;
 
 #[tokio::test]
 async fn collection_operations() -> azure_core::Result<()> {
     env_logger::init();
 
-    let client = setup::initialize("collection_operations")?;
+    let client = setup_mock::initialize("collection_operations")?;
     let database_name = "test-collection-operations";
 
     log::info!("Creating a database with name '{}'...", database_name);

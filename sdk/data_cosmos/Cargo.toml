@@ -40,5 +40,4 @@ stop-token = { version = "0.7.0", features = ["tokio"] }
 [features]
 default = ["azure_core/enable_reqwest"]
 test_e2e = []
-mock_transport_framework = [ "azure_core/mock_transport_framework"]
 into_future = []

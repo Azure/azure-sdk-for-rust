@@ -9,38 +9,43 @@ use player_policy::MockTransportPlayerPolicy;
 use recorder_policy::MockTransportRecorderPolicy;
 use std::sync::Arc;
 
+use crate::{HttpClient, Policy};
+
 pub const TESTING_MODE_KEY: &str = "TESTING_MODE";
 pub const TESTING_MODE_REPLAY: &str = "REPLAY";
 pub const TESTING_MODE_RECORD: &str = "RECORD";
 
-// Replace the default transport policy at runtime
-//
-// Replacement happens if these two conditions are met:
-// 1. The mock_transport_framework is enabled
-// 2. The environmental variable TESTING_MODE is either RECORD or PLAY
-pub(crate) fn set_mock_transport_policy(
-    policy: &mut std::sync::Arc<dyn crate::Policy>,
-    transport_options: crate::TransportOptions,
-) {
+/// Create a new mock transport policy.
+///
+/// Returns a reply mock policy unless the environment variable  "TESTING_MODE" is set to "RECORD".
+pub fn new_mock_transport(transaction_name: String) -> Arc<dyn Policy> {
     match std::env::var(TESTING_MODE_KEY)
         .as_deref()
         .unwrap_or(TESTING_MODE_REPLAY)
     {
         TESTING_MODE_RECORD => {
             log::warn!("mock testing framework record mode enabled");
-            *policy = Arc::new(MockTransportRecorderPolicy::new(transport_options))
+            new_recorder_transport(transaction_name, crate::new_http_client())
         }
-        TESTING_MODE_REPLAY => {
+        _ => {
             log::info!("mock testing framework replay mode enabled");
-            *policy = Arc::new(MockTransportPlayerPolicy::new(transport_options))
+            new_replay_transport(transaction_name)
         }
-        m => {
-            log::error!(
-                "invalid TESTING_MODE '{}' selected. Supported options are '{}' and '{}'",
-                m,
-                TESTING_MODE_RECORD,
-                TESTING_MODE_REPLAY
-            );
-        }
-    };
+    }
+}
+
+/// Create a mock transport policy that replays recorded mock requests/responses.
+pub fn new_replay_transport(transaction_name: String) -> Arc<dyn Policy> {
+    Arc::new(MockTransportPlayerPolicy::new(transaction_name))
+}
+
+/// Create a mock transport policy that records live calls.
+pub fn new_recorder_transport(
+    transaction_name: String,
+    http_client: Arc<dyn HttpClient>,
+) -> Arc<dyn Policy> {
+    Arc::new(MockTransportRecorderPolicy::new(
+        transaction_name,
+        http_client,
+    ))
 }

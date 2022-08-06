@@ -39,7 +39,6 @@ reqwest = "0.11"
 [features]
 default = ["enable_reqwest"]
 test_e2e = []
-mock_transport_framework = [ "azure_core/mock_transport_framework"]
 test_integration = []
 azurite_workaround = []
 enable_reqwest = ["azure_core/enable_reqwest"]

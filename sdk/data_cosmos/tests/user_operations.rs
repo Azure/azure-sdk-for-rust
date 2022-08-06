@@ -1,8 +1,6 @@
-#![cfg(feature = "mock_transport_framework")]
-
 use futures::stream::StreamExt;
 
-mod setup;
+mod setup_mock;
 
 #[tokio::test]
 async fn user_operations() {
@@ -10,7 +8,7 @@ async fn user_operations() {
     const USER_NAME: &str = "someone@cool.net";
     const USER_NAME_REPLACED: &str = "someone.else@cool.net";
 
-    let client = setup::initialize("user_operations").unwrap();
+    let client = setup_mock::initialize("user_operations").unwrap();
 
     // create a temp database
     let _ = client

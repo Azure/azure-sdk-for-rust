@@ -2,7 +2,7 @@ use super::mock_response::MockResponse;
 use super::mock_transaction::MockTransaction;
 use crate::error::{Error, ErrorKind};
 use crate::policies::{Policy, PolicyResult};
-use crate::{Context, Request, TransportOptions};
+use crate::{Context, Request};
 use std::collections::HashMap;
 use std::sync::Arc;
 
@@ -12,8 +12,8 @@ pub struct MockTransportPlayerPolicy {
 }
 
 impl MockTransportPlayerPolicy {
-    pub fn new(transport_options: TransportOptions) -> Self {
-        let transaction = MockTransaction::new(transport_options.transaction_name.clone());
+    pub fn new(transaction_name: String) -> Self {
+        let transaction = MockTransaction::new(transaction_name);
         Self { transaction }
     }
 }

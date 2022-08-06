@@ -28,7 +28,6 @@ mod seekable_stream;
 
 pub mod auth;
 pub mod headers;
-#[cfg(feature = "mock_transport_framework")]
 pub mod mock;
 pub mod parsing;
 pub mod prelude;

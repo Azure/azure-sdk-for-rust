@@ -1,20 +1,7 @@
 use azure_identity::DefaultAzureCredential;
-use azure_storage::clients::StorageClient;
+use azure_storage::clients::{StorageClient, StorageCredentials};
 use std::sync::Arc;
 
-#[cfg(feature = "mock_transport_framework")]
-use azure_storage::clients::StorageCredentials;
-
-#[cfg(not(feature = "mock_transport_framework"))]
-pub fn initialize() -> azure_core::Result<StorageClient> {
-    let credentials = Arc::new(DefaultAzureCredential::default());
-
-    let client = StorageClient::new_token_credential(get_account(), credentials);
-
-    Ok(client)
-}
-
-#[cfg(feature = "mock_transport_framework")]
 pub fn initialize(transaction_name: impl Into<String>) -> azure_core::Result<StorageClient> {
     let account_name = (std::env::var(azure_core::mock::TESTING_MODE_KEY).as_deref()
         == Ok(azure_core::mock::TESTING_MODE_RECORD))

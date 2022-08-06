@@ -41,17 +41,6 @@ impl ClientOptions {
         }
     }
 
-    #[cfg(feature = "mock_transport_framework")]
-    pub fn new_with_transaction_name(transaction_name: String) -> Self {
-        Self {
-            transport: TransportOptions::new_with_transaction_name(transaction_name),
-            per_call_policies: Vec::new(),
-            per_retry_policies: Vec::new(),
-            retry: RetryOptions::default(),
-            telemetry: TelemetryOptions::default(),
-        }
-    }
-
     /// A mutable reference to per-call policies.
     pub fn per_call_policies_mut(&mut self) -> &mut Vec<Arc<dyn Policy>> {
         &mut self.per_call_policies
@@ -184,29 +173,43 @@ impl TelemetryOptions {
 /// Transport options.
 #[derive(Clone, Debug)]
 pub struct TransportOptions {
-    /// The HTTP client implementation to use for requests.
-    pub(crate) http_client: Arc<dyn HttpClient>,
-    #[cfg(feature = "mock_transport_framework")]
-    /// The name of the transaction used when reading or writing mock requests and responses.
-    pub(crate) transaction_name: String,
+    inner: TransportOptionsImpl,
+}
+
+#[derive(Clone, Debug)]
+enum TransportOptionsImpl {
+    Http {
+        /// The HTTP client implementation to use for requests.
+        http_client: Arc<dyn HttpClient>,
+    },
+    Custom(Arc<dyn Policy>),
 }
 
 impl TransportOptions {
     /// Creates a new `TransportOptions` using the given `HttpClient`.
     pub fn new(http_client: Arc<dyn HttpClient>) -> Self {
-        Self {
-            http_client,
-            #[cfg(feature = "mock_transport_framework")]
-            transaction_name: String::new(),
-        }
+        let inner = TransportOptionsImpl::Http { http_client };
+        Self { inner }
     }
 
-    #[cfg(feature = "mock_transport_framework")]
-    #[cfg(any(feature = "enable_reqwest", feature = "enable_reqwest_rustls"))]
-    pub fn new_with_transaction_name(transaction_name: String) -> Self {
-        Self {
-            http_client: crate::http_client::new_reqwest_client(),
-            transaction_name,
+    /// Creates a new `TransportOptions` using the custom policy.
+    ///
+    /// This policy is expected to be the last policy in the pipeline.
+    pub fn new_custom_policy(policy: Arc<dyn Policy>) -> Self {
+        let inner = TransportOptionsImpl::Custom(policy);
+        Self { inner }
+    }
+
+    /// Use these options to send a request.
+    pub async fn send(
+        &self,
+        ctx: &crate::Context,
+        request: &mut crate::Request,
+    ) -> crate::Result<crate::Response> {
+        use TransportOptionsImpl as I;
+        match &self.inner {
+            I::Http { http_client } => http_client.execute_request(request).await,
+            I::Custom(s) => s.send(ctx, request, &[]).await,
         }
     }
 }

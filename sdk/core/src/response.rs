@@ -15,8 +15,6 @@ pub struct Response {
 }
 
 impl Response {
-    #[cfg(any(feature = "enable_reqwest", feature = "enable_reqwest_rustls"))]
-    #[cfg(not(target_arch = "wasm32"))]
     pub(crate) fn new(status: StatusCode, headers: Headers, body: PinnedStream) -> Self {
         Self {
             status,

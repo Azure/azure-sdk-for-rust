@@ -1,5 +1,3 @@
-#![cfg(feature = "mock_transport_framework")]
-
 use azure_storage_blobs::container::PublicAccess;
 use azure_storage_blobs::prelude::{AsBlobServiceClient, AsContainerClient};
 use bytes::Bytes;
