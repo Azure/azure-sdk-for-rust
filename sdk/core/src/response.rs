@@ -15,7 +15,7 @@ pub struct Response {
 }
 
 impl Response {
-    pub(crate) fn new(status: StatusCode, headers: Headers, body: PinnedStream) -> Self {
+    pub fn new(status: StatusCode, headers: Headers, body: PinnedStream) -> Self {
         Self {
             status,
             headers,

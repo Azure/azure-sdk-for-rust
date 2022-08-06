@@ -1,8 +1,9 @@
+use crate::mock_request::RequestSerializer;
+
 use super::mock_response::MockResponse;
 use super::MockTransaction;
-use crate::error::ResultExt;
-use crate::policies::{Policy, PolicyResult};
-use crate::{Context, HttpClient, Request};
+use azure_core::error::{ErrorKind, ResultExt};
+use azure_core::{Context, HttpClient, Policy, PolicyResult, Request};
 use std::io::Write;
 use std::sync::Arc;
 
@@ -42,15 +43,12 @@ impl Policy for MockTransportRecorderPolicy {
         request_path.push(format!("{}_request.json", number));
         response_path.push(format!("{}_response.json", number));
 
-        let request_contents = serde_json::to_string(&request).unwrap();
+        let request_contents = serde_json::to_string(&RequestSerializer::new(request)).unwrap();
         {
             let mut request_contents_stream = std::fs::File::create(&request_path).unwrap();
             request_contents_stream
                 .write_all(request_contents.as_str().as_bytes())
-                .context(
-                    crate::error::ErrorKind::MockFramework,
-                    "cannot write request file",
-                )?;
+                .context(ErrorKind::MockFramework, "cannot write request file")?;
         }
 
         let response = self.http_client.execute_request(request).await?;
@@ -63,10 +61,7 @@ impl Policy for MockTransportRecorderPolicy {
             let mut response_contents_stream = std::fs::File::create(&response_path).unwrap();
             response_contents_stream
                 .write_all(response_contents.as_bytes())
-                .context(
-                    crate::error::ErrorKind::MockFramework,
-                    "cannot write response file",
-                )?
+                .context(ErrorKind::MockFramework, "cannot write response file")?
         }
 
         self.transaction.increment_number();

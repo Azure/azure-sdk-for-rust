@@ -1,8 +1,9 @@
+use crate::mock_request::RequestDeserializer;
+
 use super::mock_response::MockResponse;
 use super::mock_transaction::MockTransaction;
-use crate::error::{Error, ErrorKind};
-use crate::policies::{Policy, PolicyResult};
-use crate::{Context, Request};
+use azure_core::error::{Error, ErrorKind};
+use azure_core::{Body, Context, Policy, PolicyResult, Request};
 use std::collections::HashMap;
 use std::sync::Arc;
 
@@ -45,7 +46,8 @@ impl Policy for MockTransportPlayerPolicy {
             (request, response)
         };
 
-        let expected_request: Request = serde_json::from_str(&expected_request)?;
+        let expected_request =
+            serde_json::from_str::<RequestDeserializer>(&expected_request)?.into_inner();
         let expected_response = serde_json::from_str::<MockResponse>(&expected_response)?;
 
         let expected_uri = expected_request.path_and_query();
@@ -126,13 +128,13 @@ impl Policy for MockTransportPlayerPolicy {
         }
 
         let actual_body = match request.body() {
-            crate::Body::Bytes(bytes) => bytes as &[u8],
-            crate::Body::SeekableStream(_) => unimplemented!(),
+            Body::Bytes(bytes) => bytes as &[u8],
+            Body::SeekableStream(_) => unimplemented!(),
         };
 
         let expected_body = match expected_request.body() {
-            crate::Body::Bytes(bytes) => bytes as &[u8],
-            crate::Body::SeekableStream(_) => unimplemented!(),
+            Body::Bytes(bytes) => bytes as &[u8],
+            Body::SeekableStream(_) => unimplemented!(),
         };
 
         if actual_body != expected_body {

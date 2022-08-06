@@ -1,4 +1,5 @@
 [workspace]
 members = [
-  "sdk/*"
+  "sdk/*",
+  "./eng/test/mock_transport"
 ]

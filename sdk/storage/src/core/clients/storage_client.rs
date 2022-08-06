@@ -4,7 +4,6 @@ use crate::shared_access_signature::account_sas::{
     AccountSasPermissions, AccountSasResource, AccountSasResourceType, AccountSharedAccessSignature,
 };
 use crate::ConnectionString;
-use azure_core::date;
 use azure_core::{
     auth::TokenCredential,
     error::{Error, ErrorKind, ResultExt},
@@ -12,6 +11,7 @@ use azure_core::{
     prelude::Timeout,
     Body, ClientOptions, Context, Method, Pipeline, Request, Response, TimeoutPolicy,
 };
+use azure_core::{date, Policy, TransportOptions};
 use std::sync::Arc;
 use time::OffsetDateTime;
 use url::Url;
@@ -342,12 +342,10 @@ impl StorageClient {
     pub fn new_mock(
         account: impl Into<String>,
         storage_credentials: StorageCredentials,
-        transaction_name: impl Into<String>,
+        transport_policy: Arc<dyn Policy>,
     ) -> Self {
         let account = account.into();
-        let options = ClientOptions::new(azure_core::TransportOptions::new_custom_policy(
-            azure_core::mock::new_mock_transport(transaction_name.into()),
-        ));
+        let options = ClientOptions::new(TransportOptions::new_custom_policy(transport_policy));
         let pipeline = new_pipeline_from_options(
             StorageOptions {
                 options,

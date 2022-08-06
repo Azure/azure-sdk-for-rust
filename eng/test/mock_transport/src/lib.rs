@@ -9,7 +9,7 @@ use player_policy::MockTransportPlayerPolicy;
 use recorder_policy::MockTransportRecorderPolicy;
 use std::sync::Arc;
 
-use crate::{HttpClient, Policy};
+use azure_core::{HttpClient, Policy};
 
 pub const TESTING_MODE_KEY: &str = "TESTING_MODE";
 pub const TESTING_MODE_REPLAY: &str = "REPLAY";
@@ -25,7 +25,7 @@ pub fn new_mock_transport(transaction_name: String) -> Arc<dyn Policy> {
     {
         TESTING_MODE_RECORD => {
             log::warn!("mock testing framework record mode enabled");
-            new_recorder_transport(transaction_name, crate::new_http_client())
+            new_recorder_transport(transaction_name, azure_core::new_http_client())
         }
         _ => {
             log::info!("mock testing framework replay mode enabled");
