@@ -9,7 +9,7 @@ use std::collections::HashMap;
 #[derive(Template)]
 #[template(path = "readme.md.jinja")]
 pub struct ReadmeMd<'a> {
-    pub crate_name: &'a str,
+    pub package_name: &'a str,
     pub readme_url: String,
     pub tags: &'a Vec<&'a Tag>,
     pub default_tag: &'a Tag,

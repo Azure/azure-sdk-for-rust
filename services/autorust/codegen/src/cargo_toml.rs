@@ -6,7 +6,7 @@ use std::{
     io::{prelude::*, LineWriter},
 };
 
-pub fn create(crate_name: &str, tags: &[&Tag], default_tag: &Tag, path: &Utf8Path) -> Result<()> {
+pub fn create(package_name: &str, tags: &[&Tag], default_tag: &Tag, path: &Utf8Path) -> Result<()> {
     let file = File::create(path)?;
     let mut file = LineWriter::new(file);
     let default_feature = default_tag.rust_feature_name();
@@ -54,7 +54,7 @@ enable_reqwest = ["azure_core/enable_reqwest"]
 enable_reqwest_rustls = ["azure_core/enable_reqwest_rustls"]
 no-default-tag = []
 "#,
-            crate_name, crate_name, default_feature
+            package_name, package_name, default_feature
         )
         .as_bytes(),
     )?;
