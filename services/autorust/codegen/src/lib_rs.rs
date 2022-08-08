@@ -1,4 +1,4 @@
-use crate::{codegen::create_generated_by_header, config_parser::Tag, identifier::parse_ident, write_file};
+use crate::{config_parser::Tag, identifier::parse_ident, write_file};
 use crate::{ErrorKind, Result, ResultExt};
 use camino::Utf8Path;
 use proc_macro2::{Ident, TokenStream};
@@ -39,16 +39,14 @@ impl ToTokens for BodyCode {
                 #[cfg(feature = #feature_name)]
                 pub mod #mod_name;
                 #[cfg(all(feature = #feature_name, not(feature = "no-default-tag")))]
-                pub use #mod_name::{models, operations, operations::Client, operations::ClientBuilder};
+                pub use #mod_name::{models, Client, ClientBuilder};
             });
         }
-        let generated_by = create_generated_by_header();
         tokens.extend(quote! {
             #![allow(clippy::module_inception)]
             #![allow(clippy::too_many_arguments)]
             #![allow(clippy::ptr_arg)]
             #![allow(clippy::large_enum_variant)]
-            #generated_by
             #cfgs
         })
     }
