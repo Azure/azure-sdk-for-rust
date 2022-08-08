@@ -37,8 +37,8 @@ impl MockResponse {
 
     pub(crate) async fn duplicate(response: Response) -> error::Result<(Response, Self)> {
         use error::ResultExt;
-        let (status_code, header_map, pinned_stream) = response.deconstruct();
-        let response_bytes = collect_pinned_stream(pinned_stream).await.context(
+        let (status_code, header_map, body) = response.deconstruct();
+        let response_bytes = body.collect().await.context(
             error::ErrorKind::Io,
             "an error occurred fetching the next part of the byte stream",
         )?;

@@ -39,7 +39,7 @@ pub struct GetQueueServicePropertiesResponse {
 impl GetQueueServicePropertiesResponse {
     async fn try_from(response: AzureResponse) -> azure_core::Result<Self> {
         let (_, headers, body) = response.deconstruct();
-        let body = collect_pinned_stream(body).await?;
+        let body = body.collect().await?;
 
         let queue_service_properties: QueueServiceProperties = read_xml(&body)?;
 

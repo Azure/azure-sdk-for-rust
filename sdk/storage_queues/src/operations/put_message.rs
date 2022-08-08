@@ -82,7 +82,7 @@ struct QueueMessageInternal {
 impl PutMessageResponse {
     async fn try_from(response: AzureResponse) -> azure_core::Result<Self> {
         let (_, headers, body) = response.deconstruct();
-        let body = collect_pinned_stream(body).await?;
+        let body = body.collect().await?;
 
         let response: PutMessageResponseInternal = read_xml(&body)?;
         let queue_message = response.queue_message;

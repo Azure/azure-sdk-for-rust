@@ -34,7 +34,7 @@ impl GetPageRangesBuilder {
             let response = self.client.send(&mut self.context, &mut request).await?;
 
             let (_, headers, body) = response.deconstruct();
-            let body = collect_pinned_stream(body).await?;
+            let body = body.collect().await?;
 
             GetPageRangesResponse::from_response(&headers, &body)
         })

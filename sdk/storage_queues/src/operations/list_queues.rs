@@ -75,7 +75,7 @@ impl Continuable for ListQueuesResponse {
 impl ListQueuesResponse {
     async fn try_from(response: AzureResponse) -> azure_core::Result<Self> {
         let (_, headers, body) = response.deconstruct();
-        let body = collect_pinned_stream(body).await?;
+        let body = body.collect().await?;
 
         let mut response: ListQueuesResponseInternal = read_xml(&body)?;
 

@@ -46,7 +46,7 @@ impl GetACLResponse {
     // this should be named into and be consuming
     pub(crate) async fn from_response(response: Response) -> azure_core::Result<GetACLResponse> {
         let (_, headers, body) = response.deconstruct();
-        let body = collect_pinned_stream(body).await?;
+        let body = body.collect().await?;
 
         // todo: parse SAS policies
         let public_access = public_access_from_header(&headers)?;

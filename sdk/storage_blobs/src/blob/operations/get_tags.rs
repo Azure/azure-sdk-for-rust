@@ -31,9 +31,9 @@ impl GetTagsBuilder {
             let response = self.client.send(&mut self.context, &mut request).await?;
 
             let (_, headers, body) = response.deconstruct();
+            let body = body.collect().await?;
 
-            let collected = collect_pinned_stream(body).await?;
-            GetTagsResponse::from_response(&headers, &collected)
+            GetTagsResponse::from_response(&headers, &body)
         })
     }
 }

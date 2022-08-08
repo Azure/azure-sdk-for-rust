@@ -35,8 +35,8 @@ impl Response {
     }
 
     /// Deconstruct the HTTP response into its components.
-    pub fn deconstruct(self) -> (StatusCode, Headers, PinnedStream) {
-        (self.status, self.headers, self.body.0)
+    pub fn deconstruct(self) -> (StatusCode, Headers, ResponseBody) {
+        (self.status, self.headers, self.body)
     }
 
     /// Consume the HTTP response and return the HTTP body bytes.
@@ -103,7 +103,7 @@ impl CollectedResponse {
     /// From a response
     pub async fn from_response(response: Response) -> crate::Result<Self> {
         let (status, headers, body) = response.deconstruct();
-        let body = collect_pinned_stream(body).await?;
+        let body = body.collect().await?;
         Ok(Self::new(status, headers, body))
     }
 }

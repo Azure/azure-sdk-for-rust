@@ -55,7 +55,7 @@ pub trait HttpClient: Send + Sync + std::fmt::Debug {
     ) -> crate::Result<crate::CollectedResponse> {
         let rsp = self.execute_request(request).await?;
         let (status, headers, body) = rsp.deconstruct();
-        let body = crate::collect_pinned_stream(body).await?;
+        let body = body.collect().await?;
 
         if status.is_success() {
             Ok(crate::CollectedResponse::new(status, headers, body))

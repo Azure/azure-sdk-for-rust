@@ -103,12 +103,11 @@ where
     T: DeserializeOwned,
 {
     pub async fn try_from(response: HttpResponse) -> azure_core::Result<Self> {
-        let (status_code, headers, pinned_stream) = response.deconstruct();
+        let (status_code, headers, body) = response.deconstruct();
+        let body = body.collect().await?;
 
         let has_been_found =
             status_code == StatusCode::Ok || status_code == StatusCode::NotModified;
-
-        let body = collect_pinned_stream(pinned_stream).await?;
 
         if has_been_found {
             Ok(GetDocumentResponse::Found(

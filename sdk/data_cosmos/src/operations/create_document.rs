@@ -110,8 +110,8 @@ pub struct CreateDocumentResponse {
 
 impl CreateDocumentResponse {
     pub async fn try_from(response: HttpResponse) -> azure_core::Result<Self> {
-        let (status_code, headers, pinned_stream) = response.deconstruct();
-        let body = collect_pinned_stream(pinned_stream).await?;
+        let (status_code, headers, body) = response.deconstruct();
+        let body = body.collect().await?;
 
         Ok(CreateDocumentResponse {
             is_update: status_code == StatusCode::Ok,

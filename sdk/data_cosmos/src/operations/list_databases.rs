@@ -63,8 +63,8 @@ pub struct ListDatabasesResponse {
 
 impl ListDatabasesResponse {
     pub(crate) async fn try_from(response: Response) -> azure_core::Result<Self> {
-        let (_status_code, headers, pinned_stream) = response.deconstruct();
-        let body: bytes::Bytes = collect_pinned_stream(pinned_stream).await?;
+        let (_status_code, headers, body) = response.deconstruct();
+        let body = body.collect().await?;
 
         #[derive(Deserialize, Debug)]
         pub struct Response {

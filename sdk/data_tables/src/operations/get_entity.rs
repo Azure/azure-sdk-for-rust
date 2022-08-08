@@ -88,7 +88,7 @@ where
 {
     async fn try_from(response: Response) -> azure_core::Result<Self> {
         let (_, headers, body) = response.deconstruct();
-        let body = collect_pinned_stream(body).await?;
+        let body = body.collect().await?;
 
         let get_entity_response_internal: GetEntityResponseInternal<T> =
             serde_json::from_slice(&body)?;

@@ -86,9 +86,9 @@ pub struct GetFileResponse {
 
 impl GetFileResponse {
     pub async fn try_from(response: HttpResponse) -> azure_core::Result<Self> {
-        let (_status_code, headers, pinned_stream) = response.deconstruct();
+        let (_status_code, headers, body) = response.deconstruct();
+        let data = body.collect().await?;
 
-        let data = collect_pinned_stream(pinned_stream).await?;
         let content_range = headers.get_optional_as(&headers::CONTENT_RANGE)?;
 
         Ok(Self {

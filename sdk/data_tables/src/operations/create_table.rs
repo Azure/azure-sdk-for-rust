@@ -49,7 +49,7 @@ pub struct CreateTableResponse {
 impl CreateTableResponse {
     async fn try_from(response: Response) -> azure_core::Result<Self> {
         let (_, headers, body) = response.deconstruct();
-        let body = collect_pinned_stream(body).await?;
+        let body = body.collect().await?;
 
         Ok(CreateTableResponse {
             common_storage_response_headers: (&headers).try_into()?,
