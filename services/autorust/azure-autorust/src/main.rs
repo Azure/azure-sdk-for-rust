@@ -15,13 +15,13 @@ struct Args {
     #[clap(long)]
     publish: bool,
 
-    /// Specify specific package to generate
+    /// Specify specific package to generate. Multiple accepted.
     #[clap(long = "package", short = 'p')]
-    packages: Vec<String>,
+    package: Vec<String>,
 }
 impl Args {
     pub fn packages(&self) -> Vec<&str> {
-        self.packages.iter().map(String::as_str).collect()
+        self.package.iter().map(String::as_str).collect()
     }
 }
 
