@@ -1,5 +1,5 @@
 use crate::{
-    codegen::{create_generated_by_header, type_name_gen, TypeNameCode},
+    codegen::{type_name_gen, TypeNameCode},
     identifier::{CamelCaseIdent, SnakeCaseIdent},
     spec::{self, get_schema_array_items, get_type_name_for_schema, get_type_name_for_schema_ref, TypeName},
     CodeGen, PropertyName, ResolvedSchema, Spec,
@@ -297,7 +297,6 @@ fn add_schema_gen(all_schemas: &mut IndexMap<RefKey, SchemaGen>, resolved_schema
 
 pub fn create_models(cg: &CodeGen) -> Result<TokenStream> {
     let mut file = TokenStream::new();
-    file.extend(create_generated_by_header());
 
     let has_case_workaround = cg.should_workaround_case();
 
