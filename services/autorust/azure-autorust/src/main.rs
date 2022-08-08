@@ -19,6 +19,7 @@ struct Args {
     #[clap(long = "package", short = 'p')]
     package: Vec<String>,
 }
+
 impl Args {
     pub fn packages(&self) -> Vec<&str> {
         self.package.iter().map(String::as_str).collect()
