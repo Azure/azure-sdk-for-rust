@@ -55,18 +55,6 @@ impl std::fmt::Debug for Response {
     }
 }
 
-/// Convenience function that transforms a `PinnedStream` in a `bytes::Bytes` struct by collecting all the chunks. It consumes the response stream.
-pub async fn collect_pinned_stream(mut pinned_stream: PinnedStream) -> crate::error::Result<Bytes> {
-    let mut final_result = Vec::new();
-
-    while let Some(res) = pinned_stream.next().await {
-        let res = res?;
-        final_result.extend(&res);
-    }
-
-    Ok(final_result.into())
-}
-
 /// A response with the body collected as bytes
 #[derive(Debug, Clone)]
 pub struct CollectedResponse {
@@ -150,4 +138,16 @@ impl Debug for ResponseBody {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_str("ResonseBody")
     }
+}
+
+/// Convenience function that transforms a `PinnedStream` in a `bytes::Bytes` struct by collecting all the chunks. It consumes the response stream.
+async fn collect_pinned_stream(mut pinned_stream: PinnedStream) -> crate::error::Result<Bytes> {
+    let mut final_result = Vec::new();
+
+    while let Some(res) = pinned_stream.next().await {
+        let res = res?;
+        final_result.extend(&res);
+    }
+
+    Ok(final_result.into())
 }
