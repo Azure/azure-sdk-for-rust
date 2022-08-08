@@ -2,9 +2,7 @@ use crate::{
     container::{public_access_from_header, PublicAccess},
     prelude::*,
 };
-use azure_core::{
-    collect_pinned_stream, date, headers::*, prelude::*, Method, RequestId, Response,
-};
+use azure_core::{date, headers::*, prelude::*, Method, RequestId, Response};
 use azure_storage::core::StoredAccessPolicyList;
 use time::OffsetDateTime;
 

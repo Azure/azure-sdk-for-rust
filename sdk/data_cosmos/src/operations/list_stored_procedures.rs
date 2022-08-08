@@ -3,7 +3,7 @@ use crate::prelude::*;
 use crate::resources::ResourceType;
 use crate::resources::StoredProcedure;
 use crate::ResourceQuota;
-use azure_core::collect_pinned_stream;
+
 use azure_core::headers::{continuation_token_from_headers_optional, session_token_from_headers};
 use azure_core::prelude::*;
 use azure_core::{Pageable, Response as HttpResponse};

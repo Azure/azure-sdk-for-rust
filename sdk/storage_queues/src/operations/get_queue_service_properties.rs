@@ -1,5 +1,5 @@
 use crate::{QueueServiceClient, QueueServiceProperties};
-use azure_core::{collect_pinned_stream, headers::Headers, Method, Response as AzureResponse};
+use azure_core::{headers::Headers, Method, Response as AzureResponse};
 use azure_storage::core::{headers::CommonStorageResponseHeaders, xml::read_xml};
 use std::convert::TryInto;
 

@@ -9,7 +9,7 @@ use serde::Serialize;
 use std::convert::TryFrom;
 use time::OffsetDateTime;
 
-use azure_core::{collect_pinned_stream, Response as HttpResponse};
+use azure_core::Response as HttpResponse;
 
 operation! {
     CreateDocument<D: Serialize + CosmosEntity + Send + 'static>,

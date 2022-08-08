@@ -3,7 +3,6 @@ use crate::prelude::*;
 use crate::resources::User;
 use azure_core::prelude::Continuation;
 use azure_core::{
-    collect_pinned_stream,
     headers::{continuation_token_from_headers_optional, session_token_from_headers},
     prelude::MaxItemCount,
     Response as HttpResponse, SessionToken,

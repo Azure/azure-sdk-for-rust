@@ -6,8 +6,8 @@ use crate::ResourceQuota;
 use azure_core::headers::{
     continuation_token_from_headers_optional, item_count_from_headers, session_token_from_headers,
 };
-use azure_core::{collect_pinned_stream, Response, SessionToken};
 use azure_core::{prelude::*, Pageable};
+use azure_core::{Response, SessionToken};
 use serde::de::DeserializeOwned;
 use time::OffsetDateTime;
 

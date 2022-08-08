@@ -1,7 +1,5 @@
 use crate::prelude::*;
-use azure_core::{
-    collect_pinned_stream, headers::*, AppendToUrlQuery, Context, Etag, Method, Response,
-};
+use azure_core::{headers::*, AppendToUrlQuery, Context, Etag, Method, Response};
 use azure_storage::core::headers::CommonStorageResponseHeaders;
 use serde::de::DeserializeOwned;
 use std::{convert::TryInto, marker::PhantomData};

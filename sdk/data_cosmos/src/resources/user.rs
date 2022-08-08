@@ -3,7 +3,6 @@
 use super::Resource;
 use crate::headers::from_headers::*;
 use azure_core::{
-    collect_pinned_stream,
     headers::{etag_from_headers, session_token_from_headers},
     Response as HttpResponse,
 };

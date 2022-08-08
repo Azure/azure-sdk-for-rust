@@ -3,7 +3,7 @@ use std::marker::PhantomData;
 use crate::headers::from_headers::*;
 use crate::prelude::*;
 use crate::resources::stored_procedure::Parameters;
-use azure_core::collect_pinned_stream;
+
 use azure_core::headers::session_token_from_headers;
 use azure_core::prelude::*;
 use azure_core::{Response as HttpResponse, SessionToken};

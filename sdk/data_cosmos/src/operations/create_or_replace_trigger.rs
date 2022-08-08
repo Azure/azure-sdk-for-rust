@@ -3,7 +3,7 @@ use crate::prelude::*;
 use crate::resources::trigger::*;
 use crate::resources::Trigger;
 use crate::ResourceQuota;
-use azure_core::collect_pinned_stream;
+
 use azure_core::headers::{etag_from_headers, session_token_from_headers};
 use azure_core::Response as HttpResponse;
 use time::OffsetDateTime;

@@ -3,7 +3,7 @@ use crate::prelude::*;
 use crate::resources::document::Query;
 use crate::resources::ResourceType;
 use crate::ResourceQuota;
-use azure_core::collect_pinned_stream;
+
 use azure_core::headers;
 use azure_core::headers::HeaderValue;
 use azure_core::headers::{

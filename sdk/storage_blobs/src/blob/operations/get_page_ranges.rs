@@ -1,5 +1,5 @@
 use crate::{blob::PageRangeList, prelude::*};
-use azure_core::{collect_pinned_stream, headers::*, prelude::*, RequestId};
+use azure_core::{headers::*, prelude::*, RequestId};
 use std::str::from_utf8;
 use time::OffsetDateTime;
 

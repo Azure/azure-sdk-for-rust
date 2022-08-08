@@ -1,7 +1,5 @@
 use crate::{clients::QueueClient, prelude::*, PopReceipt};
-use azure_core::{
-    collect_pinned_stream, headers::Headers, prelude::*, Method, Response as AzureResponse,
-};
+use azure_core::{headers::Headers, prelude::*, Method, Response as AzureResponse};
 use azure_storage::core::{headers::CommonStorageResponseHeaders, xml::read_xml};
 use serde::Deserialize;
 use std::convert::TryInto;

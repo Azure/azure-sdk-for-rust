@@ -1,7 +1,6 @@
 use crate::{blob::Blob, prelude::*};
 use azure_core::Method;
 use azure_core::{
-    collect_pinned_stream,
     error::Error,
     headers::{date_from_headers, request_id_from_headers, Headers},
     prelude::*,

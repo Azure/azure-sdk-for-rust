@@ -1,5 +1,5 @@
 use azure_core::{
-    collect_pinned_stream, error,
+    error,
     headers::{HeaderName, HeaderValue, Headers},
     BytesStream, Response, StatusCode,
 };

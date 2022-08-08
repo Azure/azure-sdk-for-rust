@@ -1,5 +1,5 @@
 use azure_core::prelude::*;
-use azure_core::{collect_pinned_stream, Response as HttpResponse};
+use azure_core::Response as HttpResponse;
 use azure_storage::{headers::CommonStorageResponseHeaders, xml::read_xml};
 
 use crate::prelude::BlobServiceClient;

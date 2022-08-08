@@ -4,7 +4,7 @@ use crate::resources::Database;
 use crate::ResourceQuota;
 
 use azure_core::headers::{continuation_token_from_headers_optional, session_token_from_headers};
-use azure_core::{collect_pinned_stream, prelude::*, Pageable, Response};
+use azure_core::{prelude::*, Pageable, Response};
 use time::OffsetDateTime;
 
 operation! {

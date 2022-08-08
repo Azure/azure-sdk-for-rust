@@ -1,6 +1,6 @@
 use crate::clients::DataLakeClient;
 use crate::file_system::{FileSystem, FileSystemList};
-use azure_core::{collect_pinned_stream, error::Error, prelude::*, Pageable, Response};
+use azure_core::{error::Error, prelude::*, Pageable, Response};
 use azure_core::{AppendToUrlQuery, Request};
 use azure_storage::core::headers::CommonStorageResponseHeaders;
 use std::convert::TryInto;

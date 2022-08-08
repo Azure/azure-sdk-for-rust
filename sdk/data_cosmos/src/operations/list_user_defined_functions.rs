@@ -3,7 +3,7 @@ use crate::prelude::*;
 use crate::resources::ResourceType;
 use crate::resources::UserDefinedFunction;
 use crate::ResourceQuota;
-use azure_core::collect_pinned_stream;
+
 use azure_core::headers::{
     continuation_token_from_headers_optional, item_count_from_headers, session_token_from_headers,
 };

@@ -1,5 +1,5 @@
 use crate::prelude::*;
-use azure_core::{collect_pinned_stream, headers::*, prelude::*, Method, Response};
+use azure_core::{headers::*, prelude::*, Method, Response};
 use azure_storage::core::headers::CommonStorageResponseHeaders;
 use std::convert::TryInto;
 

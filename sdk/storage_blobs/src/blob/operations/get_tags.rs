@@ -1,5 +1,5 @@
 use crate::prelude::*;
-use azure_core::{collect_pinned_stream, headers::*, prelude::*, RequestId};
+use azure_core::{headers::*, prelude::*, RequestId};
 use azure_storage::xml::read_xml;
 use time::OffsetDateTime;
 

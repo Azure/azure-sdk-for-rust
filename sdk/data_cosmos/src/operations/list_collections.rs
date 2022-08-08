@@ -4,8 +4,8 @@ use crate::resources::Collection;
 use crate::ResourceQuota;
 use azure_core::headers::{continuation_token_from_headers_optional, session_token_from_headers};
 use azure_core::prelude::*;
+use azure_core::Pageable;
 use azure_core::Response as HttpResponse;
-use azure_core::{collect_pinned_stream, Pageable};
 use time::OffsetDateTime;
 
 operation! {

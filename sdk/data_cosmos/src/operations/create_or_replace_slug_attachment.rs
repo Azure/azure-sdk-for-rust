@@ -2,13 +2,13 @@ use crate::headers::from_headers::*;
 use crate::prelude::*;
 use crate::resources::Attachment;
 use crate::ResourceQuota;
+use azure_core::headers;
 use azure_core::headers::{
     date_from_headers, etag_from_headers, session_token_from_headers, HeaderValue,
 };
 use azure_core::Method;
 use azure_core::Response as HttpResponse;
 use azure_core::SessionToken;
-use azure_core::{collect_pinned_stream, headers};
 use azure_core::{content_type, prelude::*};
 use bytes::Bytes;
 use time::OffsetDateTime;

@@ -6,8 +6,8 @@ use crate::ResourceQuota;
 
 use azure_core::headers::session_token_from_headers;
 use azure_core::prelude::*;
+use azure_core::Response as HttpResponse;
 use azure_core::SessionToken;
-use azure_core::{collect_pinned_stream, Response as HttpResponse};
 use serde::Serialize;
 use time::OffsetDateTime;
 

@@ -5,8 +5,8 @@ use crate::prelude::*;
 use crate::resources::Document;
 use crate::ResourceQuota;
 use azure_core::headers::{etag_from_headers, session_token_from_headers, Headers};
-use azure_core::{collect_pinned_stream, Response as HttpResponse, SessionToken};
 use azure_core::{prelude::*, StatusCode};
+use azure_core::{Response as HttpResponse, SessionToken};
 use serde::de::DeserializeOwned;
 use time::OffsetDateTime;
 

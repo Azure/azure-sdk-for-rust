@@ -1,6 +1,6 @@
 use crate::QueueServiceClient;
 use azure_core::{
-    collect_pinned_stream, date,
+    date,
     error::{ErrorKind, ResultExt},
     headers::Headers,
     Method, Response as AzureResponse,
