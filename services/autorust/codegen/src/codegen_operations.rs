@@ -1,6 +1,6 @@
 use crate::{
-    codegen::{create_generated_by_header, parse_query_params, TypeNameCode},
     codegen::{parse_path_params, type_name_gen, PARAM_RE},
+    codegen::{parse_query_params, TypeNameCode},
     identifier::{parse_ident, SnakeCaseIdent},
     spec::{get_type_name_for_schema_ref, WebOperation, WebParameter, WebVerb},
     status_codes::get_success_responses,
@@ -152,13 +152,13 @@ pub fn create_client(modules: &[String], endpoint: Option<&str>) -> Result<Token
 
 pub fn create_operations(cg: &CodeGen) -> Result<TokenStream> {
     let mut file = TokenStream::new();
-    file.extend(create_generated_by_header());
     file.extend(quote! {
+
         #![allow(unused_mut)]
         #![allow(unused_variables)]
         #![allow(unused_imports)]
         #![allow(clippy::redundant_clone)]
-        use super::models;
+        pub mod models;
     });
     let mut operations_code: IndexMap<Option<String>, OperationCode> = IndexMap::new();
     // println!("input_files {:?}", cg.input_files());
