@@ -67,6 +67,114 @@ pub enum ServiceType {
 }
 
 #[derive(Clone, Debug)]
+pub struct StorageClientBuilder {
+    storage_credentials: Option<StorageCredentials>,
+    blob_storage_url: Url,
+    table_storage_url: Url,
+    queue_storage_url: Url,
+    queue_storage_secondary_url: Url,
+    filesystem_url: Url,
+    account: String,
+    storage_options: StorageOptions,
+}
+
+impl StorageClientBuilder {
+    #[must_use]
+    pub fn new(account: impl Into<String>) -> Self {
+        let account = account.into();
+        Self {
+            storage_credentials: None,
+            blob_storage_url: get_endpoint_uri(None, &account, "blob").unwrap(),
+            table_storage_url: get_endpoint_uri(None, &account, "table").unwrap(),
+            queue_storage_url: get_endpoint_uri(None, &account, "queue").unwrap(),
+            queue_storage_secondary_url: get_endpoint_uri(
+                None,
+                &format!("{account}-secondary"),
+                "queue",
+            )
+            .unwrap(),
+            filesystem_url: get_endpoint_uri(None, &account, "dfs").unwrap(),
+            account,
+            storage_options: StorageOptions::new(),
+        }
+    }
+
+    #[must_use]
+    pub fn new_emulator() -> Self {
+        let account = EMULATOR_ACCOUNT.to_string();
+        let blob_storage_url = Url::parse("http://127.0.0.1:10000").unwrap();
+        let queue_storage_url = Url::parse("http://127.0.0.1:10001").unwrap();
+        let queue_storage_secondary_url = queue_storage_url.clone();
+        let table_storage_url = Url::parse("http://127.0.0.1:10002").unwrap();
+        let filesystem_url = Url::parse("http://127.0.0.1:10004").unwrap();
+        Self {
+            storage_credentials: Some(StorageCredentials::Key(
+                account.clone(),
+                EMULATOR_ACCOUNT_KEY.to_string(),
+            )),
+            blob_storage_url,
+            table_storage_url,
+            queue_storage_url,
+            queue_storage_secondary_url,
+            filesystem_url,
+            account,
+            storage_options: StorageOptions::new(),
+        }
+    }
+
+    #[must_use]
+    pub fn access_key(mut self, key: impl Into<String>) -> Self {
+        match self.storage_credentials {
+            None => {
+                self.storage_credentials =
+                    Some(StorageCredentials::Key(self.account.clone(), key.into()));
+                self
+            }
+            // FIXME: This gets a bit tricky in the emulator case...
+            Some(c) => panic!(
+                "credentials already set to: {:?}, you should only set them once.",
+                c
+            ),
+        }
+    }
+
+    #[must_use]
+    pub fn retry(mut self, retry: impl Into<azure_core::RetryOptions>) -> Self {
+        self.storage_options.options = self.storage_options.options.retry(retry);
+        self
+    }
+
+    #[must_use]
+    pub fn transport(mut self, transport: impl Into<azure_core::TransportOptions>) -> Self {
+        self.storage_options.options = self.storage_options.options.transport(transport);
+        self
+    }
+
+    #[must_use]
+    pub fn timeout(mut self, timeout: impl Into<TimeoutPolicy>) -> Self {
+        let timeout = timeout.into();
+        self.storage_options.timeout_policy = timeout;
+        self
+    }
+
+    pub fn build(self) -> StorageClient {
+        // TODO: Make this an error?
+        let storage_credentials = self.storage_credentials.unwrap();
+        let pipeline = new_pipeline_from_options(self.storage_options, storage_credentials.clone());
+        StorageClient {
+            storage_credentials,
+            blob_storage_url: self.blob_storage_url,
+            table_storage_url: self.table_storage_url,
+            queue_storage_url: self.queue_storage_url,
+            queue_storage_secondary_url: self.queue_storage_secondary_url,
+            filesystem_url: self.filesystem_url,
+            account: self.account,
+            pipeline,
+        }
+    }
+}
+
+#[derive(Clone, Debug)]
 pub struct StorageClient {
     storage_credentials: StorageCredentials,
     blob_storage_url: Url,
