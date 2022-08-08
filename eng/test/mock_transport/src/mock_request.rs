@@ -1,5 +1,4 @@
-use crate::Method;
-use crate::{Body, Request};
+use azure_core::{Body, Method, Request};
 use serde::de::Visitor;
 use serde::ser::{Serialize, SerializeStruct, Serializer};
 use serde::{Deserialize, Deserializer};
@@ -9,12 +8,32 @@ use url::Url;
 
 const FIELDS: &[&str] = &["uri", "method", "headers", "body"];
 
-impl<'de> Deserialize<'de> for Request {
+pub struct RequestSerializer<'a>(&'a Request);
+
+impl<'a> RequestSerializer<'a> {
+    pub fn new(req: &'a Request) -> Self {
+        Self(req)
+    }
+}
+
+pub struct RequestDeserializer(Request);
+
+impl RequestDeserializer {
+    pub fn into_inner(self) -> Request {
+        self.0
+    }
+}
+
+impl<'de> Deserialize<'de> for RequestDeserializer {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: Deserializer<'de>,
     {
-        deserializer.deserialize_struct("Request", FIELDS, RequestVisitor)
+        Ok(RequestDeserializer(deserializer.deserialize_struct(
+            "Request",
+            FIELDS,
+            RequestVisitor,
+        )?))
     }
 }
 
@@ -79,30 +98,29 @@ impl<'de> Visitor<'de> for RequestVisitor {
 
         let body = base64::decode(&body.1).map_err(serde::de::Error::custom)?;
 
-        let mut hm = std::collections::HashMap::new();
-        for (k, v) in headers.1.into_iter() {
-            hm.insert(k.to_owned().into(), v.into());
-        }
-
         // `url` cannot be relative
         let url = Url::parse("http://example.com").unwrap();
         let url = url.join(uri.1).expect("expected a valid uri");
-        Ok(Self::Value {
+        let mut req = Self::Value::new(
             url,
-            method: Method::from_str(method.1).expect("expected a valid HTTP method"),
-            headers: hm.into(),
-            body: bytes::Bytes::from(body).into(),
-        })
+            Method::from_str(method.1).expect("expected a valid HTTP method"),
+        );
+        for (k, v) in headers.1.into_iter() {
+            req.insert_header(k.to_owned(), v);
+        }
+
+        req.set_body(bytes::Bytes::from(body));
+        Ok(req)
     }
 }
 
-impl Serialize for Request {
+impl<'a> Serialize for RequestSerializer<'a> {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
     {
         let mut hm = std::collections::BTreeMap::new();
-        for (h, v) in self.headers().iter() {
+        for (h, v) in self.0.headers().iter() {
             if h.as_str().to_lowercase() == "authorization" {
                 hm.insert(h.as_str(), "<<STRIPPED>>");
             } else {
@@ -111,12 +129,12 @@ impl Serialize for Request {
         }
 
         let mut state = serializer.serialize_struct("Request", 4)?;
-        state.serialize_field(FIELDS[0], &self.path_and_query())?;
-        state.serialize_field(FIELDS[1], &self.method.to_string())?;
+        state.serialize_field(FIELDS[0], &self.0.path_and_query())?;
+        state.serialize_field(FIELDS[1], &self.0.method().to_string())?;
         state.serialize_field(FIELDS[2], &hm)?;
         state.serialize_field(
             FIELDS[3],
-            &match &self.body {
+            &match &self.0.body() {
                 Body::Bytes(bytes) => base64::encode(bytes as &[u8]),
                 Body::SeekableStream(_) => unimplemented!(),
             },

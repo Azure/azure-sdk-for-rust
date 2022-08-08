@@ -1,8 +1,7 @@
-#![cfg(feature = "mock_transport_framework")]
 use azure_data_cosmos::prelude::*;
 use futures::stream::StreamExt;
 
-mod setup;
+mod setup_mock;
 
 const TRIGGER_BODY: &str = r#"
 function updateMetadata() {
@@ -40,7 +39,7 @@ async fn trigger_operations() -> azure_core::Result<()> {
     const COLLECTION_NAME: &str = "test-udf";
     const TRIGGER_NAME: &str = "test";
 
-    let client = setup::initialize("trigger_operations")?;
+    let client = setup_mock::initialize("trigger_operations")?;
 
     // create a temp database
     let _create_database_response = client.create_database(DATABASE_NAME).into_future().await?;

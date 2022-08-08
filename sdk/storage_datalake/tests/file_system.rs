@@ -1,5 +1,3 @@
-#![cfg(feature = "mock_transport_framework")]
-
 use azure_storage_datalake::prelude::*;
 use futures::stream::StreamExt;
 use std::num::NonZeroU32;

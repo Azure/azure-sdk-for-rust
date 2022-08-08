@@ -1,7 +1,6 @@
-#![cfg(feature = "mock_transport_framework")]
 use serde::{Deserialize, Serialize};
 
-mod setup;
+mod setup_mock;
 
 use azure_core::prelude::*;
 use azure_data_cosmos::prelude::*;
@@ -28,7 +27,7 @@ async fn document_operations() {
     const COLLECTION_NAME: &str = "test-collection-create-and-delete-document";
     const DOCUMENT_NAME: &str = "test-document-name-create-and-delete-document";
 
-    let client = setup::initialize("document_operations").unwrap();
+    let client = setup_mock::initialize("document_operations").unwrap();
 
     client
         .create_database(DATABASE_NAME)

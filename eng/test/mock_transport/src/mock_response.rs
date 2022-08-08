@@ -1,4 +1,4 @@
-use crate::{
+use azure_core::{
     collect_pinned_stream, error,
     headers::{HeaderName, HeaderValue, Headers},
     BytesStream, Response, StatusCode,
@@ -16,7 +16,7 @@ pub(crate) struct MockResponse {
 
 impl From<MockResponse> for Response {
     fn from(mock_response: MockResponse) -> Self {
-        let bytes_stream: crate::BytesStream = mock_response.body.into();
+        let bytes_stream: azure_core::BytesStream = mock_response.body.into();
 
         Self::new(
             mock_response.status,
@@ -35,9 +35,7 @@ impl MockResponse {
         }
     }
 
-    pub(crate) async fn duplicate(
-        response: crate::Response,
-    ) -> error::Result<(crate::Response, Self)> {
+    pub(crate) async fn duplicate(response: Response) -> error::Result<(Response, Self)> {
         use error::ResultExt;
         let (status_code, header_map, pinned_stream) = response.deconstruct();
         let response_bytes = collect_pinned_stream(pinned_stream).await.context(

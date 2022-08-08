@@ -1,8 +1,7 @@
-#![cfg(feature = "mock_transport_framework")]
 use azure_data_cosmos::prelude::*;
 use futures::StreamExt;
 
-mod setup;
+mod setup_mock;
 
 #[tokio::test]
 async fn permission_operations() {
@@ -13,7 +12,7 @@ async fn permission_operations() {
     const PERMISSION1: &str = "godmode";
     const PERMISSION2: &str = "spyme";
 
-    let client = setup::initialize("permission_operations").unwrap();
+    let client = setup_mock::initialize("permission_operations").unwrap();
 
     // create a temp database
     let _ = client
