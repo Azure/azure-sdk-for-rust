@@ -57,18 +57,18 @@ async fn code() -> azure_core::Result<()> {
     let mut stream = blob.get().chunk_size(5u64).into_stream();
     let mut result = vec![];
     while let Some(entry) = stream.next().await {
-        let entry = entry?;
-        println!("got {:?}", entry.data);
-        result.extend(&entry.data);
+        let data = entry?.data.collect().await?;
+        println!("got {:?}", data);
+        result.extend(&data);
     }
 
     let returned_string = { String::from_utf8(result).map_kind(ErrorKind::DataConversion)? };
-    assert_eq!(string, returned_string);
+    assert_eq!(returned_string, string);
 
     // test streaming a blob smaller than the chunk size issue 239.
     let mut stream = blob.get().chunk_size(0xFFFFu64).into_stream();
     let first = stream.next().await.expect("first chunk")?;
-    let result = String::from_utf8(first.data.to_vec()).map_kind(ErrorKind::DataConversion)?;
+    let result = first.data.collect_string().await?;
     assert_eq!(result, string);
 
     assert!(stream.next().await.is_none(), "second chunk should be None");

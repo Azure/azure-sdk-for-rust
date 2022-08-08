@@ -196,7 +196,7 @@ pub mod classic_administrators {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::ClassicAdministratorListResult = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -438,7 +438,7 @@ pub mod deny_assignments {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::DenyAssignmentListResult = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -523,7 +523,7 @@ pub mod deny_assignments {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::DenyAssignmentListResult = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -606,7 +606,7 @@ pub mod deny_assignments {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::DenyAssignmentListResult = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -657,7 +657,7 @@ pub mod deny_assignments {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::DenyAssignment = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -701,7 +701,7 @@ pub mod deny_assignments {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::DenyAssignment = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -783,7 +783,7 @@ pub mod deny_assignments {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::DenyAssignmentListResult = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -865,7 +865,7 @@ pub mod provider_operations_metadata {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::ProviderOperationsMetadata = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -945,7 +945,7 @@ pub mod provider_operations_metadata {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::ProviderOperationsMetadataListResult = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -1196,7 +1196,7 @@ pub mod role_assignments {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::RoleAssignmentListResult = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -1290,7 +1290,7 @@ pub mod role_assignments {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::RoleAssignmentListResult = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -1390,7 +1390,7 @@ pub mod role_assignments {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::RoleAssignmentListResult = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -1450,7 +1450,7 @@ pub mod role_assignments {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::RoleAssignment = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -1506,12 +1506,12 @@ pub mod role_assignments {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Created => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::RoleAssignment = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Created201(rsp_value))
                             }
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::RoleAssignment = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
@@ -1574,7 +1574,7 @@ pub mod role_assignments {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::RoleAssignment = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
@@ -1675,7 +1675,7 @@ pub mod role_assignments {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::RoleAssignmentListResult = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -1729,7 +1729,7 @@ pub mod role_assignments {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::RoleAssignment = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -1779,12 +1779,12 @@ pub mod role_assignments {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Created => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::RoleAssignment = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Created201(rsp_value))
                             }
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::RoleAssignment = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
@@ -1841,7 +1841,7 @@ pub mod role_assignments {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::RoleAssignment = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
@@ -1956,7 +1956,7 @@ pub mod role_definitions {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::RoleDefinition = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -2006,7 +2006,7 @@ pub mod role_definitions {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::RoleDefinition = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -2058,7 +2058,7 @@ pub mod role_definitions {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Created => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::RoleDefinition = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -2112,7 +2112,7 @@ pub mod role_definitions {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::RoleDefinition = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
@@ -2195,7 +2195,7 @@ pub mod role_definitions {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::RoleDefinitionListResult = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -2321,7 +2321,7 @@ pub mod permissions {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::PermissionGetResult = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -2405,7 +2405,7 @@ pub mod permissions {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::PermissionGetResult = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -2505,7 +2505,7 @@ pub mod eligible_child_resources {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::EligibleChildResourcesListResult = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -2585,7 +2585,7 @@ pub mod role_assignment_schedules {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::RoleAssignmentSchedule = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -2667,7 +2667,7 @@ pub mod role_assignment_schedules {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::RoleAssignmentScheduleListResult = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -2779,7 +2779,7 @@ pub mod role_assignment_schedule_instances {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::RoleAssignmentScheduleInstanceListResult = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -2830,7 +2830,7 @@ pub mod role_assignment_schedule_instances {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::RoleAssignmentScheduleInstance = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -2959,7 +2959,7 @@ pub mod role_assignment_schedule_requests {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::RoleAssignmentScheduleRequest = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -3011,7 +3011,7 @@ pub mod role_assignment_schedule_requests {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Created => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::RoleAssignmentScheduleRequest = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -3093,7 +3093,7 @@ pub mod role_assignment_schedule_requests {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::RoleAssignmentScheduleRequestListResult = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -3193,7 +3193,7 @@ pub mod role_assignment_schedule_requests {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::RoleAssignmentScheduleRequest = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -3272,7 +3272,7 @@ pub mod role_eligibility_schedules {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::RoleEligibilitySchedule = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -3354,7 +3354,7 @@ pub mod role_eligibility_schedules {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::RoleEligibilityScheduleListResult = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -3466,7 +3466,7 @@ pub mod role_eligibility_schedule_instances {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::RoleEligibilityScheduleInstanceListResult = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -3517,7 +3517,7 @@ pub mod role_eligibility_schedule_instances {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::RoleEligibilityScheduleInstance = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -3646,7 +3646,7 @@ pub mod role_eligibility_schedule_requests {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::RoleEligibilityScheduleRequest = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -3698,7 +3698,7 @@ pub mod role_eligibility_schedule_requests {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Created => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::RoleEligibilityScheduleRequest = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -3780,7 +3780,7 @@ pub mod role_eligibility_schedule_requests {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::RoleEligibilityScheduleRequestListResult = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -3880,7 +3880,7 @@ pub mod role_eligibility_schedule_requests {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::RoleEligibilityScheduleRequest = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -3989,7 +3989,7 @@ pub mod role_management_policies {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::RoleManagementPolicy = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -4041,7 +4041,7 @@ pub mod role_management_policies {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::RoleManagementPolicy = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -4165,7 +4165,7 @@ pub mod role_management_policies {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::RoleManagementPolicyListResult = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -4275,7 +4275,7 @@ pub mod role_management_policy_assignments {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::RoleManagementPolicyAssignment = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -4327,7 +4327,7 @@ pub mod role_management_policy_assignments {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Created => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::RoleManagementPolicyAssignment = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -4451,7 +4451,7 @@ pub mod role_management_policy_assignments {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::RoleManagementPolicyAssignmentListResult = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }

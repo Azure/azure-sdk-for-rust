@@ -415,7 +415,7 @@ pub mod azure_ad_only_authentications {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::AzureAdOnlyAuthentication = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -477,12 +477,12 @@ pub mod azure_ad_only_authentications {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::AzureAdOnlyAuthentication = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
                             azure_core::StatusCode::Created => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::AzureAdOnlyAuthentication = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Created201(rsp_value))
                             }
@@ -560,7 +560,7 @@ pub mod azure_ad_only_authentications {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::AzureAdOnlyAuthenticationListResult = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -685,7 +685,7 @@ pub mod operations {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::CheckNameAvailabilityResponse = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -725,7 +725,7 @@ pub mod operations {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: Vec<models::AvailableRpOperation> = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -838,7 +838,7 @@ pub mod operations {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::OperationResource = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -1031,7 +1031,7 @@ pub mod ip_firewall_rules {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::IpFirewallRuleInfoListResult = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -1086,7 +1086,7 @@ pub mod ip_firewall_rules {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::IpFirewallRuleInfo = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -1148,12 +1148,12 @@ pub mod ip_firewall_rules {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::IpFirewallRuleInfo = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
                             azure_core::StatusCode::Created => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::IpFirewallRuleInfo = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Created201(rsp_value))
                             }
@@ -1214,7 +1214,7 @@ pub mod ip_firewall_rules {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: serde_json::Value = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
@@ -1275,7 +1275,7 @@ pub mod ip_firewall_rules {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::ReplaceAllFirewallRulesOperationResponse = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
@@ -1447,7 +1447,7 @@ pub mod keys {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::KeyInfoListResult = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -1502,7 +1502,7 @@ pub mod keys {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::Key = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -1558,7 +1558,7 @@ pub mod keys {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::Key = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -1616,7 +1616,7 @@ pub mod keys {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::Key = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
@@ -1765,7 +1765,7 @@ pub mod private_endpoint_connections {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::PrivateEndpointConnection = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -1826,12 +1826,12 @@ pub mod private_endpoint_connections {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::PrivateEndpointConnection = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
                             azure_core::StatusCode::Created => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::PrivateEndpointConnection = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Created201(rsp_value))
                             }
@@ -1892,7 +1892,7 @@ pub mod private_endpoint_connections {
                         match rsp_status {
                             azure_core::StatusCode::Ok => Ok(Response::Ok200),
                             azure_core::StatusCode::Accepted => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::OperationResource = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Accepted202(rsp_value))
                             }
@@ -1970,7 +1970,7 @@ pub mod private_endpoint_connections {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::PrivateEndpointConnectionList = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -2097,7 +2097,7 @@ pub mod private_link_resources {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::PrivateLinkResourceListResult = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -2152,7 +2152,7 @@ pub mod private_link_resources {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::PrivateLinkResource = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -2278,7 +2278,7 @@ pub mod private_link_hub_private_link_resources {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::PrivateLinkResourceListResult = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -2333,7 +2333,7 @@ pub mod private_link_hub_private_link_resources {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::PrivateLinkResource = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -2522,7 +2522,7 @@ pub mod private_link_hubs {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::PrivateLinkHubInfoListResult = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -2575,7 +2575,7 @@ pub mod private_link_hubs {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::PrivateLinkHub = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -2633,12 +2633,12 @@ pub mod private_link_hubs {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::PrivateLinkHub = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
                             azure_core::StatusCode::Created => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::PrivateLinkHub = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Created201(rsp_value))
                             }
@@ -2696,12 +2696,12 @@ pub mod private_link_hubs {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::PrivateLinkHub = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
                             azure_core::StatusCode::Created => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::PrivateLinkHub = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Created201(rsp_value))
                             }
@@ -2830,7 +2830,7 @@ pub mod private_link_hubs {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::PrivateLinkHubInfoListResult = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -2949,7 +2949,7 @@ pub mod private_endpoint_connections_private_link_hub {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::PrivateEndpointConnectionForPrivateLinkHubResourceCollectionResponse =
                                     serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
@@ -2998,7 +2998,7 @@ pub mod private_endpoint_connections_private_link_hub {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::PrivateEndpointConnectionForPrivateLinkHub = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -3248,7 +3248,7 @@ pub mod sql_pools {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::SqlPool = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -3309,7 +3309,7 @@ pub mod sql_pools {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::SqlPool = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
@@ -3370,7 +3370,7 @@ pub mod sql_pools {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::SqlPool = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
@@ -3431,12 +3431,12 @@ pub mod sql_pools {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: serde_json::Value = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
                             azure_core::StatusCode::Accepted => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: serde_json::Value = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Accepted202(rsp_value))
                             }
@@ -3514,7 +3514,7 @@ pub mod sql_pools {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::SqlPoolInfoListResult = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -3575,7 +3575,7 @@ pub mod sql_pools {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: serde_json::Value = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
@@ -3636,7 +3636,7 @@ pub mod sql_pools {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: serde_json::Value = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
@@ -3791,7 +3791,7 @@ pub mod sql_pool_metadata_sync_configs {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::MetadataSyncConfig = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -3840,7 +3840,7 @@ pub mod sql_pool_metadata_sync_configs {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::MetadataSyncConfig = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -3924,12 +3924,12 @@ pub mod sql_pool_operation_results {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: serde_json::Value = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
                             azure_core::StatusCode::Accepted => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: serde_json::Value = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Accepted202(rsp_value))
                             }
@@ -4067,7 +4067,7 @@ pub mod sql_pool_geo_backup_policies {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::GeoBackupPolicyListResult = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -4115,7 +4115,7 @@ pub mod sql_pool_geo_backup_policies {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::GeoBackupPolicy = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -4169,12 +4169,12 @@ pub mod sql_pool_geo_backup_policies {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Created => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::GeoBackupPolicy = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Created201(rsp_value))
                             }
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::GeoBackupPolicy = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
@@ -4254,7 +4254,7 @@ pub mod sql_pool_data_warehouse_user_activities {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::DataWarehouseUserActivities = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -4437,7 +4437,7 @@ pub mod sql_pool_restore_points {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::RestorePointListResult = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -4500,13 +4500,13 @@ pub mod sql_pool_restore_points {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::RestorePoint = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
                             azure_core::StatusCode::Accepted => Ok(Response::Accepted202),
                             azure_core::StatusCode::Created => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::RestorePoint = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Created201(rsp_value))
                             }
@@ -4562,7 +4562,7 @@ pub mod sql_pool_restore_points {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::RestorePoint = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -4753,7 +4753,7 @@ pub mod sql_pool_replication_links {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::ReplicationLinkListResult = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -4802,7 +4802,7 @@ pub mod sql_pool_replication_links {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::ReplicationLink = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -4915,7 +4915,7 @@ pub mod sql_pool_maintenance_windows {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::MaintenanceWindows = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -5049,7 +5049,7 @@ pub mod sql_pool_maintenance_window_options {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::MaintenanceWindowOptions = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -5181,7 +5181,7 @@ pub mod sql_pool_transparent_data_encryptions {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::TransparentDataEncryption = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -5235,12 +5235,12 @@ pub mod sql_pool_transparent_data_encryptions {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::TransparentDataEncryption = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
                             azure_core::StatusCode::Created => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::TransparentDataEncryption = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Created201(rsp_value))
                             }
@@ -5312,7 +5312,7 @@ pub mod sql_pool_transparent_data_encryptions {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::TransparentDataEncryptionListResult = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -5444,7 +5444,7 @@ pub mod sql_pool_blob_auditing_policies {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::SqlPoolBlobAuditingPolicy = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -5498,12 +5498,12 @@ pub mod sql_pool_blob_auditing_policies {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::SqlPoolBlobAuditingPolicy = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
                             azure_core::StatusCode::Created => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::SqlPoolBlobAuditingPolicy = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Created201(rsp_value))
                             }
@@ -5582,7 +5582,7 @@ pub mod sql_pool_blob_auditing_policies {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::SqlPoolBlobAuditingPolicyListResult = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -5691,7 +5691,7 @@ pub mod sql_pool_operations {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::SqlPoolBlobAuditingPolicySqlPoolOperationListResult =
                                     serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
@@ -5801,7 +5801,7 @@ pub mod sql_pool_usages {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::SqlPoolUsageListResult = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -6136,7 +6136,7 @@ pub mod sql_pool_sensitivity_labels {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::SensitivityLabelListResult = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -6283,7 +6283,7 @@ pub mod sql_pool_sensitivity_labels {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::SensitivityLabelListResult = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -6335,7 +6335,7 @@ pub mod sql_pool_sensitivity_labels {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::SensitivityLabel = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -6392,12 +6392,12 @@ pub mod sql_pool_sensitivity_labels {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::SensitivityLabel = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
                             azure_core::StatusCode::Created => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::SensitivityLabel = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Created201(rsp_value))
                             }
@@ -6763,7 +6763,7 @@ pub mod sql_pool_schemas {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::SqlPoolSchemaListResult = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -6820,7 +6820,7 @@ pub mod sql_pool_schemas {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::SqlPoolSchema = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -6971,7 +6971,7 @@ pub mod sql_pool_tables {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::SqlPoolTableListResult = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -7021,7 +7021,7 @@ pub mod sql_pool_tables {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::SqlPoolTable = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -7140,7 +7140,7 @@ pub mod sql_pool_table_columns {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::SqlPoolColumnListResult = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -7221,7 +7221,7 @@ pub mod sql_pool_connection_policies {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::SqlPoolConnectionPolicy = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -7403,7 +7403,7 @@ pub mod sql_pool_vulnerability_assessments {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::SqlPoolVulnerabilityAssessmentListResult = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -7452,7 +7452,7 @@ pub mod sql_pool_vulnerability_assessments {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::SqlPoolVulnerabilityAssessment = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -7506,12 +7506,12 @@ pub mod sql_pool_vulnerability_assessments {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::SqlPoolVulnerabilityAssessment = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
                             azure_core::StatusCode::Created => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::SqlPoolVulnerabilityAssessment = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Created201(rsp_value))
                             }
@@ -7749,7 +7749,7 @@ pub mod sql_pool_vulnerability_assessment_scans {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::VulnerabilityAssessmentScanRecordListResult = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -7856,12 +7856,12 @@ pub mod sql_pool_vulnerability_assessment_scans {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::SqlPoolVulnerabilityAssessmentScansExport = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
                             azure_core::StatusCode::Created => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::SqlPoolVulnerabilityAssessmentScansExport = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Created201(rsp_value))
                             }
@@ -7910,7 +7910,7 @@ pub mod sql_pool_vulnerability_assessment_scans {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::VulnerabilityAssessmentScanRecord = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -8066,7 +8066,7 @@ pub mod sql_pool_security_alert_policies {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::ListSqlPoolSecurityAlertPolicies = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -8115,7 +8115,7 @@ pub mod sql_pool_security_alert_policies {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::SqlPoolSecurityAlertPolicy = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -8169,12 +8169,12 @@ pub mod sql_pool_security_alert_policies {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::SqlPoolSecurityAlertPolicy = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
                             azure_core::StatusCode::Created => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::SqlPoolSecurityAlertPolicy = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Created201(rsp_value))
                             }
@@ -8326,7 +8326,7 @@ pub mod sql_pool_vulnerability_assessment_rule_baselines {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::SqlPoolVulnerabilityAssessmentRuleBaseline = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -8378,7 +8378,7 @@ pub mod sql_pool_vulnerability_assessment_rule_baselines {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::SqlPoolVulnerabilityAssessmentRuleBaseline = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -8558,7 +8558,7 @@ pub mod extended_sql_pool_blob_auditing_policies {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::ExtendedSqlPoolBlobAuditingPolicy = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -8612,12 +8612,12 @@ pub mod extended_sql_pool_blob_auditing_policies {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::ExtendedSqlPoolBlobAuditingPolicy = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
                             azure_core::StatusCode::Created => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::ExtendedSqlPoolBlobAuditingPolicy = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Created201(rsp_value))
                             }
@@ -8689,7 +8689,7 @@ pub mod extended_sql_pool_blob_auditing_policies {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::ExtendedSqlPoolBlobAuditingPolicyListResult = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -8797,7 +8797,7 @@ pub mod data_masking_policies {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::DataMaskingPolicy = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -8847,7 +8847,7 @@ pub mod data_masking_policies {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::DataMaskingPolicy = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -8986,7 +8986,7 @@ pub mod data_masking_rules {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::DataMaskingRule = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -9041,12 +9041,12 @@ pub mod data_masking_rules {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::DataMaskingRule = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
                             azure_core::StatusCode::Created => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::DataMaskingRule = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Created201(rsp_value))
                             }
@@ -9095,7 +9095,7 @@ pub mod data_masking_rules {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::DataMaskingRuleListResult = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -9182,7 +9182,7 @@ pub mod sql_pool_columns {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::SqlPoolColumn = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -9348,7 +9348,7 @@ pub mod sql_pool_workload_group {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::WorkloadGroup = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -9412,13 +9412,13 @@ pub mod sql_pool_workload_group {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::WorkloadGroup = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
                             azure_core::StatusCode::Accepted => Ok(Response::Accepted202),
                             azure_core::StatusCode::Created => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::WorkloadGroup = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Created201(rsp_value))
                             }
@@ -9557,7 +9557,7 @@ pub mod sql_pool_workload_group {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::WorkloadGroupListResult = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -9729,7 +9729,7 @@ pub mod sql_pool_workload_classifier {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::WorkloadClassifier = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -9786,13 +9786,13 @@ pub mod sql_pool_workload_classifier {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::WorkloadClassifier = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
                             azure_core::StatusCode::Accepted => Ok(Response::Accepted202),
                             azure_core::StatusCode::Created => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::WorkloadClassifier = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Created201(rsp_value))
                             }
@@ -9918,7 +9918,7 @@ pub mod sql_pool_workload_classifier {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::WorkloadClassifierListResult = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -10048,7 +10048,7 @@ pub mod workspace_managed_sql_server_blob_auditing_policies {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::ServerBlobAuditingPolicy = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -10109,7 +10109,7 @@ pub mod workspace_managed_sql_server_blob_auditing_policies {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::ServerBlobAuditingPolicy = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
@@ -10187,7 +10187,7 @@ pub mod workspace_managed_sql_server_blob_auditing_policies {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::ServerBlobAuditingPolicyListResult = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -10317,7 +10317,7 @@ pub mod workspace_managed_sql_server_extended_blob_auditing_policies {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::ExtendedServerBlobAuditingPolicy = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -10378,7 +10378,7 @@ pub mod workspace_managed_sql_server_extended_blob_auditing_policies {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::ExtendedServerBlobAuditingPolicy = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
@@ -10456,7 +10456,7 @@ pub mod workspace_managed_sql_server_extended_blob_auditing_policies {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::ExtendedServerBlobAuditingPolicyListResult = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -10586,7 +10586,7 @@ pub mod workspace_managed_sql_server_security_alert_policy {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::ServerSecurityAlertPolicy = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -10647,7 +10647,7 @@ pub mod workspace_managed_sql_server_security_alert_policy {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::ServerSecurityAlertPolicy = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
@@ -10725,7 +10725,7 @@ pub mod workspace_managed_sql_server_security_alert_policy {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::ServerSecurityAlertPolicyListResult = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -10878,7 +10878,7 @@ pub mod workspace_managed_sql_server_vulnerability_assessments {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::ServerVulnerabilityAssessment = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -10938,12 +10938,12 @@ pub mod workspace_managed_sql_server_vulnerability_assessments {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::ServerVulnerabilityAssessment = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
                             azure_core::StatusCode::Created => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::ServerVulnerabilityAssessment = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Created201(rsp_value))
                             }
@@ -11075,7 +11075,7 @@ pub mod workspace_managed_sql_server_vulnerability_assessments {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::ServerVulnerabilityAssessmentListResult = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -11228,7 +11228,7 @@ pub mod workspace_managed_sql_server_encryption_protector {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::EncryptionProtector = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -11289,7 +11289,7 @@ pub mod workspace_managed_sql_server_encryption_protector {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::EncryptionProtector = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
@@ -11367,7 +11367,7 @@ pub mod workspace_managed_sql_server_encryption_protector {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::EncryptionProtectorListResult = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -11521,7 +11521,7 @@ pub mod workspace_managed_sql_server_usages {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::ServerUsageListResult = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -11648,7 +11648,7 @@ pub mod workspace_managed_sql_server_recoverable_sql_pools {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::RecoverableSqlPoolListResult = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -11703,7 +11703,7 @@ pub mod workspace_managed_sql_server_recoverable_sql_pools {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::RecoverableSqlPool = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -11825,7 +11825,7 @@ pub mod workspace_managed_sql_server_dedicated_sql_minimal_tls_settings {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::DedicatedSqLminimalTlsSettings = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -11879,7 +11879,7 @@ pub mod workspace_managed_sql_server_dedicated_sql_minimal_tls_settings {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::DedicatedSqLminimalTlsSettings = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
@@ -11951,7 +11951,7 @@ pub mod workspace_managed_sql_server_dedicated_sql_minimal_tls_settings {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::DedicatedSqLminimalTlsSettingsListResult = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -12141,7 +12141,7 @@ pub mod workspaces {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::WorkspaceInfoListResult = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -12194,7 +12194,7 @@ pub mod workspaces {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::Workspace = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -12253,12 +12253,12 @@ pub mod workspaces {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::Workspace = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
                             azure_core::StatusCode::Created => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::Workspace = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Created201(rsp_value))
                             }
@@ -12317,12 +12317,12 @@ pub mod workspaces {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::Workspace = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
                             azure_core::StatusCode::Created => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::Workspace = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Created201(rsp_value))
                             }
@@ -12380,12 +12380,12 @@ pub mod workspaces {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: serde_json::Value = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
                             azure_core::StatusCode::Accepted => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: serde_json::Value = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Accepted202(rsp_value))
                             }
@@ -12459,7 +12459,7 @@ pub mod workspaces {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::WorkspaceInfoListResult = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -12572,7 +12572,7 @@ pub mod workspace_aad_admins {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::WorkspaceAadAdminInfo = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -12625,12 +12625,12 @@ pub mod workspace_aad_admins {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::WorkspaceAadAdminInfo = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
                             azure_core::StatusCode::Accepted => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::WorkspaceAadAdminInfo = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Accepted202(rsp_value))
                             }
@@ -12792,7 +12792,7 @@ pub mod workspace_sql_aad_admins {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::WorkspaceAadAdminInfo = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -12845,12 +12845,12 @@ pub mod workspace_sql_aad_admins {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::WorkspaceAadAdminInfo = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
                             azure_core::StatusCode::Accepted => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::WorkspaceAadAdminInfo = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Accepted202(rsp_value))
                             }
@@ -12993,7 +12993,7 @@ pub mod workspace_managed_identity_sql_control_settings {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::ManagedIdentitySqlControlSettingsModel = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -13046,7 +13046,7 @@ pub mod workspace_managed_identity_sql_control_settings {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::ManagedIdentitySqlControlSettingsModel = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
@@ -13148,7 +13148,7 @@ pub mod restorable_dropped_sql_pools {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::RestorableDroppedSqlPool = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -13201,7 +13201,7 @@ pub mod restorable_dropped_sql_pools {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::RestorableDroppedSqlPoolListResult = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -13380,7 +13380,7 @@ pub mod big_data_pools {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::BigDataPoolResourceInfo = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -13450,12 +13450,12 @@ pub mod big_data_pools {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::BigDataPoolResourceInfo = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
                             azure_core::StatusCode::Accepted => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::BigDataPoolResourceInfo = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Accepted202(rsp_value))
                             }
@@ -13511,7 +13511,7 @@ pub mod big_data_pools {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::BigDataPoolResourceInfo = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -13571,12 +13571,12 @@ pub mod big_data_pools {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: serde_json::Value = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
                             azure_core::StatusCode::Accepted => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: serde_json::Value = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Accepted202(rsp_value))
                             }
@@ -13654,7 +13654,7 @@ pub mod big_data_pools {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::BigDataPoolResourceInfoListResult = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -13738,7 +13738,7 @@ pub mod library {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::LibraryResource = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -13841,7 +13841,7 @@ pub mod libraries {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::LibraryListResponse = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -14167,7 +14167,7 @@ pub mod integration_runtimes {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::IntegrationRuntimeResource = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -14237,7 +14237,7 @@ pub mod integration_runtimes {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::IntegrationRuntimeResource = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
@@ -14294,7 +14294,7 @@ pub mod integration_runtimes {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::IntegrationRuntimeResource = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -14473,7 +14473,7 @@ pub mod integration_runtimes {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::IntegrationRuntimeListResponse = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -14534,7 +14534,7 @@ pub mod integration_runtimes {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::IntegrationRuntimeStatusResponse = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
@@ -14639,7 +14639,7 @@ pub mod integration_runtimes {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::IntegrationRuntimeOutboundNetworkDependenciesEndpointsResponse =
                                     serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
@@ -14821,7 +14821,7 @@ pub mod integration_runtime_node_ip_address {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::IntegrationRuntimeNodeIpAddress = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -14932,7 +14932,7 @@ pub mod integration_runtime_object_metadata {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::SsisObjectMetadataListResponse = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -14985,7 +14985,7 @@ pub mod integration_runtime_object_metadata {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::SsisObjectMetadataStatusResponse = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
@@ -15121,7 +15121,7 @@ pub mod integration_runtime_nodes {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::SelfHostedIntegrationRuntimeNode = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -15171,7 +15171,7 @@ pub mod integration_runtime_nodes {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::SelfHostedIntegrationRuntimeNode = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -15370,7 +15370,7 @@ pub mod integration_runtime_connection_infos {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::IntegrationRuntimeConnectionInfo = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -15474,7 +15474,7 @@ pub mod integration_runtime_auth_keys {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::IntegrationRuntimeAuthKeys = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -15522,7 +15522,7 @@ pub mod integration_runtime_auth_keys {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::IntegrationRuntimeAuthKeys = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -15599,7 +15599,7 @@ pub mod integration_runtime_monitoring_data {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::IntegrationRuntimeMonitoringData = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -15676,7 +15676,7 @@ pub mod integration_runtime_status {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::IntegrationRuntimeStatusResponse = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -15759,7 +15759,7 @@ pub mod spark_configuration {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::SparkConfigurationResource = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -15862,7 +15862,7 @@ pub mod spark_configurations {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::SparkConfigurationListResponse = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -15942,7 +15942,7 @@ pub mod kusto_operations {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::OperationListResult = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -16329,7 +16329,7 @@ pub mod kusto_pools {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::SkuDescriptionList = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -16381,7 +16381,7 @@ pub mod kusto_pools {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::CheckNameResult = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -16433,7 +16433,7 @@ pub mod kusto_pools {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::KustoPoolListResult = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -16487,7 +16487,7 @@ pub mod kusto_pools {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::KustoPool = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -16566,12 +16566,12 @@ pub mod kusto_pools {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::KustoPool = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
                             azure_core::StatusCode::Created => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::KustoPool = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Created201(rsp_value))
                             }
@@ -16641,12 +16641,12 @@ pub mod kusto_pools {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::KustoPool = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
                             azure_core::StatusCode::Accepted => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::KustoPool = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Accepted202(rsp_value))
                             }
@@ -16873,7 +16873,7 @@ pub mod kusto_pools {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::ListResourceSkusResult = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -16922,7 +16922,7 @@ pub mod kusto_pools {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::LanguageExtensionsList = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -17073,7 +17073,7 @@ pub mod kusto_pools {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::FollowerDatabaseListResult = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -17204,7 +17204,7 @@ pub mod kusto_pool_child_resource {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::CheckNameResult = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -17358,7 +17358,7 @@ pub mod kusto_pool_attached_database_configurations {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::AttachedDatabaseConfigurationListResult = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -17406,7 +17406,7 @@ pub mod kusto_pool_attached_database_configurations {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::AttachedDatabaseConfiguration = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -17462,17 +17462,17 @@ pub mod kusto_pool_attached_database_configurations {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::AttachedDatabaseConfiguration = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
                             azure_core::StatusCode::Created => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::AttachedDatabaseConfiguration = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Created201(rsp_value))
                             }
                             azure_core::StatusCode::Accepted => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::AttachedDatabaseConfiguration = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Accepted202(rsp_value))
                             }
@@ -17713,7 +17713,7 @@ pub mod kusto_pool_databases {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::DatabaseListResult = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -17769,7 +17769,7 @@ pub mod kusto_pool_databases {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::Database = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -17832,12 +17832,12 @@ pub mod kusto_pool_databases {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::Database = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
                             azure_core::StatusCode::Created => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::Database = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Created201(rsp_value))
                             }
@@ -17900,12 +17900,12 @@ pub mod kusto_pool_databases {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::Database = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
                             azure_core::StatusCode::Accepted => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::Database = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Accepted202(rsp_value))
                             }
@@ -18220,7 +18220,7 @@ pub mod kusto_pool_data_connections {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::CheckNameResult = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -18275,7 +18275,7 @@ pub mod kusto_pool_data_connections {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::DataConnectionValidationListResult = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
@@ -18325,7 +18325,7 @@ pub mod kusto_pool_data_connections {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::DataConnectionListResult = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -18374,7 +18374,7 @@ pub mod kusto_pool_data_connections {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::DataConnection = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -18430,12 +18430,12 @@ pub mod kusto_pool_data_connections {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::DataConnection = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
                             azure_core::StatusCode::Created => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::DataConnection = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Created201(rsp_value))
                             }
@@ -18491,12 +18491,12 @@ pub mod kusto_pool_data_connections {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::DataConnection = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
                             azure_core::StatusCode::Accepted => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::DataConnection = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Accepted202(rsp_value))
                             }
@@ -18729,7 +18729,7 @@ pub mod kusto_pool_principal_assignments {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::CheckNameResult = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -18777,7 +18777,7 @@ pub mod kusto_pool_principal_assignments {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::ClusterPrincipalAssignmentListResult = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -18825,7 +18825,7 @@ pub mod kusto_pool_principal_assignments {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::ClusterPrincipalAssignment = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -18880,12 +18880,12 @@ pub mod kusto_pool_principal_assignments {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::ClusterPrincipalAssignment = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
                             azure_core::StatusCode::Created => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::ClusterPrincipalAssignment = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Created201(rsp_value))
                             }
@@ -19133,7 +19133,7 @@ pub mod kusto_pool_database_principal_assignments {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::CheckNameResult = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -19182,7 +19182,7 @@ pub mod kusto_pool_database_principal_assignments {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::DatabasePrincipalAssignmentListResult = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -19231,7 +19231,7 @@ pub mod kusto_pool_database_principal_assignments {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::DatabasePrincipalAssignment = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -19287,12 +19287,12 @@ pub mod kusto_pool_database_principal_assignments {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::DatabasePrincipalAssignment = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
                             azure_core::StatusCode::Created => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::DatabasePrincipalAssignment = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Created201(rsp_value))
                             }

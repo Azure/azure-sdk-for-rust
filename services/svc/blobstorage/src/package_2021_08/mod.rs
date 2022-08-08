@@ -269,7 +269,7 @@ pub mod service {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::StorageServiceProperties = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -387,7 +387,7 @@ pub mod service {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::StorageServiceStats = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -498,7 +498,7 @@ pub mod service {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::ListContainersSegmentResponse = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -561,7 +561,7 @@ pub mod service {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::UserDelegationKey = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -664,7 +664,7 @@ pub mod service {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: serde_json::Value = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -757,7 +757,7 @@ pub mod service {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::FilterBlobSegment = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -1547,7 +1547,7 @@ pub mod container {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::SignedIdentifiers = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -1876,7 +1876,7 @@ pub mod container {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Accepted => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: serde_json::Value = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -1974,7 +1974,7 @@ pub mod container {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::FilterBlobSegment = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -2530,7 +2530,7 @@ pub mod container {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::ListBlobsFlatSegmentResponse = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -2650,7 +2650,7 @@ pub mod container {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::ListBlobsHierarchySegmentResponse = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -3604,12 +3604,12 @@ pub mod blob {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: serde_json::Value = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
                             azure_core::StatusCode::PartialContent => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: serde_json::Value = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::PartialContent206(rsp_value))
                             }
@@ -6256,12 +6256,12 @@ pub mod blob {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: serde_json::Value = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
                             azure_core::StatusCode::PartialContent => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: serde_json::Value = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::PartialContent206(rsp_value))
                             }
@@ -6364,7 +6364,7 @@ pub mod blob {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::BlobTags = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -7959,7 +7959,7 @@ pub mod page_blob {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::PageList = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -8153,7 +8153,7 @@ pub mod page_blob {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::PageList = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -10852,7 +10852,7 @@ pub mod block_blob {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::BlockList = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }

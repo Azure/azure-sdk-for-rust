@@ -280,7 +280,7 @@ pub mod attached_data_networks {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::AttachedDataNetwork = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -335,12 +335,12 @@ pub mod attached_data_networks {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::AttachedDataNetwork = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
                             azure_core::StatusCode::Created => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::AttachedDataNetwork = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Created201(rsp_value))
                             }
@@ -390,7 +390,7 @@ pub mod attached_data_networks {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::AttachedDataNetwork = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -514,7 +514,7 @@ pub mod attached_data_networks {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::AttachedDataNetworkListResult = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -688,7 +688,7 @@ pub mod data_networks {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::DataNetwork = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -749,12 +749,12 @@ pub mod data_networks {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::DataNetwork = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
                             azure_core::StatusCode::Created => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::DataNetwork = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Created201(rsp_value))
                             }
@@ -810,7 +810,7 @@ pub mod data_networks {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::DataNetwork = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -945,7 +945,7 @@ pub mod data_networks {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::DataNetworkListResult = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -1131,7 +1131,7 @@ pub mod mobile_networks {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::MobileNetwork = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -1190,12 +1190,12 @@ pub mod mobile_networks {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::MobileNetwork = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
                             azure_core::StatusCode::Created => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::MobileNetwork = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Created201(rsp_value))
                             }
@@ -1249,7 +1249,7 @@ pub mod mobile_networks {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::MobileNetwork = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -1378,7 +1378,7 @@ pub mod mobile_networks {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::MobileNetworkListResult = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -1454,7 +1454,7 @@ pub mod mobile_networks {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::MobileNetworkListResult = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -1513,12 +1513,12 @@ pub mod mobile_networks {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::SimIdListResult = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
                             azure_core::StatusCode::Accepted => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::SimIdListResult = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Accepted202(rsp_value))
                             }
@@ -1691,7 +1691,7 @@ pub mod sites {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::Site = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -1752,12 +1752,12 @@ pub mod sites {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::Site = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
                             azure_core::StatusCode::Created => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::Site = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Created201(rsp_value))
                             }
@@ -1813,7 +1813,7 @@ pub mod sites {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::Site = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -1948,7 +1948,7 @@ pub mod sites {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::SiteListResult = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -2115,7 +2115,7 @@ pub mod sim_groups {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::SimGroup = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -2174,12 +2174,12 @@ pub mod sim_groups {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::SimGroup = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
                             azure_core::StatusCode::Created => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::SimGroup = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Created201(rsp_value))
                             }
@@ -2233,7 +2233,7 @@ pub mod sim_groups {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::SimGroup = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -2362,7 +2362,7 @@ pub mod sim_groups {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::SimGroupListResult = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -2438,7 +2438,7 @@ pub mod sim_groups {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::SimGroupListResult = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -2587,7 +2587,7 @@ pub mod sims {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::Sim = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -2648,12 +2648,12 @@ pub mod sims {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::Sim = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
                             azure_core::StatusCode::Created => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::Sim = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Created201(rsp_value))
                             }
@@ -2788,7 +2788,7 @@ pub mod sims {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::SimListResult = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -2868,7 +2868,7 @@ pub mod operations {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::OperationList = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -3035,7 +3035,7 @@ pub mod packet_core_control_planes {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::PacketCoreControlPlane = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -3094,12 +3094,12 @@ pub mod packet_core_control_planes {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::PacketCoreControlPlane = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
                             azure_core::StatusCode::Created => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::PacketCoreControlPlane = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Created201(rsp_value))
                             }
@@ -3153,7 +3153,7 @@ pub mod packet_core_control_planes {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::PacketCoreControlPlane = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -3282,7 +3282,7 @@ pub mod packet_core_control_planes {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::PacketCoreControlPlaneListResult = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -3358,7 +3358,7 @@ pub mod packet_core_control_planes {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::PacketCoreControlPlaneListResult = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -3427,7 +3427,7 @@ pub mod packet_core_control_plane_versions {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::PacketCoreControlPlaneVersion = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -3498,7 +3498,7 @@ pub mod packet_core_control_plane_versions {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::PacketCoreControlPlaneVersionListResult = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -3665,7 +3665,7 @@ pub mod packet_core_data_planes {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::PacketCoreDataPlane = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -3719,12 +3719,12 @@ pub mod packet_core_data_planes {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::PacketCoreDataPlane = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
                             azure_core::StatusCode::Created => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::PacketCoreDataPlane = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Created201(rsp_value))
                             }
@@ -3773,7 +3773,7 @@ pub mod packet_core_data_planes {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::PacketCoreDataPlane = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -3895,7 +3895,7 @@ pub mod packet_core_data_planes {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::PacketCoreDataPlaneListResult = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -4069,7 +4069,7 @@ pub mod services {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::Service = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -4130,12 +4130,12 @@ pub mod services {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::Service = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
                             azure_core::StatusCode::Created => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::Service = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Created201(rsp_value))
                             }
@@ -4191,7 +4191,7 @@ pub mod services {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::Service = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -4326,7 +4326,7 @@ pub mod services {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::ServiceListResult = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -4500,7 +4500,7 @@ pub mod sim_policies {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::SimPolicy = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -4561,12 +4561,12 @@ pub mod sim_policies {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::SimPolicy = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
                             azure_core::StatusCode::Created => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::SimPolicy = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Created201(rsp_value))
                             }
@@ -4622,7 +4622,7 @@ pub mod sim_policies {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::SimPolicy = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -4757,7 +4757,7 @@ pub mod sim_policies {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::SimPolicyListResult = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -4931,7 +4931,7 @@ pub mod slices {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::Slice = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -4992,12 +4992,12 @@ pub mod slices {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::Slice = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Ok200(rsp_value))
                             }
                             azure_core::StatusCode::Created => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::Slice = serde_json::from_slice(&rsp_body)?;
                                 Ok(Response::Created201(rsp_value))
                             }
@@ -5053,7 +5053,7 @@ pub mod slices {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::Slice = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -5188,7 +5188,7 @@ pub mod slices {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::SliceListResult = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }

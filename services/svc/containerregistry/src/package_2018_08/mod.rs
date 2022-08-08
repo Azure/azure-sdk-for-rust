@@ -309,7 +309,7 @@ pub mod get_tag_list {
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
                         azure_core::StatusCode::Ok => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                            let rsp_body = rsp_stream.collect().await?;
                             let rsp_value: models::RepositoryTags = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
@@ -356,7 +356,7 @@ pub mod get_manifest {
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
                         azure_core::StatusCode::Ok => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                            let rsp_body = rsp_stream.collect().await?;
                             let rsp_value: models::Manifest = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
@@ -414,7 +414,7 @@ pub mod get_repositories {
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
                         azure_core::StatusCode::Ok => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                            let rsp_body = rsp_stream.collect().await?;
                             let rsp_value: models::Repositories = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
@@ -472,7 +472,7 @@ pub mod get_acr_repositories {
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
                         azure_core::StatusCode::Ok => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                            let rsp_body = rsp_stream.collect().await?;
                             let rsp_value: models::Repositories = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
@@ -513,7 +513,7 @@ pub mod get_acr_repository_attributes {
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
                         azure_core::StatusCode::Ok => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                            let rsp_body = rsp_stream.collect().await?;
                             let rsp_value: models::RepositoryAttributes = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
@@ -602,7 +602,7 @@ pub mod delete_acr_repository {
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
                         azure_core::StatusCode::Accepted => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                            let rsp_body = rsp_stream.collect().await?;
                             let rsp_value: models::DeletedRepository = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
@@ -679,7 +679,7 @@ pub mod get_acr_tags {
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
                         azure_core::StatusCode::Ok => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                            let rsp_body = rsp_stream.collect().await?;
                             let rsp_value: models::AcrRepositoryTags = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
@@ -726,7 +726,7 @@ pub mod get_acr_tag_attributes {
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
                         azure_core::StatusCode::Ok => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                            let rsp_body = rsp_stream.collect().await?;
                             let rsp_value: models::AcrTagAttributes = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
@@ -891,7 +891,7 @@ pub mod get_acr_manifests {
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
                         azure_core::StatusCode::Ok => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                            let rsp_body = rsp_stream.collect().await?;
                             let rsp_value: models::AcrManifests = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
@@ -938,7 +938,7 @@ pub mod get_acr_manifest_attributes {
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
                         azure_core::StatusCode::Ok => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                            let rsp_body = rsp_stream.collect().await?;
                             let rsp_value: models::AcrManifestAttributes = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }

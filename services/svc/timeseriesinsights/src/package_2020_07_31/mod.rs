@@ -186,7 +186,7 @@ pub mod query {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::AvailabilityResponse = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -258,7 +258,7 @@ pub mod query {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::EventSchema = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -339,7 +339,7 @@ pub mod query {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::QueryResultPage = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -426,7 +426,7 @@ pub mod model_settings {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::ModelSettingsResponse = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -489,7 +489,7 @@ pub mod model_settings {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::ModelSettingsResponse = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -611,7 +611,7 @@ pub mod time_series_instances {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::GetInstancesPage = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -674,7 +674,7 @@ pub mod time_series_instances {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::InstancesBatchResponse = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -737,7 +737,7 @@ pub mod time_series_instances {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::InstancesSuggestResponse = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -809,7 +809,7 @@ pub mod time_series_instances {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::SearchInstancesResponsePage = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -906,7 +906,7 @@ pub mod time_series_types {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::GetTypesPage = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -969,7 +969,7 @@ pub mod time_series_types {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::TypesBatchResponse = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -1066,7 +1066,7 @@ pub mod time_series_hierarchies {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::GetHierarchiesPage = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -1129,7 +1129,7 @@ pub mod time_series_hierarchies {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::HierarchiesBatchResponse = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }

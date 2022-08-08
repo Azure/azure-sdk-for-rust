@@ -1,7 +1,5 @@
 use crate::prelude::*;
-use azure_core::{
-    collect_pinned_stream, date, headers::Headers, prelude::*, Method, Response as AzureResponse,
-};
+use azure_core::{date, headers::Headers, prelude::*, Method, Response as AzureResponse};
 use azure_storage::{core::headers::CommonStorageResponseHeaders, xml::read_xml};
 use std::convert::TryInto;
 use time::OffsetDateTime;
@@ -82,7 +80,7 @@ struct QueueMessageInternal {
 impl PutMessageResponse {
     async fn try_from(response: AzureResponse) -> azure_core::Result<Self> {
         let (_, headers, body) = response.deconstruct();
-        let body = collect_pinned_stream(body).await?;
+        let body = body.collect().await?;
 
         let response: PutMessageResponseInternal = read_xml(&body)?;
         let queue_message = response.queue_message;

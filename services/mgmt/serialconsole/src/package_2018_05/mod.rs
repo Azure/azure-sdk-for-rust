@@ -151,7 +151,7 @@ pub mod list_operations {
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
                         azure_core::StatusCode::Ok => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                            let rsp_body = rsp_stream.collect().await?;
                             let rsp_value: models::SerialConsoleOperations = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
@@ -201,7 +201,7 @@ pub mod get_console_status {
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
                         azure_core::StatusCode::Ok => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                            let rsp_body = rsp_stream.collect().await?;
                             let rsp_value: models::SerialConsoleStatus = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
@@ -252,7 +252,7 @@ pub mod disable_console {
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
                         azure_core::StatusCode::Ok => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                            let rsp_body = rsp_stream.collect().await?;
                             let rsp_value: models::DisableSerialConsoleResult = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
@@ -303,7 +303,7 @@ pub mod enable_console {
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
                         azure_core::StatusCode::Ok => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                            let rsp_body = rsp_stream.collect().await?;
                             let rsp_value: models::EnableSerialConsoleResult = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
@@ -514,7 +514,7 @@ pub mod serial_ports {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::SerialPortListResult = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -572,7 +572,7 @@ pub mod serial_ports {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::SerialPort = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -632,7 +632,7 @@ pub mod serial_ports {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Created => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::SerialPort = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -736,7 +736,7 @@ pub mod serial_ports {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::SerialPortListResult = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -786,7 +786,7 @@ pub mod serial_ports {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::SerialPortConnectResult = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }

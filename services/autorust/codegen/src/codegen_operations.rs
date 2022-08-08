@@ -625,7 +625,7 @@ fn create_operation_code(cg: &CodeGen, operation: &WebOperationGen) -> Result<Op
                         Some(_) => {
                             match_status.extend(quote! {
                                 azure_core::StatusCode::#status_code_name => {
-                                    let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                    let rsp_body = rsp_stream.collect().await?;
                                     #rsp_value
                                     Ok(rsp_value)
                                 }
@@ -644,7 +644,7 @@ fn create_operation_code(cg: &CodeGen, operation: &WebOperationGen) -> Result<Op
                         Some(_) => {
                             match_status.extend(quote! {
                                 azure_core::StatusCode::#status_code_name => {
-                                    let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                    let rsp_body = rsp_stream.collect().await?;
                                     #rsp_value
                                     Ok(Response::#response_type_name(rsp_value))
                                 }

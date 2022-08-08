@@ -9,7 +9,7 @@ use serde::Serialize;
 use std::convert::TryFrom;
 use time::OffsetDateTime;
 
-use azure_core::{collect_pinned_stream, Response as HttpResponse};
+use azure_core::Response as HttpResponse;
 
 operation! {
     CreateDocument<D: Serialize + CosmosEntity + Send + 'static>,
@@ -110,8 +110,8 @@ pub struct CreateDocumentResponse {
 
 impl CreateDocumentResponse {
     pub async fn try_from(response: HttpResponse) -> azure_core::Result<Self> {
-        let (status_code, headers, pinned_stream) = response.deconstruct();
-        let body = collect_pinned_stream(pinned_stream).await?;
+        let (status_code, headers, body) = response.deconstruct();
+        let body = body.collect().await?;
 
         Ok(CreateDocumentResponse {
             is_update: status_code == StatusCode::Ok,

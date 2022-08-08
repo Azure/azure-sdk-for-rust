@@ -3,7 +3,7 @@ use crate::prelude::*;
 use crate::resources::document::Query;
 use crate::resources::ResourceType;
 use crate::ResourceQuota;
-use azure_core::collect_pinned_stream;
+
 use azure_core::headers;
 use azure_core::headers::HeaderValue;
 use azure_core::headers::{
@@ -146,8 +146,8 @@ where
     T: DeserializeOwned,
 {
     pub async fn try_from(response: HttpResponse) -> azure_core::Result<Self> {
-        let (_status_code, headers, pinned_stream) = response.deconstruct();
-        let body = collect_pinned_stream(pinned_stream).await?;
+        let (_status_code, headers, body) = response.deconstruct();
+        let body = body.collect().await?;
 
         let inner: Value = serde_json::from_slice(&body)?;
         let results = if let Value::Array(documents) = &inner["Documents"] {

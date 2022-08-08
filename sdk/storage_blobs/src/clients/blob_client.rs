@@ -54,7 +54,7 @@ impl BlobClient {
         // than restarting the whole blob on a failure.
         let mut stream = self.get().into_stream();
         while let Some(value) = stream.next().await {
-            let data = value?.data;
+            let data = value?.data.collect().await?;
             blob.extend(&data);
         }
         Ok(blob)

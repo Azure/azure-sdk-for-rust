@@ -1,7 +1,5 @@
 use crate::{clients::QueueClient, prelude::*};
-use azure_core::{
-    collect_pinned_stream, headers::Headers, prelude::*, Method, Response as AzureResponse,
-};
+use azure_core::{headers::Headers, prelude::*, Method, Response as AzureResponse};
 use azure_storage::core::{headers::CommonStorageResponseHeaders, xml::read_xml};
 use std::convert::TryInto;
 use time::OffsetDateTime;
@@ -61,7 +59,7 @@ pub struct PeekMessage {
 impl PeekMessagesResponse {
     async fn try_from(response: AzureResponse) -> azure_core::Result<Self> {
         let (_, headers, body) = response.deconstruct();
-        let body = collect_pinned_stream(body).await?;
+        let body = body.collect().await?;
 
         let messages = read_xml::<PeekMessagesBody>(&body)?.messages;
 

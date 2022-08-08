@@ -509,7 +509,7 @@ pub mod list_operations {
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
                         azure_core::StatusCode::Ok => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                            let rsp_body = rsp_stream.collect().await?;
                             let rsp_value: models::OperationListResult = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
@@ -601,7 +601,7 @@ pub mod list_addresses_at_subscription_level {
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
                         azure_core::StatusCode::Ok => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                            let rsp_body = rsp_stream.collect().await?;
                             let rsp_value: models::AddressResourceList = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
@@ -695,7 +695,7 @@ pub mod list_product_families {
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
                         azure_core::StatusCode::Ok => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                            let rsp_body = rsp_stream.collect().await?;
                             let rsp_value: models::ProductFamilies = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
@@ -780,7 +780,7 @@ pub mod list_configurations {
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
                         azure_core::StatusCode::Ok => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                            let rsp_body = rsp_stream.collect().await?;
                             let rsp_value: models::Configurations = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
@@ -864,7 +864,7 @@ pub mod list_product_families_metadata {
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
                         azure_core::StatusCode::Ok => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                            let rsp_body = rsp_stream.collect().await?;
                             let rsp_value: models::ProductFamiliesMetadata = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
@@ -947,7 +947,7 @@ pub mod list_order_at_subscription_level {
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
                         azure_core::StatusCode::Ok => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                            let rsp_body = rsp_stream.collect().await?;
                             let rsp_value: models::OrderResourceList = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
@@ -1048,7 +1048,7 @@ pub mod list_order_items_at_subscription_level {
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
                         azure_core::StatusCode::Ok => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                            let rsp_body = rsp_stream.collect().await?;
                             let rsp_value: models::OrderItemResourceList = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
@@ -1142,7 +1142,7 @@ pub mod list_addresses_at_resource_group_level {
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
                         azure_core::StatusCode::Ok => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                            let rsp_body = rsp_stream.collect().await?;
                             let rsp_value: models::AddressResourceList = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
@@ -1195,7 +1195,7 @@ pub mod get_address_by_name {
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
                         azure_core::StatusCode::Ok => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                            let rsp_body = rsp_stream.collect().await?;
                             let rsp_value: models::AddressResource = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
@@ -1254,7 +1254,7 @@ pub mod create_address {
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
                         azure_core::StatusCode::Ok => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                            let rsp_body = rsp_stream.collect().await?;
                             let rsp_value: models::AddressResource = serde_json::from_slice(&rsp_body)?;
                             Ok(Response::Ok200(rsp_value))
                         }
@@ -1324,7 +1324,7 @@ pub mod update_address {
                     match rsp_status {
                         azure_core::StatusCode::Accepted => Ok(Response::Accepted202),
                         azure_core::StatusCode::Ok => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                            let rsp_body = rsp_stream.collect().await?;
                             let rsp_value: models::AddressResource = serde_json::from_slice(&rsp_body)?;
                             Ok(Response::Ok200(rsp_value))
                         }
@@ -1464,7 +1464,7 @@ pub mod list_order_at_resource_group_level {
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
                         azure_core::StatusCode::Ok => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                            let rsp_body = rsp_stream.collect().await?;
                             let rsp_value: models::OrderResourceList = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
@@ -1519,7 +1519,7 @@ pub mod get_order_by_name {
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
                         azure_core::StatusCode::Ok => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                            let rsp_body = rsp_stream.collect().await?;
                             let rsp_value: models::OrderResource = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
@@ -1621,7 +1621,7 @@ pub mod list_order_items_at_resource_group_level {
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
                         azure_core::StatusCode::Ok => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                            let rsp_body = rsp_stream.collect().await?;
                             let rsp_value: models::OrderItemResourceList = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
@@ -1683,7 +1683,7 @@ pub mod get_order_item_by_name {
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
                         azure_core::StatusCode::Ok => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                            let rsp_body = rsp_stream.collect().await?;
                             let rsp_value: models::OrderItemResource = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
@@ -1742,7 +1742,7 @@ pub mod create_order_item {
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
                         azure_core::StatusCode::Ok => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                            let rsp_body = rsp_stream.collect().await?;
                             let rsp_value: models::OrderItemResource = serde_json::from_slice(&rsp_body)?;
                             Ok(Response::Ok200(rsp_value))
                         }
@@ -1812,7 +1812,7 @@ pub mod update_order_item {
                     match rsp_status {
                         azure_core::StatusCode::Accepted => Ok(Response::Accepted202),
                         azure_core::StatusCode::Ok => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                            let rsp_body = rsp_stream.collect().await?;
                             let rsp_value: models::OrderItemResource = serde_json::from_slice(&rsp_body)?;
                             Ok(Response::Ok200(rsp_value))
                         }

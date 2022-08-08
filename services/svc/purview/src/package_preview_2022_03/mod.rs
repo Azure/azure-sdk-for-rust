@@ -557,7 +557,7 @@ pub mod entity {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::EntityMutationResponse = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -634,7 +634,7 @@ pub mod entity {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::AtlasEntitiesWithExtInfo = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -676,7 +676,7 @@ pub mod entity {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::EntityMutationResponse = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -721,7 +721,7 @@ pub mod entity {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::EntityMutationResponse = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -820,7 +820,7 @@ pub mod entity {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::AtlasEntityWithExtInfo = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -866,7 +866,7 @@ pub mod entity {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::EntityMutationResponse = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -907,7 +907,7 @@ pub mod entity {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::EntityMutationResponse = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -954,7 +954,7 @@ pub mod entity {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::AtlasClassification = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -1042,7 +1042,7 @@ pub mod entity {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::AtlasClassifications = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -1204,7 +1204,7 @@ pub mod entity {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::AtlasEntityWithExtInfo = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -1262,7 +1262,7 @@ pub mod entity {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::EntityMutationResponse = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -1318,7 +1318,7 @@ pub mod entity {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::EntityMutationResponse = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -1522,7 +1522,7 @@ pub mod entity {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: Vec<String> = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -1598,7 +1598,7 @@ pub mod entity {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::AtlasEntitiesWithExtInfo = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -1640,7 +1640,7 @@ pub mod entity {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::AtlasEntityHeader = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -1906,7 +1906,7 @@ pub mod entity {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value = rsp_body;
                                 Ok(rsp_value)
                             }
@@ -1954,7 +1954,7 @@ pub mod entity {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::BulkImportResponse = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -2817,7 +2817,7 @@ pub mod glossary {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: Vec<models::AtlasGlossary> = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -2859,7 +2859,7 @@ pub mod glossary {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::AtlasGlossary = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -2901,7 +2901,7 @@ pub mod glossary {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: Vec<models::AtlasGlossaryCategory> = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -2943,7 +2943,7 @@ pub mod glossary {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::AtlasGlossaryCategory = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -2988,7 +2988,7 @@ pub mod glossary {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::AtlasGlossaryCategory = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -3035,7 +3035,7 @@ pub mod glossary {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::AtlasGlossaryCategory = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -3123,7 +3123,7 @@ pub mod glossary {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::AtlasGlossaryCategory = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -3195,7 +3195,7 @@ pub mod glossary {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: serde_json::Value = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -3267,7 +3267,7 @@ pub mod glossary {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: Vec<models::AtlasRelatedTermHeader> = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -3320,7 +3320,7 @@ pub mod glossary {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::AtlasGlossaryTerm = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -3385,7 +3385,7 @@ pub mod glossary {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::AtlasGlossaryTerm = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -3440,7 +3440,7 @@ pub mod glossary {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::AtlasGlossaryTerm = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -3536,7 +3536,7 @@ pub mod glossary {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::AtlasGlossaryTerm = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -3589,7 +3589,7 @@ pub mod glossary {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: Vec<models::AtlasGlossaryTerm> = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -3661,7 +3661,7 @@ pub mod glossary {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: Vec<models::AtlasRelatedObjectId> = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -3862,7 +3862,7 @@ pub mod glossary {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: serde_json::Value = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -3903,7 +3903,7 @@ pub mod glossary {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::AtlasGlossary = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -3946,7 +3946,7 @@ pub mod glossary {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::AtlasGlossary = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -4055,7 +4055,7 @@ pub mod glossary {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: Vec<models::AtlasGlossaryCategory> = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -4127,7 +4127,7 @@ pub mod glossary {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: Vec<models::AtlasRelatedCategoryHeader> = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -4183,7 +4183,7 @@ pub mod glossary {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::AtlasGlossaryExtInfo = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -4241,7 +4241,7 @@ pub mod glossary {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::AtlasGlossary = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -4324,7 +4324,7 @@ pub mod glossary {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: Vec<models::AtlasGlossaryTerm> = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -4396,7 +4396,7 @@ pub mod glossary {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: Vec<models::AtlasRelatedTermHeader> = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -4456,7 +4456,7 @@ pub mod glossary {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Accepted => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::ImportCsvOperation = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -4519,7 +4519,7 @@ pub mod glossary {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Accepted => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::ImportCsvOperation = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -4567,7 +4567,7 @@ pub mod glossary {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::ImportCsvOperation = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -4625,7 +4625,7 @@ pub mod glossary {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value = rsp_body;
                                 Ok(rsp_value)
                             }
@@ -4699,7 +4699,7 @@ pub mod glossary {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: Vec<models::AtlasGlossaryTerm> = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -4790,7 +4790,7 @@ pub mod discovery {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::SearchResult = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -4835,7 +4835,7 @@ pub mod discovery {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::SuggestResult = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -4880,7 +4880,7 @@ pub mod discovery {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::BrowseResult = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -4925,7 +4925,7 @@ pub mod discovery {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::AutoCompleteResult = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -5066,7 +5066,7 @@ pub mod lineage {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::AtlasLineageInfo = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -5142,7 +5142,7 @@ pub mod lineage {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::AtlasLineageInfo = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -5230,7 +5230,7 @@ pub mod lineage {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::AtlasLineageInfo = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -5319,7 +5319,7 @@ pub mod relationship {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::AtlasRelationship = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -5361,7 +5361,7 @@ pub mod relationship {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::AtlasRelationship = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -5413,7 +5413,7 @@ pub mod relationship {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::AtlasRelationshipWithExtInfo = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -5717,7 +5717,7 @@ pub mod types {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::AtlasBusinessMetadataDef = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -5762,7 +5762,7 @@ pub mod types {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::AtlasBusinessMetadataDef = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -5807,7 +5807,7 @@ pub mod types {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::AtlasClassificationDef = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -5852,7 +5852,7 @@ pub mod types {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::AtlasClassificationDef = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -5894,7 +5894,7 @@ pub mod types {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::AtlasEntityDef = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -5936,7 +5936,7 @@ pub mod types {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::AtlasEntityDef = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -5978,7 +5978,7 @@ pub mod types {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::AtlasEnumDef = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -6020,7 +6020,7 @@ pub mod types {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::AtlasEnumDef = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -6065,7 +6065,7 @@ pub mod types {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::AtlasRelationshipDef = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -6110,7 +6110,7 @@ pub mod types {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::AtlasRelationshipDef = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -6152,7 +6152,7 @@ pub mod types {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::AtlasStructDef = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -6194,7 +6194,7 @@ pub mod types {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::AtlasStructDef = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -6236,7 +6236,7 @@ pub mod types {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::AtlasTypeDef = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -6278,7 +6278,7 @@ pub mod types {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::AtlasTypeDef = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -6376,7 +6376,7 @@ pub mod types {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::AtlasTypesDef = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -6418,7 +6418,7 @@ pub mod types {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::AtlasTypesDef = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -6460,7 +6460,7 @@ pub mod types {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::AtlasTypesDef = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -6558,7 +6558,7 @@ pub mod types {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: Vec<models::AtlasTypeDefHeader> = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -6602,7 +6602,7 @@ pub mod types {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::TermTemplateDef = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -6646,7 +6646,7 @@ pub mod types {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::TermTemplateDef = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -6746,7 +6746,7 @@ pub mod collection {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::EntityMutationResponse = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -6793,7 +6793,7 @@ pub mod collection {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::EntityMutationResponse = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -6843,7 +6843,7 @@ pub mod collection {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::EntityMutationResponse = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }

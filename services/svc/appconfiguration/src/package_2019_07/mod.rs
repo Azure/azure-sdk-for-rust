@@ -344,7 +344,7 @@ pub mod get_keys {
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
                         azure_core::StatusCode::Ok => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                            let rsp_body = rsp_stream.collect().await?;
                             let rsp_value: models::KeyListResult = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
@@ -539,7 +539,7 @@ pub mod get_key_values {
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
                         azure_core::StatusCode::Ok => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                            let rsp_body = rsp_stream.collect().await?;
                             let rsp_value: models::KeyValueListResult = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
@@ -725,7 +725,7 @@ pub mod get_key_value {
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
                         azure_core::StatusCode::Ok => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                            let rsp_body = rsp_stream.collect().await?;
                             let rsp_value: models::KeyValue = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
@@ -816,7 +816,7 @@ pub mod put_key_value {
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
                         azure_core::StatusCode::Ok => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                            let rsp_body = rsp_stream.collect().await?;
                             let rsp_value: models::KeyValue = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
@@ -891,7 +891,7 @@ pub mod delete_key_value {
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
                         azure_core::StatusCode::Ok => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                            let rsp_body = rsp_stream.collect().await?;
                             let rsp_value: models::KeyValue = serde_json::from_slice(&rsp_body)?;
                             Ok(Response::Ok200(rsp_value))
                         }
@@ -1093,7 +1093,7 @@ pub mod get_labels {
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
                         azure_core::StatusCode::Ok => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                            let rsp_body = rsp_stream.collect().await?;
                             let rsp_value: models::LabelListResult = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
@@ -1255,7 +1255,7 @@ pub mod put_lock {
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
                         azure_core::StatusCode::Ok => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                            let rsp_body = rsp_stream.collect().await?;
                             let rsp_value: models::KeyValue = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
@@ -1335,7 +1335,7 @@ pub mod delete_lock {
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
                         azure_core::StatusCode::Ok => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                            let rsp_body = rsp_stream.collect().await?;
                             let rsp_value: models::KeyValue = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
@@ -1454,7 +1454,7 @@ pub mod get_revisions {
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
                         azure_core::StatusCode::Ok => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                            let rsp_body = rsp_stream.collect().await?;
                             let rsp_value: models::KeyValueListResult = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }

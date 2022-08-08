@@ -1,6 +1,6 @@
 use crate::QueueServiceClient;
 use azure_core::{
-    collect_pinned_stream, date,
+    date,
     error::{ErrorKind, ResultExt},
     headers::Headers,
     Method, Response as AzureResponse,
@@ -71,7 +71,7 @@ struct GeoReplication {
 impl GetQueueServiceStatsResponse {
     async fn try_from(response: AzureResponse) -> azure_core::Result<Self> {
         let (_, headers, body) = response.deconstruct();
-        let body = collect_pinned_stream(body).await?;
+        let body = body.collect().await?;
 
         let response: GetQueueServiceStatsResponseInternal = read_xml(&body)?;
 

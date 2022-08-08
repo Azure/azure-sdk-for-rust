@@ -223,7 +223,7 @@ pub mod spark_batch {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::SparkBatchJobCollection = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -281,7 +281,7 @@ pub mod spark_batch {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::SparkBatchJob = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -339,7 +339,7 @@ pub mod spark_batch {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::SparkBatchJob = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -646,7 +646,7 @@ pub mod spark_session {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::SparkSessionCollection = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -704,7 +704,7 @@ pub mod spark_session {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::SparkSession = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -762,7 +762,7 @@ pub mod spark_session {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::SparkSession = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -901,7 +901,7 @@ pub mod spark_session {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::SparkStatementCollection = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -952,7 +952,7 @@ pub mod spark_session {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::SparkStatement = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -1003,7 +1003,7 @@ pub mod spark_session {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::SparkStatement = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }
@@ -1055,7 +1055,7 @@ pub mod spark_session {
                         let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                         match rsp_status {
                             azure_core::StatusCode::Ok => {
-                                let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                let rsp_body = rsp_stream.collect().await?;
                                 let rsp_value: models::SparkStatementCancellationResult = serde_json::from_slice(&rsp_body)?;
                                 Ok(rsp_value)
                             }

@@ -89,7 +89,7 @@ pub struct ListContainersResponse {
 
 impl ListContainersResponse {
     async fn try_from(response: Response) -> azure_core::Result<Self> {
-        let body = response.into_body_string().await;
+        let body = response.into_body().collect_string().await?;
         let elem: Element = body.parse().map_kind(ErrorKind::Other)?;
 
         let mut containers = Vec::new();

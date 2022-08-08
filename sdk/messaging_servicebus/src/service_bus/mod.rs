@@ -8,7 +8,7 @@ use url::form_urlencoded::{self, Serializer};
 
 mod client;
 
-use crate::utils::{body_bytes_to_utf8, craft_peek_lock_url};
+use crate::utils::craft_peek_lock_url;
 
 pub use self::client::Client;
 
@@ -176,7 +176,7 @@ async fn peek_lock_message2(
         .headers()
         .get_optional_string(&headers::LOCATION)
         .unwrap_or_default();
-    let body = body_bytes_to_utf8(&res.into_body().await)?;
+    let body = res.into_body().collect_string().await?;
 
     Ok(PeekLockResponse {
         body,

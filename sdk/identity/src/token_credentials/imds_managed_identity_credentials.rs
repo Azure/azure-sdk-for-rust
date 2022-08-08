@@ -122,7 +122,7 @@ impl TokenCredential for ImdsManagedIdentityCredential {
 
         let rsp = self.http_client.execute_request(&req).await?;
         let rsp_status = rsp.status();
-        let rsp_body = rsp.into_body().await;
+        let rsp_body = rsp.into_body().collect().await?;
 
         if !rsp_status.is_success() {
             match rsp_status {

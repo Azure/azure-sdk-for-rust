@@ -7,7 +7,7 @@ use azure_core::headers::{
     content_type_from_headers, etag_from_headers, session_token_from_headers,
 };
 use azure_core::SessionToken;
-use azure_core::{collect_pinned_stream, prelude::*, Response as HttpResponse};
+use azure_core::{prelude::*, Response as HttpResponse};
 use time::OffsetDateTime;
 
 operation! {
@@ -75,8 +75,8 @@ pub struct GetAttachmentResponse {
 
 impl GetAttachmentResponse {
     pub async fn try_from(response: HttpResponse) -> azure_core::Result<Self> {
-        let (_status_code, headers, pinned_stream) = response.deconstruct();
-        let body = collect_pinned_stream(pinned_stream).await?;
+        let (_status_code, headers, body) = response.deconstruct();
+        let body = body.collect().await?;
 
         Ok(Self {
             attachment: serde_json::from_slice(&body)?,

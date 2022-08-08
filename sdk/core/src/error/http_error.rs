@@ -22,7 +22,11 @@ impl HttpError {
             .iter()
             .map(|(name, value)| (name.as_str().to_owned(), value.as_str().to_owned()))
             .collect();
-        let body = response.into_body().await;
+        let body = response
+            .into_body()
+            .collect()
+            .await
+            .unwrap_or_else(|_| Bytes::from_static(b"<ERROR COLLECTING BODY>"));
         let details = ErrorDetails::new(&headers, &body);
         HttpError {
             status,

@@ -82,7 +82,7 @@ pub async fn perform(
     req.set_body(encoded);
     let rsp = http_client.execute_request(&req).await?;
     let rsp_status = rsp.status();
-    let rsp_body = rsp.into_body().await;
+    let rsp_body = rsp.into_body().collect().await?;
     if !rsp_status.is_success() {
         return Err(ErrorKind::http_response_from_body(rsp_status, &rsp_body).into_error());
     }

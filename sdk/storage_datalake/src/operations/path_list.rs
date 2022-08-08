@@ -3,9 +3,7 @@ use crate::{
     file_system::{Path, PathList},
     request_options::*,
 };
-use azure_core::{
-    collect_pinned_stream, error::Error, prelude::*, AppendToUrlQuery, Pageable, Request, Response,
-};
+use azure_core::{error::Error, prelude::*, AppendToUrlQuery, Pageable, Request, Response};
 use azure_storage::core::headers::CommonStorageResponseHeaders;
 use std::convert::TryInto;
 
@@ -98,8 +96,8 @@ pub struct ListPathsResponse {
 
 impl ListPathsResponse {
     pub(crate) async fn try_from(response: Response) -> azure_core::Result<Self> {
-        let (_status_code, headers, pinned_stream) = response.deconstruct();
-        let body = collect_pinned_stream(pinned_stream).await?;
+        let (_status_code, headers, body) = response.deconstruct();
+        let body = body.collect().await?;
         let path_list: PathList = body.try_into()?;
 
         Ok(ListPathsResponse {

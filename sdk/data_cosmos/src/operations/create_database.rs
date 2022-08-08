@@ -3,7 +3,7 @@ use crate::prelude::*;
 use crate::resources::Database;
 use crate::ResourceQuota;
 use azure_core::headers::{etag_from_headers, session_token_from_headers};
-use azure_core::{collect_pinned_stream, Response as HttpResponse};
+use azure_core::Response as HttpResponse;
 use time::OffsetDateTime;
 
 operation! {
@@ -60,8 +60,8 @@ pub struct CreateDatabaseResponse {
 
 impl CreateDatabaseResponse {
     pub async fn try_from(response: HttpResponse) -> azure_core::Result<Self> {
-        let (_status_code, headers, pinned_stream) = response.deconstruct();
-        let body: bytes::Bytes = collect_pinned_stream(pinned_stream).await?;
+        let (_status_code, headers, body) = response.deconstruct();
+        let body = body.collect().await?;
 
         Ok(Self {
             database: serde_json::from_slice(&body)?,

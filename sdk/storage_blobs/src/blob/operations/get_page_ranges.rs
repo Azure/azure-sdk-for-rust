@@ -1,5 +1,5 @@
 use crate::{blob::PageRangeList, prelude::*};
-use azure_core::{collect_pinned_stream, headers::*, prelude::*, RequestId};
+use azure_core::{headers::*, prelude::*, RequestId};
 use std::str::from_utf8;
 use time::OffsetDateTime;
 
@@ -34,7 +34,7 @@ impl GetPageRangesBuilder {
             let response = self.client.send(&mut self.context, &mut request).await?;
 
             let (_, headers, body) = response.deconstruct();
-            let body = collect_pinned_stream(body).await?;
+            let body = body.collect().await?;
 
             GetPageRangesResponse::from_response(&headers, &body)
         })

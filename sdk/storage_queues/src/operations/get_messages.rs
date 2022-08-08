@@ -1,7 +1,5 @@
 use crate::{clients::QueueClient, prelude::*, PopReceipt};
-use azure_core::{
-    collect_pinned_stream, headers::Headers, prelude::*, Method, Response as AzureResponse,
-};
+use azure_core::{headers::Headers, prelude::*, Method, Response as AzureResponse};
 use azure_storage::core::{headers::CommonStorageResponseHeaders, xml::read_xml};
 use serde::Deserialize;
 use std::convert::TryInto;
@@ -83,7 +81,7 @@ impl GetMessagesResponse {
 
     async fn try_from(response: AzureResponse) -> azure_core::Result<Self> {
         let (_, headers, body) = response.deconstruct();
-        let body = collect_pinned_stream(body).await?;
+        let body = body.collect().await?;
 
         let messages = Self::parse_messages(&body)?;
 

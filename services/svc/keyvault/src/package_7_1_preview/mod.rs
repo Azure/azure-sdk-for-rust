@@ -1160,7 +1160,7 @@ pub mod get_certificates {
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
                         azure_core::StatusCode::Ok => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                            let rsp_body = rsp_stream.collect().await?;
                             let rsp_value: models::CertificateListResult = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
@@ -1205,7 +1205,7 @@ pub mod delete_certificate {
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
                         azure_core::StatusCode::Ok => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                            let rsp_body = rsp_stream.collect().await?;
                             let rsp_value: models::DeletedCertificateBundle = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
@@ -1248,7 +1248,7 @@ pub mod get_certificate_contacts {
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
                         azure_core::StatusCode::Ok => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                            let rsp_body = rsp_stream.collect().await?;
                             let rsp_value: models::Contacts = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
@@ -1293,7 +1293,7 @@ pub mod set_certificate_contacts {
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
                         azure_core::StatusCode::Ok => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                            let rsp_body = rsp_stream.collect().await?;
                             let rsp_value: models::Contacts = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
@@ -1336,7 +1336,7 @@ pub mod delete_certificate_contacts {
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
                         azure_core::StatusCode::Ok => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                            let rsp_body = rsp_stream.collect().await?;
                             let rsp_value: models::Contacts = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
@@ -1413,7 +1413,7 @@ pub mod get_certificate_issuers {
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
                         azure_core::StatusCode::Ok => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                            let rsp_body = rsp_stream.collect().await?;
                             let rsp_value: models::CertificateIssuerListResult = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
@@ -1458,7 +1458,7 @@ pub mod get_certificate_issuer {
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
                         azure_core::StatusCode::Ok => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                            let rsp_body = rsp_stream.collect().await?;
                             let rsp_value: models::IssuerBundle = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
@@ -1504,7 +1504,7 @@ pub mod set_certificate_issuer {
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
                         azure_core::StatusCode::Ok => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                            let rsp_body = rsp_stream.collect().await?;
                             let rsp_value: models::IssuerBundle = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
@@ -1550,7 +1550,7 @@ pub mod update_certificate_issuer {
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
                         azure_core::StatusCode::Ok => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                            let rsp_body = rsp_stream.collect().await?;
                             let rsp_value: models::IssuerBundle = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
@@ -1594,7 +1594,7 @@ pub mod delete_certificate_issuer {
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
                         azure_core::StatusCode::Ok => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                            let rsp_body = rsp_stream.collect().await?;
                             let rsp_value: models::IssuerBundle = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
@@ -1644,7 +1644,7 @@ pub mod create_certificate {
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
                         azure_core::StatusCode::Accepted => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                            let rsp_body = rsp_stream.collect().await?;
                             let rsp_value: models::CertificateOperation = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
@@ -1694,7 +1694,7 @@ pub mod import_certificate {
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
                         azure_core::StatusCode::Ok => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                            let rsp_body = rsp_stream.collect().await?;
                             let rsp_value: models::CertificateBundle = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
@@ -1776,7 +1776,7 @@ pub mod get_certificate_versions {
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
                         azure_core::StatusCode::Ok => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                            let rsp_body = rsp_stream.collect().await?;
                             let rsp_value: models::CertificateListResult = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
@@ -1825,7 +1825,7 @@ pub mod get_certificate_policy {
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
                         azure_core::StatusCode::Ok => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                            let rsp_body = rsp_stream.collect().await?;
                             let rsp_value: models::CertificatePolicy = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
@@ -1875,7 +1875,7 @@ pub mod update_certificate_policy {
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
                         azure_core::StatusCode::Ok => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                            let rsp_body = rsp_stream.collect().await?;
                             let rsp_value: models::CertificatePolicy = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
@@ -1925,7 +1925,7 @@ pub mod get_certificate {
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
                         azure_core::StatusCode::Ok => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                            let rsp_body = rsp_stream.collect().await?;
                             let rsp_value: models::CertificateBundle = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
@@ -1977,7 +1977,7 @@ pub mod update_certificate {
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
                         azure_core::StatusCode::Ok => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                            let rsp_body = rsp_stream.collect().await?;
                             let rsp_value: models::CertificateBundle = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
@@ -2025,7 +2025,7 @@ pub mod get_certificate_operation {
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
                         azure_core::StatusCode::Ok => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                            let rsp_body = rsp_stream.collect().await?;
                             let rsp_value: models::CertificateOperation = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
@@ -2075,7 +2075,7 @@ pub mod update_certificate_operation {
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
                         azure_core::StatusCode::Ok => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                            let rsp_body = rsp_stream.collect().await?;
                             let rsp_value: models::CertificateOperation = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
@@ -2123,7 +2123,7 @@ pub mod delete_certificate_operation {
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
                         azure_core::StatusCode::Ok => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                            let rsp_body = rsp_stream.collect().await?;
                             let rsp_value: models::CertificateOperation = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
@@ -2173,7 +2173,7 @@ pub mod merge_certificate {
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
                         azure_core::StatusCode::Created => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                            let rsp_body = rsp_stream.collect().await?;
                             let rsp_value: models::CertificateBundle = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
@@ -2222,7 +2222,7 @@ pub mod backup_certificate {
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
                         azure_core::StatusCode::Ok => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                            let rsp_body = rsp_stream.collect().await?;
                             let rsp_value: models::BackupCertificateResult = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
@@ -2267,7 +2267,7 @@ pub mod restore_certificate {
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
                         azure_core::StatusCode::Ok => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                            let rsp_body = rsp_stream.collect().await?;
                             let rsp_value: models::CertificateBundle = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
@@ -2355,7 +2355,7 @@ pub mod get_deleted_certificates {
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
                         azure_core::StatusCode::Ok => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                            let rsp_body = rsp_stream.collect().await?;
                             let rsp_value: models::DeletedCertificateListResult = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
@@ -2404,7 +2404,7 @@ pub mod get_deleted_certificate {
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
                         azure_core::StatusCode::Ok => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                            let rsp_body = rsp_stream.collect().await?;
                             let rsp_value: models::DeletedCertificateBundle = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
@@ -2497,7 +2497,7 @@ pub mod recover_deleted_certificate {
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
                         azure_core::StatusCode::Ok => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                            let rsp_body = rsp_stream.collect().await?;
                             let rsp_value: models::CertificateBundle = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
@@ -2543,7 +2543,7 @@ pub mod create_key {
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
                         azure_core::StatusCode::Ok => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                            let rsp_body = rsp_stream.collect().await?;
                             let rsp_value: models::KeyBundle = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
@@ -2589,7 +2589,7 @@ pub mod import_key {
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
                         azure_core::StatusCode::Ok => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                            let rsp_body = rsp_stream.collect().await?;
                             let rsp_value: models::KeyBundle = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
@@ -2633,7 +2633,7 @@ pub mod delete_key {
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
                         azure_core::StatusCode::Ok => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                            let rsp_body = rsp_stream.collect().await?;
                             let rsp_value: models::DeletedKeyBundle = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
@@ -2678,7 +2678,7 @@ pub mod get_key {
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
                         azure_core::StatusCode::Ok => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                            let rsp_body = rsp_stream.collect().await?;
                             let rsp_value: models::KeyBundle = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
@@ -2725,7 +2725,7 @@ pub mod update_key {
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
                         azure_core::StatusCode::Ok => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                            let rsp_body = rsp_stream.collect().await?;
                             let rsp_value: models::KeyBundle = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
@@ -2803,7 +2803,7 @@ pub mod get_key_versions {
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
                         azure_core::StatusCode::Ok => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                            let rsp_body = rsp_stream.collect().await?;
                             let rsp_value: models::KeyListResult = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
@@ -2881,7 +2881,7 @@ pub mod get_keys {
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
                         azure_core::StatusCode::Ok => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                            let rsp_body = rsp_stream.collect().await?;
                             let rsp_value: models::KeyListResult = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
@@ -2927,7 +2927,7 @@ pub mod backup_key {
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
                         azure_core::StatusCode::Ok => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                            let rsp_body = rsp_stream.collect().await?;
                             let rsp_value: models::BackupKeyResult = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
@@ -2972,7 +2972,7 @@ pub mod restore_key {
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
                         azure_core::StatusCode::Ok => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                            let rsp_body = rsp_stream.collect().await?;
                             let rsp_value: models::KeyBundle = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
@@ -3024,7 +3024,7 @@ pub mod encrypt {
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
                         azure_core::StatusCode::Ok => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                            let rsp_body = rsp_stream.collect().await?;
                             let rsp_value: models::KeyOperationResult = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
@@ -3076,7 +3076,7 @@ pub mod decrypt {
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
                         azure_core::StatusCode::Ok => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                            let rsp_body = rsp_stream.collect().await?;
                             let rsp_value: models::KeyOperationResult = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
@@ -3128,7 +3128,7 @@ pub mod sign {
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
                         azure_core::StatusCode::Ok => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                            let rsp_body = rsp_stream.collect().await?;
                             let rsp_value: models::KeyOperationResult = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
@@ -3180,7 +3180,7 @@ pub mod verify {
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
                         azure_core::StatusCode::Ok => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                            let rsp_body = rsp_stream.collect().await?;
                             let rsp_value: models::KeyVerifyResult = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
@@ -3232,7 +3232,7 @@ pub mod wrap_key {
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
                         azure_core::StatusCode::Ok => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                            let rsp_body = rsp_stream.collect().await?;
                             let rsp_value: models::KeyOperationResult = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
@@ -3284,7 +3284,7 @@ pub mod unwrap_key {
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
                         azure_core::StatusCode::Ok => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                            let rsp_body = rsp_stream.collect().await?;
                             let rsp_value: models::KeyOperationResult = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
@@ -3361,7 +3361,7 @@ pub mod get_deleted_keys {
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
                         azure_core::StatusCode::Ok => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                            let rsp_body = rsp_stream.collect().await?;
                             let rsp_value: models::DeletedKeyListResult = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
@@ -3406,7 +3406,7 @@ pub mod get_deleted_key {
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
                         azure_core::StatusCode::Ok => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                            let rsp_body = rsp_stream.collect().await?;
                             let rsp_value: models::DeletedKeyBundle = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
@@ -3491,7 +3491,7 @@ pub mod recover_deleted_key {
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
                         azure_core::StatusCode::Ok => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                            let rsp_body = rsp_stream.collect().await?;
                             let rsp_value: models::KeyBundle = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
@@ -3537,7 +3537,7 @@ pub mod set_secret {
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
                         azure_core::StatusCode::Ok => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                            let rsp_body = rsp_stream.collect().await?;
                             let rsp_value: models::SecretBundle = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
@@ -3581,7 +3581,7 @@ pub mod delete_secret {
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
                         azure_core::StatusCode::Ok => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                            let rsp_body = rsp_stream.collect().await?;
                             let rsp_value: models::DeletedSecretBundle = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
@@ -3631,7 +3631,7 @@ pub mod get_secret {
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
                         azure_core::StatusCode::Ok => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                            let rsp_body = rsp_stream.collect().await?;
                             let rsp_value: models::SecretBundle = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
@@ -3683,7 +3683,7 @@ pub mod update_secret {
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
                         azure_core::StatusCode::Ok => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                            let rsp_body = rsp_stream.collect().await?;
                             let rsp_value: models::SecretBundle = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
@@ -3760,7 +3760,7 @@ pub mod get_secrets {
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
                         azure_core::StatusCode::Ok => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                            let rsp_body = rsp_stream.collect().await?;
                             let rsp_value: models::SecretListResult = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
@@ -3839,7 +3839,7 @@ pub mod get_secret_versions {
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
                         azure_core::StatusCode::Ok => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                            let rsp_body = rsp_stream.collect().await?;
                             let rsp_value: models::SecretListResult = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
@@ -3917,7 +3917,7 @@ pub mod get_deleted_secrets {
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
                         azure_core::StatusCode::Ok => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                            let rsp_body = rsp_stream.collect().await?;
                             let rsp_value: models::DeletedSecretListResult = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
@@ -3962,7 +3962,7 @@ pub mod get_deleted_secret {
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
                         azure_core::StatusCode::Ok => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                            let rsp_body = rsp_stream.collect().await?;
                             let rsp_value: models::DeletedSecretBundle = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
@@ -4047,7 +4047,7 @@ pub mod recover_deleted_secret {
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
                         azure_core::StatusCode::Ok => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                            let rsp_body = rsp_stream.collect().await?;
                             let rsp_value: models::SecretBundle = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
@@ -4092,7 +4092,7 @@ pub mod backup_secret {
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
                         azure_core::StatusCode::Ok => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                            let rsp_body = rsp_stream.collect().await?;
                             let rsp_value: models::BackupSecretResult = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
@@ -4137,7 +4137,7 @@ pub mod restore_secret {
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
                         azure_core::StatusCode::Ok => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                            let rsp_body = rsp_stream.collect().await?;
                             let rsp_value: models::SecretBundle = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
@@ -4214,7 +4214,7 @@ pub mod get_storage_accounts {
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
                         azure_core::StatusCode::Ok => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                            let rsp_body = rsp_stream.collect().await?;
                             let rsp_value: models::StorageListResult = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
@@ -4292,7 +4292,7 @@ pub mod get_deleted_storage_accounts {
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
                         azure_core::StatusCode::Ok => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                            let rsp_body = rsp_stream.collect().await?;
                             let rsp_value: models::DeletedStorageListResult = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
@@ -4337,7 +4337,7 @@ pub mod get_deleted_storage_account {
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
                         azure_core::StatusCode::Ok => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                            let rsp_body = rsp_stream.collect().await?;
                             let rsp_value: models::DeletedStorageBundle = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
@@ -4426,7 +4426,7 @@ pub mod recover_deleted_storage_account {
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
                         azure_core::StatusCode::Ok => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                            let rsp_body = rsp_stream.collect().await?;
                             let rsp_value: models::StorageBundle = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
@@ -4471,7 +4471,7 @@ pub mod backup_storage_account {
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
                         azure_core::StatusCode::Ok => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                            let rsp_body = rsp_stream.collect().await?;
                             let rsp_value: models::BackupStorageResult = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
@@ -4516,7 +4516,7 @@ pub mod restore_storage_account {
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
                         azure_core::StatusCode::Ok => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                            let rsp_body = rsp_stream.collect().await?;
                             let rsp_value: models::StorageBundle = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
@@ -4560,7 +4560,7 @@ pub mod get_storage_account {
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
                         azure_core::StatusCode::Ok => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                            let rsp_body = rsp_stream.collect().await?;
                             let rsp_value: models::StorageBundle = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
@@ -4606,7 +4606,7 @@ pub mod set_storage_account {
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
                         azure_core::StatusCode::Ok => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                            let rsp_body = rsp_stream.collect().await?;
                             let rsp_value: models::StorageBundle = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
@@ -4652,7 +4652,7 @@ pub mod update_storage_account {
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
                         azure_core::StatusCode::Ok => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                            let rsp_body = rsp_stream.collect().await?;
                             let rsp_value: models::StorageBundle = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
@@ -4696,7 +4696,7 @@ pub mod delete_storage_account {
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
                         azure_core::StatusCode::Ok => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                            let rsp_body = rsp_stream.collect().await?;
                             let rsp_value: models::DeletedStorageBundle = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
@@ -4746,7 +4746,7 @@ pub mod regenerate_storage_account_key {
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
                         azure_core::StatusCode::Ok => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                            let rsp_body = rsp_stream.collect().await?;
                             let rsp_value: models::StorageBundle = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
@@ -4825,7 +4825,7 @@ pub mod get_sas_definitions {
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
                         azure_core::StatusCode::Ok => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                            let rsp_body = rsp_stream.collect().await?;
                             let rsp_value: models::SasDefinitionListResult = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
@@ -4908,7 +4908,7 @@ pub mod get_deleted_sas_definitions {
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
                         azure_core::StatusCode::Ok => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                            let rsp_body = rsp_stream.collect().await?;
                             let rsp_value: models::DeletedSasDefinitionListResult = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
@@ -4959,7 +4959,7 @@ pub mod get_deleted_sas_definition {
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
                         azure_core::StatusCode::Ok => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                            let rsp_body = rsp_stream.collect().await?;
                             let rsp_value: models::DeletedSasDefinitionBundle = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
@@ -5010,7 +5010,7 @@ pub mod recover_deleted_sas_definition {
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
                         azure_core::StatusCode::Ok => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                            let rsp_body = rsp_stream.collect().await?;
                             let rsp_value: models::SasDefinitionBundle = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
@@ -5060,7 +5060,7 @@ pub mod get_sas_definition {
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
                         azure_core::StatusCode::Ok => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                            let rsp_body = rsp_stream.collect().await?;
                             let rsp_value: models::SasDefinitionBundle = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
@@ -5112,7 +5112,7 @@ pub mod set_sas_definition {
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
                         azure_core::StatusCode::Ok => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                            let rsp_body = rsp_stream.collect().await?;
                             let rsp_value: models::SasDefinitionBundle = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
@@ -5164,7 +5164,7 @@ pub mod update_sas_definition {
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
                         azure_core::StatusCode::Ok => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                            let rsp_body = rsp_stream.collect().await?;
                             let rsp_value: models::SasDefinitionBundle = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
@@ -5214,7 +5214,7 @@ pub mod delete_sas_definition {
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
                         azure_core::StatusCode::Ok => {
-                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                            let rsp_body = rsp_stream.collect().await?;
                             let rsp_value: models::DeletedSasDefinitionBundle = serde_json::from_slice(&rsp_body)?;
                             Ok(rsp_value)
                         }
