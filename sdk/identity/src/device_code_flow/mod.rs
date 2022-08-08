@@ -44,7 +44,7 @@ where
 
     let rsp = post_form(http_client.clone(), url, encoded).await?;
     let rsp_status = rsp.status();
-    let rsp_body = rsp.into_body().await;
+    let rsp_body = rsp.into_body().collect().await?;
     if !rsp_status.is_success() {
         return Err(ErrorKind::http_response_from_body(rsp_status, &rsp_body).into_error());
     }
@@ -128,7 +128,10 @@ impl<'a> DeviceCodePhaseOneResponse<'a> {
                     match post_form(http_client.clone(), url, encoded).await {
                         Ok(rsp) => {
                             let rsp_status = rsp.status();
-                            let rsp_body = rsp.into_body().await;
+                            let rsp_body = match rsp.into_body().collect().await {
+                                Ok(b) => b,
+                                Err(e) => return Some((Err(e), NextState::Finish)),
+                            };
                             if rsp_status.is_success() {
                                 match serde_json::from_slice::<DeviceCodeAuthorization>(&rsp_body) {
                                     Ok(authorization) => {

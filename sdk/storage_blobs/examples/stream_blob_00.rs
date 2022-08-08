@@ -47,10 +47,15 @@ async fn main() -> azure_core::Result<()> {
 
     let mut result = vec![];
 
+    // The stream is composed of individual calls to the get blob endpoint
     while let Some(value) = stream.next().await {
-        let value = value?.data;
-        println!("received {:?} bytes", value.len());
-        result.extend(&value);
+        let mut body = value?.data;
+        // For each response, we stream the body instead of collecting it all into one large allocation.
+        while let Some(value) = body.next().await {
+            let value = value?;
+            println!("received {:?} bytes", value.len());
+            result.extend(&value);
+        }
     }
 
     let returned_string = { String::from_utf8(result).map_kind(ErrorKind::DataConversion)? };
