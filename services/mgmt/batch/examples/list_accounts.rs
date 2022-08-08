@@ -13,7 +13,7 @@ use std::sync::Arc;
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let credential = Arc::new(AzureCliCredential {});
     let subscription_id = AzureCliCredential::get_subscription()?;
-    let client = azure_mgmt_batch::ClientBuilder::new(credential).build();
+    let client = azure_mgmt_batch::Client::builder(credential).build();
 
     let mut accounts = client.batch_account_client().list(subscription_id).into_stream();
     while let Some(accounts) = accounts.next().await {

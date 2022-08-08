@@ -13,7 +13,7 @@ use std::sync::Arc;
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let credential = Arc::new(AzureCliCredential {});
     let subscription_id = AzureCliCredential::get_subscription()?;
-    let client = azure_mgmt_storage::ClientBuilder::new(credential).build();
+    let client = azure_mgmt_storage::Client::builder(credential).build();
 
     let mut count = 0;
     let mut stream = client.storage_accounts_client().list(subscription_id).into_stream();

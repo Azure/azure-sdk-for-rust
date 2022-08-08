@@ -22,7 +22,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let key_name = std::env::args().nth(2).expect("please specify the name of the key to create");
     let endpoint = format!("https://{}.vault.azure.net", keyvault_name);
     let scopes = &["https://vault.azure.net"];
-    let client = azure_svc_keyvault::ClientBuilder::new(credential)
+    let client = azure_svc_keyvault::Client::builder(credential)
         .endpoint(endpoint)
         .scopes(scopes)
         .build();
