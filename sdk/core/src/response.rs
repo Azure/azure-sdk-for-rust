@@ -6,7 +6,7 @@ use futures::{Stream, StreamExt};
 use std::fmt::Debug;
 use std::pin::Pin;
 
-pub type PinnedStream = Pin<Box<dyn Stream<Item = crate::Result<Bytes>> + Send + Sync>>;
+pub(crate) type PinnedStream = Pin<Box<dyn Stream<Item = crate::Result<Bytes>> + Send + Sync>>;
 
 /// An HTTP Response.
 pub struct Response {
