@@ -106,6 +106,7 @@ pub fn create_client(modules: &[String], endpoint: Option<&str>) -> Result<Token
                 self.endpoint = Some(endpoint.into());
                 self
             }
+
             #[doc = "Set the scopes."]
             #[must_use]
             pub fn scopes(mut self, scopes: &[&str]) -> Self {
