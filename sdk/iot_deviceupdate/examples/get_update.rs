@@ -1,5 +1,5 @@
-use azure_device_update::DeviceUpdateClient;
 use azure_identity::{ClientSecretCredential, TokenCredentialOptions};
+use azure_iot_deviceupdate::DeviceUpdateClient;
 use std::{env, sync::Arc};
 
 #[tokio::main]
