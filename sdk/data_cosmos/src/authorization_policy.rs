@@ -1,7 +1,6 @@
-use crate::headers::{HEADER_DATE, HEADER_VERSION};
 use crate::resources::permission::AuthorizationToken;
 use crate::resources::ResourceType;
-use azure_core::headers::{HeaderValue, AUTHORIZATION};
+use azure_core::headers::{HeaderValue, AUTHORIZATION, MS_DATE, VERSION};
 use azure_core::{date, Context, Policy, PolicyResult, Request};
 use hmac::{Hmac, Mac};
 use sha2::Sha256;
@@ -11,7 +10,7 @@ use time::OffsetDateTime;
 use url::form_urlencoded;
 
 const AZURE_VERSION: &str = "2018-12-31";
-const VERSION: &str = "1.0";
+const VERSION_NUMBER: &str = "1.0";
 
 /// The `AuthorizationPolicy` takes care to authenticate your calls to Azure CosmosDB.
 ///
@@ -75,8 +74,8 @@ impl Policy for AuthorizationPolicy {
             &auth
         );
 
-        request.insert_header(HEADER_DATE, HeaderValue::from(time_nonce.to_string()));
-        request.insert_header(HEADER_VERSION, HeaderValue::from_static(AZURE_VERSION));
+        request.insert_header(MS_DATE, HeaderValue::from(date::to_rfc1123(&time_nonce)));
+        request.insert_header(VERSION, HeaderValue::from_static(AZURE_VERSION));
         request.insert_header(AUTHORIZATION, HeaderValue::from(auth));
 
         // next[0] will not panic, because we checked at the beginning of the function
@@ -161,7 +160,7 @@ fn generate_authorization(
 
     let str_unencoded = format!(
         "type={}&ver={}&sig={}",
-        authorization_type, VERSION, signature
+        authorization_type, VERSION_NUMBER, signature
     );
     trace!(
         "generate_authorization::str_unencoded == {:?}",

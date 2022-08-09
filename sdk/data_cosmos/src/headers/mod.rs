@@ -2,8 +2,6 @@ use azure_core::headers::HeaderName;
 
 pub(crate) mod from_headers;
 
-pub(crate) const HEADER_VERSION: HeaderName = HeaderName::from_static("x-ms-version");
-pub(crate) const HEADER_DATE: HeaderName = HeaderName::from_static("x-ms-date");
 pub(crate) const HEADER_DOCUMENTDB_IS_UPSERT: HeaderName =
     HeaderName::from_static("x-ms-documentdb-is-upsert");
 pub(crate) const HEADER_INDEXING_DIRECTIVE: HeaderName =
@@ -14,7 +12,6 @@ pub(crate) const HEADER_SESSION_TOKEN: HeaderName = HeaderName::from_static("x-m
 pub(crate) const HEADER_ALLOW_MULTIPLE_WRITES: HeaderName =
     HeaderName::from_static("x-ms-cosmos-allow-tentative-writes");
 pub(crate) const HEADER_A_IM: HeaderName = HeaderName::from_static("A-IM");
-pub(crate) const HEADER_ACTIVITY_ID: HeaderName = HeaderName::from_static("x-ms-activity-id");
 pub(crate) const HEADER_DOCUMENTDB_PARTITIONRANGEID: HeaderName =
     HeaderName::from_static("x-ms-documentdb-partitionkeyrangeid");
 pub(crate) const HEADER_DOCUMENTDB_PARTITIONKEY: HeaderName =
