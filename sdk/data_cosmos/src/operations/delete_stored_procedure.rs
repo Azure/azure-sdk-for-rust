@@ -26,7 +26,7 @@ impl DeleteStoredProcedureBuilder {
                 .client
                 .pipeline()
                 .send(
-                    self.context.clone().insert(ResourceType::Permissions),
+                    self.context.clone().insert(ResourceType::StoredProcedures),
                     &mut request,
                 )
                 .await?;
