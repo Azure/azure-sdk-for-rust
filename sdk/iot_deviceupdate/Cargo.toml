@@ -1,5 +1,5 @@
 [package]
-name = "azure_device_update"
+name = "azure_iot_deviceupdate"
 version = "0.1.0"
 authors = ["roland.erk@conplement.de"]
 description = "Rust wrapper around Microsoft Azure REST APIs for Azure Device Update"
