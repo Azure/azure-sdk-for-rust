@@ -18,7 +18,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let subscription_id = &AzureCliCredential::get_subscription()?;
     let resource_group_name = &env::var("RESOURCE_GROUP_NAME").map_err(|_| "RESOURCE_GROUP_NAME required")?;
     let resource_group_location = env::var("RESOURCE_GROUP_LOCATION").map_err(|_| "RESOURCE_GROUP_LOCATION required")?;
-    let client = azure_mgmt_resources::ClientBuilder::new(credential).build();
+    let client = azure_mgmt_resources::Client::builder(credential).build();
 
     let group = ResourceGroup {
         id: None,

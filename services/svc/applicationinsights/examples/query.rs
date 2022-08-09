@@ -24,7 +24,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let endpoint = format!("{}/v1", ENDPOINT);
     let credential = Arc::new(AzureCliCredential {});
-    let client = azure_svc_applicationinsights::ClientBuilder::new(credential)
+    let client = azure_svc_applicationinsights::Client::builder(credential)
         .endpoint(endpoint)
         .build();
 

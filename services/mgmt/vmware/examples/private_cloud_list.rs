@@ -18,7 +18,7 @@ use std::sync::Arc;
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let subscription_id = AzureCliCredential::get_subscription()?;
     let credential = Arc::new(AzureCliCredential {});
-    let client = azure_mgmt_vmware::ClientBuilder::new(credential).build();
+    let client = azure_mgmt_vmware::Client::builder(credential).build();
 
     let mut count = 0;
     let mut clouds = client.private_clouds_client().list_in_subscription(subscription_id).into_stream();
