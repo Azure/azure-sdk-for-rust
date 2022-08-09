@@ -91,11 +91,16 @@ where
                     error
                 }
                 Err(error) => {
-                    log::debug!(
-                        "error occurred when making request which will be retried: {}",
+                    if error.kind() == &ErrorKind::Io {
+                        log::debug!(
+                            "io error occurred when making request which will be retried: {}",
+                            error
+                        );
                         error
-                    );
-                    error
+                    } else {
+                        log::error!("non-io error occurred which will not be retried: {}", error);
+                        return Err(error);
+                    }
                 }
             };
 

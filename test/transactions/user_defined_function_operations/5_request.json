@@ -1,0 +1,17 @@
+{
+  "uri": "/dbs/test-cosmos-db-udf/colls/test-udf/docs",
+  "method": "POST",
+  "headers": {
+    "authorization": "<<STRIPPED>>",
+    "content-type": "application/query+json",
+    "user-agent": "azsdk-rust-data_cosmos/0.4.0 (1.62.1; linux; x86_64)",
+    "x-ms-consistency-level": "Session",
+    "x-ms-date": "Tue, 09 Aug 2022 09:29:27 GMT",
+    "x-ms-documentdb-isquery": "true",
+    "x-ms-documentdb-query-enablecrosspartition": "false",
+    "x-ms-max-item-count": "2",
+    "x-ms-session-token": "0:-1#3",
+    "x-ms-version": "2018-12-31"
+  },
+  "body": "eyJxdWVyeSI6IlNFTEVDVCB1ZGYudGVzdCgxMDApIiwicGFyYW1ldGVycyI6W119"
+}

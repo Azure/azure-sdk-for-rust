@@ -41,7 +41,9 @@ impl CreateOrReplaceUserDefinedFunctionBuilder {
                 .client
                 .pipeline()
                 .send(
-                    self.context.clone().insert(ResourceType::Permissions),
+                    self.context
+                        .clone()
+                        .insert(ResourceType::UserDefinedFunctions),
                     &mut request,
                 )
                 .await?;

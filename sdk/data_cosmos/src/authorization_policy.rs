@@ -75,7 +75,10 @@ impl Policy for AuthorizationPolicy {
             &auth
         );
 
-        request.insert_header(HEADER_DATE, HeaderValue::from(time_nonce.to_string()));
+        request.insert_header(
+            HEADER_DATE,
+            HeaderValue::from(date::to_rfc1123(&time_nonce)),
+        );
         request.insert_header(HEADER_VERSION, HeaderValue::from_static(AZURE_VERSION));
         request.insert_header(AUTHORIZATION, HeaderValue::from(auth));
 
