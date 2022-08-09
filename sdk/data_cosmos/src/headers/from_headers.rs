@@ -21,7 +21,7 @@ pub(crate) fn number_of_read_regions_from_headers(headers: &Headers) -> azure_co
 }
 
 pub(crate) fn activity_id_from_headers(headers: &Headers) -> azure_core::Result<uuid::Uuid> {
-    headers.get_as(&HEADER_ACTIVITY_ID)
+    headers.get_as(&headers::ACTIVITY_ID)
 }
 
 pub(crate) fn content_path_from_headers(headers: &Headers) -> azure_core::Result<String> {
