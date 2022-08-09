@@ -21,7 +21,7 @@ serde_json = "1.0"
 url = "2.2"
 serde = { version = "1.0", features = ["derive"] }
 getset = "0.1"
-azure_core = { path = "../core", version = "0.3", default_features = false }
+azure_core = { path = "../core", version = "0.4", default_features = false }
 log = "0.4"
 azure_identity = { path = "../identity", default_features = false }
 
