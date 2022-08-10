@@ -32,7 +32,7 @@ url = "2.2"
 [dev-dependencies]
 tokio = { version = "1.0", features = ["macros", "rt-multi-thread"] }
 env_logger = "0.9"
-azure_identity = { path = "../identity", default_features = false }
+azure_identity = { path = "../identity" }
 reqwest = "0.11"
 oauth2 = { version = "4.0.0", default-features = false }
 mock_transport = { path = "../../eng/test/mock_transport" }
