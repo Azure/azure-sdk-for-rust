@@ -51,3 +51,42 @@ pub mod refresh_token;
 mod token_credentials;
 
 pub use crate::token_credentials::*;
+
+pub(crate) async fn oauth2_async_http_client(
+    _request: oauth2::HttpRequest,
+) -> Result<oauth2::HttpResponse, azure_core::error::Error> {
+    // let client = {
+    //     let builder = reqwest::Client::builder();
+
+    //     // Following redirects opens the client up to SSRF vulnerabilities.
+    //     // but this is not possible to prevent on wasm targets
+    //     #[cfg(not(target_arch = "wasm32"))]
+    //     let builder = builder.redirect(reqwest::redirect::Policy::none());
+
+    //     builder.build().map_err(Error::Reqwest)?
+    // };
+
+    // let mut request_builder = client
+    //     .request(request.method, request.url.as_str())
+    //     .body(request.body);
+    // for (name, value) in &request.headers {
+    //     request_builder = request_builder.header(name.as_str(), value.as_bytes());
+    // }
+    // let request = request_builder.build().map_err(Error::Reqwest)?;
+
+    // let response = client.execute(request).await.map_err(Error::Reqwest)?;
+
+    // let status_code = response.status();
+    // let headers = response.headers().to_owned();
+    // let chunks = response.bytes().await.map_err(Error::Reqwest)?;
+
+    let status_code = http::StatusCode::CREATED;
+    let headers = http::HeaderMap::new();
+    let body = vec![];
+
+    Ok(oauth2::HttpResponse {
+        status_code,
+        headers,
+        body,
+    })
+}

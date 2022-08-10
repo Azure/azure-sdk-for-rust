@@ -1,6 +1,6 @@
 use azure_core::auth::{AccessToken, TokenCredential, TokenResponse};
 use azure_core::error::{ErrorKind, ResultExt};
-use oauth2::{basic::BasicClient, reqwest::async_http_client, AuthType, AuthUrl, Scope, TokenUrl};
+use oauth2::{basic::BasicClient, AuthType, AuthUrl, Scope, TokenUrl};
 use std::str;
 use time::OffsetDateTime;
 use url::Url;
@@ -135,7 +135,7 @@ impl TokenCredential for ClientSecretCredential {
         let token_result = client
             .exchange_client_credentials()
             .add_scope(Scope::new(format!("{}/.default", resource)))
-            .request_async(async_http_client)
+            .request_async(crate::oauth2_async_http_client)
             .await
             .map(|r| {
                 use oauth2::TokenResponse as _;

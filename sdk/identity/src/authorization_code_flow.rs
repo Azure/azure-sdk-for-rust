@@ -4,7 +4,6 @@
 
 use azure_core::error::{ErrorKind, ResultExt};
 use oauth2::basic::BasicClient;
-use oauth2::reqwest::async_http_client;
 use oauth2::{ClientId, ClientSecret};
 use url::Url;
 
@@ -85,7 +84,7 @@ impl AuthorizationCodeFlow {
             .exchange_code(code)
             // Send the PKCE code verifier in the token request
             .set_pkce_verifier(self.pkce_code_verifier)
-            .request_async(async_http_client)
+            .request_async(crate::oauth2_async_http_client)
             .await
             .context(
                 ErrorKind::Credential,

@@ -16,6 +16,7 @@ edition = "2021"
 azure_core = { path = "../core", version = "0.4" }
 async-lock = "2.5"
 oauth2 = { version = "4.0.0", default-features = false }
+http = "0.2"
 url = "2.2"
 futures = "0.3"
 serde = { version = "1.0", features = ["derive"] }
@@ -40,11 +41,9 @@ azure_security_keyvault = { path = "../security_keyvault", default_features = fa
 [features]
 default = ["development", "enable_reqwest"]
 enable_reqwest = [
-  "oauth2/native-tls",
   "azure_core/enable_reqwest",
 ]
 enable_reqwest_rustls = [
-  "oauth2/rustls-tls",
   "azure_core/enable_reqwest_rustls",
 ]
 development = []
