@@ -2,13 +2,11 @@ use azure_identity::{device_code_flow, refresh_token};
 use azure_storage::core::prelude::*;
 use azure_storage_blobs::prelude::*;
 use futures::stream::StreamExt;
-use oauth2::ClientId;
 use std::env;
 
 #[tokio::main]
 async fn main() -> azure_core::Result<()> {
-    let client_id =
-        ClientId::new(env::var("CLIENT_ID").expect("Missing CLIENT_ID environment variable."));
+    let client_id = env::var("CLIENT_ID").expect("Missing CLIENT_ID environment variable.");
     let tenant_id = env::var("TENANT_ID").expect("Missing TENANT_ID environment variable.");
 
     let storage_account_name = std::env::args()

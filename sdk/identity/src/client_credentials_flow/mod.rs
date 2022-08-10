@@ -54,15 +54,15 @@ use url::{form_urlencoded, Url};
 #[fix_hidden_lifetime_bug::fix_hidden_lifetime_bug]
 pub async fn perform(
     http_client: Arc<dyn HttpClient>,
-    client_id: &oauth2::ClientId,
-    client_secret: &oauth2::ClientSecret,
+    client_id: &str,
+    client_secret: &str,
     scopes: &[&str],
     tenant_id: &str,
 ) -> azure_core::Result<LoginResponse> {
     let encoded: String = form_urlencoded::Serializer::new(String::new())
-        .append_pair("client_id", client_id.as_str())
+        .append_pair("client_id", client_id)
         .append_pair("scope", &scopes.join(" "))
-        .append_pair("client_secret", client_secret.secret())
+        .append_pair("client_secret", client_secret)
         .append_pair("grant_type", "client_credentials")
         .finish();
 
