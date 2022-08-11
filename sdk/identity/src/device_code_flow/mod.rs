@@ -37,10 +37,10 @@ where
         tenant_id
     );
 
-    let mut encoded = form_urlencoded::Serializer::new(String::new());
-    let encoded = encoded.append_pair("client_id", client_id.as_str());
-    let encoded = encoded.append_pair("scope", &scopes.join(" "));
-    let encoded = encoded.finish();
+    let encoded = form_urlencoded::Serializer::new(String::new())
+        .append_pair("client_id", client_id.as_str())
+        .append_pair("scope", &scopes.join(" "))
+        .finish();
 
     let rsp = post_form(http_client.clone(), url, encoded).await?;
     let rsp_status = rsp.status();
@@ -116,12 +116,11 @@ impl<'a> DeviceCodePhaseOneResponse<'a> {
                     // last poll and wait only the delta.
                     new_timer(Duration::from_secs(self.interval)).await;
 
-                    let mut encoded = form_urlencoded::Serializer::new(String::new());
-                    let encoded = encoded
-                        .append_pair("grant_type", "urn:ietf:params:oauth:grant-type:device_code");
-                    let encoded = encoded.append_pair("client_id", self.client_id.as_str());
-                    let encoded = encoded.append_pair("device_code", &self.device_code);
-                    let encoded = encoded.finish();
+                    let encoded = form_urlencoded::Serializer::new(String::new())
+                        .append_pair("grant_type", "urn:ietf:params:oauth:grant-type:device_code")
+                        .append_pair("client_id", self.client_id.as_str())
+                        .append_pair("device_code", &self.device_code)
+                        .finish();
 
                     let http_client = self.http_client.clone().unwrap();
 
@@ -183,4 +182,37 @@ async fn post_form(
     );
     req.set_body(form_body);
     http_client.execute_request(&req).await
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use async_trait::async_trait;
+    use std::error::Error;
+
+    #[async_trait]
+    trait LoginHelper {
+        async fn get_secret(&self) -> Result<String, Box<dyn Error>>;
+    }
+
+    struct DeviceCodeLoginHelper {
+        client_id: ClientId,
+        tenant_id: String,
+        scopes: Vec<String>,
+    }
+
+    #[async_trait]
+    impl LoginHelper for DeviceCodeLoginHelper {
+        async fn get_secret(&self) -> Result<String, Box<dyn Error>> {
+            let scopes: Vec<_> = self.scopes.iter().map(|x| x.as_ref()).collect();
+            let _phase_one = start(
+                azure_core::new_http_client(),
+                &self.tenant_id,
+                &self.client_id,
+                &scopes,
+            )
+            .await?;
+            Ok("".to_string())
+        }
+    }
 }
