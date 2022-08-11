@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use crate::MsEnum;
 
 /// see Response Headers https://swagger.io/docs/specification/2-0/describing-responses/
-#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Default)]
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq, Default)]
 pub struct Header {
     #[serde(rename = "type")]
     pub type_: String,

@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 
 /// General information about the API.
 /// https://github.com/OAI/OpenAPI-Specification/blob/master/versions/2.0.md#info-object
-#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Default)]
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq, Default)]
 #[serde(rename_all = "lowercase")]
 pub struct Info {
     /// A unique and precise title of the API.
