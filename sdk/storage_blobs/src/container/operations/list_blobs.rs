@@ -88,7 +88,7 @@ impl ListBlobsBuilder {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ListBlobsResponse {
     pub prefix: Option<String>,
     pub max_results: Option<u32>,
@@ -109,7 +109,7 @@ struct ListBlobsResponseInternal {
     pub blobs: Blobs,
 }
 
-#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
 #[serde(rename_all = "PascalCase")]
 pub struct Blobs {
     pub blob_prefix: Option<Vec<BlobPrefix>>,
@@ -117,7 +117,7 @@ pub struct Blobs {
     pub blobs: Vec<Blob>,
 }
 
-#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
 #[serde(rename_all = "PascalCase")]
 pub struct BlobPrefix {
     pub name: String,

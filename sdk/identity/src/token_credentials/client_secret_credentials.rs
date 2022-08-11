@@ -7,7 +7,7 @@ use url::Url;
 
 /// Provides options to configure how the Identity library makes authentication
 /// requests to Azure Active Directory.
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct TokenCredentialOptions {
     authority_host: String,
 }

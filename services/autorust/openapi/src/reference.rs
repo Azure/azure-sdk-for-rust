@@ -3,7 +3,7 @@ use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 /// https://swagger.io/docs/specification/using-ref/
 /// https://github.com/OAI/OpenAPI-Specification/blob/master/versions/2.0.md#referenceObject
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
 #[serde(untagged)]
 pub enum ReferenceOr<T> {
     Reference {
@@ -57,7 +57,7 @@ impl<T> ReferenceOr<T> {
 ///   "$ref": "#/definitions/CloudError"
 ///   "$ref": "../../../../../common-types/resource-management/v1/types.json#/parameters/ApiVersionParameter"
 ///   "$ref": "#/parameters/privateCloudName"
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Reference {
     pub file: Option<String>,
     pub path: Vec<String>,

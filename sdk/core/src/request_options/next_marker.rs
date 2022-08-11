@@ -2,7 +2,7 @@ use crate::headers::{self, Headers};
 use crate::AppendToUrlQuery;
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct NextMarker(String);
 
 impl NextMarker {

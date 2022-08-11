@@ -2,7 +2,7 @@ use crate::xml::read_xml;
 use azure_core::date;
 use time::OffsetDateTime;
 
-#[derive(Debug, Clone, Default, PartialEq)]
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct StoredAccessPolicyList {
     pub stored_access: Vec<StoredAccessPolicy>,
 }
@@ -68,7 +68,7 @@ impl From<SignedIdentifiers> for StoredAccessPolicyList {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct StoredAccessPolicy {
     pub id: String,
     pub start: OffsetDateTime,

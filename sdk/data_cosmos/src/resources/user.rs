@@ -9,7 +9,7 @@ use azure_core::{
 /// A logical namespace for scoping permissions on resources.
 ///
 /// You can learn more about users [here](https://docs.microsoft.com/rest/api/cosmos-db/users).
-#[derive(Serialize, Deserialize, Clone, Debug, PartialOrd, PartialEq)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialOrd, PartialEq, Eq)]
 pub struct User {
     /// The user's id
     pub id: String,

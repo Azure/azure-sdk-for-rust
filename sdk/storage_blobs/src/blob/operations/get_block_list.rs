@@ -45,7 +45,7 @@ impl GetBlockListBuilder {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct GetBlockListResponse {
     pub etag: Option<String>,
     pub last_modified: Option<OffsetDateTime>,

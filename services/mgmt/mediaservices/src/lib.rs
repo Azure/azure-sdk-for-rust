@@ -2,6 +2,7 @@
 #![allow(clippy::too_many_arguments)]
 #![allow(clippy::ptr_arg)]
 #![allow(clippy::large_enum_variant)]
+#![allow(clippy::derive_partial_eq_without_eq)]
 #[cfg(feature = "package-account-2021-11")]
 pub mod package_account_2021_11;
 #[cfg(all(feature = "package-account-2021-11", not(feature = "no-default-tag")))]

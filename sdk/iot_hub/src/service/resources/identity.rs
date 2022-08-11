@@ -7,7 +7,7 @@ pub enum DesiredCapability {
 }
 
 /// The connection state of a module or device
-#[derive(Serialize, Debug, Deserialize, PartialEq)]
+#[derive(Serialize, Debug, Deserialize, PartialEq, Eq)]
 pub enum ConnectionState {
     /// The device or module is connected
     Connected,
@@ -16,7 +16,7 @@ pub enum ConnectionState {
 }
 
 /// Device or module status
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 #[serde(rename_all = "lowercase")]
 pub enum Status {
     /// The device or module is disabled
@@ -26,7 +26,7 @@ pub enum Status {
 }
 
 /// Representation of device capabilities.
-#[derive(Default, Serialize, Deserialize, Clone, Debug, PartialEq)]
+#[derive(Default, Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
 pub struct DeviceCapabilities {
     #[serde(rename = "iotEdge")]
     /// Whether the device has the IoT Edge capability or not.
@@ -34,7 +34,7 @@ pub struct DeviceCapabilities {
 }
 
 /// Representation of a symmetric key for authentication.
-#[derive(Serialize, Deserialize, Debug, PartialEq, Clone, Default)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Clone, Default)]
 pub struct SymmetricKey {
     /// The primary key.
     pub primary_key: Option<String>,
@@ -43,7 +43,7 @@ pub struct SymmetricKey {
 }
 
 /// Representation of a x509 thumbprint for authentication.
-#[derive(Default, Serialize, Deserialize, Debug, Clone, PartialEq)]
+#[derive(Default, Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct X509ThumbPrint {
     /// The primary thumbprint.
@@ -53,7 +53,7 @@ pub struct X509ThumbPrint {
 }
 
 /// AuthenticationType of a module or device.
-#[derive(Serialize, Debug, Deserialize, Clone, PartialEq)]
+#[derive(Serialize, Debug, Deserialize, Clone, PartialEq, Eq)]
 pub enum AuthenticationType {
     /// Authentication using a certificate authority.
     #[serde(rename = "certificateAuthority")]
@@ -70,7 +70,7 @@ pub enum AuthenticationType {
 }
 
 /// The authentication mechanism for a device or module identity.
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct AuthenticationMechanism {
     /// The symmetric key pair used for authentication.
@@ -126,7 +126,7 @@ impl AuthenticationMechanism {
 }
 
 /// The operation to perform on an identity
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) enum IdentityOperation {
     Create,
     Update,

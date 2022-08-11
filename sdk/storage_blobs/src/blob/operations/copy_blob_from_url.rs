@@ -60,7 +60,7 @@ impl CopyBlobFromUrlBuilder {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CopyBlobFromUrlResponse {
     pub content_md5: Option<ConsistencyMD5>,
     pub last_modified: OffsetDateTime,

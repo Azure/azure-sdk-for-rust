@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 
 /// The transfer protocol of the API. Values MUST be from the list: "http", "https", "ws", "wss".
 /// If the schemes is not included, the default scheme to be used is the one used to access the Swagger definition itself.
-#[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "lowercase")]
 pub enum Scheme {
     Http,
@@ -23,7 +23,7 @@ impl Default for Scheme {
 
 /// https://swagger.io/docs/specification/data-models/data-types/
 /// https://github.com/OAI/OpenAPI-Specification/blob/master/versions/2.0.md#data-types
-#[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "lowercase")]
 pub enum DataType {
     String,

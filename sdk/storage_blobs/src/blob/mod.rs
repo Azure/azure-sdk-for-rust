@@ -84,7 +84,7 @@ where
         .map_err(serde::de::Error::custom)
 }
 
-#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
 #[serde(rename_all = "PascalCase")]
 pub struct Blob {
     pub name: String,
@@ -97,7 +97,7 @@ pub struct Blob {
     pub tags: Option<Tags>,
 }
 
-#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
 #[serde(rename_all = "PascalCase")]
 pub struct BlobProperties {
     #[cfg(not(feature = "azurite_workaround"))]

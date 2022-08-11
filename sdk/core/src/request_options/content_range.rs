@@ -4,7 +4,7 @@ use std::str::FromStr;
 
 const PREFIX: &str = "bytes ";
 
-#[derive(Debug, Copy, Clone, PartialEq)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct ContentRange {
     start: u64,
     end: u64,
