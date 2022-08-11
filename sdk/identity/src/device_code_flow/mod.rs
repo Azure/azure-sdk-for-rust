@@ -187,32 +187,16 @@ async fn post_form(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use async_trait::async_trait;
-    use std::error::Error;
 
-    #[async_trait]
-    trait LoginHelper {
-        async fn get_secret(&self) -> Result<String, Box<dyn Error>>;
-    }
+    fn require_send<T: Send>(_t: T) {}
 
-    struct DeviceCodeLoginHelper {
-        client_id: ClientId,
-        tenant_id: String,
-        scopes: Vec<String>,
-    }
-
-    #[async_trait]
-    impl LoginHelper for DeviceCodeLoginHelper {
-        async fn get_secret(&self) -> Result<String, Box<dyn Error>> {
-            let scopes: Vec<_> = self.scopes.iter().map(|x| x.as_ref()).collect();
-            let _phase_one = start(
-                azure_core::new_http_client(),
-                &self.tenant_id,
-                &self.client_id,
-                &scopes,
-            )
-            .await?;
-            Ok("".to_string())
-        }
+    #[test]
+    fn ensure_that_start_is_send() {
+        require_send(start(
+            azure_core::new_http_client(),
+            "UNUSED",
+            &ClientId::new("UNUSED".to_owned()),
+            &[],
+        ));
     }
 }
