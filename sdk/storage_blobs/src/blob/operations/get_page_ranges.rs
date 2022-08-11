@@ -41,7 +41,7 @@ impl GetPageRangesBuilder {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct GetPageRangesResponse {
     pub etag: String,
     pub last_modified: OffsetDateTime,

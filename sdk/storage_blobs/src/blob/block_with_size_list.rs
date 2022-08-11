@@ -35,7 +35,7 @@ struct BlockList {
     pub uncommitted_blocks: Option<OuterBlock>,
 }
 
-#[derive(Default, Debug, Clone, PartialEq)]
+#[derive(Default, Debug, Clone, PartialEq, Eq)]
 pub struct BlockWithSizeList {
     pub blocks: Vec<BlobBlockWithSize>,
 }

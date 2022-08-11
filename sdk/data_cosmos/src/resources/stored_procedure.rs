@@ -8,7 +8,7 @@ use serde::Serialize;
 /// A piece of application logic that is registered and executed against a collection as a single transaction
 ///
 /// You can learn more about stored procedures [here](https://docs.microsoft.com/rest/api/cosmos-db/stored-procedures).
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct StoredProcedure {
     /// The procedure id
     pub id: String,

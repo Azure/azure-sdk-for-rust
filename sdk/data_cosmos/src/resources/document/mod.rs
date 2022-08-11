@@ -71,7 +71,7 @@ impl<T> Resource for &Document<T> {
 }
 
 /// Whether to query across partitions
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[allow(missing_docs)]
 pub enum QueryCrossPartition {
     Yes,
@@ -115,7 +115,7 @@ impl Header for QueryCrossPartition {
 
 /// Whether to parallelize across partitions
 #[allow(missing_docs)]
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ParallelizeCrossPartition {
     Yes,
     No,
@@ -151,7 +151,7 @@ impl Header for ParallelizeCrossPartition {
 }
 
 /// Whether the operation is an upsert
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[allow(missing_docs)]
 pub enum IsUpsert {
     Yes,

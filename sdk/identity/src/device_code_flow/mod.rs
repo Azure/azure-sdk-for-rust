@@ -97,7 +97,7 @@ impl<'a> DeviceCodePhaseOneResponse<'a> {
     pub fn stream(
         &self,
     ) -> impl futures::Stream<Item = azure_core::Result<DeviceCodeAuthorization>> + '_ {
-        #[derive(Debug, Clone, PartialEq)]
+        #[derive(Debug, Clone, PartialEq, Eq)]
         enum NextState {
             Continue,
             Finish,

@@ -1,6 +1,6 @@
 use azure_core::AppendToUrlQuery;
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Top(u32);
 
 impl Top {

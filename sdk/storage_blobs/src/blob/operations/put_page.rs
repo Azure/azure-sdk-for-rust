@@ -47,7 +47,7 @@ impl PutPageBuilder {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PutPageResponse {
     pub etag: String,
     pub last_modified: OffsetDateTime,

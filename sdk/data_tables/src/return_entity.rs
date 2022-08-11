@@ -1,6 +1,6 @@
 use azure_core::headers::{Header, HeaderName, HeaderValue, PREFER};
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ReturnEntity(bool);
 
 impl ReturnEntity {

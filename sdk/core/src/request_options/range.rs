@@ -4,7 +4,7 @@ use std::convert::From;
 use std::fmt;
 use std::str::FromStr;
 
-#[derive(Debug, Copy, Clone, PartialEq)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct Range {
     pub start: u64,
     pub end: u64,

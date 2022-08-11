@@ -4,7 +4,7 @@ use azure_core::{
 };
 use headers::IF_MATCH;
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum IfMatchCondition {
     Etag(Etag),
     Any,

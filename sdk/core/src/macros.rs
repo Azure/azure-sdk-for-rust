@@ -396,7 +396,7 @@ macro_rules! request_option {
 #[macro_export]
 macro_rules! create_enum {
     ($name:ident, $(($variant:ident, $value:expr)), *) => (
-        #[derive(Debug, PartialEq, PartialOrd, Clone, Copy)]
+        #[derive(Debug, PartialEq, Eq, PartialOrd, Clone, Copy)]
         pub enum $name {
             $(
                 $variant,

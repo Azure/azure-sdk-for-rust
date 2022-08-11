@@ -61,7 +61,7 @@ impl CopyBlobBuilder {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CopyBlobResponse {
     pub etag: String,
     pub last_modified: OffsetDateTime,
