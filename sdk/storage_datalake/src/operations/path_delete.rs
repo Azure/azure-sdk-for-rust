@@ -74,7 +74,7 @@ impl<C: PathClient + 'static> DeletePathBuilder<C> {
     }
 }
 
-azure_core::future!(DeletePath);
+pub type DeletePath = futures::future::BoxFuture<'static, azure_core::Result<DeletePathResponse>>;
 
 #[derive(Debug, Clone)]
 pub struct DeletePathResponse {

@@ -230,8 +230,9 @@ macro_rules! operation {
             @nosetter
             $($nosetter: $nstype),*
         }
-        $crate::future!($name);
+
         azure_core::__private::paste! {
+        pub type $name = futures::future::BoxFuture<'static, azure_core::Result<[<$name Response>]>>;
         #[cfg(feature = "into_future")]
         impl <$($generic: $first_constraint $(+ $constraint)*)* $(+ $lt)*> std::future::IntoFuture for [<$name Builder>]<$($generic),*> {
             type IntoFuture = $name;
@@ -276,23 +277,6 @@ macro_rules! operation {
                 $($nosetter: $nstype),*
             }
     }
-}
-
-/// Declare a `Future` with the given name
-///
-/// `Future::Output` will be set to `azure_core::Result<$NAMEResponse>.
-/// The `Future` will be `Send` for all targets but `wasm32`.
-#[macro_export]
-macro_rules! future {
-    ($name:ident) => {
-        $crate::future!($name<>);
-    };
-    ($name:ident<$($generic:ident)?>) => {
-        azure_core::__private::paste! {
-        pub type $name<$($generic)*> =
-            futures::future::BoxFuture<'static, azure_core::Result<[<$name Response>]<$($generic)*>>>;
-        }
-    };
 }
 
 /// The following macro invocation:

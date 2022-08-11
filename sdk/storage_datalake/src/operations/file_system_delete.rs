@@ -54,7 +54,7 @@ impl DeleteFileSystemBuilder {
     }
 }
 
-azure_core::future!(DeleteFileSystem);
+pub type DeleteFileSystem = futures::future::BoxFuture<'static, azure_core::Result<DeleteFileSystemResponse>>;
 
 #[derive(Debug, Clone)]
 pub struct DeleteFileSystemResponse {

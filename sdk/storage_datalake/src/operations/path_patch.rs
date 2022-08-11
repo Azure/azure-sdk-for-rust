@@ -110,7 +110,7 @@ impl<C: PathClient + 'static> PatchPathBuilder<C> {
     }
 }
 
-azure_core::future!(PatchPath);
+pub type PatchPath = futures::future::BoxFuture<'static, azure_core::Result<PatchPathResponse>>;
 
 #[derive(Debug, Clone)]
 pub struct PatchPathResponse {

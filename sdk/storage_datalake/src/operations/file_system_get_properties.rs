@@ -55,7 +55,7 @@ impl GetFileSystemPropertiesBuilder {
     }
 }
 
-azure_core::future!(GetFileSystemProperties);
+pub type GetFileSystemProperties = futures::future::BoxFuture<'static, azure_core::Result<GetFileSystemPropertiesResponse>>;
 
 #[derive(Debug, Clone)]
 pub struct GetFileSystemPropertiesResponse {

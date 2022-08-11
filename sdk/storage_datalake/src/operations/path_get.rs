@@ -73,7 +73,7 @@ impl GetFileBuilder {
     }
 }
 
-azure_core::future!(GetFile);
+pub type GetFile = futures::future::BoxFuture<'static, azure_core::Result<GetFileResponse>>;
 
 #[derive(Debug, Clone)]
 pub struct GetFileResponse {

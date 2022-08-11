@@ -63,7 +63,7 @@ impl SetFileSystemPropertiesBuilder {
     }
 }
 
-azure_core::future!(SetFileSystemProperties);
+pub type SetFileSystemProperties = futures::future::BoxFuture<'static, azure_core::Result<SetFileSystemPropertiesResponse>>;
 
 #[derive(Debug, Clone)]
 pub struct SetFileSystemPropertiesResponse {

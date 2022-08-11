@@ -65,7 +65,8 @@ where
     }
 }
 
-azure_core::future!(InsertEntity<T>);
+pub type InsertEntity<T> =
+    futures::future::BoxFuture<'static, azure_core::Result<InsertEntityResponse<T>>>;
 
 #[cfg(feature = "into_future")]
 impl<T: DeserializeOwned + Send> std::future::IntoFuture for InsertEntityBuilder<T> {

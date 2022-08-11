@@ -77,7 +77,7 @@ impl<C: PathClient + 'static> HeadPathBuilder<C> {
     }
 }
 
-azure_core::future!(HeadPath);
+pub type HeadPath = futures::future::BoxFuture<'static, azure_core::Result<HeadPathResponse>>;
 
 #[derive(Debug, Clone)]
 pub struct HeadPathResponse {

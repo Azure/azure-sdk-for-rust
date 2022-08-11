@@ -77,7 +77,7 @@ impl<T: DeserializeOwned + Send> GetDocumentBuilder<T> {
     }
 }
 
-azure_core::future!(GetDocument<T>);
+pub type GetDocument<T> = futures::future::BoxFuture<'static, azure_core::Result<GetDocumentResponse<T>>>;
 
 #[cfg(feature = "into_future")]
 impl<T: DeserializeOwned + Send> std::future::IntoFuture for GetDocumentBuilder<T> {

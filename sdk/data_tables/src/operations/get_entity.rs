@@ -50,7 +50,8 @@ impl<T: DeserializeOwned + Send> GetEntityBuilder<T> {
     }
 }
 
-azure_core::future!(GetEntity<T>);
+pub type GetEntity<T> =
+    futures::future::BoxFuture<'static, azure_core::Result<GetEntityResponse<T>>>;
 
 #[cfg(feature = "into_future")]
 impl<T: DeserializeOwned + Send> std::future::IntoFuture for GetEntityBuilder<T> {

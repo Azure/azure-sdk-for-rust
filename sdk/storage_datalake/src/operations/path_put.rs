@@ -87,7 +87,7 @@ impl<C: PathClient + 'static> PutPathBuilder<C> {
     }
 }
 
-azure_core::future!(PutPath);
+pub type PutPath = futures::future::BoxFuture<'static, azure_core::Result<PutPathResponse>>;
 
 #[derive(Debug, Clone)]
 pub struct PutPathResponse {
@@ -187,6 +187,6 @@ impl<C: PathClient + 'static> RenamePathBuilder<C> {
     }
 }
 
-azure_core::future!(RenamePath);
+pub type RenamePath = futures::future::BoxFuture<'static, azure_core::Result<RenamePathResponse>>;
 
 type RenamePathResponse = ();
