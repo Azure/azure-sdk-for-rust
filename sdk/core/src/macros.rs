@@ -58,8 +58,8 @@ macro_rules! setters {
 /// For the following code:
 /// ```
 /// # #[derive(Clone, Debug)]
-/// # struct DatabaseClient;
-/// # struct CreateCollectionResponse;
+/// # pub struct DatabaseClient;
+/// # pub struct CreateCollectionResponse;
 /// azure_core::operation! {
 ///    CreateCollection,
 ///    client: DatabaseClient,
@@ -74,8 +74,8 @@ macro_rules! setters {
 /// # use azure_core::setters;
 /// # use azure_core::Context;
 /// # #[derive(Clone, Debug)]
-/// # struct DatabaseClient;
-/// # struct CreateCollectionResponse;
+/// # pub struct DatabaseClient;
+/// # pub struct CreateCollectionResponse;
 /// #[derive(Debug, Clone)]
 /// pub struct CreateCollectionBuilder {
 ///     client: DatabaseClient,
