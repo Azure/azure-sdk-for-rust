@@ -49,7 +49,7 @@ fn main() -> Result<()> {
     Ok(())
 }
 
-fn gen_mgmt(only_packages: &Vec<&str>) -> Result<()> {
+fn gen_mgmt(only_packages: &[&str]) -> Result<()> {
     const OUTPUT_FOLDER: &str = "../mgmt";
     let run_config = &mut RunConfig::new("azure_mgmt_");
     for (i, spec) in get_mgmt_readmes()?.iter().enumerate() {
@@ -67,7 +67,7 @@ fn gen_mgmt(only_packages: &Vec<&str>) -> Result<()> {
     Ok(())
 }
 
-fn gen_svc(only_packages: &Vec<&str>) -> Result<()> {
+fn gen_svc(only_packages: &[&str]) -> Result<()> {
     const OUTPUT_FOLDER: &str = "../svc";
     let run_config = &mut RunConfig::new("azure_svc_");
     for (i, spec) in get_svc_readmes()?.iter().enumerate() {
@@ -85,7 +85,7 @@ fn gen_svc(only_packages: &Vec<&str>) -> Result<()> {
     Ok(())
 }
 
-fn gen_services_workspace(only_packages: &Vec<&str>) -> Result<()> {
+fn gen_services_workspace(only_packages: &[&str]) -> Result<()> {
     let dirs: Vec<String> = if only_packages.is_empty() {
         list_dirs()?
             .iter()
@@ -141,7 +141,7 @@ fn gen_workflow_publish_services() -> Result<()> {
 }
 
 /// Run `cargo fmt` on the services workspace or a subset of packages.
-fn fmt(only_packages: &Vec<&str>) -> Result<()> {
+fn fmt(only_packages: &[&str]) -> Result<()> {
     let services_dir = "../";
     let mut args = vec!["fmt"];
     if !only_packages.is_empty() {
