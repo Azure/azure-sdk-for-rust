@@ -32,10 +32,11 @@ impl Args {
 
 fn main() -> Result<()> {
     let args = Args::parse();
-    gen_mgmt(&args.packages())?;
-    gen_svc(&args.packages())?;
-    if args.packages().is_empty() {
-        gen_services_workspace()?;
+    let packages = &args.packages();
+    gen_mgmt(packages)?;
+    gen_svc(packages)?;
+    gen_services_workspace(packages)?;
+    if packages.is_empty() {
         gen_workflow_check_all_services()?;
         if args.publish {
             gen_workflow_publish_sdks()?;
@@ -43,7 +44,7 @@ fn main() -> Result<()> {
         }
     }
     if args.fmt {
-        fmt(&args.packages())?;
+        fmt(packages)?;
     }
     Ok(())
 }
@@ -84,9 +85,18 @@ fn gen_svc(only_packages: &Vec<&str>) -> Result<()> {
     Ok(())
 }
 
-fn gen_services_workspace() -> Result<()> {
-    let dirs = list_dirs()?;
-    let dirs: Vec<String> = dirs.iter().map(|dir| dir.as_str().replace('\\', "/").replace("../", "")).collect();
+fn gen_services_workspace(only_packages: &Vec<&str>) -> Result<()> {
+    let dirs: Vec<String> = if only_packages.is_empty() {
+        list_dirs()?
+            .iter()
+            .map(|dir| dir.as_str().replace('\\', "/").replace("../", ""))
+            .collect()
+    } else {
+        only_packages
+            .iter()
+            .map(|p| p.replace("azure_mgmt_", "mgmt/").replace("azure_svc_", "svc/"))
+            .collect()
+    };
 
     let yml = CargoToml { dirs };
     yml.create("../Cargo.toml")?;
