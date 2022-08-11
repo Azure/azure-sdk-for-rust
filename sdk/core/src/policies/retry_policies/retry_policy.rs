@@ -34,8 +34,7 @@ const RETRY_STATUSES: &[StatusCode] = &[
     StatusCode::GatewayTimeout,
 ];
 
-#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
-#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
+#[async_trait::async_trait]
 impl<T> Policy for T
 where
     T: RetryPolicy + std::fmt::Debug + Send + Sync,

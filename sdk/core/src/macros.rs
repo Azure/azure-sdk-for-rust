@@ -289,10 +289,6 @@ macro_rules! future {
     };
     ($name:ident<$($generic:ident)?>) => {
         azure_core::__private::paste! {
-        #[cfg(target_arch = "wasm32")]
-        pub type $name<$($generic)*> =
-            std::pin::Pin<std::boxed::Box<dyn std::future::Future<Output = azure_core::Result<[<$name Response>]<$($generic)*>>> + 'static>>;
-        #[cfg(not(target_arch = "wasm32"))]
         pub type $name<$($generic)*> =
             futures::future::BoxFuture<'static, azure_core::Result<[<$name Response>]<$($generic)*>>>;
         }

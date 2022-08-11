@@ -34,8 +34,7 @@ impl AutoRefreshingTokenCredential {
     }
 }
 
-#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
-#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
+#[async_trait::async_trait]
 impl TokenCredential for AutoRefreshingTokenCredential {
     async fn get_token(&self, resource: &str) -> azure_core::Result<TokenResponse> {
         if let Some(Ok(token)) = self.current_token.read().await.as_ref() {

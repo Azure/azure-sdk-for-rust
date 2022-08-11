@@ -69,15 +69,13 @@ async fn main() -> azure_core::Result<()> {
     // First, we'll look at the results as JSON.
     let mut stream = query.clone().into_stream::<serde_json::Value>();
     while let Some(respo) = stream.next().await {
-        let respo = respo?;
-        println!("JSON: {:#?}", respo.results);
+        println!("JSON: {:#?}", respo?.results);
     }
 
     // Then, we'll look at the results as `Family` structs.
     let mut stream = query.into_stream::<Family>();
     while let Some(respo) = stream.next().await {
-        let respo = respo?;
-        println!("Structs: {:#?}", respo.results);
+        println!("Structs: {:#?}", respo?.results);
     }
 
     Ok(())

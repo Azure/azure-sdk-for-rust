@@ -25,8 +25,7 @@ pub type PolicyResult = crate::error::Result<Response>;
 /// The only runtime enforced check is that the last policy must be a Transport policy. It's up to
 /// the implementer to call the following policy.
 /// The `C` generic represents the *contents* of the AuthorizationPolicy specific of this pipeline.
-#[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
-#[cfg_attr(not(target_arch = "wasm32"), async_trait)]
+#[async_trait]
 pub trait Policy: Send + Sync + std::fmt::Debug {
     async fn send(
         &self,
