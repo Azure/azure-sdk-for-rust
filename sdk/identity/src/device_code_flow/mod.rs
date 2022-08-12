@@ -37,7 +37,7 @@ where
     );
 
     let encoded = form_urlencoded::Serializer::new(String::new())
-        .append_pair("client_id", client_id.as_str())
+        .append_pair("client_id", client_id)
         .append_pair("scope", &scopes.join(" "))
         .finish();
 
