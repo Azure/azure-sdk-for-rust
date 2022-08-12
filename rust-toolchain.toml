@@ -1,5 +1,3 @@
 [toolchain]
 channel = "1.62.0"
-components = [ "rustfmt", "clippy", "llvm-tools-preview" ]
-targets = [ "x86_64-unknown-linux-gnu", "x86_64-apple-darwin" ]
-profile = "default"
+components = [ "rustfmt", "clippy" ]
