@@ -23,17 +23,18 @@ pub async fn exchange(
     client_secret: Option<&ClientSecret>,
     refresh_token: &AccessToken,
 ) -> azure_core::Result<RefreshTokenResponse> {
-    let mut encoded = form_urlencoded::Serializer::new(String::new());
-    let encoded = encoded.append_pair("grant_type", "refresh_token");
-    let encoded = encoded.append_pair("client_id", client_id.as_str());
-    // optionally add the client secret
-    let encoded = if let Some(client_secret) = client_secret {
-        encoded.append_pair("client_secret", client_secret.secret())
-    } else {
-        encoded
+    let encoded = {
+        let mut encoded = &mut form_urlencoded::Serializer::new(String::new());
+        encoded = encoded
+            .append_pair("grant_type", "refresh_token")
+            .append_pair("client_id", client_id.as_str())
+            .append_pair("refresh_token", refresh_token.secret());
+        // optionally add the client secret
+        if let Some(client_secret) = client_secret {
+            encoded = encoded.append_pair("client_secret", client_secret.secret())
+        };
+        encoded.finish()
     };
-    let encoded = encoded.append_pair("refresh_token", refresh_token.secret());
-    let encoded = encoded.finish();
 
     let url = Url::parse(&format!(
         "https://login.microsoftonline.com/{}/oauth2/v2.0/token",
@@ -135,5 +136,23 @@ impl fmt::Display for RefreshTokenError {
             writeln!(f, "suberror: {}", suberror)?;
         }
         writeln!(f, "description: {}", self.error_description)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn require_send<T: Send>(_t: T) {}
+
+    #[test]
+    fn ensure_that_exchange_is_send() {
+        require_send(exchange(
+            azure_core::new_http_client(),
+            "UNUSED",
+            &ClientId::new("UNUSED".to_owned()),
+            None,
+            &AccessToken::new("UNUSED"),
+        ));
     }
 }
