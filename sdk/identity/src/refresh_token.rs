@@ -24,16 +24,15 @@ pub async fn exchange(
     refresh_token: &AccessToken,
 ) -> azure_core::Result<RefreshTokenResponse> {
     let encoded = {
-        let mut encoded = form_urlencoded::Serializer::new(String::new());
-        let encoded = encoded.append_pair("grant_type", "refresh_token");
-        let encoded = encoded.append_pair("client_id", client_id.as_str());
+        let mut encoded = &mut form_urlencoded::Serializer::new(String::new());
+        encoded = encoded
+            .append_pair("grant_type", "refresh_token")
+            .append_pair("client_id", client_id.as_str())
+            .append_pair("refresh_token", refresh_token.secret());
         // optionally add the client secret
-        let encoded = if let Some(client_secret) = client_secret {
-            encoded.append_pair("client_secret", client_secret.secret())
-        } else {
-            encoded
+        if let Some(client_secret) = client_secret {
+            encoded = encoded.append_pair("client_secret", client_secret.secret())
         };
-        let encoded = encoded.append_pair("refresh_token", refresh_token.secret());
         encoded.finish()
     };
 
