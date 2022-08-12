@@ -120,7 +120,8 @@ impl ContainerClient {
         Ok(url)
     }
 
-    pub(crate) fn url(&self) -> azure_core::Result<url::Url> {
+    /// Full URL for the container.
+    pub fn url(&self) -> azure_core::Result<url::Url> {
         self.storage_client
             .blob_url_with_segments(Some(self.container_name.as_str()).into_iter())
     }
