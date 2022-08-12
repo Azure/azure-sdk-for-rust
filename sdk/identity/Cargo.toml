@@ -16,7 +16,6 @@ edition = "2021"
 azure_core = { path = "../core", version = "0.4" }
 async-lock = "2.5"
 oauth2 = { version = "4.0.0", default-features = false }
-http = "0.2"
 url = "2.2"
 futures = "0.3"
 serde = { version = "1.0", features = ["derive"] }

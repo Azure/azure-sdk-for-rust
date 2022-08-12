@@ -115,8 +115,8 @@ fn try_from_method(method: &oauth2::http::Method) -> azure_core::Result<azure_co
 
 fn try_from_headers(
     _headers: &azure_core::headers::Headers,
-) -> azure_core::Result<http::HeaderMap> {
-    let header_map = http::HeaderMap::new();
+) -> azure_core::Result<oauth2::http::HeaderMap> {
+    let header_map = oauth2::http::HeaderMap::new();
     // TODO
     // for (name, value) in headers.iter() {
     //     let name = name.as_str();
@@ -131,6 +131,6 @@ fn try_from_headers(
     Ok(header_map)
 }
 
-fn try_from_status(status: azure_core::StatusCode) -> azure_core::Result<http::StatusCode> {
-    http::StatusCode::from_u16(status as u16).map_kind(ErrorKind::DataConversion)
+fn try_from_status(status: azure_core::StatusCode) -> azure_core::Result<oauth2::http::StatusCode> {
+    oauth2::http::StatusCode::from_u16(status as u16).map_kind(ErrorKind::DataConversion)
 }
