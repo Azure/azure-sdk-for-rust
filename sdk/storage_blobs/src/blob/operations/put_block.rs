@@ -36,7 +36,7 @@ impl PutBlockBuilder {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PutBlockResponse {
     pub content_md5: Option<ConsistencyMD5>,
     pub content_crc64: Option<ConsistencyCRC64>,

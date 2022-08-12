@@ -1,6 +1,6 @@
 use crate::blob::{BlobBlockType, BlockWithSizeList};
 
-#[derive(Default, Debug, Clone, PartialEq)]
+#[derive(Default, Debug, Clone, PartialEq, Eq)]
 pub struct BlockList {
     pub blocks: Vec<BlobBlockType>,
 }

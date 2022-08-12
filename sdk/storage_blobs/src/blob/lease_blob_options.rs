@@ -1,6 +1,6 @@
 use azure_core::prelude::*;
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct LeaseBlobOptions {
     pub lease_id: Option<LeaseId>,
     pub timeout: Option<u64>,

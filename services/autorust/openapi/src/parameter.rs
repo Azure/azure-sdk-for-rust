@@ -50,7 +50,7 @@ pub struct Parameter {
     pub x_ms_header_collection_prefix: Option<String>,
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub enum ParameterType {
     Path,
@@ -61,7 +61,7 @@ pub enum ParameterType {
     FormData,
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub enum CollectionFormat {
     Csv,

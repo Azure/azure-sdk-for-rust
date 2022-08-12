@@ -3,7 +3,7 @@ use crate::{headers, Header};
 /// Conditional request header based on the value of the object's sequence number
 ///
 /// Ref: <https://docs.microsoft.com/en-us/rest/api/storageservices/put-page-from-url>
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum IfSequenceNumber {
     /// If the object's sequence number is less than the specified value, the
     /// request proceeds; otherwise it fails with SequenceNumberConditionNotMet

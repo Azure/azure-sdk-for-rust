@@ -7,7 +7,7 @@ pub type Result<T> = std::result::Result<T, Error>;
 /// The kind of error
 ///
 /// The classification of error is intentionally fairly coarse.
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum ErrorKind {
     /// An error performing IO
     Io,

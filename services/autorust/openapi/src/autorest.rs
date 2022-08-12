@@ -6,7 +6,7 @@ use indexmap::IndexMap;
 use serde::{Deserialize, Serialize};
 
 /// https://github.com/Azure/autorest/blob/master/docs/extensions/readme.md#x-ms-enum
-#[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct MsEnum {
     pub name: String,
@@ -16,7 +16,7 @@ pub struct MsEnum {
     pub values: Vec<MsEnumValue>,
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
 #[serde()]
 pub struct MsEnumValue {
     pub value: serde_json::Value,
@@ -28,7 +28,7 @@ pub struct MsEnumValue {
 
 /// provides insight to Autorest on how to generate code. It doesn't alter the modeling of what is actually sent on the wire
 /// https://github.com/Azure/autorest/blob/master/docs/extensions/readme.md#x-ms-mutability
-#[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "lowercase")]
 pub enum MsMutability {
     Create,
@@ -38,7 +38,7 @@ pub enum MsMutability {
 
 /// allows paging through lists of data
 /// https://github.com/Azure/autorest/blob/master/docs/extensions/readme.md#x-ms-pageable
-#[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct MsPageable {
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -54,14 +54,14 @@ pub struct MsPageable {
 pub type MsExamples = IndexMap<String, ReferenceOr<Operation>>;
 
 /// https://github.com/Azure/autorest/blob/master/docs/extensions/readme.md#x-ms-long-running-operation-options
-#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Default)]
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct MsLongRunningOperationOptions {
     #[serde(rename = "final-state-via")]
     pub final_state_via: MsLongRunningOperationOptionsFinalStateVia,
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "kebab-case")]
 pub enum MsLongRunningOperationOptionsFinalStateVia {
     AzureAsyncOperation,
@@ -76,14 +76,14 @@ impl Default for MsLongRunningOperationOptionsFinalStateVia {
 }
 
 /// https://github.com/Azure/autorest/blob/master/docs/extensions/readme.md#x-ms-parameter-location
-#[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub enum MsParameterLocation {
     Client,
     Method,
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(untagged)]
 pub enum MsCodeGenerationSetting {
     String(String),
@@ -106,7 +106,7 @@ pub struct MsParameterizedHost {
 
 /// groups method parameters in generated clients
 /// https://github.com/Azure/autorest/blob/master/docs/extensions/readme.md#x-ms-parameter-grouping
-#[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
 pub struct MsParameterGrouping {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -115,7 +115,7 @@ pub struct MsParameterGrouping {
 }
 
 // specify xml serialization
-#[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
 pub struct MsXml {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,

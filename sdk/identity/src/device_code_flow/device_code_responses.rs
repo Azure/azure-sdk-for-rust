@@ -3,7 +3,7 @@ use serde::Deserialize;
 use std::fmt;
 
 /// Error response returned from the device code flow.
-#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
 pub struct DeviceCodeErrorResponse {
     /// Name of the error.
     pub error: String,

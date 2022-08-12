@@ -1,7 +1,7 @@
 use azure_core::AppendToUrlQuery;
 use std::borrow::Cow;
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Filter(Cow<'static, str>);
 
 impl Filter {

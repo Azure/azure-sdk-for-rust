@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 pub type ConfigurationResponse = Configuration;
 
 /// Representation of a multiple configurations response
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Eq)]
 pub struct MultipleConfigurationResponse(Vec<ConfigurationResponse>);
 
 impl ConfigurationResponse {

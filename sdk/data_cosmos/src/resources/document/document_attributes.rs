@@ -1,7 +1,7 @@
 use azure_core::{prelude::IfMatchCondition, CollectedResponse};
 
 /// A document's attributes
-#[derive(Default, Serialize, Deserialize, Debug, Clone, PartialEq)]
+#[derive(Default, Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 pub struct DocumentAttributes {
     #[serde(rename = "_rid")]
     rid: String,

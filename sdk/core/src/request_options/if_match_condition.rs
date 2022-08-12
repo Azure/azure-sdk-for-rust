@@ -1,7 +1,7 @@
 use crate::headers::{self, Header};
 use headers::{IF_MATCH, IF_NONE_MATCH};
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum IfMatchCondition {
     Match(String),
     NotMatch(String),

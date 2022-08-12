@@ -4,7 +4,7 @@ macro_rules! response_from_headers {
     ($cn:ident, $($fh:path => $na:ident: $typ:ty),+) => {
         use azure_core::headers::Headers;
 
-        #[derive(Debug, Clone, PartialEq)]
+        #[derive(Debug, Clone, PartialEq, Eq)]
         pub struct $cn {
              $(pub $na: $typ),+,
         }

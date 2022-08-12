@@ -4,7 +4,7 @@ use crate::{
 };
 use time::OffsetDateTime;
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum IfSourceModifiedSinceCondition {
     Modified(OffsetDateTime),
     Unmodified(OffsetDateTime),

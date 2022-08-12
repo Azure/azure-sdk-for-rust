@@ -39,14 +39,14 @@ pub struct PropertyName {
 }
 
 /// Different types of code generators to run
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Runs {
     Models,
     Operations,
 }
 
 /// Settings for the entire run, generating multiple crates
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct RunConfig {
     pub crate_name_prefix: &'static str,
     pub runs: Vec<Runs>,
@@ -64,7 +64,7 @@ impl RunConfig {
 }
 
 /// Settings for generating of a single crate
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct CrateConfig<'a> {
     pub run_config: &'a RunConfig,
     pub input_files: Vec<Utf8PathBuf>,
