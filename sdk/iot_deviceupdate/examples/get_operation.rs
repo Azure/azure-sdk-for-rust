@@ -15,7 +15,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let operation_id = env::var("DEVICE_UPDATE_OPERATION_ID")
         .expect("Missing DEVICE_UPDATE_OPERATION_ID environment variable.");
 
+    let http_client = azure_core::new_http_client();
     let creds = Arc::new(ClientSecretCredential::new(
+        http_client,
         tenant_id,
         client_id,
         client_secret,

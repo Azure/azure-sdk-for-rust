@@ -17,7 +17,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let secret_version =
         env::var("SECRET_VERSION").expect("Missing SECRET_VERSION environment variable.");
 
+    let http_client = azure_core::new_http_client();
     let creds = ClientSecretCredential::new(
+        http_client,
         tenant_id,
         client_id,
         client_secret,

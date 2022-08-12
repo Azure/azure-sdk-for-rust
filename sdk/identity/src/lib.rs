@@ -50,43 +50,87 @@ pub mod device_code_flow;
 pub mod refresh_token;
 mod token_credentials;
 
+use std::sync::Arc;
+
+use azure_core::{
+    error::{Error, ErrorKind, ResultExt},
+    HttpClient, Request,
+};
+
 pub use crate::token_credentials::*;
 
-pub(crate) async fn oauth2_async_http_client(
-    _request: oauth2::HttpRequest,
-) -> Result<oauth2::HttpResponse, azure_core::error::Error> {
-    // let client = {
-    //     let builder = reqwest::Client::builder();
+pub(crate) struct Oauth2HttpClient {
+    http_client: Arc<dyn HttpClient>,
+}
 
-    //     // Following redirects opens the client up to SSRF vulnerabilities.
-    //     // but this is not possible to prevent on wasm targets
-    //     #[cfg(not(target_arch = "wasm32"))]
-    //     let builder = builder.redirect(reqwest::redirect::Policy::none());
+impl Oauth2HttpClient {
+    /// Create a new Oauth2HttpClient
+    pub fn new(http_client: Arc<dyn HttpClient>) -> Self {
+        Self { http_client }
+    }
 
-    //     builder.build().map_err(Error::Reqwest)?
-    // };
+    pub(crate) async fn request_async(
+        &self,
+        oauth2_request: oauth2::HttpRequest,
+    ) -> Result<oauth2::HttpResponse, azure_core::error::Error> {
+        let method = try_from_method(&oauth2_request.method)?;
+        let request = Request::new(oauth2_request.url, method);
+        let response = self.http_client.execute_request(&request).await?;
+        let status_code = try_from_status(response.status())?;
+        let headers = try_from_headers(response.headers())?;
+        let body = response.into_body().collect().await?.to_vec();
+        Ok(oauth2::HttpResponse {
+            status_code,
+            headers,
+            body,
+        })
+    }
+}
 
-    // let mut request_builder = client
-    //     .request(request.method, request.url.as_str())
-    //     .body(request.body);
-    // for (name, value) in &request.headers {
-    //     request_builder = request_builder.header(name.as_str(), value.as_bytes());
+fn try_from_method(method: &oauth2::http::Method) -> azure_core::Result<azure_core::Method> {
+    if method == oauth2::http::Method::GET {
+        Ok(azure_core::Method::Get)
+    } else if method == oauth2::http::Method::POST {
+        Ok(azure_core::Method::Post)
+    } else if method == oauth2::http::Method::PUT {
+        Ok(azure_core::Method::Put)
+    } else if method == oauth2::http::Method::DELETE {
+        Ok(azure_core::Method::Delete)
+    } else if method == oauth2::http::Method::HEAD {
+        Ok(azure_core::Method::Head)
+    } else if method == oauth2::http::Method::OPTIONS {
+        Ok(azure_core::Method::Options)
+    } else if method == oauth2::http::Method::CONNECT {
+        Ok(azure_core::Method::Connect)
+    } else if method == oauth2::http::Method::PATCH {
+        Ok(azure_core::Method::Patch)
+    } else if method == oauth2::http::Method::TRACE {
+        Ok(azure_core::Method::Trace)
+    } else {
+        Err(Error::with_message(ErrorKind::DataConversion, || {
+            format!("unsupported oauth2::http::Method {}", method)
+        }))
+    }
+}
+
+fn try_from_headers(
+    _headers: &azure_core::headers::Headers,
+) -> azure_core::Result<http::HeaderMap> {
+    let header_map = http::HeaderMap::new();
+    // TODO
+    // for (name, value) in headers.iter() {
+    //     let name = name.as_str();
+    //     let value = value.as_str();
+    //     header_map.append(
+    //         name,
+    //         http::HeaderValue::from_str(&value).with_context(ErrorKind::DataConversion, || {
+    //             format!("unable to convert http header '{}'", name)
+    //         })?,
+    //     );
     // }
-    // let request = request_builder.build().map_err(Error::Reqwest)?;
+    Ok(header_map)
+}
 
-    // let response = client.execute(request).await.map_err(Error::Reqwest)?;
-
-    // let status_code = response.status();
-    // let headers = response.headers().to_owned();
-    // let chunks = response.bytes().await.map_err(Error::Reqwest)?;
-
-    let status_code = http::StatusCode::CREATED;
-    let headers = http::HeaderMap::new();
-    let body = vec![];
-
-    Ok(oauth2::HttpResponse {
-        status_code,
-        headers,
-        body,
-    })
+fn try_from_status(status: azure_core::StatusCode) -> azure_core::Result<http::StatusCode> {
+    http::StatusCode::from_u16(status as u16).map_kind(ErrorKind::DataConversion)
 }

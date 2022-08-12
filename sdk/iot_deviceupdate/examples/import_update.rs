@@ -14,7 +14,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .expect("Missing DEVICE_UPDATE_INSTANCE_ID environment variable.");
     let import_json = env::var("IMPORT_VALUE").expect("Missing IMPORT_VALUE environment variable.");
 
+    let http_client = azure_core::new_http_client();
     let creds = Arc::new(ClientSecretCredential::new(
+        http_client,
         tenant_id,
         client_id,
         client_secret,
