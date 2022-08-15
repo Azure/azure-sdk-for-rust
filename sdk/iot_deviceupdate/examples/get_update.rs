@@ -19,9 +19,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let version = env::var("DEVICE_UPDATE_VERSION")
         .expect("Missing DEVICE_UPDATE_VERSION environment variable.");
 
-    let http_client = azure_core::new_http_client();
     let creds = Arc::new(ClientSecretCredential::new(
-        http_client,
+        azure_core::new_http_client(),
         tenant_id,
         client_id,
         client_secret,

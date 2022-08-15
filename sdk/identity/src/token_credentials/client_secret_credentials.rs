@@ -1,4 +1,4 @@
-use crate::Oauth2HttpClient;
+use crate::oauth2_http_client::Oauth2HttpClient;
 use azure_core::auth::{AccessToken, TokenCredential, TokenResponse};
 use azure_core::error::{ErrorKind, ResultExt};
 use azure_core::HttpClient;
@@ -142,7 +142,7 @@ impl TokenCredential for ClientSecretCredential {
         let token_result = client
             .exchange_client_credentials()
             .add_scope(Scope::new(format!("{}/.default", resource)))
-            .request_async(|request| oauth_http_client.request_async(request))
+            .request_async(|request| oauth_http_client.request(request))
             .await
             .map(|r| {
                 use oauth2::TokenResponse as _;
