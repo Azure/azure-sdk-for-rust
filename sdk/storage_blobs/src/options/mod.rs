@@ -43,11 +43,3 @@ request_query!(
     VersionId,
     "version_id"
 );
-
-request_query!(
-    /// This type could also be a DateTime but the docs clearly states to treat is as opaque so we do not convert it in any way.
-    ///
-    /// See: <https://docs.microsoft.com/rest/api/storageservices/get-blob>"]
-    Snapshot,
-    "snapshot"
-);

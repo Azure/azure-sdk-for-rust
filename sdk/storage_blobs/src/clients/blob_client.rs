@@ -1,3 +1,4 @@
+use crate::blob::Snapshot;
 use crate::{
     blob::operations::*,
     options::{BA512Range, Tags},

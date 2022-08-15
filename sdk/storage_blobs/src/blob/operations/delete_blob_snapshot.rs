@@ -1,3 +1,4 @@
+use crate::blob::Snapshot;
 use crate::{blob::operations::DeleteBlobResponse, prelude::*};
 use azure_core::{headers::Headers, prelude::*};
 
