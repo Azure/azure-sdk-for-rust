@@ -113,6 +113,7 @@ impl SecretClient {
     /// ```no_run
     /// use azure_security_keyvault::KeyvaultClient;
     /// use azure_identity::DefaultAzureCredential;
+    /// use futures::StreamExt;
     /// use tokio::runtime::Runtime;
     /// use std::sync::Arc;
     ///
@@ -122,7 +123,7 @@ impl SecretClient {
     ///     &"KEYVAULT_URL",
     ///     Arc::new(creds),
     ///     ).unwrap().secret_client();
-    ///     let secret_versions = client.get_versions("SECRET_NAME").into_future().await.unwrap();
+    ///     let secret_versions = client.get_versions("SECRET_NAME").into_stream().next().await.unwrap();
     ///     dbg!(&secret_versions);
     /// }
     ///

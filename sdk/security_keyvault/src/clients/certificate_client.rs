@@ -57,6 +57,7 @@ impl CertificateClient {
     /// use azure_security_keyvault::KeyvaultClient;
     /// use azure_identity::DefaultAzureCredential;
     /// use tokio::runtime::Runtime;
+    /// use futures::StreamExt;
     /// use std::sync::Arc;
     ///
     /// async fn example() {
@@ -65,7 +66,7 @@ impl CertificateClient {
     ///         &"KEYVAULT_URL",
     ///         Arc::new(creds),
     ///     ).unwrap().certificate_client();
-    ///     let certificate_versions = client.get_versions("NAME").into_future().await.unwrap();
+    ///     let certificate_versions = client.get_versions("NAME").into_stream().next().await.unwrap();
     ///     dbg!(&certificate_versions);
     /// }
     ///
@@ -160,6 +161,7 @@ impl CertificateClient {
     /// ```no_run
     /// use azure_security_keyvault::KeyvaultClient;
     /// use azure_identity::DefaultAzureCredential;
+    /// use futures::StreamExt;
     /// use tokio::runtime::Runtime;
     /// use std::sync::Arc;
     ///
@@ -169,7 +171,7 @@ impl CertificateClient {
     ///          &"KEYVAULT_URL",
     ///          Arc::new(creds),
     ///     ).unwrap().certificate_client();
-    ///     let certificates = client.list_certificates().into_future().await.unwrap();
+    ///     let certificates = client.list_certificates().into_stream().next().await.unwrap();
     ///     dbg!(&certificates);
     /// }
     ///
