@@ -2,13 +2,11 @@ use serde::Deserialize;
 use time::OffsetDateTime;
 
 #[derive(Deserialize, Debug)]
-pub(crate) struct KeyVaultCertificateBaseIdentifierAttributedRaw {
+pub struct KeyVaultCertificateBaseIdentifierAttributes {
     pub enabled: bool,
-    #[serde(default)]
-    #[serde(with = "azure_core::date::timestamp::option")]
+    #[serde(default, with = "azure_core::date::timestamp::option")]
     pub exp: Option<OffsetDateTime>,
-    #[serde(default)]
-    #[serde(with = "azure_core::date::timestamp::option")]
+    #[serde(default, with = "azure_core::date::timestamp::option")]
     pub nbf: Option<OffsetDateTime>,
     #[serde(with = "azure_core::date::timestamp")]
     pub created: OffsetDateTime,
@@ -17,16 +15,16 @@ pub(crate) struct KeyVaultCertificateBaseIdentifierAttributedRaw {
 }
 
 #[derive(Deserialize, Debug)]
-pub(crate) struct KeyVaultCertificateBaseIdentifierRaw {
+pub struct KeyVaultCertificateBaseIdentifier {
     pub id: String,
     #[allow(unused)]
     pub x5t: String,
-    pub attributes: KeyVaultCertificateBaseIdentifierAttributedRaw,
+    pub attributes: KeyVaultCertificateBaseIdentifierAttributes,
 }
 
 #[derive(Deserialize, Debug)]
-pub(crate) struct KeyVaultGetCertificatesResponse {
-    pub value: Vec<KeyVaultCertificateBaseIdentifierRaw>,
+pub struct KeyVaultGetCertificatesResponse {
+    pub value: Vec<KeyVaultCertificateBaseIdentifier>,
     #[serde(rename = "nextLink")]
     pub next_link: Option<String>,
 }
@@ -45,11 +43,9 @@ pub(crate) struct KeyVaultGetCertificateResponse {
 #[derive(Deserialize, Debug)]
 pub(crate) struct KeyVaultGetCertificateResponseAttributes {
     pub enabled: bool,
-    #[serde(default)]
-    #[serde(with = "azure_core::date::timestamp::option")]
+    #[serde(default, with = "azure_core::date::timestamp::option")]
     pub exp: Option<OffsetDateTime>,
-    #[serde(default)]
-    #[serde(with = "azure_core::date::timestamp::option")]
+    #[serde(default, with = "azure_core::date::timestamp::option")]
     pub nbf: Option<OffsetDateTime>,
     #[serde(with = "azure_core::date::timestamp")]
     pub created: OffsetDateTime,

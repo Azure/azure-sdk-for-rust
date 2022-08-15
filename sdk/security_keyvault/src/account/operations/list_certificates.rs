@@ -1,65 +1,54 @@
 use crate::prelude::*;
-use azure_core::{headers::Headers, CollectedResponse, Method};
+use azure_core::{
+    error::Error, headers::Headers, CollectedResponse, Continuable, Method, Pageable,
+};
 use url::Url;
 
 operation! {
+    #[stream]
     ListCertificates,
     client: CertificateClient,
 }
 
 impl ListCertificatesBuilder {
-    pub fn into_future(mut self) -> ListCertificates {
-        Box::pin(async move {
-            let mut certificates = Vec::<CertificateProperties>::new();
+    pub fn into_stream(self) -> Pageable<KeyVaultGetCertificatesResponse, Error> {
+        let make_request = move |continuation: Option<String>| {
+            let this = self.clone();
+            let mut ctx = self.context.clone();
+            async move {
+                let mut uri = this.client.client.vault_url.clone();
+                uri.set_path("certificates");
 
-            let mut uri = self.client.client.vault_url.clone();
-            uri.set_path("certificates");
+                println!("url: {}", uri);
+                if let Some(continuation) = continuation {
+                    uri = Url::parse(&continuation)?;
+                }
 
-            loop {
                 let headers = Headers::new();
                 let mut request =
-                    self.client
+                    this.client
                         .client
                         .finalize_request(uri, Method::Get, headers, None)?;
 
-                let response = self
-                    .client
-                    .client
-                    .send(&mut self.context, &mut request)
-                    .await?;
+                let response = this.client.client.send(&mut ctx, &mut request).await?;
 
                 let response = CollectedResponse::from_response(response).await?;
                 let body = response.body();
 
-                let response =
-                    serde_json::from_slice::<KeyVaultGetCertificatesResponse>(body).unwrap();
-
-                certificates.extend(
-                    response
-                        .value
-                        .into_iter()
-                        .map(|s| CertificateProperties {
-                            id: s.id.to_owned(),
-                            name: s.id.split('/').collect::<Vec<_>>()[4].to_string(),
-                            version: s.id.split('/').collect::<Vec<_>>()[5].to_string(),
-                            enabled: s.attributes.enabled,
-                            created_on: s.attributes.created,
-                            updated_on: s.attributes.updated,
-                            not_before: s.attributes.nbf,
-                            expires_on: s.attributes.exp,
-                        })
-                        .collect::<Vec<CertificateProperties>>(),
-                );
-
-                match response.next_link {
-                    None => break,
-                    Some(u) => uri = Url::parse(&u).unwrap(),
-                }
+                let response = serde_json::from_slice::<KeyVaultGetCertificatesResponse>(body)?;
+                Ok(response)
             }
-
-            Ok(certificates)
-        })
+        };
+        Pageable::new(make_request)
     }
 }
 
-type ListCertificatesResponse = Vec<CertificateProperties>;
+type ListCertificatesResponse = KeyVaultGetCertificatesResponse;
+
+impl Continuable for ListCertificatesResponse {
+    type Continuation = String;
+
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
+    }
+}
