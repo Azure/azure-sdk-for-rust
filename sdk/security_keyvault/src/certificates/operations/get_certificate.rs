@@ -32,25 +32,9 @@ impl GetCertificateBuilder {
 
             let response: KeyVaultGetCertificateResponse = serde_json::from_slice(body)?;
 
-            Ok(KeyVaultCertificate {
-                key_id: response.kid,
-                secret_id: response.sid,
-                x5t: response.x5t,
-                cer: response.cer,
-                content_type: response.policy.secret_props.content_type,
-                properties: CertificateProperties {
-                    id: response.id,
-                    name: self.name.to_string(),
-                    version: version.to_string(),
-                    enabled: response.attributes.enabled,
-                    not_before: response.attributes.nbf,
-                    expires_on: response.attributes.exp,
-                    created_on: response.attributes.created,
-                    updated_on: response.attributes.updated,
-                },
-            })
+            Ok(response)
         })
     }
 }
 
-type GetCertificateResponse = KeyVaultCertificate;
+type GetCertificateResponse = KeyVaultGetCertificateResponse;

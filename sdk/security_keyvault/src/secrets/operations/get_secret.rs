@@ -31,16 +31,9 @@ impl GetSecretBuilder {
             let response = CollectedResponse::from_response(response).await?;
             let body = response.body();
             let response = serde_json::from_slice::<KeyVaultGetSecretResponse>(body)?;
-            Ok(KeyVaultSecret {
-                expires_on: response.attributes.exp,
-                enabled: response.attributes.enabled,
-                value: response.value,
-                created_on: response.attributes.created,
-                updated_on: response.attributes.updated,
-                id: response.id,
-            })
+            Ok(response)
         })
     }
 }
 
-type GetSecretResponse = KeyVaultSecret;
+type GetSecretResponse = KeyVaultGetSecretResponse;
