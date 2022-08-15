@@ -14,6 +14,7 @@ impl ListSecretsBuilder {
 
             let mut uri = self.client.client.vault_url.clone();
             uri.set_path("secrets");
+            uri.set_query(Some(API_VERSION_PARAM));
 
             loop {
                 let resp_body = self
