@@ -1,12 +1,14 @@
 use crate::{clients::pipeline::new_pipeline_from_options, prelude::*};
 use azure_core::{
     auth::TokenCredential,
+    date,
     error::{Error, ErrorKind},
     headers::*,
     Body, Context, Method, Pipeline, Request, Response,
 };
 use const_format::formatcp;
 use std::sync::Arc;
+use time::OffsetDateTime;
 use url::Url;
 
 pub const API_VERSION: &str = "7.0";
@@ -72,8 +74,8 @@ impl KeyvaultClient {
         headers: Headers,
         request_body: Option<Body>,
     ) -> azure_core::Result<Request> {
-        let dt = chrono::Utc::now();
-        let time = format!("{}", dt.format("%a, %d %h %Y %T GMT"));
+        let dt = OffsetDateTime::now_utc();
+        let time = date::to_rfc1123(&dt);
 
         url.set_query(Some(API_VERSION_PARAM));
 

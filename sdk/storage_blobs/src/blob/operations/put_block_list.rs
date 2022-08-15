@@ -2,7 +2,7 @@ use crate::prelude::*;
 use azure_core::{headers::*, prelude::*, RequestId};
 use azure_storage::{headers::content_md5_from_headers, ConsistencyMD5};
 use bytes::Bytes;
-use chrono::{DateTime, Utc};
+use time::OffsetDateTime;
 
 operation! {
     PutBlockList,
@@ -65,13 +65,13 @@ impl PutBlockListBuilder {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PutBlockListResponse {
     pub etag: String,
-    pub last_modified: DateTime<Utc>,
+    pub last_modified: OffsetDateTime,
     pub content_md5: ConsistencyMD5,
     pub request_id: RequestId,
-    pub date: DateTime<Utc>,
+    pub date: OffsetDateTime,
     pub request_server_encrypted: bool,
 }
 

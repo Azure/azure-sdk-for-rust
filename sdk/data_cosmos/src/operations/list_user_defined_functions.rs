@@ -3,12 +3,12 @@ use crate::prelude::*;
 use crate::resources::ResourceType;
 use crate::resources::UserDefinedFunction;
 use crate::ResourceQuota;
-use azure_core::collect_pinned_stream;
+
 use azure_core::headers::{
     continuation_token_from_headers_optional, item_count_from_headers, session_token_from_headers,
 };
 use azure_core::{prelude::*, Pageable, Response as HttpResponse};
-use chrono::{DateTime, Utc};
+use time::OffsetDateTime;
 
 operation! {
     #[stream]
@@ -67,7 +67,7 @@ pub struct ListUserDefinedFunctionsResponse {
     pub user_defined_functions: Vec<UserDefinedFunction>,
     pub content_location: String,
     pub server: String,
-    pub last_state_change: DateTime<Utc>,
+    pub last_state_change: OffsetDateTime,
     pub continuation_token: Option<Continuation>,
     pub resource_quota: Vec<ResourceQuota>,
     pub resource_usage: Vec<ResourceQuota>,
@@ -86,13 +86,13 @@ pub struct ListUserDefinedFunctionsResponse {
     pub service_version: String,
     pub activity_id: uuid::Uuid,
     pub gateway_version: String,
-    pub date: DateTime<Utc>,
+    pub date: OffsetDateTime,
 }
 
 impl ListUserDefinedFunctionsResponse {
     pub async fn try_from(response: HttpResponse) -> azure_core::Result<Self> {
-        let (_status_code, headers, pinned_stream) = response.deconstruct();
-        let body = collect_pinned_stream(pinned_stream).await?;
+        let (_status_code, headers, body) = response.deconstruct();
+        let body = body.collect().await?;
 
         #[derive(Debug, Deserialize)]
         struct Response<'a> {

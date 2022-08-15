@@ -3,7 +3,7 @@ use azure_core::error::Error;
 use serde::Deserialize;
 
 /// The representation of a module identity
-#[derive(Deserialize, Debug, PartialEq)]
+#[derive(Deserialize, Debug, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct ModuleIdentityResponse {
     /// The authentication mechanism of the module.
@@ -38,5 +38,16 @@ impl std::convert::TryFrom<crate::service::CollectedResponse> for ModuleIdentity
         let module_identity_response: ModuleIdentityResponse = serde_json::from_slice(body)?;
 
         Ok(module_identity_response)
+    }
+}
+
+/// Response for CreateOrUpdateModuleIdentity
+pub type CreateOrUpdateModuleIdentityResponse = ModuleIdentityResponse;
+
+impl CreateOrUpdateModuleIdentityResponse {
+    pub(crate) async fn try_from(response: azure_core::Response) -> azure_core::Result<Self> {
+        let collected = azure_core::CollectedResponse::from_response(response).await?;
+        let body = collected.body();
+        Ok(serde_json::from_slice(body)?)
     }
 }

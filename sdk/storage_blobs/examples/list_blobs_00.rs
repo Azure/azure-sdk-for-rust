@@ -2,7 +2,8 @@ use azure_core::{prelude::Timeout, Context};
 use azure_storage::core::prelude::*;
 use azure_storage_blobs::prelude::*;
 use futures::StreamExt;
-use std::{num::NonZeroU32, time::Duration};
+use std::num::NonZeroU32;
+use std::time::Duration;
 
 #[tokio::main]
 async fn main() -> azure_core::Result<()> {

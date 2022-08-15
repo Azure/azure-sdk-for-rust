@@ -51,7 +51,7 @@ pub trait Header {
 }
 
 /// A collection of headers
-#[derive(Clone, Debug, PartialEq, Default)]
+#[derive(Clone, Debug, PartialEq, Eq, Default)]
 pub struct Headers(std::collections::HashMap<HeaderName, HeaderValue>);
 
 impl Headers {

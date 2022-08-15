@@ -1,6 +1,6 @@
 use crate::clients::DataLakeClient;
 use crate::file_system::{FileSystem, FileSystemList};
-use azure_core::{collect_pinned_stream, error::Error, prelude::*, Pageable, Response};
+use azure_core::{error::Error, prelude::*, Pageable, Response};
 use azure_core::{AppendToUrlQuery, Request};
 use azure_storage::core::headers::CommonStorageResponseHeaders;
 use std::convert::TryInto;
@@ -85,8 +85,8 @@ pub struct ListFileSystemsResponse {
 
 impl ListFileSystemsResponse {
     pub(crate) async fn try_from(response: Response) -> azure_core::Result<Self> {
-        let (_status_code, headers, pinned_stream) = response.deconstruct();
-        let body = collect_pinned_stream(pinned_stream).await?;
+        let (_status_code, headers, body) = response.deconstruct();
+        let body = body.collect().await?;
         let file_system_list: FileSystemList = body.try_into()?;
 
         Ok(ListFileSystemsResponse {

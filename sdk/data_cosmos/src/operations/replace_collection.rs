@@ -4,8 +4,8 @@ use crate::resources::collection::{IndexingPolicy, PartitionKey};
 use azure_core::headers::{
     content_type_from_headers, etag_from_headers, session_token_from_headers,
 };
-use azure_core::{collect_pinned_stream, Response as HttpResponse};
-use chrono::{DateTime, Utc};
+use azure_core::Response as HttpResponse;
+use time::OffsetDateTime;
 
 operation! {
     ReplaceCollection,
@@ -78,8 +78,8 @@ pub struct ReplaceCollectionResponse {
     pub alt_content_path: String,
     pub service_version: String,
     pub quorum_acked_lsn: u64,
-    pub last_state_change: DateTime<Utc>,
-    pub date: DateTime<Utc>,
+    pub last_state_change: OffsetDateTime,
+    pub date: OffsetDateTime,
     pub content_location: String,
     pub activity_id: uuid::Uuid,
     pub schema_version: String,
@@ -87,8 +87,8 @@ pub struct ReplaceCollectionResponse {
 
 impl ReplaceCollectionResponse {
     pub async fn try_from(response: HttpResponse) -> azure_core::Result<Self> {
-        let (_status_code, headers, pinned_stream) = response.deconstruct();
-        let body = collect_pinned_stream(pinned_stream).await?;
+        let (_status_code, headers, body) = response.deconstruct();
+        let body = body.collect().await?;
         Ok(Self {
             collection: serde_json::from_slice(&body)?,
             last_state_change: last_state_change_from_headers(&headers)?,

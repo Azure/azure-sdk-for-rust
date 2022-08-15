@@ -3,13 +3,13 @@ use std::marker::PhantomData;
 use crate::headers::from_headers::*;
 use crate::prelude::*;
 use crate::resources::stored_procedure::Parameters;
-use azure_core::collect_pinned_stream;
+
 use azure_core::headers::session_token_from_headers;
 use azure_core::prelude::*;
 use azure_core::{Response as HttpResponse, SessionToken};
 use bytes::Bytes;
-use chrono::{DateTime, Utc};
 use serde::de::DeserializeOwned;
+use time::OffsetDateTime;
 
 #[derive(Debug, Clone)]
 pub struct ExecuteStoredProcedureBuilder<T> {
@@ -108,7 +108,7 @@ where
 {
     pub payload: T,
 
-    pub last_state_change: DateTime<Utc>,
+    pub last_state_change: OffsetDateTime,
     pub schema_version: String,
     pub alt_content_path: String,
     pub content_path: String,
@@ -126,7 +126,7 @@ where
     pub service_version: String,
     pub activity_id: uuid::Uuid,
     pub gateway_version: String,
-    pub date: DateTime<Utc>,
+    pub date: OffsetDateTime,
 }
 
 impl<T> ExecuteStoredProcedureResponse<T>
@@ -134,8 +134,8 @@ where
     T: DeserializeOwned,
 {
     pub async fn try_from(response: HttpResponse) -> azure_core::Result<Self> {
-        let (_status_code, headers, pinned_stream) = response.deconstruct();
-        let body = collect_pinned_stream(pinned_stream).await?;
+        let (_status_code, headers, body) = response.deconstruct();
+        let body = body.collect().await?;
 
         Ok(Self {
             payload: serde_json::from_slice(&body)?,

@@ -14,6 +14,7 @@ mod macros;
 mod bytes_stream;
 mod constants;
 mod context;
+pub mod date;
 pub mod error;
 mod http_client;
 mod models;
@@ -27,8 +28,6 @@ mod seekable_stream;
 
 pub mod auth;
 pub mod headers;
-#[cfg(feature = "mock_transport_framework")]
-pub mod mock;
 pub mod parsing;
 pub mod prelude;
 pub mod request_options;

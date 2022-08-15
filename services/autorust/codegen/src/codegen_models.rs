@@ -1,5 +1,5 @@
 use crate::{
-    codegen::{create_generated_by_header, type_name_gen, TypeNameCode},
+    codegen::{type_name_gen, TypeNameCode},
     identifier::{CamelCaseIdent, SnakeCaseIdent},
     spec::{self, get_schema_array_items, get_type_name_for_schema, get_type_name_for_schema_ref, TypeName},
     CodeGen, PropertyName, ResolvedSchema, Spec,
@@ -297,7 +297,6 @@ fn add_schema_gen(all_schemas: &mut IndexMap<RefKey, SchemaGen>, resolved_schema
 
 pub fn create_models(cg: &CodeGen) -> Result<TokenStream> {
     let mut file = TokenStream::new();
-    file.extend(create_generated_by_header());
 
     let has_case_workaround = cg.should_workaround_case();
 
@@ -633,8 +632,19 @@ fn create_struct(cg: &CodeGen, schema: &SchemaGen, struct_name: &str, pageable: 
         if field_name != property_name {
             serde_attrs.push(quote! { rename = #property_name });
         }
-        if !is_required {
-            if type_name.is_vec() {
+        #[allow(clippy::collapsible_else_if)]
+        if is_required {
+            if type_name.is_date_time() {
+                serde_attrs.push(quote! { with = "azure_core::date::rfc3339"});
+            } else if type_name.is_date_time_rfc1123() {
+                serde_attrs.push(quote! { with = "azure_core::date::rfc1123"});
+            }
+        } else {
+            if type_name.is_date_time() {
+                serde_attrs.push(quote! { with = "azure_core::date::rfc3339::option"});
+            } else if type_name.is_date_time_rfc1123() {
+                serde_attrs.push(quote! { with = "azure_core::date::rfc1123::option"});
+            } else if type_name.is_vec() {
                 serde_attrs.push(quote! { default, skip_serializing_if = "Vec::is_empty"});
             } else {
                 serde_attrs.push(quote! { default, skip_serializing_if = "Option::is_none"});

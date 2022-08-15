@@ -1,14 +1,13 @@
 use crate::{blob::Blob, prelude::*};
 use azure_core::Method;
 use azure_core::{
-    collect_pinned_stream,
     error::Error,
     headers::{date_from_headers, request_id_from_headers, Headers},
     prelude::*,
     Pageable, RequestId, Response as AzureResponse,
 };
 use azure_storage::xml::read_xml;
-use chrono::{DateTime, Utc};
+use time::OffsetDateTime;
 
 operation! {
     #[stream]
@@ -89,7 +88,7 @@ impl ListBlobsBuilder {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ListBlobsResponse {
     pub prefix: Option<String>,
     pub max_results: Option<u32>,
@@ -97,7 +96,7 @@ pub struct ListBlobsResponse {
     pub next_marker: Option<NextMarker>,
     pub blobs: Blobs,
     pub request_id: RequestId,
-    pub date: DateTime<Utc>,
+    pub date: OffsetDateTime,
 }
 
 #[derive(Debug, Clone, PartialEq, Deserialize)]
@@ -110,7 +109,7 @@ struct ListBlobsResponseInternal {
     pub blobs: Blobs,
 }
 
-#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
 #[serde(rename_all = "PascalCase")]
 pub struct Blobs {
     pub blob_prefix: Option<Vec<BlobPrefix>>,
@@ -118,7 +117,7 @@ pub struct Blobs {
     pub blobs: Vec<Blob>,
 }
 
-#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
 #[serde(rename_all = "PascalCase")]
 pub struct BlobPrefix {
     pub name: String,
@@ -127,7 +126,7 @@ pub struct BlobPrefix {
 impl ListBlobsResponse {
     pub async fn try_from(response: AzureResponse) -> azure_core::Result<Self> {
         let (_, headers, body) = response.deconstruct();
-        let body = collect_pinned_stream(body).await?;
+        let body = body.collect().await?;
 
         let list_blobs_response_internal: ListBlobsResponseInternal = read_xml(&body)?;
 

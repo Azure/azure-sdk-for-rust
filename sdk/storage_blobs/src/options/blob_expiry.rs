@@ -1,5 +1,5 @@
-use azure_core::headers::Headers;
-use chrono::{DateTime, Utc};
+use azure_core::{date, headers::Headers};
+use time::OffsetDateTime;
 
 const EXPIRY_TIME: &str = "x-ms-expiry-time";
 const EXPIRY_OPTION: &str = "x-ms-expiry-option";
@@ -8,7 +8,7 @@ const EXPIRY_OPTION: &str = "x-ms-expiry-option";
 pub enum BlobExpiry {
     RelativeToCreation(u64),
     RelativeToNow(u64),
-    Absolute(DateTime<Utc>),
+    Absolute(OffsetDateTime),
     NeverExpire,
 }
 
@@ -26,7 +26,7 @@ impl BlobExpiry {
             }
             BlobExpiry::Absolute(date) => {
                 headers.insert(EXPIRY_OPTION, "Abosolute");
-                headers.insert(EXPIRY_TIME, date.to_rfc2822());
+                headers.insert(EXPIRY_TIME, date::to_rfc1123(date));
             }
             BlobExpiry::NeverExpire => {
                 headers.insert(EXPIRY_OPTION, "NeverExpire");

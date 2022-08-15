@@ -3,13 +3,13 @@ use azure_core::{
     error::{Error, ErrorKind, ResultExt},
     HttpClient, Method, Request, StatusCode,
 };
-use chrono::{DateTime, TimeZone, Utc};
 use serde::{
     de::{self, Deserializer},
     Deserialize,
 };
 use std::str;
 use std::sync::Arc;
+use time::OffsetDateTime;
 use url::Url;
 
 const MSI_ENDPOINT_ENV_KEY: &str = "IDENTITY_ENDPOINT";
@@ -122,7 +122,7 @@ impl TokenCredential for ImdsManagedIdentityCredential {
 
         let rsp = self.http_client.execute_request(&req).await?;
         let rsp_status = rsp.status();
-        let rsp_body = rsp.into_body().await;
+        let rsp_body = rsp.into_body().collect().await?;
 
         if !rsp_status.is_success() {
             match rsp_status {
@@ -154,13 +154,13 @@ impl TokenCredential for ImdsManagedIdentityCredential {
     }
 }
 
-fn expires_on_string<'de, D>(deserializer: D) -> std::result::Result<DateTime<Utc>, D::Error>
+fn expires_on_string<'de, D>(deserializer: D) -> std::result::Result<OffsetDateTime, D::Error>
 where
     D: Deserializer<'de>,
 {
     let v = String::deserialize(deserializer)?;
     let as_i64 = v.parse::<i64>().map_err(de::Error::custom)?;
-    Ok(Utc.timestamp(as_i64, 0))
+    OffsetDateTime::from_unix_timestamp(as_i64).map_err(de::Error::custom)
 }
 
 // NOTE: expires_on is a String version of unix epoch time, not an integer.
@@ -170,7 +170,7 @@ where
 struct MsiTokenResponse {
     pub access_token: AccessToken,
     #[serde(deserialize_with = "expires_on_string")]
-    pub expires_on: DateTime<Utc>,
+    pub expires_on: OffsetDateTime,
     pub token_type: String,
     pub resource: String,
 }
@@ -178,17 +178,18 @@ struct MsiTokenResponse {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use time::macros::datetime;
 
     #[derive(Debug, Deserialize)]
     struct TestExpires {
         #[serde(deserialize_with = "expires_on_string")]
-        date: DateTime<Utc>,
+        date: OffsetDateTime,
     }
 
     #[test]
     fn check_expires_on_string() {
         let as_string = r#"{"date": "1586984735"}"#;
-        let expected = Utc.ymd(2020, 4, 15).and_hms(21, 5, 35);
+        let expected = datetime!(2020-4-15 21:5:35 UTC);
         let parsed: TestExpires =
             serde_json::from_str(as_string).expect("deserialize should succeed");
         assert_eq!(expected, parsed.date);

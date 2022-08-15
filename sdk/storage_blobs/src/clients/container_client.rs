@@ -13,7 +13,7 @@ use azure_storage::{
         SasToken,
     },
 };
-use chrono::{DateTime, Utc};
+use time::OffsetDateTime;
 
 pub trait AsContainerClient {
     fn container_client(&self, container_name: impl Into<String>) -> ContainerClient;
@@ -93,7 +93,7 @@ impl ContainerClient {
     pub fn shared_access_signature(
         &self,
         permissions: BlobSasPermissions,
-        expiry: DateTime<Utc>,
+        expiry: OffsetDateTime,
     ) -> azure_core::Result<BlobSharedAccessSignature> {
         let canonicalized_resource = format!(
             "/blob/{}/{}",
@@ -120,7 +120,8 @@ impl ContainerClient {
         Ok(url)
     }
 
-    pub(crate) fn url(&self) -> azure_core::Result<url::Url> {
+    /// Full URL for the container.
+    pub fn url(&self) -> azure_core::Result<url::Url> {
         self.storage_client
             .blob_url_with_segments(Some(self.container_name.as_str()).into_iter())
     }

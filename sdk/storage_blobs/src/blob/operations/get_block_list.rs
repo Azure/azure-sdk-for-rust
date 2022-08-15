@@ -2,9 +2,9 @@ use crate::{
     blob::{BlockListType, BlockWithSizeList},
     prelude::*,
 };
-use azure_core::{collect_pinned_stream, headers::*, prelude::*, RequestId};
-use chrono::{DateTime, Utc};
+use azure_core::{headers::*, prelude::*, RequestId};
 use std::str::from_utf8;
+use time::OffsetDateTime;
 
 operation! {
     GetBlockList,
@@ -38,19 +38,19 @@ impl GetBlockListBuilder {
             let response = self.client.send(&mut self.context, &mut request).await?;
 
             let (_, headers, body) = response.deconstruct();
-            let body = collect_pinned_stream(body).await?;
+            let body = body.collect().await?;
 
             GetBlockListResponse::from_response(&headers, &body)
         })
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct GetBlockListResponse {
     pub etag: Option<String>,
-    pub last_modified: Option<DateTime<Utc>>,
+    pub last_modified: Option<OffsetDateTime>,
     pub request_id: RequestId,
-    pub date: DateTime<Utc>,
+    pub date: OffsetDateTime,
     pub block_with_size_list: BlockWithSizeList,
 }
 

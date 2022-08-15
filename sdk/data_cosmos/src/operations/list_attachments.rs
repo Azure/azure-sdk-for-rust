@@ -3,13 +3,13 @@ use crate::prelude::*;
 use crate::resources::Attachment;
 use crate::resources::ResourceType;
 use crate::ResourceQuota;
-use azure_core::collect_pinned_stream;
+
 use azure_core::headers::{
     continuation_token_from_headers_optional, item_count_from_headers, session_token_from_headers,
 };
 use azure_core::prelude::*;
 use azure_core::{Pageable, Response as HttpResponse, SessionToken};
-use chrono::{DateTime, Utc};
+use time::OffsetDateTime;
 
 operation! {
     #[stream]
@@ -84,7 +84,7 @@ pub struct ListAttachmentsResponse {
 
     pub max_media_storage_usage_mb: u64,
     pub media_storage_usage_mb: u64,
-    pub last_change: DateTime<Utc>,
+    pub last_change: OffsetDateTime,
     pub resource_quota: Vec<ResourceQuota>,
     pub resource_usage: Vec<ResourceQuota>,
     pub lsn: u64,
@@ -100,14 +100,14 @@ pub struct ListAttachmentsResponse {
     pub service_version: String,
     pub activity_id: uuid::Uuid,
     pub gateway_version: String,
-    pub date: DateTime<Utc>,
+    pub date: OffsetDateTime,
     pub continuation_token: Option<Continuation>,
 }
 
 impl ListAttachmentsResponse {
     pub async fn try_from(response: HttpResponse) -> azure_core::Result<Self> {
-        let (_status_code, headers, pinned_stream) = response.deconstruct();
-        let body = collect_pinned_stream(pinned_stream).await?;
+        let (_status_code, headers, body) = response.deconstruct();
+        let body = body.collect().await?;
 
         let json: JsonListAttachmentResponse = serde_json::from_slice(&body)?;
 

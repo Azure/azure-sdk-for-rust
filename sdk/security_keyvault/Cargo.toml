@@ -1,6 +1,6 @@
 [package]
 name = "azure_security_keyvault"
-version = "0.3.0"
+version = "0.4.0"
 authors = ["Microsoft Corp."]
 description = "Rust wrapper around Microsoft Azure REST APIs for Azure Key Vault"
 repository = "https://github.com/azure/azure-sdk-for-rust"
@@ -16,12 +16,12 @@ edition = "2021"
 async-trait = "0.1"
 futures = "0.3"
 base64 = "0.13"
-chrono = { version = "0.4", features = ["serde"] }
+time = { version = "0.3", features = ["serde"] }
 const_format = "0.2.13"
 serde_json = "1.0"
 url = "2.2"
 serde = { version = "1.0", features = ["derive"] }
-azure_core = { path = "../core", version = "0.3"}
+azure_core = { path = "../core", version = "0.4"}
 
 [dev-dependencies]
 oauth2 = "4.0.0"

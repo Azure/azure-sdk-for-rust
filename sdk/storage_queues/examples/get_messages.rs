@@ -4,6 +4,7 @@ extern crate log;
 use azure_storage::core::prelude::*;
 use azure_storage_queues::prelude::*;
 use std::time::Duration;
+use time::OffsetDateTime;
 
 #[tokio::main]
 async fn main() -> azure_core::Result<()> {
@@ -48,7 +49,7 @@ async fn main() -> azure_core::Result<()> {
 
         let response = pop_receipt
             .update(
-                format!("new body at {}", chrono::Utc::now()),
+                format!("new body at {}", OffsetDateTime::now_utc()),
                 Duration::from_secs(4),
             )
             .into_future()

@@ -5,10 +5,16 @@ use crate::{
 };
 use std::{collections::HashMap, fs};
 
+/// Get the package name, such as "azure_svc_blobstorage".
+/// It is a concatenation of the prefix such as "azure_svc" & the service name such as "blobstorage".
+pub fn package_name(spec: &SpecReadme, run_config: &RunConfig) -> String {
+    format!("{}{}", &run_config.crate_name_prefix, &spec.service_name())
+}
+
 pub fn gen_crate(spec: &SpecReadme, run_config: &RunConfig, output_folder: &str) -> Result<()> {
     let spec_config = spec.config()?;
     let service_name = &spec.service_name();
-    let crate_name = &format!("{}{}", &run_config.crate_name_prefix, service_name);
+    let package_name = &package_name(spec, run_config);
     let output_folder = &io::join(output_folder, service_name)?;
     let mut package_config = autorust_toml::read(&io::join(&output_folder, "autorust.toml")?)?;
     if package_config.tags.sort.is_none() {
@@ -65,10 +71,10 @@ pub fn gen_crate(spec: &SpecReadme, run_config: &RunConfig, output_folder: &str)
         spec_config.tag()
     };
     let default_tag = cargo_toml::get_default_tag(tags, default_tag_name);
-    cargo_toml::create(crate_name, tags, default_tag, &io::join(output_folder, "Cargo.toml")?)?;
+    cargo_toml::create(package_name, tags, default_tag, &io::join(output_folder, "Cargo.toml")?)?;
     lib_rs::create(tags, &io::join(src_folder, "lib.rs")?, false)?;
     let readme = ReadmeMd {
-        crate_name,
+        package_name,
         readme_url: readme_md::url(spec.readme().as_str()),
         tags,
         default_tag,

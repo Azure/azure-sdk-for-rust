@@ -1,0 +1,13 @@
+{
+  "status": 201,
+  "headers": {
+    "date": "Wed, 03 Aug 2022 14:22:17 GMT",
+    "etag": "\"0x8DA755B9218152E\"",
+    "last-modified": "Wed, 03 Aug 2022 14:22:17 GMT",
+    "server": "Windows-Azure-Blob/1.0 Microsoft-HTTPAPI/2.0",
+    "transfer-encoding": "chunked",
+    "x-ms-request-id": "bf2dc33b-601e-0065-5c44-a7c5f3000000",
+    "x-ms-version": "2019-12-12"
+  },
+  "body": ""
+}

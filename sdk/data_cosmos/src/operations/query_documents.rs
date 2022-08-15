@@ -3,7 +3,7 @@ use crate::prelude::*;
 use crate::resources::document::Query;
 use crate::resources::ResourceType;
 use crate::ResourceQuota;
-use azure_core::collect_pinned_stream;
+
 use azure_core::headers;
 use azure_core::headers::HeaderValue;
 use azure_core::headers::{
@@ -14,9 +14,9 @@ use azure_core::Method;
 use azure_core::Pageable;
 use azure_core::Response as HttpResponse;
 use azure_core::SessionToken;
-use chrono::{DateTime, Utc};
 use serde::de::DeserializeOwned;
 use serde_json::Value;
+use time::OffsetDateTime;
 
 operation! {
     #[stream]
@@ -108,7 +108,7 @@ pub type QueryDocuments<T> = Pageable<QueryDocumentsResponse<T>, azure_core::err
 pub struct QueryDocumentsResponse<T> {
     pub query_response_meta: QueryResponseMeta,
     pub results: Vec<(T, Option<DocumentAttributes>)>,
-    pub last_state_change: DateTime<Utc>,
+    pub last_state_change: OffsetDateTime,
     pub resource_quota: Vec<ResourceQuota>,
     pub resource_usage: Vec<ResourceQuota>,
     pub lsn: u64,
@@ -130,7 +130,7 @@ pub struct QueryDocumentsResponse<T> {
     pub service_version: String,
     pub activity_id: uuid::Uuid,
     pub gateway_version: String,
-    pub date: DateTime<Utc>,
+    pub date: OffsetDateTime,
     pub continuation_token: Option<Continuation>,
 }
 
@@ -146,8 +146,8 @@ where
     T: DeserializeOwned,
 {
     pub async fn try_from(response: HttpResponse) -> azure_core::Result<Self> {
-        let (_status_code, headers, pinned_stream) = response.deconstruct();
-        let body = collect_pinned_stream(pinned_stream).await?;
+        let (_status_code, headers, body) = response.deconstruct();
+        let body = body.collect().await?;
 
         let inner: Value = serde_json::from_slice(&body)?;
         let results = if let Value::Array(documents) = &inner["Documents"] {
@@ -199,7 +199,7 @@ where
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 pub struct QueryResponseMeta {
     #[serde(rename = "_rid")]
     pub rid: String,

@@ -2,7 +2,6 @@ use crate::service::responses::InvokeMethodResponse;
 use crate::service::{ServiceClient, API_VERSION};
 use azure_core::Method;
 use serde::Serialize;
-use std::convert::TryInto;
 
 azure_core::operation! {
     /// The InvokeMethodBuilder is used for constructing the request to
@@ -19,7 +18,7 @@ azure_core::operation! {
 
 impl InvokeMethodBuilder {
     /// Turn the builder into a `Future`
-    pub fn into_future(self) -> InvokeMethod {
+    pub fn into_future(mut self) -> InvokeMethod {
         Box::pin(async move {
             let uri = match &self.module_id {
                 Some(module_id_value) => format!(
@@ -44,11 +43,9 @@ impl InvokeMethodBuilder {
 
             request.set_body(body);
 
-            self.client
-                .http_client()
-                .execute_request_check_status(&request)
-                .await?
-                .try_into()
+            let response = self.client.send(&mut self.context, &mut request).await?;
+
+            InvokeMethodResponse::try_from(response).await
         })
     }
 }

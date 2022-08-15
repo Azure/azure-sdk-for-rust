@@ -1,0 +1,14 @@
+[package]
+name = "mock_transport"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+azure_core = { path = "../../../sdk/core" }
+log = "0.4"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+url = "2.2"
+base64 = "0.13"
+bytes = "1.0"
+async-trait = "0.1"

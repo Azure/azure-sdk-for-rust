@@ -1,0 +1,37 @@
+[package]
+name = "azure_iot_deviceupdate"
+version = "0.1.0"
+authors = ["roland.erk@conplement.de"]
+description = "Rust wrapper around Microsoft Azure REST APIs for Azure Device Update"
+repository = "https://github.com/azure/azure-sdk-for-rust"
+homepage = "https://github.com/azure/azure-sdk-for-rust"
+documentation = "https://docs.rs/azure_iot_deviceupdate"
+keywords = ["azure", "microsoft", "sdk", "device", "update", "cloud"]
+categories = ["api-bindings"]
+readme = "README.md"
+license = "MIT"
+edition = "2018"
+
+[dependencies]
+base64 = "0.13"
+reqwest = { version = "0.11", features = ["json"], default_features = false }
+time = { version = "0.3.10", features = ["serde"] }
+const_format = "0.2"
+serde_json = "1.0"
+url = "2.2"
+serde = { version = "1.0", features = ["derive"] }
+getset = "0.1"
+azure_core = { path = "../core", version = "0.4", default_features = false }
+log = "0.4"
+azure_identity = { path = "../identity", default_features = false }
+
+[dev-dependencies]
+tokio = { version = "1.0", features = ["macros", "rt-multi-thread"] }
+oauth2 = "4.0.0"
+mockito = "0.31"
+async-trait = "0.1"
+
+[features]
+default = ["enable_reqwest", "azure_identity/default"]
+enable_reqwest = ["azure_core/enable_reqwest"]
+enable_reqwest_rustls = ["reqwest/rustls-tls"]

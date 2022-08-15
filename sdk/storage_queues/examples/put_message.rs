@@ -3,6 +3,7 @@ extern crate log;
 
 use azure_storage::core::prelude::*;
 use azure_storage_queues::prelude::*;
+use time::OffsetDateTime;
 
 #[tokio::main]
 async fn main() -> azure_core::Result<()> {
@@ -22,7 +23,10 @@ async fn main() -> azure_core::Result<()> {
 
     trace!("putting message");
     let response = queue
-        .put_message(format!("Azure SDK for Rust rocks! {}", chrono::Utc::now()))
+        .put_message(format!(
+            "Azure SDK for Rust rocks! {}",
+            OffsetDateTime::now_utc()
+        ))
         .into_future()
         .await?;
 

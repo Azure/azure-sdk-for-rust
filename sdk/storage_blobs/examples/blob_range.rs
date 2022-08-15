@@ -37,7 +37,7 @@ async fn main() -> azure_core::Result<()> {
         let mut chunk: Vec<u8> = vec![];
         let mut stream = blob_client.get().range(range.clone()).into_stream();
         while let Some(value) = stream.next().await {
-            let value = value?.data;
+            let value = value?.data.collect().await?;
             chunk.extend(&value);
         }
         assert_eq!(chunk, &buf[range.clone()]);
@@ -50,10 +50,28 @@ async fn main() -> azure_core::Result<()> {
             .chunk_size(0xFFFF_FFFF_FFFFu64)
             .into_stream();
         while let Some(value) = stream.next().await {
-            let value = value?.data;
+            let value = value?.data.collect().await?;
             chunk.extend(&value);
         }
         assert_eq!(chunk, &buf[range.clone()]);
+
+        // download a large blob streaming the individual page to keep memory usage low
+        let mut result: Vec<u8> = vec![];
+        let mut stream = blob_client
+            .get()
+            .chunk_size(0xFFFF_FFFF_FFFFu64)
+            .into_stream();
+        while let Some(value) = stream.next().await {
+            let mut data_stream = value?.data;
+            while let Some(value) = data_stream.next().await {
+                let value = value?;
+                result.extend(&value);
+            }
+        }
+        assert_eq!(
+            buf, result,
+            "streamed blob content should match original buf"
+        );
 
         // if we download the range in tiny chunks, the result should still be the same
         let mut chunk: Vec<u8> = vec![];
@@ -63,7 +81,7 @@ async fn main() -> azure_core::Result<()> {
             .chunk_size(17u64)
             .into_stream();
         while let Some(value) = stream.next().await {
-            let value = value?.data;
+            let value = value?.data.collect().await?;
             chunk.extend(&value);
         }
         assert_eq!(chunk, &buf[range.clone()]);
@@ -73,7 +91,7 @@ async fn main() -> azure_core::Result<()> {
     let mut result: Vec<u8> = vec![];
     let mut stream = blob_client.get().chunk_size(100u64).into_stream();
     while let Some(value) = stream.next().await {
-        let value = value?.data;
+        let value = value?.data.collect().await?;
         result.extend(&value);
     }
     assert_eq!(

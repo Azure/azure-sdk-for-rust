@@ -16,7 +16,8 @@ pub use device_code_responses::*;
 use futures::stream::unfold;
 use oauth2::ClientId;
 use serde::Deserialize;
-use std::{borrow::Cow, sync::Arc, time::Duration};
+use std::time::Duration;
+use std::{borrow::Cow, sync::Arc};
 use url::{form_urlencoded, Url};
 
 /// Start the device authorization grant flow.
@@ -36,14 +37,14 @@ where
         tenant_id
     );
 
-    let mut encoded = form_urlencoded::Serializer::new(String::new());
-    let encoded = encoded.append_pair("client_id", client_id.as_str());
-    let encoded = encoded.append_pair("scope", &scopes.join(" "));
-    let encoded = encoded.finish();
+    let encoded = form_urlencoded::Serializer::new(String::new())
+        .append_pair("client_id", client_id.as_str())
+        .append_pair("scope", &scopes.join(" "))
+        .finish();
 
     let rsp = post_form(http_client.clone(), url, encoded).await?;
     let rsp_status = rsp.status();
-    let rsp_body = rsp.into_body().await;
+    let rsp_body = rsp.into_body().collect().await?;
     if !rsp_status.is_success() {
         return Err(ErrorKind::http_response_from_body(rsp_status, &rsp_body).into_error());
     }
@@ -96,7 +97,7 @@ impl<'a> DeviceCodePhaseOneResponse<'a> {
     pub fn stream(
         &self,
     ) -> impl futures::Stream<Item = azure_core::Result<DeviceCodeAuthorization>> + '_ {
-        #[derive(Debug, Clone, PartialEq)]
+        #[derive(Debug, Clone, PartialEq, Eq)]
         enum NextState {
             Continue,
             Finish,
@@ -115,19 +116,21 @@ impl<'a> DeviceCodePhaseOneResponse<'a> {
                     // last poll and wait only the delta.
                     new_timer(Duration::from_secs(self.interval)).await;
 
-                    let mut encoded = form_urlencoded::Serializer::new(String::new());
-                    let encoded = encoded
-                        .append_pair("grant_type", "urn:ietf:params:oauth:grant-type:device_code");
-                    let encoded = encoded.append_pair("client_id", self.client_id.as_str());
-                    let encoded = encoded.append_pair("device_code", &self.device_code);
-                    let encoded = encoded.finish();
+                    let encoded = form_urlencoded::Serializer::new(String::new())
+                        .append_pair("grant_type", "urn:ietf:params:oauth:grant-type:device_code")
+                        .append_pair("client_id", self.client_id.as_str())
+                        .append_pair("device_code", &self.device_code)
+                        .finish();
 
                     let http_client = self.http_client.clone().unwrap();
 
                     match post_form(http_client.clone(), url, encoded).await {
                         Ok(rsp) => {
                             let rsp_status = rsp.status();
-                            let rsp_body = rsp.into_body().await;
+                            let rsp_body = match rsp.into_body().collect().await {
+                                Ok(b) => b,
+                                Err(e) => return Some((Err(e), NextState::Finish)),
+                            };
                             if rsp_status.is_success() {
                                 match serde_json::from_slice::<DeviceCodeAuthorization>(&rsp_body) {
                                     Ok(authorization) => {
@@ -179,4 +182,21 @@ async fn post_form(
     );
     req.set_body(form_body);
     http_client.execute_request(&req).await
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn require_send<T: Send>(_t: T) {}
+
+    #[test]
+    fn ensure_that_start_is_send() {
+        require_send(start(
+            azure_core::new_http_client(),
+            "UNUSED",
+            &ClientId::new("UNUSED".to_owned()),
+            &[],
+        ));
+    }
 }

@@ -1,7 +1,6 @@
 use crate::QueueServiceClient;
 use azure_core::{
-    collect_pinned_stream, error::Error, headers::Headers, prelude::*, Method, Pageable,
-    Response as AzureResponse,
+    error::Error, headers::Headers, prelude::*, Method, Pageable, Response as AzureResponse,
 };
 use azure_storage::{core::headers::CommonStorageResponseHeaders, xml::read_xml};
 use std::convert::TryInto;
@@ -75,7 +74,7 @@ impl Continuable for ListQueuesResponse {
 impl ListQueuesResponse {
     async fn try_from(response: AzureResponse) -> azure_core::Result<Self> {
         let (_, headers, body) = response.deconstruct();
-        let body = collect_pinned_stream(body).await?;
+        let body = body.collect().await?;
 
         let mut response: ListQueuesResponseInternal = read_xml(&body)?;
 

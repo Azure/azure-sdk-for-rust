@@ -1,7 +1,7 @@
 use crate::headers::from_headers::*;
 
 use azure_core::headers::{etag_from_headers, session_token_from_headers};
-use azure_core::{collect_pinned_stream, Response as HttpResponse};
+use azure_core::Response as HttpResponse;
 
 use super::Permission;
 
@@ -18,8 +18,8 @@ pub struct PermissionResponse {
 
 impl PermissionResponse {
     pub async fn try_from(response: HttpResponse) -> azure_core::Result<PermissionResponse> {
-        let (_status_code, headers, pinned_stream) = response.deconstruct();
-        let body = collect_pinned_stream(pinned_stream).await?;
+        let (_status_code, headers, body) = response.deconstruct();
+        let body = body.collect().await?;
 
         Ok(Self {
             permission: serde_json::from_slice(&body)?,

@@ -1,3 +1,6 @@
+# 0.5 (2022-08)
+- generated from azure-rest-api-specs [commit from 2022-08-01](https://github.com/Azure/azure-rest-api-specs/commit/d1b0569d8adbd342a1111d6a69764d099f5f717c)
+
 # 0.4 (2022-06)
 - generated from azure-rest-api-specs [commit from 2022-06-08](https://github.com/Azure/azure-rest-api-specs/commit/facedaf6dc920b45055d38765f40af696454755c)
 - [#768](https://github.com/Azure/azure-sdk-for-rust/issues/768) add support for x-ms-enum modelAsString

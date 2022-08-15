@@ -1,6 +1,4 @@
-#![cfg(feature = "mock_transport_framework")]
-
-mod setup;
+mod setup_mock;
 
 use futures::StreamExt;
 
@@ -8,7 +6,7 @@ use futures::StreamExt;
 async fn database_operations() -> azure_core::Result<()> {
     const DATABASE_NAME: &str = "cosmos-test-db-create-and-delete-database";
 
-    let client = setup::initialize("database_operations")?;
+    let client = setup_mock::initialize("database_operations")?;
 
     // list existing databases and remember their number
     let databases = client

@@ -4,8 +4,8 @@ use crate::headers::from_headers::*;
 use azure_core::headers::{
     content_type_from_headers, etag_from_headers, session_token_from_headers,
 };
-use azure_core::{collect_pinned_stream, Response as HttpResponse};
-use chrono::{DateTime, Utc};
+use azure_core::Response as HttpResponse;
+use time::OffsetDateTime;
 
 operation! {
     GetCollection,
@@ -39,7 +39,7 @@ impl GetCollectionBuilder {
 #[derive(Debug, Clone)]
 pub struct GetCollectionResponse {
     pub collection: Collection,
-    pub last_state_change: DateTime<Utc>,
+    pub last_state_change: OffsetDateTime,
     pub etag: String,
     pub collection_partition_index: u64,
     pub collection_service_index: u64,
@@ -62,13 +62,13 @@ pub struct GetCollectionResponse {
     pub xp_role: u32,
     pub content_type: String,
     pub content_location: String,
-    pub date: DateTime<Utc>,
+    pub date: OffsetDateTime,
 }
 
 impl GetCollectionResponse {
     pub async fn try_from(response: HttpResponse) -> azure_core::Result<Self> {
-        let (_status_code, headers, pinned_stream) = response.deconstruct();
-        let body = collect_pinned_stream(pinned_stream).await?;
+        let (_status_code, headers, body) = response.deconstruct();
+        let body = body.collect().await?;
 
         Ok(Self {
             collection: serde_json::from_slice(&body)?,

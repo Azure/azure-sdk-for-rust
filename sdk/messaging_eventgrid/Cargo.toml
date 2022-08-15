@@ -1,6 +1,6 @@
 [package]
 name = "azure_messaging_eventgrid"
-version = "0.3.0"
+version = "0.4.0"
 description = "Rust wrappers around Microsoft Azure Event Grid REST APIs"
 readme = "README.md"
 authors = ["Microsoft Corp."]
@@ -13,8 +13,8 @@ categories = ["api-bindings"]
 edition = "2021"
 
 [dependencies]
-azure_core = { path = "../core", version = "0.3", default_features = false }
-chrono = { version = "0.4", features = ["serde"] }
+azure_core = { path = "../core", version = "0.4", default_features = false }
+time = { version = "0.3.10", features = ["serde", "macros"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 uuid = { version = "1.0", features = ["v4"] }
@@ -24,4 +24,4 @@ url = "2.2"
 tokio = { version = "1.0", features = ["macros", "rt-multi-thread"] }
 
 [features]
-default = ["azure_core/default"]
+default = ["azure_core/enable_reqwest"]

@@ -1,6 +1,6 @@
 [package]
 name = "azure_storage_datalake"
-version = "0.4.0"
+version = "0.5.0"
 description = "Azure Data Lake Storage Gen2 crate from the Azure SDK for Rust"
 readme = "README.md"
 authors = ["Microsoft Corp."]
@@ -14,12 +14,11 @@ edition = "2021"
 
 [dependencies]
 async-trait = "0.1"
-azure_core = { path = "../core", version = "0.3" }
-azure_identity = { path = "../identity", default_features = false }
-azure_storage = { path = "../storage", version = "0.4", default_features = false }
+azure_core = { path = "../core", version = "0.4" }
+azure_storage = { path = "../storage", version = "0.5", default_features = false }
 base64 = "0.13"
 bytes = "1.0"
-chrono = { version = "0.4", features = ["serde"] }
+time = { version = "0.3.10", features = ["serde"] }
 futures = "0.3"
 log = "0.4"
 serde = { version = "1.0" }
@@ -30,11 +29,12 @@ uuid = { version = "1.0", features = ["v4"] }
 url = "2.2"
 
 [dev-dependencies]
+azure_identity = { path = "../identity", default_features = false }
 tokio = { version = "1.0", features = ["macros", "rt-multi-thread"] }
+mock_transport = { path = "../../eng/test/mock_transport" }
 
 [features]
 default = ["enable_reqwest"]
 test_e2e = []
-enable_reqwest = ["azure_core/enable_reqwest", "azure_storage/enable_reqwest", "azure_identity/enable_reqwest"]
+enable_reqwest = ["azure_core/enable_reqwest", "azure_storage/enable_reqwest"]
 enable_reqwest_rustls = ["azure_core/enable_reqwest_rustls"]
-mock_transport_framework = ["azure_core/mock_transport_framework"]

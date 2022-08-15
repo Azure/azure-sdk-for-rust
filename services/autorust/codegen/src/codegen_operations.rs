@@ -1,6 +1,6 @@
 use crate::{
-    codegen::{create_generated_by_header, parse_query_params, TypeNameCode},
     codegen::{parse_path_params, type_name_gen, PARAM_RE},
+    codegen::{parse_query_params, TypeNameCode},
     identifier::{parse_ident, SnakeCaseIdent},
     spec::{get_type_name_for_schema_ref, WebOperation, WebParameter, WebVerb},
     status_codes::get_success_responses,
@@ -83,33 +83,57 @@ pub fn create_client(modules: &[String], endpoint: Option<&str>) -> Result<Token
             credential: std::sync::Arc<dyn azure_core::auth::TokenCredential>,
             endpoint: Option<String>,
             scopes: Option<Vec<String>>,
+            options: azure_core::ClientOptions,
         }
 
         #default_endpoint_code
 
         impl ClientBuilder {
+            #[doc = "Create a new instance of `ClientBuilder`."]
+            #[must_use]
             pub fn new(credential: std::sync::Arc<dyn azure_core::auth::TokenCredential>) -> Self {
                 Self {
                     credential,
                     endpoint: None,
                     scopes: None,
+                    options: azure_core::ClientOptions::default(),
                 }
             }
 
+            #[doc = "Set the endpoint."]
+            #[must_use]
             pub fn endpoint(mut self, endpoint: impl Into<String>) -> Self {
                 self.endpoint = Some(endpoint.into());
                 self
             }
 
+            #[doc = "Set the scopes."]
+            #[must_use]
             pub fn scopes(mut self, scopes: &[&str]) -> Self {
                 self.scopes = Some(scopes.iter().map(|scope| (*scope).to_owned()).collect());
                 self
             }
 
+            #[doc = "Set the retry options."]
+            #[must_use]
+            pub fn retry(mut self, retry: impl Into<azure_core::RetryOptions>) -> Self {
+                self.options = self.options.retry(retry);
+                self
+            }
+
+            #[doc = "Set the transport options."]
+            #[must_use]
+            pub fn transport(mut self, transport: impl Into<azure_core::TransportOptions>) -> Self {
+                self.options = self.options.transport(transport);
+                self
+            }
+
+            #[doc = "Convert the builder into a `Client` instance."]
+            #[must_use]
             pub fn build(self) -> Client {
                 let endpoint = self.endpoint.unwrap_or_else(|| DEFAULT_ENDPOINT.to_owned());
                 let scopes = self.scopes.unwrap_or_else(|| vec![format!("{}/", endpoint)]);
-                Client::new(endpoint, self.credential, scopes)
+                Client::new(endpoint, self.credential, scopes, self.options)
             }
         }
 
@@ -127,12 +151,21 @@ pub fn create_client(modules: &[String], endpoint: Option<&str>) -> Result<Token
                 let mut context = azure_core::Context::default();
                 self.pipeline.send(&mut context, request).await
             }
-            pub fn new(endpoint: impl Into<String>, credential: std::sync::Arc<dyn azure_core::auth::TokenCredential>, scopes: Vec<String>) -> Self {
+
+            #[doc = "Create a new `ClientBuilder`."]
+            #[must_use]
+            pub fn builder(credential: std::sync::Arc<dyn azure_core::auth::TokenCredential>) -> ClientBuilder {
+                ClientBuilder::new(credential)
+            }
+
+            #[doc = "Create a new `Client`."]
+            #[must_use]
+            pub fn new(endpoint: impl Into<String>, credential: std::sync::Arc<dyn azure_core::auth::TokenCredential>, scopes: Vec<String>, options: azure_core::ClientOptions) -> Self {
                 let endpoint = endpoint.into();
                 let pipeline = azure_core::Pipeline::new(
                     option_env!("CARGO_PKG_NAME"),
                     option_env!("CARGO_PKG_VERSION"),
-                    azure_core::ClientOptions::default(),
+                    options,
                     Vec::new(),
                     Vec::new(),
                 );
@@ -152,13 +185,13 @@ pub fn create_client(modules: &[String], endpoint: Option<&str>) -> Result<Token
 
 pub fn create_operations(cg: &CodeGen) -> Result<TokenStream> {
     let mut file = TokenStream::new();
-    file.extend(create_generated_by_header());
     file.extend(quote! {
+
         #![allow(unused_mut)]
         #![allow(unused_variables)]
         #![allow(unused_imports)]
         #![allow(clippy::redundant_clone)]
-        use super::models;
+        pub mod models;
     });
     let mut operations_code: IndexMap<Option<String>, OperationCode> = IndexMap::new();
     // println!("input_files {:?}", cg.input_files());
@@ -625,7 +658,7 @@ fn create_operation_code(cg: &CodeGen, operation: &WebOperationGen) -> Result<Op
                         Some(_) => {
                             match_status.extend(quote! {
                                 azure_core::StatusCode::#status_code_name => {
-                                    let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                    let rsp_body = rsp_stream.collect().await?;
                                     #rsp_value
                                     Ok(rsp_value)
                                 }
@@ -644,7 +677,7 @@ fn create_operation_code(cg: &CodeGen, operation: &WebOperationGen) -> Result<Op
                         Some(_) => {
                             match_status.extend(quote! {
                                 azure_core::StatusCode::#status_code_name => {
-                                    let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await?;
+                                    let rsp_body = rsp_stream.collect().await?;
                                     #rsp_value
                                     Ok(Response::#response_type_name(rsp_value))
                                 }
@@ -819,7 +852,7 @@ fn format_path(path: &str) -> String {
     PARAM_RE.replace_all(path, "{}").to_string()
 }
 
-#[derive(PartialEq, Clone)]
+#[derive(PartialEq, Eq, Clone)]
 enum ParamKind {
     Path,
     Query,
@@ -843,6 +876,7 @@ impl From<&ParameterType> for ParamKind {
 #[derive(Clone)]
 struct FunctionParam {
     name: String,
+    description: Option<String>,
     variable_name: Ident,
     type_name: TypeNameCode,
     kind: ParamKind,
@@ -911,12 +945,14 @@ fn create_function_params_code(parameters: &[&WebParameter]) -> Result<FunctionP
     let mut params = Vec::new();
     for param in parameters.iter() {
         let name = param.name().to_owned();
+        let description = param.description().clone();
         let variable_name = name.to_snake_case_ident()?;
         let type_name = type_name_gen(&param.type_name()?)?.qualify_models(true).optional(!param.required());
         let kind = ParamKind::from(param.type_());
         let collection_format = param.collection_format().clone();
         params.push(FunctionParam {
             name,
+            description,
             variable_name,
             type_name,
             kind,
@@ -929,6 +965,7 @@ fn create_function_params_code(parameters: &[&WebParameter]) -> Result<FunctionP
 #[derive(Clone)]
 struct BuilderInstanceCode {
     summary: Option<String>,
+    description: Option<String>,
     fname: Ident,
     parameters: FunctionParams,
     in_group: bool,
@@ -938,8 +975,10 @@ impl BuilderInstanceCode {
     fn new(operation: &WebOperationGen, parameters: &FunctionParams, in_group: bool) -> Result<Self> {
         let fname = operation.function_name()?;
         let summary = operation.0.summary.clone();
+        let description = operation.0.description.clone();
         Ok(Self {
             summary,
+            description,
             fname,
             parameters: parameters.clone(),
             in_group,
@@ -978,17 +1017,44 @@ impl ToTokens for BuilderInstanceCode {
                 params.push(quote! { #variable_name: None });
             }
         }
-        let summary = if let Some(summary) = &self.summary {
-            quote! {
-                #[doc = #summary]
-            }
-        } else {
-            quote! {}
+
+        let summary = match &self.summary {
+            Some(summary) if !summary.is_empty() => quote! { #[doc = #summary] },
+            _ => quote! {},
         };
+        let description = match &self.description {
+            Some(desc) if !desc.is_empty() => quote! { #[doc = #desc] },
+            _ => quote! {},
+        };
+
+        let mut param_descriptions: Vec<TokenStream> = Vec::new();
+        if self
+            .parameters
+            .required_params()
+            .into_iter()
+            .any(|param| param.description.is_some())
+        {
+            // Add a blank link before the arguments if there is a summary or description.
+            if !summary.is_empty() || !description.is_empty() {
+                param_descriptions.push(quote! { #[doc = ""] });
+            }
+            param_descriptions.push(quote! { #[doc = "Arguments:"] });
+            for required_param in self.parameters.required_params().iter() {
+                if let Some(desc) = &required_param.description {
+                    if !desc.is_empty() {
+                        let doc_comment = format!("* `{}`: {}", required_param.variable_name, desc);
+                        param_descriptions.push(quote! { #[doc = #doc_comment] });
+                    }
+                }
+            }
+        };
+
         let fname = &self.fname;
         let parameters = FunctionCallParamsCode(self.parameters.clone());
         tokens.extend(quote! {
             #summary
+            #description
+            #(#param_descriptions)*
             pub fn #fname(#parameters) -> #fname::Builder {
                 #fname::Builder {
                     #(#params),*
@@ -1077,7 +1143,12 @@ impl ToTokens for BuilderSettersCode {
             if !is_vec {
                 value = quote! { Some(#value) };
             }
+            let doc_comment = match &param.description {
+                Some(desc) if !desc.is_empty() => quote! { #[ doc = #desc ] },
+                _ => quote! {},
+            };
             tokens.extend(quote! {
+                #doc_comment
                 pub fn #variable_name(mut self, #variable_name: #type_name) -> Self {
                     self.#variable_name = #value;
                     self

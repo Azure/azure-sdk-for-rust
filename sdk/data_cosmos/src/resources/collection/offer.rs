@@ -4,7 +4,7 @@ use azure_core::Header;
 /// The collection performance level.
 ///
 /// It can either be custom or fixed. You can find more details [here](https://docs.microsoft.com/rest/api/cosmos-db/create-a-collection).
-#[derive(Debug, Clone, PartialEq, Copy)]
+#[derive(Debug, Clone, PartialEq, Eq, Copy)]
 pub enum Offer {
     /// A Custom level of throughput
     Throughput(u64),

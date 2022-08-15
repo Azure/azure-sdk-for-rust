@@ -1,11 +1,9 @@
 use crate::{clients::QueueClient, prelude::*, PopReceipt};
-use azure_core::{
-    collect_pinned_stream, headers::Headers, prelude::*, Method, Response as AzureResponse,
-};
+use azure_core::{headers::Headers, prelude::*, Method, Response as AzureResponse};
 use azure_storage::core::{headers::CommonStorageResponseHeaders, xml::read_xml};
-use chrono::{DateTime, Utc};
 use serde::Deserialize;
 use std::convert::TryInto;
+use time::OffsetDateTime;
 
 operation! {
     GetMessages,
@@ -47,12 +45,12 @@ pub struct GetMessagesResponse {
 pub struct Message {
     message_id: String,
     pop_receipt: String,
-    #[serde(deserialize_with = "deserialize_utc_date_from_rfc2822")]
-    pub insertion_time: DateTime<Utc>,
-    #[serde(deserialize_with = "deserialize_utc_date_from_rfc2822")]
-    pub expiration_time: DateTime<Utc>,
-    #[serde(deserialize_with = "deserialize_utc_date_from_rfc2822")]
-    pub time_next_visible: DateTime<Utc>,
+    #[serde(with = "azure_core::date::rfc1123")]
+    pub insertion_time: OffsetDateTime,
+    #[serde(with = "azure_core::date::rfc1123")]
+    pub expiration_time: OffsetDateTime,
+    #[serde(with = "azure_core::date::rfc1123")]
+    pub time_next_visible: OffsetDateTime,
     pub dequeue_count: u64,
     pub message_text: String,
 }
@@ -83,7 +81,7 @@ impl GetMessagesResponse {
 
     async fn try_from(response: AzureResponse) -> azure_core::Result<Self> {
         let (_, headers, body) = response.deconstruct();
-        let body = collect_pinned_stream(body).await?;
+        let body = body.collect().await?;
 
         let messages = Self::parse_messages(&body)?;
 

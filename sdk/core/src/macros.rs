@@ -58,8 +58,8 @@ macro_rules! setters {
 /// For the following code:
 /// ```
 /// # #[derive(Clone, Debug)]
-/// # struct DatabaseClient;
-/// # struct CreateCollectionResponse;
+/// # pub struct DatabaseClient;
+/// # pub struct CreateCollectionResponse;
 /// azure_core::operation! {
 ///    CreateCollection,
 ///    client: DatabaseClient,
@@ -74,8 +74,8 @@ macro_rules! setters {
 /// # use azure_core::setters;
 /// # use azure_core::Context;
 /// # #[derive(Clone, Debug)]
-/// # struct DatabaseClient;
-/// # struct CreateCollectionResponse;
+/// # pub struct DatabaseClient;
+/// # pub struct CreateCollectionResponse;
 /// #[derive(Debug, Clone)]
 /// pub struct CreateCollectionBuilder {
 ///     client: DatabaseClient,
@@ -396,7 +396,7 @@ macro_rules! request_option {
 #[macro_export]
 macro_rules! create_enum {
     ($name:ident, $(($variant:ident, $value:expr)), *) => (
-        #[derive(Debug, PartialEq, PartialOrd, Clone, Copy)]
+        #[derive(Debug, PartialEq, Eq, PartialOrd, Clone, Copy)]
         pub enum $name {
             $(
                 $variant,

@@ -2,15 +2,14 @@
 #[macro_use]
 extern crate log;
 
+use azure_core::date;
 use azure_storage::core::prelude::*;
 use azure_storage_blobs::{blob::BlockListType, container::PublicAccess, prelude::*};
 use bytes::Bytes;
-use chrono::{FixedOffset, Utc};
 use futures::StreamExt;
-use std::{
-    ops::{Add, Deref},
-    time::Duration,
-};
+use std::ops::{Add, Deref};
+use std::time::Duration;
+use time::OffsetDateTime;
 use url::Url;
 use uuid::Uuid;
 
@@ -32,8 +31,8 @@ async fn create_and_delete_container() -> azure_core::Result<()> {
     let _result = container.get_acl().into_future().await?;
 
     // set stored acess policy list
-    let dt_start = Utc::now().with_timezone(&FixedOffset::east(0));
-    let dt_end = dt_start.add(chrono::Duration::days(7));
+    let dt_start = OffsetDateTime::now_utc();
+    let dt_end = dt_start.add(date::duration_from_days(7));
 
     let mut sapl = StoredAccessPolicyList::default();
     sapl.stored_access
@@ -367,6 +366,58 @@ async fn put_block_blob_and_get_properties() -> azure_core::Result<()> {
     let _ = requires_send_future(blob.get_properties().into_future());
     container.delete().into_future().await?;
     Ok(())
+}
+
+#[tokio::test]
+async fn put_block_blob_and_snapshot() {
+    let blob_name: &'static str = "snapshot-blob.txt";
+    let container_name: &'static str = "rust-snapshot-test";
+    let data = Bytes::from_static(b"abcdef");
+
+    let storage = initialize();
+    let blob_service = storage.blob_service_client();
+    let container = storage.container_client(container_name);
+    let blob = container.blob_client(blob_name);
+
+    if blob_service
+        .list_containers()
+        .into_stream()
+        .next()
+        .await
+        .unwrap()
+        .unwrap()
+        .containers
+        .iter()
+        .find(|x| x.name == container_name)
+        .is_none()
+    {
+        container
+            .create()
+            .public_access(PublicAccess::None)
+            .into_future()
+            .await
+            .unwrap();
+    }
+
+    // calculate md5 too!
+    let digest = md5::compute(&data[..]);
+
+    blob.put_block_blob(data)
+        .content_type("text/plain")
+        .hash(digest)
+        .into_future()
+        .await
+        .unwrap();
+
+    trace!("created {:?}", blob_name);
+
+    let snapshot = blob.snapshot().into_future().await.unwrap().snapshot;
+
+    trace!("crated snapshot: {:?} of {:?}", snapshot, blob_name);
+
+    // Clean-up test
+    container.delete().into_future().await.unwrap();
+    trace!("container {} deleted!", container_name);
 }
 
 #[tokio::test]

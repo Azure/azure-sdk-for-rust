@@ -1,10 +1,9 @@
 use crate::{blob::Blob, prelude::*};
 use azure_core::{
-    collect_pinned_stream, error::Error, headers::*, prelude::*, Pageable, RequestId,
-    Response as AzureResponse,
+    error::Error, headers::*, prelude::*, Pageable, RequestId, Response as AzureResponse,
+    ResponseBody,
 };
-use bytes::Bytes;
-use chrono::{DateTime, Utc};
+use time::OffsetDateTime;
 
 const DEFAULT_CHUNK_SIZE: u64 = 0x1000 * 0x1000;
 
@@ -61,12 +60,12 @@ impl GetBlobBuilder {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct GetBlobResponse {
     pub request_id: RequestId,
     pub blob: Blob,
-    pub data: Bytes,
-    pub date: DateTime<Utc>,
+    pub data: ResponseBody,
+    pub date: OffsetDateTime,
     pub remaining_range: Option<Range>,
 }
 
@@ -75,11 +74,10 @@ impl GetBlobResponse {
         request: GetBlobBuilder,
         response: AzureResponse,
     ) -> azure_core::Result<Self> {
-        let (_, headers, body) = response.deconstruct();
-        let data = collect_pinned_stream(body).await?;
+        let headers = response.headers();
 
-        let request_id = request_id_from_headers(&headers)?;
-        let date = date_from_headers(&headers)?;
+        let request_id = request_id_from_headers(headers)?;
+        let date = date_from_headers(headers)?;
 
         let content_range = headers.get_optional_as(&CONTENT_RANGE)?;
 
@@ -88,10 +86,12 @@ impl GetBlobResponse {
             request.range,
             content_range,
         );
+        let blob = Blob::from_headers(request.client.blob_name(), headers)?;
+        let data = response.into_body();
 
         Ok(Self {
             request_id,
-            blob: Blob::from_headers(request.client.blob_name(), &headers)?,
+            blob,
             data,
             date,
             remaining_range,

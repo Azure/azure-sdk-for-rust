@@ -10,7 +10,7 @@ use std::{
 };
 use url::form_urlencoded;
 
-#[derive(Debug, Clone, PartialEq, Deserialize, Default)]
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Default)]
 #[serde(rename_all = "PascalCase")]
 /// User-defined tags for specified blobs made up of one or more key-value
 /// pairs.
@@ -33,13 +33,13 @@ pub struct Tags {
     pub tag_set: TagSet,
 }
 
-#[derive(Debug, Clone, PartialEq, Deserialize, Default)]
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Default)]
 pub struct TagSet {
     #[serde(default, rename = "Tag")]
     pub tags: Vec<Tag>,
 }
 
-#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
 #[serde(rename_all = "PascalCase")]
 pub struct Tag {
     pub key: String,

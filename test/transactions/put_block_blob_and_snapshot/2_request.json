@@ -1,0 +1,15 @@
+{
+  "uri": "/test-container-put-block-blob-and-snapshot/test-container-put-block-blob-and-snapshot",
+  "method": "PUT",
+  "headers": {
+    "authorization": "<<STRIPPED>>",
+    "content-length": "6",
+    "content-md5": "6AtQFwmJUPxYqtg8jBSXjg==",
+    "content-type": "text/plain",
+    "user-agent": "azsdk-rust-storage/0.4.0 (1.61.0; linux; x86_64)",
+    "x-ms-blob-type": "BlockBlob",
+    "x-ms-date": "Wed, 03 Aug 2022 14:22:18 GMT",
+    "x-ms-version": "2019-12-12"
+  },
+  "body": "YWJjZGVm"
+}

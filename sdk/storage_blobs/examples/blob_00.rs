@@ -49,7 +49,7 @@ async fn main() -> azure_core::Result<()> {
     // In this case we are retrieving the whole blob in 8KB chunks.
     let mut stream = blob_client.get().chunk_size(0x2000u64).into_stream();
     while let Some(value) = stream.next().await {
-        let data = value?.data;
+        let data = value?.data.collect().await?;
         println!("received {:?} bytes", data.len());
         complete_response.extend(&data);
     }

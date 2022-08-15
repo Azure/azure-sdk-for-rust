@@ -4,16 +4,16 @@ use crate::shared_access_signature::account_sas::{
     AccountSasPermissions, AccountSasResource, AccountSasResourceType, AccountSharedAccessSignature,
 };
 use crate::ConnectionString;
-use crate::TimeoutPolicy;
 use azure_core::{
     auth::TokenCredential,
     error::{Error, ErrorKind, ResultExt},
     headers::*,
     prelude::Timeout,
-    Body, ClientOptions, Context, Method, Pipeline, Request, Response,
+    Body, ClientOptions, Context, Method, Pipeline, Request, Response, TimeoutPolicy,
 };
-use chrono::{DateTime, Utc};
+use azure_core::{date, Policy, TransportOptions};
 use std::sync::Arc;
+use time::OffsetDateTime;
 use url::Url;
 
 /// The well-known account used by Azurite and the legacy Azure Storage Emulator.
@@ -336,6 +336,40 @@ impl StorageClient {
         }
     }
 
+    /// Create a new instance of `StorageClient` using a mock backend. The
+    /// transaction name is used to look up which files to read to validate the
+    /// request and mock the response.
+    pub fn new_mock(
+        account: impl Into<String>,
+        storage_credentials: StorageCredentials,
+        transport_policy: Arc<dyn Policy>,
+    ) -> Self {
+        let account = account.into();
+        let options = ClientOptions::new(TransportOptions::new_custom_policy(transport_policy));
+        let pipeline = new_pipeline_from_options(
+            StorageOptions {
+                options,
+                timeout_policy: Default::default(),
+            },
+            storage_credentials.clone(),
+        );
+        Self {
+            blob_storage_url: get_endpoint_uri(None, &account, "blob").unwrap(),
+            table_storage_url: get_endpoint_uri(None, &account, "table").unwrap(),
+            queue_storage_url: get_endpoint_uri(None, &account, "queue").unwrap(),
+            queue_storage_secondary_url: get_endpoint_uri(
+                None,
+                &format!("{}-secondary", account),
+                "queue",
+            )
+            .unwrap(),
+            filesystem_url: get_endpoint_uri(None, &account, "dfs").unwrap(),
+            storage_credentials,
+            account,
+            pipeline,
+        }
+    }
+
     pub fn blob_storage_url(&self) -> &Url {
         &self.blob_storage_url
     }
@@ -371,8 +405,8 @@ impl StorageClient {
         headers: Headers,
         request_body: Option<Body>,
     ) -> azure_core::Result<Request> {
-        let dt = chrono::Utc::now();
-        let time = format!("{}", dt.format("%a, %d %h %Y %T GMT"));
+        let dt = OffsetDateTime::now_utc();
+        let time = date::to_rfc1123(&dt);
 
         let mut request = Request::new(url, method);
         for (k, v) in headers {
@@ -425,7 +459,7 @@ impl StorageClient {
         &self,
         resource: AccountSasResource,
         resource_type: AccountSasResourceType,
-        expiry: DateTime<Utc>,
+        expiry: OffsetDateTime,
         permissions: AccountSasPermissions,
     ) -> azure_core::Result<AccountSharedAccessSignature> {
         match &self.storage_credentials {
@@ -513,7 +547,7 @@ fn get_endpoint_uri(
     })
 }
 
-/// Create a Pipeline from CosmosOptions
+/// Create a Pipeline from StorageOptions
 fn new_pipeline_from_options(options: StorageOptions, credentials: StorageCredentials) -> Pipeline {
     let auth_policy: Arc<dyn azure_core::Policy> = Arc::new(AuthorizationPolicy::new(credentials));
 

@@ -1,16 +1,13 @@
-use chrono::{
-    serde::{ts_seconds, ts_seconds_option},
-    DateTime, Utc,
-};
 use serde::Deserialize;
+use time::OffsetDateTime;
 
 #[derive(Deserialize, Debug)]
 pub struct KeyVaultSecretBaseIdentifierAttributedRaw {
     pub enabled: bool,
-    #[serde(with = "ts_seconds")]
-    pub created: DateTime<Utc>,
-    #[serde(with = "ts_seconds")]
-    pub updated: DateTime<Utc>,
+    #[serde(with = "azure_core::date::timestamp")]
+    pub created: OffsetDateTime,
+    #[serde(with = "azure_core::date::timestamp")]
+    pub updated: OffsetDateTime,
 }
 
 #[derive(Deserialize, Debug)]
@@ -37,12 +34,12 @@ pub(crate) struct KeyVaultGetSecretResponse {
 pub(crate) struct KeyVaultGetSecretResponseAttributes {
     pub enabled: bool,
     #[serde(default)]
-    #[serde(with = "ts_seconds_option")]
-    pub exp: Option<DateTime<Utc>>,
-    #[serde(with = "ts_seconds")]
-    pub created: DateTime<Utc>,
-    #[serde(with = "ts_seconds")]
-    pub updated: DateTime<Utc>,
+    #[serde(with = "azure_core::date::timestamp::option")]
+    pub exp: Option<OffsetDateTime>,
+    #[serde(with = "azure_core::date::timestamp")]
+    pub created: OffsetDateTime,
+    #[serde(with = "azure_core::date::timestamp")]
+    pub updated: OffsetDateTime,
     #[serde(rename = "recoveryLevel")]
     #[allow(unused)]
     pub recovery_level: String,
@@ -58,8 +55,8 @@ pub struct KeyVaultSecretBaseIdentifier {
     pub id: String,
     pub name: String,
     pub enabled: bool,
-    pub created_on: DateTime<Utc>,
-    pub updated_on: DateTime<Utc>,
+    pub created_on: OffsetDateTime,
+    pub updated_on: OffsetDateTime,
 }
 
 #[derive(Debug)]
@@ -67,7 +64,7 @@ pub struct KeyVaultSecret {
     pub id: String,
     pub value: String,
     pub enabled: bool,
-    pub expires_on: Option<DateTime<Utc>>,
-    pub created_on: DateTime<Utc>,
-    pub updated_on: DateTime<Utc>,
+    pub expires_on: Option<OffsetDateTime>,
+    pub created_on: OffsetDateTime,
+    pub updated_on: OffsetDateTime,
 }

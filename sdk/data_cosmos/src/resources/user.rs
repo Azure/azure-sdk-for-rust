@@ -3,14 +3,13 @@
 use super::Resource;
 use crate::headers::from_headers::*;
 use azure_core::{
-    collect_pinned_stream,
     headers::{etag_from_headers, session_token_from_headers},
     Response as HttpResponse,
 };
 /// A logical namespace for scoping permissions on resources.
 ///
 /// You can learn more about users [here](https://docs.microsoft.com/rest/api/cosmos-db/users).
-#[derive(Serialize, Deserialize, Clone, Debug, PartialOrd, PartialEq)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialOrd, PartialEq, Eq)]
 pub struct User {
     /// The user's id
     pub id: String,
@@ -67,8 +66,8 @@ pub struct UserResponse {
 impl UserResponse {
     /// Creates a UserResponse from an HttpResponse
     pub async fn try_from(response: HttpResponse) -> azure_core::Result<Self> {
-        let (_status_code, headers, pinned_stream) = response.deconstruct();
-        let body = collect_pinned_stream(pinned_stream).await?;
+        let (_status_code, headers, body) = response.deconstruct();
+        let body = body.collect().await?;
 
         Ok(Self {
             user: serde_json::from_slice(&body)?,

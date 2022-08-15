@@ -1,5 +1,5 @@
-use chrono::{DateTime, Utc};
 use serde::{self, Serialize};
+use time::OffsetDateTime;
 use uuid::Uuid;
 
 #[derive(Serialize, Debug)]
@@ -14,7 +14,8 @@ where
     pub id: String,
     pub event_type: String,
     pub subject: String,
-    pub event_time: DateTime<Utc>,
+    #[serde(with = "azure_core::date::rfc3339")]
+    pub event_time: OffsetDateTime,
     pub data: Option<T>,
     pub data_version: String,
     pub metadata_version: Option<String>,
@@ -52,7 +53,7 @@ where
             subject: subject.to_owned(),
             data_version: data_version.unwrap_or_else(|| String::from("0.1")),
             data: Some(data),
-            event_time: Utc::now(),
+            event_time: OffsetDateTime::now_utc(),
             topic: None,
             metadata_version: None,
         }
@@ -62,8 +63,8 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use chrono::{DateTime, NaiveDate, Utc};
     use serde::{self, Serialize};
+    use time::macros::datetime;
 
     #[derive(Serialize)]
     struct Data {
@@ -79,8 +80,7 @@ mod tests {
             Data { number: 42 },
             Some(String::from("1.0")),
         );
-        event.event_time =
-            DateTime::<Utc>::from_utc(NaiveDate::from_ymd(2020, 12, 21).and_hms(14, 53, 41), Utc);
+        event.event_time = datetime!(2020-12-21 14:53:41 UTC);
 
         assert_eq!(
             serde_json::to_string(&event).unwrap(),

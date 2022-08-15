@@ -11,7 +11,7 @@ azure_core::operation! {
 
 impl GetTwinBuilder {
     /// Execute the request to get the twin of a module or device.
-    pub fn into_future(self) -> GetTwin {
+    pub fn into_future(mut self) -> GetTwin {
         Box::pin(async move {
             let uri = match self.module_id {
                 Some(val) => format!(
@@ -27,10 +27,9 @@ impl GetTwinBuilder {
             let mut request = self.client.finalize_request(&uri, Method::Get)?;
             request.set_body(azure_core::EMPTY_BODY);
 
-            self.client
-                .http_client()
-                .execute_request_check_status(&request)
-                .await
+            let response = self.client.send(&mut self.context, &mut request).await?;
+
+            GetTwinResponse::from_response(response).await
         })
     }
 }

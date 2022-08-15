@@ -5,7 +5,7 @@ use azure_core::error::Error;
 use serde::{Deserialize, Serialize};
 
 /// The representation of a device identity.
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct DeviceIdentityResponse {
     /// The authentication mechanism of the device.
@@ -46,5 +46,16 @@ impl std::convert::TryFrom<crate::service::CollectedResponse> for DeviceIdentity
         let device_identity_response: DeviceIdentityResponse = serde_json::from_slice(body)?;
 
         Ok(device_identity_response)
+    }
+}
+
+/// Response of CreateOrUpdateDeviceIdentity
+pub type CreateOrUpdateDeviceIdentityResponse = DeviceIdentityResponse;
+
+impl CreateOrUpdateDeviceIdentityResponse {
+    pub(crate) async fn try_from(response: azure_core::Response) -> azure_core::Result<Self> {
+        let collected = azure_core::CollectedResponse::from_response(response).await?;
+        let body = collected.body();
+        Ok(serde_json::from_slice(body)?)
     }
 }

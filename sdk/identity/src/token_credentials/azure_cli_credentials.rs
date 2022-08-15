@@ -1,26 +1,36 @@
 use azure_core::auth::{AccessToken, TokenCredential, TokenResponse};
 use azure_core::error::{Error, ErrorKind, ResultExt};
-use chrono::{DateTime, Utc};
 use serde::Deserialize;
 use std::process::Command;
 use std::str;
+use time::OffsetDateTime;
 
 mod az_cli_date_format {
-    use chrono::{DateTime, Local, TimeZone, Utc};
+    use azure_core::date;
+    use azure_core::error::{ErrorKind, ResultExt};
     use serde::{self, Deserialize, Deserializer};
+    use time::format_description::FormatItem;
+    use time::macros::format_description;
+    use time::{OffsetDateTime, PrimitiveDateTime};
 
-    const FORMAT: &str = "%Y-%m-%d %H:%M:%S.%6f";
+    const FORMAT: &[FormatItem] =
+        format_description!("[year]-[month]-[day] [hour]:[minute]:[second].[subsecond digits:6]");
 
-    pub fn deserialize<'de, D>(deserializer: D) -> Result<DateTime<Utc>, D::Error>
+    pub fn parse(s: &str) -> azure_core::Result<OffsetDateTime> {
+        // expiresOn from azure cli uses the local timezone and needs to be converted to UTC
+        let dt = PrimitiveDateTime::parse(s, FORMAT)
+            .with_context(ErrorKind::DataConversion, || {
+                format!("unable to parse expiresOn '{s}")
+            })?;
+        Ok(date::assume_local(&dt))
+    }
+
+    pub fn deserialize<'de, D>(deserializer: D) -> Result<OffsetDateTime, D::Error>
     where
         D: Deserializer<'de>,
     {
         let s = String::deserialize(deserializer)?;
-        // expiresOn from azure cli uses the local timezone and needs to be converted to UTC
-        let local_datetime = Local
-            .datetime_from_str(&s, FORMAT)
-            .map_err(serde::de::Error::custom)?;
-        Ok(local_datetime.with_timezone(&Utc))
+        parse(&s).map_err(serde::de::Error::custom)
     }
 }
 
@@ -29,7 +39,7 @@ mod az_cli_date_format {
 struct CliTokenResponse {
     pub access_token: AccessToken,
     #[serde(with = "az_cli_date_format")]
-    pub expires_on: DateTime<Utc>,
+    pub expires_on: OffsetDateTime,
     pub subscription: String,
     pub tenant: String,
     #[allow(unused)]
@@ -74,7 +84,7 @@ impl AzureCliCredential {
             Ok(az_output) => {
                 let output = String::from_utf8_lossy(&az_output.stderr);
                 Err(Error::with_message(ErrorKind::Credential, || {
-                    format!("az account get-access-token command failed: {output}")
+                    format!("'az account get-access-token' command failed: {output}")
                 }))
             }
             Err(e) => match e.kind() {
@@ -112,26 +122,17 @@ impl TokenCredential for AzureCliCredential {
 
 #[cfg(test)]
 mod tests {
-    use chrono::TimeZone;
-    use serde_test::{assert_de_tokens, Token};
-
     use super::*;
+    use azure_core::date;
+    use time::macros::datetime;
 
-    #[derive(Debug, Deserialize)]
-    struct AzureDateTime {
-        #[serde(with = "az_cli_date_format")]
-        date: DateTime<Utc>,
-    }
     #[test]
-    fn can_parse_cli_datetime() {
-        let s = "2020-11-16T04:25:03Z";
-        let utc = Utc.ymd(2020, 11, 16).and_hms(4, 25, 3);
-        let dt = AzureDateTime { date: utc };
-        assert_de_tokens(&dt.date, &[Token::Str(s)]);
-
-        let s = "2020-11-16 04:25:03Z";
-        let utc = Utc.ymd(2020, 11, 16).and_hms(4, 25, 3);
-        let dt = AzureDateTime { date: utc };
-        assert_de_tokens(&dt.date, &[Token::Str(s)]);
+    fn can_parse_expires_on() -> azure_core::Result<()> {
+        let expires_on = "2022-07-30 12:12:53.919110";
+        assert_eq!(
+            az_cli_date_format::parse(expires_on)?,
+            date::assume_local(&datetime!(2022-07-30 12:12:53.919110))
+        );
+        Ok(())
     }
 }

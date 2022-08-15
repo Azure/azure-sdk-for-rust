@@ -1,6 +1,6 @@
 [package]
 name = "azure_identity"
-version = "0.4.0"
+version = "0.5.0"
 description = "Rust wrappers around Microsoft Azure REST APIs - Azure identity helper crate"
 readme = "README.md"
 authors = ["Microsoft Corp."]
@@ -13,13 +13,13 @@ categories = ["api-bindings"]
 edition = "2021"
 
 [dependencies]
-azure_core = { path = "../core", version = "0.3" }
+azure_core = { path = "../core", version = "0.4" }
 async-lock = "2.5"
 oauth2 = { version = "4.0.0", default-features = false }
 url = "2.2"
 futures = "0.3"
 serde = { version = "1.0", features = ["derive"] }
-chrono = { version = "0.4", features = ["serde"] }
+time = { version = "0.3.10", features = ["serde", "macros", "local-offset"] }
 serde_json = "1.0"
 log = "0.4"
 async-timer = "1.0.0-beta.7"

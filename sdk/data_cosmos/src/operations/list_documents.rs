@@ -6,10 +6,10 @@ use crate::ResourceQuota;
 use azure_core::headers::{
     continuation_token_from_headers_optional, item_count_from_headers, session_token_from_headers,
 };
-use azure_core::{collect_pinned_stream, Response, SessionToken};
 use azure_core::{prelude::*, Pageable};
-use chrono::{DateTime, Utc};
+use azure_core::{Response, SessionToken};
 use serde::de::DeserializeOwned;
+use time::OffsetDateTime;
 
 operation! {
     #[stream]
@@ -78,7 +78,7 @@ pub struct ListDocumentsResponse<T> {
     pub rid: String,
     pub documents: Vec<Document<T>>,
     pub content_location: String,
-    pub last_state_change: DateTime<Utc>,
+    pub last_state_change: OffsetDateTime,
     pub resource_quota: Vec<ResourceQuota>,
     pub resource_usage: Vec<ResourceQuota>,
     pub lsn: u64,
@@ -100,7 +100,7 @@ pub struct ListDocumentsResponse<T> {
     pub service_version: String,
     pub activity_id: uuid::Uuid,
     pub gateway_version: String,
-    pub date: DateTime<Utc>,
+    pub date: OffsetDateTime,
     pub continuation_token: Option<Continuation>,
 }
 
@@ -117,8 +117,8 @@ where
     T: DeserializeOwned,
 {
     pub(crate) async fn try_from(response: Response) -> azure_core::Result<Self> {
-        let (_status_code, headers, pinned_stream) = response.deconstruct();
-        let body: bytes::Bytes = collect_pinned_stream(pinned_stream).await?;
+        let (_status_code, headers, body) = response.deconstruct();
+        let body = body.collect().await?;
         let headers = &headers;
 
         // we will proceed in three steps:
@@ -210,7 +210,7 @@ mod tests {
     \"_count\": 7
 }";
 
-    #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+    #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
     struct MyStruct {
         id: String,
         color: String,

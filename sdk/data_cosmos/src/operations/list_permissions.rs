@@ -2,7 +2,7 @@ use crate::headers::from_headers::*;
 use crate::prelude::*;
 use crate::resources::Permission;
 use crate::resources::ResourceType;
-use azure_core::collect_pinned_stream;
+
 use azure_core::headers::{continuation_token_from_headers_optional, session_token_from_headers};
 use azure_core::prelude::*;
 use azure_core::{Pageable, Response as HttpResponse};
@@ -65,8 +65,8 @@ pub struct ListPermissionsResponse {
 
 impl ListPermissionsResponse {
     pub async fn try_from(response: HttpResponse) -> azure_core::Result<Self> {
-        let (_status_code, headers, pinned_stream) = response.deconstruct();
-        let body = collect_pinned_stream(pinned_stream).await?;
+        let (_status_code, headers, body) = response.deconstruct();
+        let body = body.collect().await?;
 
         #[derive(Debug, Deserialize)]
         struct Response {

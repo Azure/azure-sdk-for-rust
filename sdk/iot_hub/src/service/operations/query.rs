@@ -4,7 +4,6 @@ use crate::service::{responses::QueryResponse, ServiceClient, API_VERSION};
 use azure_core::prelude::*;
 use azure_core::Method;
 use serde::Serialize;
-use std::convert::TryInto;
 
 /// Body for the Query request
 #[derive(Serialize, Debug)]
@@ -23,7 +22,7 @@ azure_core::operation! {
 
 impl QueryBuilder {
     /// Invoke a qiven query on the IoT Hub
-    pub fn into_future(self) -> Query {
+    pub fn into_future(mut self) -> Query {
         Box::pin(async move {
             let uri = format!(
                 "https://{}.azure-devices.net/devices/query?api-version={}",
@@ -38,11 +37,9 @@ impl QueryBuilder {
             request.add_mandatory_header(&self.max_item_count.unwrap_or_default());
             request.set_body(body);
 
-            self.client
-                .http_client()
-                .execute_request_check_status(&request)
-                .await?
-                .try_into()
+            let response = self.client.send(&mut self.context, &mut request).await?;
+
+            QueryResponse::try_from(response).await
         })
     }
 }

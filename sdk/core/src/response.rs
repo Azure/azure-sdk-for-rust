@@ -1,27 +1,26 @@
+use crate::error::{ErrorKind, ResultExt};
 use crate::headers::Headers;
 use crate::StatusCode;
 use bytes::Bytes;
-use futures::Stream;
-use futures::StreamExt;
+use futures::{Stream, StreamExt};
+use std::fmt::Debug;
 use std::pin::Pin;
 
-pub type PinnedStream = Pin<Box<dyn Stream<Item = crate::Result<Bytes>> + Send + Sync>>;
+pub(crate) type PinnedStream = Pin<Box<dyn Stream<Item = crate::Result<Bytes>> + Send + Sync>>;
 
 /// An HTTP Response.
 pub struct Response {
     status: StatusCode,
     headers: Headers,
-    body: PinnedStream,
+    body: ResponseBody,
 }
 
 impl Response {
-    #[cfg(any(feature = "enable_reqwest", feature = "enable_reqwest_rustls"))]
-    #[cfg(not(target_arch = "wasm32"))]
-    pub(crate) fn new(status: StatusCode, headers: Headers, body: PinnedStream) -> Self {
+    pub fn new(status: StatusCode, headers: Headers, stream: PinnedStream) -> Self {
         Self {
             status,
             headers,
-            body,
+            body: ResponseBody::new(stream),
         }
     }
 
@@ -36,22 +35,13 @@ impl Response {
     }
 
     /// Deconstruct the HTTP response into its components.
-    pub fn deconstruct(self) -> (StatusCode, Headers, PinnedStream) {
+    pub fn deconstruct(self) -> (StatusCode, Headers, ResponseBody) {
         (self.status, self.headers, self.body)
     }
 
     /// Consume the HTTP response and return the HTTP body bytes.
-    pub async fn into_body(self) -> Bytes {
-        collect_pinned_stream(self.body)
-            .await
-            .unwrap_or_else(|_| Bytes::from_static(b"<INVALID BODY>"))
-    }
-
-    /// Consume the HTTP response and read the HTTP body into a string.
-    pub async fn into_body_string(self) -> String {
-        std::str::from_utf8(&self.into_body().await)
-            .unwrap_or("<NON-UTF8 BODY>")
-            .to_owned()
+    pub fn into_body(self) -> ResponseBody {
+        self.body
     }
 }
 
@@ -63,18 +53,6 @@ impl std::fmt::Debug for Response {
             .field("body", &"<BODY>")
             .finish()
     }
-}
-
-/// Convenience function that transforms a `PinnedStream` in a `bytes::Bytes` struct by collecting all the chunks. It consumes the response stream.
-pub async fn collect_pinned_stream(mut pinned_stream: PinnedStream) -> crate::error::Result<Bytes> {
-    let mut final_result = Vec::new();
-
-    while let Some(res) = pinned_stream.next().await {
-        let res = res?;
-        final_result.extend(&res);
-    }
-
-    Ok(final_result.into())
 }
 
 /// A response with the body collected as bytes
@@ -110,15 +88,60 @@ impl CollectedResponse {
         &self.body
     }
 
-    /// Into the body
-    pub fn into_body(self) -> Bytes {
-        self.body
-    }
-
     /// From a response
     pub async fn from_response(response: Response) -> crate::Result<Self> {
         let (status, headers, body) = response.deconstruct();
-        let body = collect_pinned_stream(body).await?;
+        let body = body.collect().await?;
         Ok(Self::new(status, headers, body))
+    }
+}
+
+/// A response body stream
+///
+/// This body can either be streamed or collected into `Bytes`
+#[pin_project::pin_project]
+pub struct ResponseBody(#[pin] PinnedStream);
+
+impl ResponseBody {
+    fn new(stream: PinnedStream) -> Self {
+        Self(stream)
+    }
+
+    /// Collect the stream into a `Bytes` collection
+    pub async fn collect(mut self) -> crate::Result<Bytes> {
+        let mut final_result = Vec::new();
+
+        while let Some(res) = self.0.next().await {
+            final_result.extend(&res?);
+        }
+
+        Ok(final_result.into())
+    }
+
+    /// Collect the stream into a `String`
+    pub async fn collect_string(self) -> crate::Result<String> {
+        std::str::from_utf8(&self.collect().await?)
+            .context(
+                ErrorKind::DataConversion,
+                "response body was not utf-8 like expected",
+            )
+            .map(ToOwned::to_owned)
+    }
+}
+
+impl Stream for ResponseBody {
+    type Item = crate::Result<Bytes>;
+    fn poll_next(
+        self: Pin<&mut Self>,
+        cx: &mut std::task::Context<'_>,
+    ) -> std::task::Poll<Option<Self::Item>> {
+        let this = self.project();
+        this.0.poll_next(cx)
+    }
+}
+
+impl Debug for ResponseBody {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str("ResonseBody")
     }
 }

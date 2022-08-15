@@ -7,8 +7,8 @@ use azure_core::Request;
 use azure_core::{AppendToUrlQuery, Response as HttpResponse};
 use azure_storage::core::headers::CommonStorageResponseHeaders;
 use bytes::Bytes;
-use chrono::{DateTime, Utc};
 use std::convert::TryInto;
+use time::OffsetDateTime;
 
 #[derive(Debug, Clone)]
 pub struct PatchPathBuilder<C>
@@ -116,7 +116,7 @@ azure_core::future!(PatchPath);
 pub struct PatchPathResponse {
     pub common_storage_response_headers: CommonStorageResponseHeaders,
     pub etag: Option<String>,
-    pub last_modified: Option<DateTime<Utc>>,
+    pub last_modified: Option<OffsetDateTime>,
     pub continuation: Option<NextMarker>,
 }
 

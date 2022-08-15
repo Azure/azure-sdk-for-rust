@@ -1,6 +1,6 @@
 [package]
 name = "azure_core"
-version = "0.3.0"
+version = "0.4.0"
 description = "Rust wrappers around Microsoft Azure REST APIs - Core crate"
 readme = "README.md"
 authors = ["Microsoft Corp."]
@@ -16,7 +16,7 @@ edition = "2021"
 async-trait = "0.1"
 base64 = "0.13"
 bytes = "1.0"
-chrono = "0.4"
+time = { version = "0.3.10", features = ["serde-well-known", "macros", "local-offset"] }
 dyn-clone = "1.0"
 futures = "0.3"
 http-types = { version = "2.12", default-features = false }
@@ -51,4 +51,3 @@ enable_reqwest_gzip = ["reqwest/gzip"]
 enable_reqwest_rustls = ["reqwest/rustls-tls"]
 test_e2e = []
 azurite_workaround = []
-mock_transport_framework = []

@@ -1,0 +1,4 @@
+[tags]
+deny_contains = ["hybrid"]
+# https://github.com/Azure/azure-rest-api-specs/pull/20055
+deny = ["package-2020-10-01"]

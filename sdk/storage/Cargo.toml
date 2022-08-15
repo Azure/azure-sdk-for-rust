@@ -1,6 +1,6 @@
 [package]
 name = "azure_storage"
-version = "0.4.0"
+version = "0.5.0"
 description = "Azure Storage crate from the Azure SDK for Rust"
 readme = "README.md"
 authors = ["Microsoft Corp."]
@@ -14,9 +14,9 @@ edition = "2021"
 
 [dependencies]
 async-trait = "0.1"
-azure_core = { path = "../core", version = "0.3" }
+azure_core = { path = "../core", version = "0.4" }
 base64 = "0.13"
-chrono = "0.4"
+time = { version = "0.3.10", features = ["serde-well-known"] }
 futures = "0.3"
 log = "0.4"
 serde = "1.0"
@@ -35,11 +35,11 @@ sha2 = "0.10"
 tokio = { version = "1.0", features = ["macros", "rt-multi-thread"] }
 env_logger = "0.9"
 reqwest = "0.11"
+mock_transport = { path = "../../eng/test/mock_transport" }
 
 [features]
 default = ["enable_reqwest"]
 test_e2e = []
-mock_transport_framework = [ "azure_core/mock_transport_framework"]
 test_integration = []
 azurite_workaround = []
 enable_reqwest = ["azure_core/enable_reqwest"]

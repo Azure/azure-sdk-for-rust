@@ -3,7 +3,7 @@ use crate::prelude::*;
 use crate::ResourceQuota;
 use azure_core::headers::session_token_from_headers;
 use azure_core::Response as HttpResponse;
-use chrono::{DateTime, Utc};
+use time::OffsetDateTime;
 
 operation! {
     DeleteStoredProcedure,
@@ -26,7 +26,7 @@ impl DeleteStoredProcedureBuilder {
                 .client
                 .pipeline()
                 .send(
-                    self.context.clone().insert(ResourceType::Permissions),
+                    self.context.clone().insert(ResourceType::StoredProcedures),
                     &mut request,
                 )
                 .await?;
@@ -41,7 +41,7 @@ pub struct DeleteStoredProcedureResponse {
     pub charge: f64,
     pub activity_id: uuid::Uuid,
     pub session_token: String,
-    pub last_change: DateTime<Utc>,
+    pub last_change: OffsetDateTime,
     pub resource_quota: Vec<ResourceQuota>,
     pub resource_usage: Vec<ResourceQuota>,
 }

@@ -1,10 +1,10 @@
 #[macro_use]
 extern crate log;
-use azure_core::prelude::*;
+use azure_core::{date, prelude::*};
 
 use azure_storage::core::prelude::*;
 use azure_storage_queues::prelude::*;
-use chrono::{Duration, Utc};
+use time::OffsetDateTime;
 
 #[tokio::main]
 async fn main() -> azure_core::Result<()> {
@@ -30,9 +30,10 @@ async fn main() -> azure_core::Result<()> {
     metadata
         .as_mut()
         .insert("source".into(), "Azure SDK for Rust".into());
-    metadata
-        .as_mut()
-        .insert("created".into(), format!("{:?}", Utc::now()).into());
+    metadata.as_mut().insert(
+        "created".into(),
+        format!("{:?}", OffsetDateTime::now_utc()).into(),
+    );
 
     let response = queue
         .create()
@@ -43,7 +44,10 @@ async fn main() -> azure_core::Result<()> {
 
     // let's add some more metadata
     metadata.insert("version".to_owned(), "TBD".to_owned());
-    metadata.insert("updated".to_owned(), format!("{:?}", Utc::now()));
+    metadata.insert(
+        "updated".to_owned(),
+        format!("{:?}", OffsetDateTime::now_utc()),
+    );
 
     println!("metadata == {:#?}", metadata);
 
@@ -58,15 +62,15 @@ async fn main() -> azure_core::Result<()> {
     let policies = vec![
         QueueStoredAccessPolicy::new(
             "first_sap_read_process",
-            Utc::now() - Duration::hours(1),
-            Utc::now() + Duration::days(1),
+            OffsetDateTime::now_utc() - date::duration_from_hours(1),
+            OffsetDateTime::now_utc() + date::duration_from_days(1),
         )
         .enable_read()
         .enable_process(),
         QueueStoredAccessPolicy::new(
             "sap_admin",
-            Utc::now() - chrono::Duration::hours(1),
-            Utc::now() + chrono::Duration::hours(5),
+            OffsetDateTime::now_utc() - date::duration_from_hours(1),
+            OffsetDateTime::now_utc() + date::duration_from_hours(5),
         )
         .enable_all(),
     ];

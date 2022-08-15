@@ -17,8 +17,8 @@ use azure_storage::core::{
         SasToken,
     },
 };
-use chrono::{DateTime, Utc};
 use futures::StreamExt;
+use time::OffsetDateTime;
 use url::Url;
 
 /// A client for handling blobs
@@ -54,7 +54,7 @@ impl BlobClient {
         // than restarting the whole blob on a failure.
         let mut stream = self.get().into_stream();
         while let Some(value) = stream.next().await {
-            let data = value?.data;
+            let data = value?.data.collect().await?;
             blob.extend(&data);
         }
         Ok(blob)
@@ -88,7 +88,7 @@ impl BlobClient {
         SetBlobTierBuilder::new(self.clone(), access_tier)
     }
 
-    /// Set an expiry time on an existing blob.  
+    /// Set an expiry time on an existing blob.
     ///
     /// This operation is only allowed on Hierarchical Namespace enabled
     /// accounts.
@@ -208,7 +208,7 @@ impl BlobClient {
     pub fn shared_access_signature(
         &self,
         permissions: BlobSasPermissions,
-        expiry: DateTime<Utc>,
+        expiry: OffsetDateTime,
     ) -> azure_core::Result<BlobSharedAccessSignature> {
         let canonicalized_resource = format!(
             "/blob/{}/{}/{}",
@@ -250,6 +250,11 @@ impl BlobClient {
         result
     }
 
+    /// Create a blob snapshot
+    pub fn snapshot(&self) -> SnapshotBlobBuilder {
+        SnapshotBlobBuilder::new(self.clone())
+    }
+
     pub fn blob_name(&self) -> &str {
         &self.blob_name
     }
@@ -267,7 +272,8 @@ impl BlobClient {
         &self.container_client
     }
 
-    pub(crate) fn url(&self) -> azure_core::Result<url::Url> {
+    /// Full URL for the blob.
+    pub fn url(&self) -> azure_core::Result<url::Url> {
         StorageClient::url_with_segments(self.container_client.url()?, self.blob_name.split('/'))
     }
 

@@ -2,7 +2,7 @@ use crate::prelude::*;
 use crate::{headers::from_headers::*, ResourceQuota};
 use azure_core::headers::{content_type_from_headers, session_token_from_headers};
 use azure_core::Response as HttpResponse;
-use chrono::{DateTime, Utc};
+use time::OffsetDateTime;
 
 operation! {
     DeleteCollection,
@@ -35,7 +35,7 @@ impl DeleteCollectionBuilder {
 
 #[derive(Debug, Clone)]
 pub struct DeleteCollectionResponse {
-    pub last_state_change: DateTime<Utc>,
+    pub last_state_change: OffsetDateTime,
     pub resource_quota: Vec<ResourceQuota>,
     pub resource_usage: Vec<ResourceQuota>,
     pub collection_partition_index: u64,
@@ -52,7 +52,7 @@ pub struct DeleteCollectionResponse {
     pub gateway_version: String,
     pub cosmos_llsn: u64,
     pub lsn: u64,
-    pub date: DateTime<Utc>,
+    pub date: OffsetDateTime,
     pub transport_request_id: u64,
     pub xp_role: u32,
     pub server: String,

@@ -20,7 +20,7 @@ impl TransportPolicy {
 impl Policy for TransportPolicy {
     async fn send(
         &self,
-        _ctx: &Context,
+        ctx: &Context,
         request: &mut Request,
         next: &[Arc<dyn Policy>],
     ) -> PolicyResult {
@@ -28,7 +28,7 @@ impl Policy for TransportPolicy {
         assert_eq!(0, next.len());
 
         log::debug!("the following request will be passed to the transport policy: {request:#?}");
-        let response = { self.transport_options.http_client.execute_request(request) };
+        let response = { self.transport_options.send(ctx, request) };
 
         response.await
     }

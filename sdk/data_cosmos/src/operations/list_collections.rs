@@ -4,9 +4,9 @@ use crate::resources::Collection;
 use crate::ResourceQuota;
 use azure_core::headers::{continuation_token_from_headers_optional, session_token_from_headers};
 use azure_core::prelude::*;
+use azure_core::Pageable;
 use azure_core::Response as HttpResponse;
-use azure_core::{collect_pinned_stream, Pageable};
-use chrono::{DateTime, Utc};
+use time::OffsetDateTime;
 
 operation! {
     #[stream]
@@ -50,7 +50,7 @@ pub struct ListCollectionsResponse {
     pub rid: String,
     pub collections: Vec<Collection>,
     pub count: u32,
-    pub last_state_change: DateTime<Utc>,
+    pub last_state_change: OffsetDateTime,
     pub resource_quota: Vec<ResourceQuota>,
     pub resource_usage: Vec<ResourceQuota>,
     pub schema_version: String,
@@ -66,8 +66,8 @@ pub struct ListCollectionsResponse {
 
 impl ListCollectionsResponse {
     pub async fn try_from(response: HttpResponse) -> azure_core::Result<Self> {
-        let (_status_code, headers, pinned_stream) = response.deconstruct();
-        let body = collect_pinned_stream(pinned_stream).await?;
+        let (_status_code, headers, body) = response.deconstruct();
+        let body = body.collect().await?;
 
         #[derive(Deserialize, Debug)]
         pub struct Response {

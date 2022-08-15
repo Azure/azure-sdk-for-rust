@@ -27,7 +27,7 @@ use std::{
 };
 
 pub use self::{
-    codegen::{create_mod, CodeGen},
+    codegen::CodeGen,
     spec::{ResolvedSchema, Spec, WebOperation},
 };
 
@@ -39,14 +39,14 @@ pub struct PropertyName {
 }
 
 /// Different types of code generators to run
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Runs {
     Models,
     Operations,
 }
 
 /// Settings for the entire run, generating multiple crates
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct RunConfig {
     pub crate_name_prefix: &'static str,
     pub runs: Vec<Runs>,
@@ -64,7 +64,7 @@ impl RunConfig {
 }
 
 /// Settings for generating of a single crate
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct CrateConfig<'a> {
     pub run_config: &'a RunConfig,
     pub input_files: Vec<Utf8PathBuf>,
@@ -116,10 +116,6 @@ pub fn run<'a>(crate_config: &'a CrateConfig, package_config: &'a PackageConfig)
     // create api client from operations
     if crate_config.should_run(&Runs::Operations) {
         let operations = codegen_operations::create_operations(&cg)?;
-        let operations_path = io::join(&crate_config.output_folder, "operations.rs")?;
-        write_file(&operations_path, &operations, crate_config.print_writing_file())?;
-
-        let operations = create_mod();
         let operations_path = io::join(&crate_config.output_folder, "mod.rs")?;
         write_file(&operations_path, &operations, crate_config.print_writing_file())?;
     }

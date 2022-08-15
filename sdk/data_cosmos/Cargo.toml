@@ -1,6 +1,6 @@
 [package]
 name = "azure_data_cosmos"
-version = "0.4.0"
+version = "0.5.0"
 description = "Rust wrappers around Microsoft Azure REST APIs - Azure Cosmos DB"
 readme = "README.md"
 authors = ["Microsoft Corp."]
@@ -16,9 +16,9 @@ edition = "2021"
 
 [dependencies]
 async-trait = "0.1"
-azure_core = { path = "../core", version = "0.3" }
+azure_core = { path = "../core", version = "0.4" }
 base64 = "0.13"
-chrono = "0.4"
+time = "0.3.10"
 futures = "0.3"
 log = "0.4"
 serde = { version = "1.0", features = ["derive"] }
@@ -36,9 +36,9 @@ tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
 clap = { version = "3.2.7", features = ["derive", "env"] }
 reqwest = "0.11.0"
 stop-token = { version = "0.7.0", features = ["tokio"] }
+mock_transport = { path = "../../eng/test/mock_transport" }
 
 [features]
 default = ["azure_core/enable_reqwest"]
 test_e2e = []
-mock_transport_framework = [ "azure_core/mock_transport_framework"]
 into_future = []

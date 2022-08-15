@@ -2,16 +2,16 @@ use crate::headers::from_headers::*;
 use crate::prelude::*;
 use crate::resources::Attachment;
 use crate::ResourceQuota;
+use azure_core::headers;
 use azure_core::headers::{
     date_from_headers, etag_from_headers, session_token_from_headers, HeaderValue,
 };
 use azure_core::Method;
 use azure_core::Response as HttpResponse;
 use azure_core::SessionToken;
-use azure_core::{collect_pinned_stream, headers};
 use azure_core::{content_type, prelude::*};
 use bytes::Bytes;
-use chrono::{DateTime, Utc};
+use time::OffsetDateTime;
 
 operation! {
     CreateOrReplaceSlugAttachment,
@@ -79,7 +79,7 @@ pub struct CreateOrReplaceSlugAttachmentResponse {
     pub attachment: Attachment,
     pub max_media_storage_usage_mb: u64,
     pub media_storage_usage_mb: u64,
-    pub last_change: DateTime<Utc>,
+    pub last_change: OffsetDateTime,
     pub etag: String,
     pub resource_quota: Vec<ResourceQuota>,
     pub resource_usage: Vec<ResourceQuota>,
@@ -98,13 +98,13 @@ pub struct CreateOrReplaceSlugAttachmentResponse {
     pub service_version: String,
     pub activity_id: uuid::Uuid,
     pub gateway_version: String,
-    pub date: DateTime<Utc>,
+    pub date: OffsetDateTime,
 }
 
 impl CreateOrReplaceSlugAttachmentResponse {
     pub async fn try_from(response: HttpResponse) -> azure_core::Result<Self> {
-        let (_status_code, headers, pinned_stream) = response.deconstruct();
-        let body = collect_pinned_stream(pinned_stream).await?;
+        let (_status_code, headers, body) = response.deconstruct();
+        let body = body.collect().await?;
 
         let attachment: Attachment = serde_json::from_slice(&body)?;
 

@@ -1,4 +1,3 @@
-use chrono::{DateTime, Local};
 use std::time::Duration;
 
 /// Retry policy with fixed back-off.
@@ -11,30 +10,22 @@ use std::time::Duration;
 pub struct FixedRetryPolicy {
     delay: Duration,
     max_retries: u32,
-    max_delay: Duration,
+    max_elapsed: Duration,
 }
 
 impl FixedRetryPolicy {
-    pub(crate) fn new(delay: Duration, max_retries: u32, max_delay: Duration) -> Self {
+    pub(crate) fn new(delay: Duration, max_retries: u32, max_elapsed: Duration) -> Self {
         Self {
-            delay,
+            delay: delay.max(Duration::from_millis(10)),
             max_retries,
-            max_delay,
+            max_elapsed,
         }
     }
 }
 
 impl super::RetryPolicy for FixedRetryPolicy {
-    fn is_expired(&self, first_retry_time: &mut Option<DateTime<Local>>, retry_count: u32) -> bool {
-        if retry_count > self.max_retries {
-            return true;
-        }
-
-        let first_retry_time = first_retry_time.get_or_insert_with(Local::now);
-        let max_delay = chrono::Duration::from_std(self.max_delay)
-            .unwrap_or_else(|_| chrono::Duration::max_value());
-
-        Local::now() > *first_retry_time + max_delay
+    fn is_expired(&self, time_since_start: Duration, retry_count: u32) -> bool {
+        retry_count >= self.max_retries || time_since_start >= self.max_elapsed
     }
 
     fn sleep_duration(&self, _retry_count: u32) -> Duration {

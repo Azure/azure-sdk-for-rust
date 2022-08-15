@@ -1,15 +1,15 @@
 use azure_core::Etag;
 use bytes::Bytes;
-use chrono::{DateTime, Utc};
 use serde::{self, Deserialize, Deserializer};
 use std::convert::TryFrom;
+use time::OffsetDateTime;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct FileSystem {
     pub name: String,
-    #[serde(with = "azure_core::parsing::rfc2822_time_format")]
-    pub last_modified: DateTime<Utc>,
+    #[serde(with = "azure_core::date::rfc1123")]
+    pub last_modified: OffsetDateTime,
     pub etag: Etag,
 }
 
@@ -36,8 +36,8 @@ pub struct Path {
     pub group: String,
     #[serde(default, deserialize_with = "deserialize_bool")]
     pub is_directory: bool,
-    #[serde(with = "azure_core::parsing::rfc2822_time_format")]
-    pub last_modified: DateTime<Utc>,
+    #[serde(with = "azure_core::date::rfc1123")]
+    pub last_modified: OffsetDateTime,
     pub name: String,
     pub owner: String,
     pub permissions: String,

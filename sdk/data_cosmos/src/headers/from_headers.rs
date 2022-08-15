@@ -3,9 +3,10 @@ use crate::resource_quota::resource_quotas_from_str;
 use crate::resources::document::IndexingDirective;
 use crate::ResourceQuota;
 
+use azure_core::date::{parse_last_state_change, parse_rfc1123};
 use azure_core::error::{Error, ErrorKind};
 use azure_core::headers::{self, Headers};
-use chrono::{DateTime, Utc};
+use time::OffsetDateTime;
 
 pub(crate) fn request_charge_from_headers(headers: &Headers) -> azure_core::Result<f64> {
     headers.get_as(&HEADER_REQUEST_CHARGE)
@@ -20,7 +21,7 @@ pub(crate) fn number_of_read_regions_from_headers(headers: &Headers) -> azure_co
 }
 
 pub(crate) fn activity_id_from_headers(headers: &Headers) -> azure_core::Result<uuid::Uuid> {
-    headers.get_as(&HEADER_ACTIVITY_ID)
+    headers.get_as(&headers::ACTIVITY_ID)
 }
 
 pub(crate) fn content_path_from_headers(headers: &Headers) -> azure_core::Result<String> {
@@ -169,24 +170,14 @@ pub(crate) fn media_storage_usage_mb_from_headers(headers: &Headers) -> azure_co
     headers.get_as(&HEADER_MEDIA_STORAGE_USAGE_MB)
 }
 
-fn _date_from_headers(
-    headers: &Headers,
-    header_name: &HeaderName,
-) -> azure_core::Result<DateTime<Utc>> {
-    let date = headers.get_str(header_name)?;
-    // since Azure returns "GMT" instead of +0000 as timezone we replace it ourselves.
-    // For example: Wed, 15 Jan 2020 23:39:44.369 GMT
-    let date = date.replace("GMT", "+0000");
-    let date = headers::parse_date_from_str(&date, "%a, %e %h %Y %H:%M:%S%.f %z")?;
-    Ok(DateTime::from_utc(date.naive_utc(), Utc))
-}
-
 pub(crate) fn last_state_change_from_headers(
     headers: &Headers,
-) -> azure_core::Result<DateTime<Utc>> {
-    _date_from_headers(headers, &HEADER_LAST_STATE_CHANGE_UTC)
+) -> azure_core::Result<OffsetDateTime> {
+    let s = headers.get_str(&HEADER_LAST_STATE_CHANGE_UTC)?;
+    parse_last_state_change(s)
 }
 
-pub(crate) fn date_from_headers(headers: &Headers) -> azure_core::Result<DateTime<Utc>> {
-    _date_from_headers(headers, &headers::DATE)
+pub(crate) fn date_from_headers(headers: &Headers) -> azure_core::Result<OffsetDateTime> {
+    let s = headers.get_str(&headers::DATE)?;
+    parse_rfc1123(s)
 }

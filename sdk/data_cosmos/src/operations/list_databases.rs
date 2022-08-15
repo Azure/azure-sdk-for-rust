@@ -4,8 +4,8 @@ use crate::resources::Database;
 use crate::ResourceQuota;
 
 use azure_core::headers::{continuation_token_from_headers_optional, session_token_from_headers};
-use azure_core::{collect_pinned_stream, prelude::*, Pageable, Response};
-use chrono::{DateTime, Utc};
+use azure_core::{prelude::*, Pageable, Response};
+use time::OffsetDateTime;
 
 operation! {
     #[stream]
@@ -52,7 +52,7 @@ pub struct ListDatabasesResponse {
     pub activity_id: uuid::Uuid,
     pub charge: f64,
     pub session_token: String,
-    pub last_state_change: DateTime<Utc>,
+    pub last_state_change: OffsetDateTime,
     pub resource_quota: Vec<ResourceQuota>,
     pub resource_usage: Vec<ResourceQuota>,
     pub schema_version: String,
@@ -63,8 +63,8 @@ pub struct ListDatabasesResponse {
 
 impl ListDatabasesResponse {
     pub(crate) async fn try_from(response: Response) -> azure_core::Result<Self> {
-        let (_status_code, headers, pinned_stream) = response.deconstruct();
-        let body: bytes::Bytes = collect_pinned_stream(pinned_stream).await?;
+        let (_status_code, headers, body) = response.deconstruct();
+        let body = body.collect().await?;
 
         #[derive(Deserialize, Debug)]
         pub struct Response {

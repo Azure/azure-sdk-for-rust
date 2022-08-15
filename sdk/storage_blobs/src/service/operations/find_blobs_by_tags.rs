@@ -1,5 +1,5 @@
 use azure_core::prelude::*;
-use azure_core::{collect_pinned_stream, Response as HttpResponse};
+use azure_core::Response as HttpResponse;
 use azure_storage::{headers::CommonStorageResponseHeaders, xml::read_xml};
 
 use crate::prelude::BlobServiceClient;
@@ -63,8 +63,8 @@ impl Continuable for FindBlobsByTagsResponse {
 
 impl FindBlobsByTagsResponse {
     async fn try_from(response: HttpResponse) -> azure_core::Result<Self> {
-        let (_status_code, headers, pinned_stream) = response.deconstruct();
-        let body = collect_pinned_stream(pinned_stream).await?;
+        let (_status_code, headers, body) = response.deconstruct();
+        let body = body.collect().await?;
         let body: ListBlobsByTagsBody = read_xml(&body)?;
 
         Ok(Self {

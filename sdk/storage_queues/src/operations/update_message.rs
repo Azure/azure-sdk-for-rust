@@ -2,13 +2,13 @@ use crate::{clients::PopReceiptClient, prelude::*};
 use azure_core::{
     error::Error,
     headers::Headers,
-    headers::{rfc2822_from_headers_mandatory, HeaderName},
+    headers::{rfc1123_from_headers_mandatory, HeaderName},
     prelude::*,
     Method, Response as AzureResponse,
 };
 use azure_storage::core::headers::CommonStorageResponseHeaders;
-use chrono::{DateTime, Utc};
 use std::convert::TryInto;
+use time::OffsetDateTime;
 
 operation! {
     UpdateMessage,
@@ -49,7 +49,7 @@ impl UpdateMessageBuilder {
 #[derive(Debug, Clone)]
 pub struct UpdateMessageResponse {
     pub common_storage_response_headers: CommonStorageResponseHeaders,
-    pub time_next_visible: DateTime<Utc>,
+    pub time_next_visible: OffsetDateTime,
     pub pop_receipt: String,
 }
 
@@ -60,7 +60,7 @@ impl std::convert::TryFrom<AzureResponse> for UpdateMessageResponse {
         let headers = response.headers();
         Ok(UpdateMessageResponse {
             common_storage_response_headers: response.headers().try_into()?,
-            time_next_visible: rfc2822_from_headers_mandatory(
+            time_next_visible: rfc1123_from_headers_mandatory(
                 headers,
                 &HeaderName::from_static("x-ms-time-next-visible"),
             )?,

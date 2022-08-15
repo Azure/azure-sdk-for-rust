@@ -7,7 +7,6 @@ pub mod hmac;
 mod macros;
 pub mod prelude;
 pub mod shared_access_signature;
-mod timeout_policy;
 
 pub use self::connection_string::{ConnectionString, EndpointProtocol};
 pub use self::connection_string_builder::ConnectionStringBuilder;
@@ -19,9 +18,8 @@ pub mod storage_shared_key_credential;
 mod stored_access_policy;
 pub use azure_core::error::{Error, ErrorKind, ResultExt};
 pub mod xml;
-pub use timeout_policy::TimeoutPolicy;
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct IPRange {
     pub start: std::net::IpAddr,
     pub end: std::net::IpAddr,
@@ -37,7 +35,7 @@ mod consistency {
     use serde::{Deserialize, Deserializer};
     use std::{convert::TryInto, str::FromStr};
 
-    #[derive(Debug, Clone, PartialEq)]
+    #[derive(Debug, Clone, PartialEq, Eq)]
     pub struct ConsistencyCRC64(Bytes);
 
     const CRC64_BYTE_LENGTH: usize = 8;
@@ -92,7 +90,7 @@ mod consistency {
         }
     }
 
-    #[derive(Debug, Clone, PartialEq)]
+    #[derive(Debug, Clone, PartialEq, Eq)]
     pub struct ConsistencyMD5(Bytes);
 
     const MD5_BYTE_LENGTH: usize = 16;

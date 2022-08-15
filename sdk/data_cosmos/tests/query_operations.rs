@@ -1,10 +1,8 @@
-#![cfg(feature = "mock_transport_framework")]
-
 use azure_data_cosmos::prelude::*;
 use futures::StreamExt;
 use serde::Deserialize;
 
-mod setup;
+mod setup_mock;
 
 #[tokio::test]
 async fn query_operations() -> azure_core::Result<()> {
@@ -23,7 +21,7 @@ async fn query_operations() -> azure_core::Result<()> {
         pub first_name: String,
     }
 
-    let client = setup::initialize("query_operations")?;
+    let client = setup_mock::initialize("query_operations")?;
 
     let client = client
         .database_client("database1")

@@ -2,7 +2,7 @@
 extern crate log;
 
 use azure_messaging_servicebus::service_bus::Client;
-use chrono::Duration;
+use std::time::Duration;
 
 #[tokio::test]
 async fn send_message_test() {
@@ -61,7 +61,7 @@ async fn renew_message_lock_test() {
     let client = create_client().unwrap();
     send_message_test(); // send message to ensure we can receive something
     client
-        .peek_lock_message2(Some(Duration::seconds(60)))
+        .peek_lock_message2(Some(Duration::from_secs(60)))
         .await
         .expect("Failed to receive message")
         .renew_message_lock()

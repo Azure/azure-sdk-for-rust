@@ -1,11 +1,11 @@
 use crate::clients::{FileClient, PathClient};
 use azure_core::headers::{self, etag_from_headers, last_modified_from_headers};
-use azure_core::{collect_pinned_stream, AppendToUrlQuery, Response as HttpResponse};
 use azure_core::{prelude::*, Request};
+use azure_core::{AppendToUrlQuery, Response as HttpResponse};
 use azure_storage::core::headers::CommonStorageResponseHeaders;
 use bytes::Bytes;
-use chrono::{DateTime, Utc};
 use std::convert::TryInto;
+use time::OffsetDateTime;
 
 #[derive(Debug, Clone)]
 pub struct GetFileBuilder {
@@ -79,16 +79,16 @@ azure_core::future!(GetFile);
 pub struct GetFileResponse {
     pub common_storage_response_headers: CommonStorageResponseHeaders,
     pub etag: String,
-    pub last_modified: DateTime<Utc>,
+    pub last_modified: OffsetDateTime,
     pub data: Bytes,
     pub content_range: Option<ContentRange>,
 }
 
 impl GetFileResponse {
     pub async fn try_from(response: HttpResponse) -> azure_core::Result<Self> {
-        let (_status_code, headers, pinned_stream) = response.deconstruct();
+        let (_status_code, headers, body) = response.deconstruct();
+        let data = body.collect().await?;
 
-        let data = collect_pinned_stream(pinned_stream).await?;
         let content_range = headers.get_optional_as(&headers::CONTENT_RANGE)?;
 
         Ok(Self {
