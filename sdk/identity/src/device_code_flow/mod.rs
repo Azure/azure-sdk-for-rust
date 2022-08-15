@@ -14,7 +14,6 @@ use azure_core::{
 };
 pub use device_code_responses::*;
 use futures::stream::unfold;
-use oauth2::ClientId;
 use serde::Deserialize;
 use std::time::Duration;
 use std::{borrow::Cow, sync::Arc};
@@ -25,7 +24,7 @@ use url::{form_urlencoded, Url};
 pub async fn start<'a, 'b, T>(
     http_client: Arc<dyn HttpClient>,
     tenant_id: T,
-    client_id: &'a ClientId,
+    client_id: &str,
     scopes: &'b [&'b str],
 ) -> azure_core::Result<DeviceCodePhaseOneResponse<'a>>
 where
@@ -38,7 +37,7 @@ where
     );
 
     let encoded = form_urlencoded::Serializer::new(String::new())
-        .append_pair("client_id", client_id.as_str())
+        .append_pair("client_id", client_id)
         .append_pair("scope", &scopes.join(" "))
         .finish();
 
@@ -61,7 +60,7 @@ where
         message: device_code_response.message,
         http_client: Some(http_client),
         tenant_id,
-        client_id: client_id.as_str().to_string(),
+        client_id: client_id.to_string(),
     })
 }
 
@@ -195,7 +194,7 @@ mod tests {
         require_send(start(
             azure_core::new_http_client(),
             "UNUSED",
-            &ClientId::new("UNUSED".to_owned()),
+            "UNUSED",
             &[],
         ));
     }
