@@ -194,7 +194,7 @@ mod tests {
         require_send(start(
             azure_core::new_http_client(),
             "UNUSED",
-            &ClientId::new("UNUSED".to_owned()),
+            "UNUSED",
             &[],
         ));
     }

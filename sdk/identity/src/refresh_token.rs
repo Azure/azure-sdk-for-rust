@@ -149,7 +149,7 @@ mod tests {
         require_send(exchange(
             azure_core::new_http_client(),
             "UNUSED",
-            &ClientId::new("UNUSED".to_owned()),
+            "UNUSED",
             None,
             &AccessToken::new("UNUSED"),
         ));
