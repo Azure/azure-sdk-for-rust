@@ -22,7 +22,7 @@ time = "0.3"
 
 [dev-dependencies]
 azure_identity = { path = "../../../sdk/identity" }
-tokio = { version = "1.0", features = ["macros"] }
+tokio = { version = "1.0", features = ["macros", "rt-multi-thread"] }
 env_logger = "0.9"
 
 [package.metadata.docs.rs]
