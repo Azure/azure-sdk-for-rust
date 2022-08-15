@@ -5,7 +5,7 @@ use azure_core::{
     error::{Error, ErrorKind, ResultExt},
     HttpClient, Request,
 };
-use std::{str::FromStr, sync::Arc};
+use std::{collections::HashMap, str::FromStr, sync::Arc};
 
 pub(crate) struct Oauth2HttpClient {
     http_client: Arc<dyn HttpClient>,
@@ -22,7 +22,9 @@ impl Oauth2HttpClient {
         oauth2_request: oauth2::HttpRequest,
     ) -> Result<oauth2::HttpResponse, azure_core::error::Error> {
         let method = try_from_method(&oauth2_request.method)?;
-        let request = Request::new(oauth2_request.url, method);
+        let mut request = Request::new(oauth2_request.url, method);
+        request.set_headers(to_headers(&oauth2_request.headers));
+        request.set_body(oauth2_request.body);
         let response = self.http_client.execute_request(&request).await?;
         let status_code = try_from_status(response.status())?;
         let headers = try_from_headers(response.headers())?;
@@ -85,4 +87,24 @@ fn try_from_headers(
 
 fn try_from_status(status: azure_core::StatusCode) -> azure_core::Result<oauth2::http::StatusCode> {
     oauth2::http::StatusCode::from_u16(status as u16).map_kind(ErrorKind::DataConversion)
+}
+
+fn to_headers(map: &oauth2::http::header::HeaderMap) -> azure_core::headers::Headers {
+    let map = map
+        .iter()
+        .filter_map(|(k, v)| {
+            let key = k.as_str();
+            match std::str::from_utf8(v.as_bytes()) {
+                Ok(value) => Some((
+                    azure_core::headers::HeaderName::from(key.to_owned()),
+                    azure_core::headers::HeaderValue::from(value.to_owned()),
+                )),
+                Err(_) => {
+                    log::warn!("header value for `{key}` is not utf8");
+                    None
+                }
+            }
+        })
+        .collect::<HashMap<_, _>>();
+    azure_core::headers::Headers::from(map)
 }

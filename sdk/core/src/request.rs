@@ -99,6 +99,10 @@ impl Request {
         &self.body
     }
 
+    pub fn set_headers(&mut self, headers: impl Into<Headers>) {
+        self.headers = headers.into();
+    }
+
     pub fn set_body(&mut self, body: impl Into<Body>) {
         self.body = body.into();
     }
