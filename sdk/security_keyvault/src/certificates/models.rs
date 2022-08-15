@@ -4,14 +4,14 @@ use time::OffsetDateTime;
 #[derive(Deserialize, Debug)]
 pub struct KeyVaultCertificateBaseIdentifierAttributes {
     pub enabled: bool,
-    #[serde(default, with = "azure_core::date::timestamp::option")]
-    pub exp: Option<OffsetDateTime>,
-    #[serde(default, with = "azure_core::date::timestamp::option")]
-    pub nbf: Option<OffsetDateTime>,
-    #[serde(with = "azure_core::date::timestamp")]
-    pub created: OffsetDateTime,
-    #[serde(with = "azure_core::date::timestamp")]
-    pub updated: OffsetDateTime,
+    #[serde(default, with = "azure_core::date::timestamp::option", rename = "exp")]
+    pub expires_on: Option<OffsetDateTime>,
+    #[serde(default, with = "azure_core::date::timestamp::option", rename = "nbf")]
+    pub not_before: Option<OffsetDateTime>,
+    #[serde(with = "azure_core::date::timestamp", rename = "created")]
+    pub created_on: OffsetDateTime,
+    #[serde(with = "azure_core::date::timestamp", rename = "updated")]
+    pub updated_on: OffsetDateTime,
 }
 
 #[derive(Deserialize, Debug)]
