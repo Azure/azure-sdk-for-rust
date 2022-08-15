@@ -37,7 +37,7 @@ reqwest = "0.11"
 mock_transport = { path = "../../eng/test/mock_transport" }
 
 [features]
-default = ["enable_reqwest", "azure_identity/default"]
+default = ["enable_reqwest"]
 test_e2e = []
 azurite_workaround = []
 enable_reqwest = ["azure_core/enable_reqwest", "azure_storage/enable_reqwest"]

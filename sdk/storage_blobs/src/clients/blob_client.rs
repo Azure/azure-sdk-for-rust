@@ -272,7 +272,8 @@ impl BlobClient {
         &self.container_client
     }
 
-    pub(crate) fn url(&self) -> azure_core::Result<url::Url> {
+    /// Full URL for the blob.
+    pub fn url(&self) -> azure_core::Result<url::Url> {
         StorageClient::url_with_segments(self.container_client.url()?, self.blob_name.split('/'))
     }
 

@@ -42,6 +42,7 @@
 //!
 //! This crate also includes utilities for handling refresh tokens and accessing token credentials from many different sources.
 
+#[cfg(feature = "enable_reqwest")]
 pub mod authorization_code_flow;
 pub mod client_credentials_flow;
 #[cfg(feature = "development")]
