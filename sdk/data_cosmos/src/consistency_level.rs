@@ -6,7 +6,7 @@ use serde::de::DeserializeOwned;
 /// The consistency guarantee provided by Cosmos.
 ///
 /// You can learn more about consistency levels in Cosmos [here](https://docs.microsoft.com/azure/cosmos-db/consistency-levels).
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ConsistencyLevel {
     /// A linearizability guarantee
     Strong,

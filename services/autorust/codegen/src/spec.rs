@@ -534,7 +534,7 @@ impl WebOperation {
     }
 }
 
-#[derive(PartialEq, Clone)]
+#[derive(PartialEq, Eq, Clone)]
 pub enum WebVerb {
     Get,
     Post,
@@ -622,7 +622,7 @@ fn path_operations_unresolved(doc_file: impl AsRef<Utf8Path>, path: &str, item: 
 }
 
 /// A $ref reference type that knows what type of reference it is
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum TypedReference {
     PathItem(Reference),
     Parameter(Reference),
@@ -684,7 +684,7 @@ fn add_references_for_schema(list: &mut Vec<TypedReference>, schema: &Schema) {
     }
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum TypeName {
     Reference(String),
     Array(Box<TypeName>),

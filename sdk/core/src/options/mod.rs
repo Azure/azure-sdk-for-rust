@@ -61,7 +61,7 @@ impl ClientOptions {
 }
 
 /// The algorithm to apply when calculating the delay between retry attempts.
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum RetryMode {
     /// Retry attempts will delay based on a back-off strategy,
     /// where each attempt will increase the duration that it waits before retrying.

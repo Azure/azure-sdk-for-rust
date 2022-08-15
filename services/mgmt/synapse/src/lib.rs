@@ -2,6 +2,7 @@
 #![allow(clippy::too_many_arguments)]
 #![allow(clippy::ptr_arg)]
 #![allow(clippy::large_enum_variant)]
+#![allow(clippy::derive_partial_eq_without_eq)]
 #[cfg(feature = "package-sqlGen3-2020-04-01-preview")]
 pub mod package_sqlgen3_2020_04_01_preview;
 #[cfg(all(feature = "package-sqlGen3-2020-04-01-preview", not(feature = "no-default-tag")))]

@@ -75,7 +75,7 @@ impl ListStoredProceduresResponse {
         let (_status_code, headers, body) = response.deconstruct();
         let body = body.collect().await?;
 
-        #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+        #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
         struct Response {
             pub _rid: String,
             #[serde(rename = "StoredProcedures")]

@@ -8,7 +8,7 @@ pub use offer::Offer;
 /// A container of JSON documents and associated JavaScript application logic.
 ///
 /// You can learn more about Collections [here](https://docs.microsoft.com/rest/api/cosmos-db/collections).
-#[derive(Serialize, Deserialize, Clone, Debug, PartialOrd, PartialEq)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialOrd, PartialEq, Eq)]
 pub struct Collection {
     /// The collection id
     pub id: String,
@@ -59,7 +59,7 @@ impl Resource for &Collection {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialOrd, PartialEq)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialOrd, PartialEq, Eq)]
 /// The type of index
 pub enum KeyKind {
     /// useful for equality comparisons
@@ -70,7 +70,7 @@ pub enum KeyKind {
     Spatial,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialOrd, PartialEq)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialOrd, PartialEq, Eq)]
 /// The datatype for which the indexing behavior is applied to
 #[allow(missing_docs)]
 pub enum DataType {
@@ -82,7 +82,7 @@ pub enum DataType {
 }
 
 /// The indexing mode
-#[derive(Serialize, Deserialize, Clone, Debug, PartialOrd, PartialEq)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialOrd, PartialEq, Eq)]
 #[serde(rename_all = "lowercase")]
 pub enum IndexingMode {
     /// indexing occurs synchronously during insertion, replacment or deletion of documents
@@ -93,7 +93,7 @@ pub enum IndexingMode {
 
 /// Path to be indexed
 #[allow(missing_docs)]
-#[derive(Serialize, Deserialize, Clone, Debug, PartialOrd, PartialEq)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialOrd, PartialEq, Eq)]
 pub struct IncludedPath {
     pub path: String,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -102,7 +102,7 @@ pub struct IncludedPath {
 }
 
 /// An indexed description
-#[derive(Serialize, Deserialize, Clone, Debug, PartialOrd, PartialEq)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialOrd, PartialEq, Eq)]
 pub struct IncludedPathIndex {
     /// The datatype for which the indexing behavior is applied to
     #[serde(rename = "dataType")]
@@ -114,7 +114,7 @@ pub struct IncludedPathIndex {
     pub kind: KeyKind,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialOrd, PartialEq)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialOrd, PartialEq, Eq)]
 /// Path that is excluded from indexing
 pub struct ExcludedPath {
     #[allow(missing_docs)]
@@ -127,7 +127,7 @@ impl From<String> for ExcludedPath {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialOrd, PartialEq)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialOrd, PartialEq, Eq)]
 /// The partitioning configuration settings for collection
 pub struct PartitionKey {
     /// An array of paths using which data within the collection can be partitioned
@@ -157,7 +157,7 @@ where
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialOrd, PartialEq)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialOrd, PartialEq, Eq)]
 /// The indexing policy for a collection
 #[serde(rename_all = "camelCase")]
 pub struct IndexingPolicy {

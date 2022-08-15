@@ -210,7 +210,7 @@ mod tests {
     \"_count\": 7
 }";
 
-    #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+    #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
     struct MyStruct {
         id: String,
         color: String,

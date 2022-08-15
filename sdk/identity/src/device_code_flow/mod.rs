@@ -36,10 +36,10 @@ where
         tenant_id
     );
 
-    let mut encoded = form_urlencoded::Serializer::new(String::new());
-    let encoded = encoded.append_pair("client_id", client_id);
-    let encoded = encoded.append_pair("scope", &scopes.join(" "));
-    let encoded = encoded.finish();
+    let encoded = form_urlencoded::Serializer::new(String::new())
+        .append_pair("client_id", client_id)
+        .append_pair("scope", &scopes.join(" "))
+        .finish();
 
     let rsp = post_form(http_client.clone(), url, encoded).await?;
     let rsp_status = rsp.status();
@@ -96,7 +96,7 @@ impl<'a> DeviceCodePhaseOneResponse<'a> {
     pub fn stream(
         &self,
     ) -> impl futures::Stream<Item = azure_core::Result<DeviceCodeAuthorization>> + '_ {
-        #[derive(Debug, Clone, PartialEq)]
+        #[derive(Debug, Clone, PartialEq, Eq)]
         enum NextState {
             Continue,
             Finish,
@@ -115,12 +115,11 @@ impl<'a> DeviceCodePhaseOneResponse<'a> {
                     // last poll and wait only the delta.
                     new_timer(Duration::from_secs(self.interval)).await;
 
-                    let mut encoded = form_urlencoded::Serializer::new(String::new());
-                    let encoded = encoded
-                        .append_pair("grant_type", "urn:ietf:params:oauth:grant-type:device_code");
-                    let encoded = encoded.append_pair("client_id", self.client_id.as_str());
-                    let encoded = encoded.append_pair("device_code", &self.device_code);
-                    let encoded = encoded.finish();
+                    let encoded = form_urlencoded::Serializer::new(String::new())
+                        .append_pair("grant_type", "urn:ietf:params:oauth:grant-type:device_code")
+                        .append_pair("client_id", self.client_id.as_str())
+                        .append_pair("device_code", &self.device_code)
+                        .finish();
 
                     let http_client = self.http_client.clone().unwrap();
 
@@ -182,4 +181,21 @@ async fn post_form(
     );
     req.set_body(form_body);
     http_client.execute_request(&req).await
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn require_send<T: Send>(_t: T) {}
+
+    #[test]
+    fn ensure_that_start_is_send() {
+        require_send(start(
+            azure_core::new_http_client(),
+            "UNUSED",
+            &ClientId::new("UNUSED".to_owned()),
+            &[],
+        ));
+    }
 }

@@ -8,7 +8,7 @@ use std::{convert::TryFrom, fmt, str::FromStr};
 /// A 512 byte aligned byte range
 ///
 /// [Read more here](https://docs.microsoft.com/en-us/rest/api/storageservices/specifying-the-range-header-for-blob-service-operations#format-2-bytesstartbyte-endbyte).
-#[derive(Debug, Copy, Clone, PartialEq)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct BA512Range {
     start: u64,
     end: u64,

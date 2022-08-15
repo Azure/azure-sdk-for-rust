@@ -852,7 +852,7 @@ fn format_path(path: &str) -> String {
     PARAM_RE.replace_all(path, "{}").to_string()
 }
 
-#[derive(PartialEq, Clone)]
+#[derive(PartialEq, Eq, Clone)]
 enum ParamKind {
     Path,
     Query,

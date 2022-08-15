@@ -10,7 +10,7 @@ use std::borrow::Cow;
 /// access to a specific resource. It is used to manage access to collections, documents,
 /// attachments, stored procedures, triggers, and user-defined functions for a particular user.
 /// You can learn more about permissions [here](https://docs.microsoft.com/rest/api/cosmos-db/permissions).
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Permission {
     ///  The unique name that identifies the permission.
     pub id: String,
@@ -43,7 +43,7 @@ pub struct Permission {
     pub permission_token: PermissionToken,
 }
 
-#[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize)]
 #[serde(tag = "permissionMode", content = "resource")]
 /// The access mode on the resource for the user along with the full
 /// addressable path of the resource associated with the permission

@@ -24,4 +24,4 @@ url = "2.2"
 tokio = { version = "1.0", features = ["macros", "rt-multi-thread"] }
 
 [features]
-default = ["azure_core/default"]
+default = ["azure_core/enable_reqwest"]

@@ -5,7 +5,7 @@ use azure_core::error::Error;
 use serde::{Deserialize, Serialize};
 
 /// The representation of a device identity.
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct DeviceIdentityResponse {
     /// The authentication mechanism of the device.

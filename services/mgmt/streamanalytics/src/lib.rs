@@ -2,6 +2,7 @@
 #![allow(clippy::too_many_arguments)]
 #![allow(clippy::ptr_arg)]
 #![allow(clippy::large_enum_variant)]
+#![allow(clippy::derive_partial_eq_without_eq)]
 #[cfg(feature = "package-pure-2020-03-preview")]
 pub mod package_pure_2020_03_preview;
 #[cfg(all(feature = "package-pure-2020-03-preview", not(feature = "no-default-tag")))]

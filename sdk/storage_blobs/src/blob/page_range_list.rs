@@ -29,7 +29,7 @@ struct PageList {
     pub page_list: Option<Vec<PageRange>>,
 }
 
-#[derive(Default, Debug, Clone, PartialEq)]
+#[derive(Default, Debug, Clone, PartialEq, Eq)]
 pub struct PageRangeList {
     pub ranges: Vec<Range>,
 }

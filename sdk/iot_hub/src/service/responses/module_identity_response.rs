@@ -3,7 +3,7 @@ use azure_core::error::Error;
 use serde::Deserialize;
 
 /// The representation of a module identity
-#[derive(Deserialize, Debug, PartialEq)]
+#[derive(Deserialize, Debug, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct ModuleIdentityResponse {
     /// The authentication mechanism of the module.

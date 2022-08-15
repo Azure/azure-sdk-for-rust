@@ -2,7 +2,7 @@ use crate::headers::{self, Header};
 use std::str::FromStr;
 use uuid::Uuid;
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct SourceLeaseId(Uuid);
 
 impl std::fmt::Display for SourceLeaseId {

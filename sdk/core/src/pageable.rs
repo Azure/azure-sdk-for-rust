@@ -109,7 +109,7 @@ impl<T, O> std::fmt::Debug for Pageable<T, O> {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 enum State<T> {
     Init,
     Continuation(T),

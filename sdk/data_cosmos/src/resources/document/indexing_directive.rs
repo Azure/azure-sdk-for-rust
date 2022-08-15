@@ -3,7 +3,7 @@ use azure_core::headers::{self, AsHeaders, HeaderValue};
 use std::fmt;
 
 /// Whether the resource should be included in the index.
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum IndexingDirective {
     /// Follow the default indexing policy for the collection.
     Default,

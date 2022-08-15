@@ -1,7 +1,7 @@
 use indexmap::IndexMap;
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(tag = "type")]
 pub enum Security {
     #[serde(rename = "apiKey")]
@@ -33,7 +33,7 @@ pub enum Security {
     },
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub enum Flow {
     Implicit,

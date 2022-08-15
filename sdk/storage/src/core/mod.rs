@@ -19,7 +19,7 @@ mod stored_access_policy;
 pub use azure_core::error::{Error, ErrorKind, ResultExt};
 pub mod xml;
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct IPRange {
     pub start: std::net::IpAddr,
     pub end: std::net::IpAddr,
@@ -35,7 +35,7 @@ mod consistency {
     use serde::{Deserialize, Deserializer};
     use std::{convert::TryInto, str::FromStr};
 
-    #[derive(Debug, Clone, PartialEq)]
+    #[derive(Debug, Clone, PartialEq, Eq)]
     pub struct ConsistencyCRC64(Bytes);
 
     const CRC64_BYTE_LENGTH: usize = 8;
@@ -90,7 +90,7 @@ mod consistency {
         }
     }
 
-    #[derive(Debug, Clone, PartialEq)]
+    #[derive(Debug, Clone, PartialEq, Eq)]
     pub struct ConsistencyMD5(Bytes);
 
     const MD5_BYTE_LENGTH: usize = 16;

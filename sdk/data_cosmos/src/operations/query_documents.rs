@@ -199,7 +199,7 @@ where
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 pub struct QueryResponseMeta {
     #[serde(rename = "_rid")]
     pub rid: String,

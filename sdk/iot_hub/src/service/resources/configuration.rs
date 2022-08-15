@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 /// The configuration content for devices or modules on edge devices.
-#[derive(Serialize, Deserialize, Debug, PartialEq, Clone, Default)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Clone, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct ConfigurationContent {
     /// The device configuration content.
@@ -17,7 +17,7 @@ pub struct ConfigurationContent {
 }
 
 /// The configuration metrics for Iot hub devices and modules.
-#[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct ConfigurationMetrics {
     /// The key-value pairs with queries and their identifier.
@@ -27,7 +27,7 @@ pub struct ConfigurationMetrics {
 }
 
 /// The configuration metrics for Iot hub devices and modules.
-#[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct Configuration {
     /// The content of the configuration.
