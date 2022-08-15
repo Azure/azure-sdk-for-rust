@@ -44,8 +44,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
     println!("code received: {:?}", code);
 
     // Exchange the token with one that can be used for authorization
-    let http_client = azure_core::new_http_client();
-    let token = c.exchange(http_client, code).await.unwrap();
+    let token = c
+        .exchange(azure_core::new_http_client(), code)
+        .await
+        .unwrap();
 
     println!("token received: {:?}", token);
 
