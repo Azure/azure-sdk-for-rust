@@ -18,7 +18,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let endpoint = format!("https://{}.{}.batch.azure.com", account_name, region);
     let scopes = &["https://batch.core.windows.net/"];
-    let credential = Arc::new(AzureCliCredential {});
+    let credential = Arc::new(AzureCliCredential::new());
     let client = azure_svc_batch::Client::builder(credential)
         .endpoint(endpoint)
         .scopes(scopes)

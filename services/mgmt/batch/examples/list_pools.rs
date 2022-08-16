@@ -17,7 +17,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let resource_group_name = std::env::args().nth(1).expect("please specify resource group");
     let account_name = std::env::args().nth(2).expect("please specify batch account");
 
-    let credential = Arc::new(AzureCliCredential {});
+    let credential = Arc::new(AzureCliCredential::new());
     let subscription_id = AzureCliCredential::get_subscription()?;
     let client = azure_mgmt_batch::Client::builder(credential).build();
 

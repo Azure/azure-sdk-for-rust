@@ -13,7 +13,7 @@ use std::sync::Arc;
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let location = std::env::args().nth(1).expect("please specify region");
-    let credential = Arc::new(AzureCliCredential {});
+    let credential = Arc::new(AzureCliCredential::new());
     let subscription_id = AzureCliCredential::get_subscription()?;
     let client = azure_mgmt_network::Client::builder(credential).build();
 

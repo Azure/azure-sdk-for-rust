@@ -17,7 +17,7 @@ use time::OffsetDateTime;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let credential = Arc::new(AzureCliCredential {});
+    let credential = Arc::new(AzureCliCredential::new());
     let keyvault_name = std::env::args().nth(1).expect("please specify an existing keyvault");
     let key_name = std::env::args().nth(2).expect("please specify the name of the key to create");
     let endpoint = format!("https://{}.vault.azure.net", keyvault_name);
