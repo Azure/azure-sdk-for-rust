@@ -1,8 +1,9 @@
-use super::{authority_hosts};
+use super::authority_hosts;
 use azure_core::{
-    auth::{AccessToken, TokenResponse, TokenCredential},
-    error::{Error, ErrorKind,},
-    headers, Request, content_type, new_http_client, Method, StatusCode
+    auth::{AccessToken, TokenCredential, TokenResponse},
+    content_type,
+    error::{Error, ErrorKind},
+    headers, new_http_client, Method, Request, StatusCode,
 };
 use base64::{CharacterSet, Config};
 use openssl::{
@@ -137,18 +138,12 @@ struct AadTokenResponse {
 fn get_encoded_cert(cert: &X509) -> Result<String, azure_core::error::Error> {
     Ok(format!(
         "\"{}\"",
-        base64::encode(
-            cert.to_pem()
-                .map_err(|_| openssl_error())?
-        )
+        base64::encode(cert.to_pem().map_err(|_| openssl_error())?)
     ))
 }
 
 fn openssl_error() -> azure_core::error::Error {
-    Error::message(
-        ErrorKind::Credential,
-        "Openssl decode error",
-    )
+    Error::message(ErrorKind::Credential, "Openssl decode error")
 }
 
 #[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
@@ -163,10 +158,7 @@ impl TokenCredential for ClientCertificateCredential {
         );
 
         let certificate = base64::decode(&self.client_certificate)
-            .map_err(|_| Error::message(
-                ErrorKind::Credential,
-                "Base64 decode failed",
-            ))?;
+            .map_err(|_| Error::message(ErrorKind::Credential, "Base64 decode failed"))?;
         let certificate = Pkcs12::from_der(&certificate)
             .map_err(|_| openssl_error())?
             .parse(&self.client_certificate_pass)
@@ -215,7 +207,6 @@ impl TokenCredential for ClientCertificateCredential {
         let sig = ClientCertificateCredential::as_jwt_part(&signature);
         let client_assertion = format!("{}.{}", jwt, sig);
 
-
         let encoded = {
             let mut encoded = &mut form_urlencoded::Serializer::new(String::new());
             encoded = encoded
@@ -223,7 +214,8 @@ impl TokenCredential for ClientCertificateCredential {
                 .append_pair("scope", format!("{}/.default", resource).as_str())
                 .append_pair(
                     "client_assertion_type",
-                    "urn:ietf:params:oauth:client-assertion-type:jwt-bearer")
+                    "urn:ietf:params:oauth:client-assertion-type:jwt-bearer",
+                )
                 .append_pair("client_assertion", client_assertion.as_str())
                 .append_pair("grant_type", "client_credentials");
             encoded.finish()
