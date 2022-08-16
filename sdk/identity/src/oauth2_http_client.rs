@@ -23,7 +23,9 @@ impl Oauth2HttpClient {
     ) -> Result<oauth2::HttpResponse, azure_core::error::Error> {
         let method = try_from_method(&oauth2_request.method)?;
         let mut request = Request::new(oauth2_request.url, method);
-        request.set_headers(to_headers(&oauth2_request.headers));
+        for (name, value) in to_headers(&oauth2_request.headers) {
+            request.insert_header(name, value)
+        }
         request.set_body(oauth2_request.body);
         let response = self.http_client.execute_request(&request).await?;
         let status_code = try_from_status(response.status())?;
@@ -38,28 +40,19 @@ impl Oauth2HttpClient {
 }
 
 fn try_from_method(method: &oauth2::http::Method) -> azure_core::Result<azure_core::Method> {
-    if method == oauth2::http::Method::GET {
-        Ok(azure_core::Method::Get)
-    } else if method == oauth2::http::Method::POST {
-        Ok(azure_core::Method::Post)
-    } else if method == oauth2::http::Method::PUT {
-        Ok(azure_core::Method::Put)
-    } else if method == oauth2::http::Method::DELETE {
-        Ok(azure_core::Method::Delete)
-    } else if method == oauth2::http::Method::HEAD {
-        Ok(azure_core::Method::Head)
-    } else if method == oauth2::http::Method::OPTIONS {
-        Ok(azure_core::Method::Options)
-    } else if method == oauth2::http::Method::CONNECT {
-        Ok(azure_core::Method::Connect)
-    } else if method == oauth2::http::Method::PATCH {
-        Ok(azure_core::Method::Patch)
-    } else if method == oauth2::http::Method::TRACE {
-        Ok(azure_core::Method::Trace)
-    } else {
-        Err(Error::with_message(ErrorKind::DataConversion, || {
+    match *method {
+        oauth2::http::Method::GET => Ok(azure_core::Method::Get),
+        oauth2::http::Method::POST => Ok(azure_core::Method::Post),
+        oauth2::http::Method::PUT => Ok(azure_core::Method::Put),
+        oauth2::http::Method::DELETE => Ok(azure_core::Method::Delete),
+        oauth2::http::Method::HEAD => Ok(azure_core::Method::Head),
+        oauth2::http::Method::OPTIONS => Ok(azure_core::Method::Options),
+        oauth2::http::Method::CONNECT => Ok(azure_core::Method::Connect),
+        oauth2::http::Method::PATCH => Ok(azure_core::Method::Patch),
+        oauth2::http::Method::TRACE => Ok(azure_core::Method::Trace),
+        _ => Err(Error::with_message(ErrorKind::DataConversion, || {
             format!("unsupported oauth2::http::Method {}", method)
-        }))
+        })),
     }
 }
 
