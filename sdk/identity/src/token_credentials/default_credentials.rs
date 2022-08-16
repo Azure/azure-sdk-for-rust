@@ -56,15 +56,15 @@ impl DefaultAzureCredentialBuilder {
                 super::EnvironmentCredential::default(),
             ));
         }
-        if self.include_managed_identity_credential {
-            sources.push(DefaultAzureCredentialEnum::ManagedIdentity(
-                ImdsManagedIdentityCredential::default(),
-            ))
-        }
         if self.include_azure_cli_credential {
             sources.push(DefaultAzureCredentialEnum::AzureCli(
                 AzureCliCredential::new(),
             ));
+        }
+        if self.include_managed_identity_credential {
+            sources.push(DefaultAzureCredentialEnum::ManagedIdentity(
+                ImdsManagedIdentityCredential::default(),
+            ))
         }
         DefaultAzureCredential::with_sources(sources)
     }
@@ -113,8 +113,8 @@ impl TokenCredential for DefaultAzureCredentialEnum {
 ///
 /// The following credential types if enabled will be tried, in order:
 /// - EnvironmentCredential
-/// - ManagedIdentityCredential
 /// - AzureCliCredential
+/// - ManagedIdentityCredential
 /// Consult the documentation of these credential types for more information on how they attempt authentication.
 pub struct DefaultAzureCredential {
     sources: Vec<DefaultAzureCredentialEnum>,
@@ -131,16 +131,7 @@ impl DefaultAzureCredential {
 
 impl Default for DefaultAzureCredential {
     fn default() -> Self {
-        DefaultAzureCredential {
-            sources: vec![
-                #[cfg(feature = "enable_reqwest")]
-                DefaultAzureCredentialEnum::Environment(super::EnvironmentCredential::default()),
-                DefaultAzureCredentialEnum::ManagedIdentity(
-                    ImdsManagedIdentityCredential::default(),
-                ),
-                DefaultAzureCredentialEnum::AzureCli(AzureCliCredential::new()),
-            ],
-        }
+        DefaultAzureCredentialBuilder::new().build()
     }
 }
 
