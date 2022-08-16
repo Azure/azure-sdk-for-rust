@@ -18,7 +18,6 @@ impl GetSecretVersionsBuilder {
                 let mut uri = this.client.client.vault_url.clone();
                 uri.set_path(&format!("secrets/{}/versions", this.name));
 
-                println!("url: {}", uri);
                 if let Some(continuation) = continuation {
                     uri = Url::parse(&continuation)?;
                 }

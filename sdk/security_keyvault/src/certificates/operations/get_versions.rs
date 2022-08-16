@@ -18,7 +18,6 @@ impl GetCertificateVersionsBuilder {
                 let mut uri = this.client.client.vault_url.clone();
                 uri.set_path(&format!("certificates/{}/versions", this.name));
 
-                println!("url: {}", uri);
                 if let Some(continuation) = continuation {
                     uri = Url::parse(&continuation)?;
                 }

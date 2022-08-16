@@ -19,7 +19,6 @@ impl ListCertificatesBuilder {
                 let mut uri = this.client.client.vault_url.clone();
                 uri.set_path("certificates");
 
-                println!("url: {}", uri);
                 if let Some(continuation) = continuation {
                     uri = Url::parse(&continuation)?;
                 }

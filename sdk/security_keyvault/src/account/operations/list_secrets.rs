@@ -19,7 +19,6 @@ impl ListSecretsBuilder {
                 let mut uri = this.client.client.vault_url.clone();
                 uri.set_path("secrets");
 
-                println!("url: {}", uri);
                 if let Some(continuation) = continuation {
                     uri = Url::parse(&continuation)?;
                 }
