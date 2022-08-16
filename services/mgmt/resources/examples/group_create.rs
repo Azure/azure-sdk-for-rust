@@ -14,7 +14,7 @@ use std::sync::Arc;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let credential = Arc::new(AzureCliCredential {});
+    let credential = Arc::new(AzureCliCredential::new());
     let subscription_id = &AzureCliCredential::get_subscription()?;
     let resource_group_name = &env::var("RESOURCE_GROUP_NAME").map_err(|_| "RESOURCE_GROUP_NAME required")?;
     let resource_group_location = env::var("RESOURCE_GROUP_LOCATION").map_err(|_| "RESOURCE_GROUP_LOCATION required")?;

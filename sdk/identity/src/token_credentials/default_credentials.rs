@@ -62,7 +62,9 @@ impl DefaultAzureCredentialBuilder {
             ))
         }
         if self.include_azure_cli_credential {
-            sources.push(DefaultAzureCredentialEnum::AzureCli(AzureCliCredential {}));
+            sources.push(DefaultAzureCredentialEnum::AzureCli(
+                AzureCliCredential::new(),
+            ));
         }
         DefaultAzureCredential::with_sources(sources)
     }
@@ -136,7 +138,7 @@ impl Default for DefaultAzureCredential {
                 DefaultAzureCredentialEnum::ManagedIdentity(
                     ImdsManagedIdentityCredential::default(),
                 ),
-                DefaultAzureCredentialEnum::AzureCli(AzureCliCredential {}),
+                DefaultAzureCredentialEnum::AzureCli(AzureCliCredential::new()),
             ],
         }
     }

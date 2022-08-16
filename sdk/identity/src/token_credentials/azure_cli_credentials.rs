@@ -47,9 +47,15 @@ struct CliTokenResponse {
 }
 
 /// Enables authentication to Azure Active Directory using Azure CLI to obtain an access token.
+#[derive(Default)]
 pub struct AzureCliCredential;
 
 impl AzureCliCredential {
+    /// Create a new `AzureCliCredential`
+    pub fn new() -> Self {
+        Self::default()
+    }
+
     /// Get an access token for an optional resource
     fn get_access_token(resource: Option<&str>) -> azure_core::Result<CliTokenResponse> {
         // on window az is a cmd and it should be called like this
