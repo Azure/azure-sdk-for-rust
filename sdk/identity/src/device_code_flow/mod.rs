@@ -5,12 +5,10 @@
 //! You can learn more about this authorization flow [here](https://docs.microsoft.com/azure/active-directory/develop/v2-oauth2-device-code).
 mod device_code_responses;
 
-use async_timer::timer::new_timer;
-use azure_core::Method;
 use azure_core::{
     content_type,
     error::{Error, ErrorKind},
-    headers, HttpClient, Request, Response,
+    headers, sleep, HttpClient, Method, Request, Response,
 };
 pub use device_code_responses::*;
 use futures::stream::unfold;
@@ -113,7 +111,7 @@ impl<'a> DeviceCodePhaseOneResponse<'a> {
                     // Throttle down as specified by Azure. This could be
                     // smarter: we could calculate the elapsed time since the
                     // last poll and wait only the delta.
-                    new_timer(Duration::from_secs(self.interval)).await;
+                    sleep(Duration::from_secs(self.interval)).await;
 
                     let encoded = form_urlencoded::Serializer::new(String::new())
                         .append_pair("grant_type", "urn:ietf:params:oauth:grant-type:device_code")
