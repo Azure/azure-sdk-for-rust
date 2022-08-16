@@ -18,7 +18,7 @@ azure_core = { path = "../core", version = "0.4" }
 azure_storage = { path = "../storage", version = "0.5", default_features = false }
 base64 = "0.13"
 bytes = "1.0"
-time = { version = "0.3.10", features = ["serde"] }
+time = "0.3.10"
 futures = "0.3"
 log = "0.4"
 serde = { version = "1.0" }

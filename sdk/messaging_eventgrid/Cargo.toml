@@ -14,7 +14,7 @@ edition = "2021"
 
 [dependencies]
 azure_core = { path = "../core", version = "0.4", default_features = false }
-time = { version = "0.3.10", features = ["serde", "macros"] }
+time = "0.3.10"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 uuid = { version = "1.0", features = ["v4"] }
