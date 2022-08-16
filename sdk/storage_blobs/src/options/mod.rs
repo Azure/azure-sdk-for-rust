@@ -36,6 +36,11 @@ pub use hash::Hash;
 pub use rehydrate_policy::RehydratePriority;
 pub use tags::Tags;
 
+use std::str::FromStr;
+
+use azure_core::error::Error;
+use azure_core::headers::HeaderName;
+
 request_query!(
     /// This type could also be a DateTime but the docs clearly states to treat is as opaque so we do not convert it in any way.
     ///
@@ -43,3 +48,22 @@ request_query!(
     VersionId,
     "version_id"
 );
+
+request_query!(
+    /// This type could also be a DateTime but the docs clearly states to treat is as opaque so we do not convert it in any way.
+    ///
+    /// See: <https://docs.microsoft.com/rest/api/storageservices/get-blob>"]
+    #[derive(PartialEq, Eq, Serialize, Deserialize)]
+    Snapshot,
+    "snapshot"
+);
+
+impl FromStr for Snapshot {
+    type Err = Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(Self::new(s.to_string()))
+    }
+}
+
+pub const SNAPSHOT: HeaderName = HeaderName::from_static("x-ms-snapshot");

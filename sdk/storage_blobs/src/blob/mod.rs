@@ -17,17 +17,16 @@ pub use block_with_size_list::BlockWithSizeList;
 pub use lease_blob_options::{LeaseBlobOptions, LEASE_BLOB_OPTIONS_DEFAULT};
 pub use page_range_list::PageRangeList;
 
-use crate::options::{AccessTier, Tags};
+use crate::options::{AccessTier, Snapshot, Tags, SNAPSHOT};
 use azure_core::{
     content_type, date,
     headers::{self, Headers},
     parsing::from_azure_time,
-    AppendToUrlQuery, Etag, LeaseDuration, LeaseState, LeaseStatus,
+    Etag, LeaseDuration, LeaseState, LeaseStatus,
 };
 use azure_storage::{ConsistencyCRC64, ConsistencyMD5, CopyId, CopyProgress};
-use std::borrow::Cow;
+use serde::{self, Deserialize, Deserializer};
 use std::collections::HashMap;
-use std::str::FromStr;
 use time::OffsetDateTime;
 
 #[cfg(feature = "azurite_workaround")]
@@ -60,10 +59,6 @@ create_enum!(
 create_enum!(RehydratePriority, (High, "High"), (Standard, "Standard"));
 
 create_enum!(PageWriteType, (Update, "update"), (Clear, "clear"));
-
-use azure_core::error::Error;
-use azure_core::headers::HeaderName;
-use serde::{self, Deserialize, Deserializer};
 
 fn deserialize_crc64_optional<'de, D>(deserializer: D) -> Result<Option<ConsistencyCRC64>, D::Error>
 where
@@ -289,42 +284,4 @@ impl Blob {
 
 pub(crate) fn copy_status_from_headers(headers: &Headers) -> azure_core::Result<CopyStatus> {
     headers.get_as(&headers::COPY_STATUS)
-}
-
-pub const SNAPSHOT: HeaderName = HeaderName::from_static("x-ms-snapshot");
-
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct Snapshot(Cow<'static, str>);
-
-impl Snapshot {
-    pub fn new<S: Into<Cow<'static, str>>>(s: S) -> Self {
-        Self(s.into())
-    }
-
-    pub const fn from_static(s: &'static str) -> Self {
-        Self(Cow::Borrowed(s))
-    }
-}
-
-impl<S> From<S> for Snapshot
-where
-    S: Into<Cow<'static, str>>,
-{
-    fn from(f: S) -> Self {
-        Self::new(f)
-    }
-}
-
-impl FromStr for Snapshot {
-    type Err = Error;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Ok(Self::new(s.to_string()))
-    }
-}
-
-impl AppendToUrlQuery for Snapshot {
-    fn append_to_url_query(&self, url: &mut url::Url) {
-        url.query_pairs_mut().append_pair("snapshot", &self.0);
-    }
 }

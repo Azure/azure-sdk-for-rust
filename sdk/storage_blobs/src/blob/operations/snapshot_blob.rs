@@ -1,4 +1,3 @@
-use crate::blob::{Snapshot, SNAPSHOT};
 use crate::prelude::*;
 use azure_core::headers::etag_from_headers;
 use azure_core::{

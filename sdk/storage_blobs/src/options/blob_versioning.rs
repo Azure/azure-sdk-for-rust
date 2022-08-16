@@ -1,5 +1,5 @@
 use super::VersionId;
-use crate::blob::Snapshot;
+use crate::options::Snapshot;
 use azure_core::AppendToUrlQuery;
 
 #[derive(Debug, Clone)]
