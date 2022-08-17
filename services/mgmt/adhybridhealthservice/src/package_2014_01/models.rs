@@ -94,7 +94,7 @@ pub struct AddsServiceMember {
     #[serde(rename = "additionalInformation", default, skip_serializing_if = "Option::is_none")]
     pub additional_information: Option<String>,
     #[doc = "The date time , in UTC, when the server was onboarded to Azure Active Directory Connect Health."]
-    #[serde(rename = "createdDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "createdDate", default, with = "azure_core::date::rfc3339::option")]
     pub created_date: Option<time::OffsetDateTime>,
     #[doc = "The server specific configuration related dimensions."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -109,16 +109,20 @@ pub struct AddsServiceMember {
     #[serde(rename = "installedQfes", default, skip_serializing_if = "Vec::is_empty")]
     pub installed_qfes: Vec<Hotfix>,
     #[doc = "The date and time , in UTC, when the server was last disabled."]
-    #[serde(rename = "lastDisabled", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastDisabled", default, with = "azure_core::date::rfc3339::option")]
     pub last_disabled: Option<time::OffsetDateTime>,
     #[doc = "The date and time, in UTC, when the server was last rebooted."]
-    #[serde(rename = "lastReboot", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastReboot", default, with = "azure_core::date::rfc3339::option")]
     pub last_reboot: Option<time::OffsetDateTime>,
     #[doc = "The date and time, in UTC, when the server's data monitoring configuration was last changed."]
-    #[serde(rename = "lastServerReportedMonitoringLevelChange", with = "azure_core::date::rfc3339::option")]
+    #[serde(
+        rename = "lastServerReportedMonitoringLevelChange",
+        default,
+        with = "azure_core::date::rfc3339::option"
+    )]
     pub last_server_reported_monitoring_level_change: Option<time::OffsetDateTime>,
     #[doc = "The date and time, in UTC, when the server properties were last updated."]
-    #[serde(rename = "lastUpdated", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastUpdated", default, with = "azure_core::date::rfc3339::option")]
     pub last_updated: Option<time::OffsetDateTime>,
     #[doc = "The id of the machine."]
     #[serde(rename = "machineId", default, skip_serializing_if = "Option::is_none")]
@@ -218,7 +222,7 @@ pub struct Agent {
     #[serde(rename = "agentVersion", default, skip_serializing_if = "Option::is_none")]
     pub agent_version: Option<String>,
     #[doc = "The date and time, in UTC, when the agent was created."]
-    #[serde(rename = "createdDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "createdDate", default, with = "azure_core::date::rfc3339::option")]
     pub created_date: Option<time::OffsetDateTime>,
     #[doc = " The connector hash key."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -263,13 +267,13 @@ pub struct Alert {
     #[serde(rename = "additionalInformation", default, skip_serializing_if = "Vec::is_empty")]
     pub additional_information: Vec<AdditionalInformation>,
     #[doc = "The date and time,in UTC,when the alert was created."]
-    #[serde(rename = "createdDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "createdDate", default, with = "azure_core::date::rfc3339::option")]
     pub created_date: Option<time::OffsetDateTime>,
     #[doc = "The date and time, in UTC, when the alert was resolved."]
-    #[serde(rename = "resolvedDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "resolvedDate", default, with = "azure_core::date::rfc3339::option")]
     pub resolved_date: Option<time::OffsetDateTime>,
     #[doc = "The date and time, in UTC, when the alert was last updated."]
-    #[serde(rename = "lastUpdated", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastUpdated", default, with = "azure_core::date::rfc3339::option")]
     pub last_updated: Option<time::OffsetDateTime>,
     #[doc = "The monitoring role type for which the alert was raised."]
     #[serde(rename = "monitorRoleType", default, skip_serializing_if = "Option::is_none")]
@@ -405,7 +409,7 @@ pub struct AlertFeedback {
     #[serde(rename = "serviceMemberId", default, skip_serializing_if = "Option::is_none")]
     pub service_member_id: Option<String>,
     #[doc = "The date and time,in UTC,when the alert was created."]
-    #[serde(rename = "createdDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "createdDate", default, with = "azure_core::date::rfc3339::option")]
     pub created_date: Option<time::OffsetDateTime>,
 }
 impl AlertFeedback {
@@ -468,7 +472,7 @@ pub struct AssociatedObject {
     #[serde(rename = "distinguishedName", default, skip_serializing_if = "Option::is_none")]
     pub distinguished_name: Option<String>,
     #[doc = "The last dirSync time."]
-    #[serde(rename = "lastDirSyncTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastDirSyncTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_dir_sync_time: Option<time::OffsetDateTime>,
     #[doc = "The email of the object."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -492,7 +496,7 @@ pub struct AssociatedObject {
     #[serde(rename = "sourceOfAuthority", default, skip_serializing_if = "Option::is_none")]
     pub source_of_authority: Option<String>,
     #[doc = " The time of the error."]
-    #[serde(rename = "timeOccurred", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "timeOccurred", default, with = "azure_core::date::rfc3339::option")]
     pub time_occurred: Option<time::OffsetDateTime>,
     #[doc = " The UPN."]
     #[serde(rename = "userPrincipalName", default, skip_serializing_if = "Option::is_none")]
@@ -853,10 +857,10 @@ pub struct Connector {
     #[serde(rename = "passwordHashSyncConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub password_hash_sync_configuration: Option<serde_json::Value>,
     #[doc = "The date and time when this connector was created."]
-    #[serde(rename = "timeCreated", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "timeCreated", default, with = "azure_core::date::rfc3339::option")]
     pub time_created: Option<time::OffsetDateTime>,
     #[doc = "The date and time when this connector was last modified."]
-    #[serde(rename = "timeLastModified", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "timeLastModified", default, with = "azure_core::date::rfc3339::option")]
     pub time_last_modified: Option<time::OffsetDateTime>,
     #[doc = "The partitions of the connector."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -898,7 +902,7 @@ pub struct ConnectorConnectionError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
     #[doc = "The time when the connection error occurred."]
-    #[serde(rename = "timeOccured", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "timeOccured", default, with = "azure_core::date::rfc3339::option")]
     pub time_occured: Option<time::OffsetDateTime>,
     #[doc = "The server where the connection error happened."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1102,7 +1106,7 @@ pub struct Dimension {
     #[serde(rename = "additionalInformation", default, skip_serializing_if = "Option::is_none")]
     pub additional_information: Option<String>,
     #[doc = "The date or time , in UTC, when the service properties were last updated."]
-    #[serde(rename = "lastUpdated", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastUpdated", default, with = "azure_core::date::rfc3339::option")]
     pub last_updated: Option<time::OffsetDateTime>,
     #[doc = "The display name of the service."]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
@@ -1301,7 +1305,7 @@ pub struct ErrorReportUsersEntry {
     #[serde(rename = "ipAddress", default, skip_serializing_if = "Option::is_none")]
     pub ip_address: Option<String>,
     #[doc = "The date and time when the last error event was logged."]
-    #[serde(rename = "lastUpdated", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastUpdated", default, with = "azure_core::date::rfc3339::option")]
     pub last_updated: Option<time::OffsetDateTime>,
     #[doc = "The list of unique IP addresses."]
     #[serde(rename = "uniqueIpAddresses", default, skip_serializing_if = "Option::is_none")]
@@ -1340,7 +1344,7 @@ pub struct ExportError {
     #[serde(rename = "serverErrorDetail", default, skip_serializing_if = "Option::is_none")]
     pub server_error_detail: Option<String>,
     #[doc = "The date and time when the export error first occurred."]
-    #[serde(rename = "timeFirstOccured", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "timeFirstOccured", default, with = "azure_core::date::rfc3339::option")]
     pub time_first_occured: Option<time::OffsetDateTime>,
     #[doc = "The retry count."]
     #[serde(rename = "retryCount", default, skip_serializing_if = "Option::is_none")]
@@ -1400,7 +1404,7 @@ pub struct ExportError {
     #[serde(rename = "adMail", default, skip_serializing_if = "Option::is_none")]
     pub ad_mail: Option<String>,
     #[doc = "The date and time of occurrence."]
-    #[serde(rename = "timeOccured", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "timeOccured", default, with = "azure_core::date::rfc3339::option")]
     pub time_occured: Option<time::OffsetDateTime>,
     #[doc = "The AAD side object type."]
     #[serde(rename = "aadObjectType", default, skip_serializing_if = "Option::is_none")]
@@ -1424,7 +1428,7 @@ pub struct ExportError {
     #[serde(rename = "aadMail", default, skip_serializing_if = "Option::is_none")]
     pub aad_mail: Option<String>,
     #[doc = "The date and time of last sync run."]
-    #[serde(rename = "lastDirSyncTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastDirSyncTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_dir_sync_time: Option<time::OffsetDateTime>,
     #[doc = "The modified attribute value."]
     #[serde(rename = "modifiedAttributeValue", default, skip_serializing_if = "Option::is_none")]
@@ -1457,7 +1461,7 @@ pub struct ExportStatus {
     #[serde(rename = "serviceMemberId", default, skip_serializing_if = "Option::is_none")]
     pub service_member_id: Option<String>,
     #[doc = "The date and time when the export ended."]
-    #[serde(rename = "endTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
     pub end_time: Option<time::OffsetDateTime>,
     #[doc = "The run step result Id."]
     #[serde(rename = "runStepResultId", default, skip_serializing_if = "Option::is_none")]
@@ -1610,7 +1614,7 @@ pub struct Hotfix {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub link: Option<String>,
     #[doc = "The date and time, in UTC, when the KB was installed in the server."]
-    #[serde(rename = "installedDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "installedDate", default, with = "azure_core::date::rfc3339::option")]
     pub installed_date: Option<time::OffsetDateTime>,
 }
 impl Hotfix {
@@ -1768,10 +1772,10 @@ pub struct ImportError {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
     #[doc = "The time when the import error occurred."]
-    #[serde(rename = "timeOccurred", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "timeOccurred", default, with = "azure_core::date::rfc3339::option")]
     pub time_occurred: Option<time::OffsetDateTime>,
     #[doc = "The time when the import error first occurred."]
-    #[serde(rename = "timeFirstOccurred", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "timeFirstOccurred", default, with = "azure_core::date::rfc3339::option")]
     pub time_first_occurred: Option<time::OffsetDateTime>,
     #[doc = "The retry count."]
     #[serde(rename = "retryCount", default, skip_serializing_if = "Option::is_none")]
@@ -1890,10 +1894,10 @@ pub struct InboundReplicationNeighbor {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<i64>,
     #[doc = "The last time a sync was attempted on the domain controller."]
-    #[serde(rename = "lastAttemptedSync", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastAttemptedSync", default, with = "azure_core::date::rfc3339::option")]
     pub last_attempted_sync: Option<time::OffsetDateTime>,
     #[doc = "The last time when a successful sync happened."]
-    #[serde(rename = "lastSuccessfulSync", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastSuccessfulSync", default, with = "azure_core::date::rfc3339::option")]
     pub last_successful_sync: Option<time::OffsetDateTime>,
     #[doc = "The last error code."]
     #[serde(rename = "lastErrorCode", default, skip_serializing_if = "Option::is_none")]
@@ -1992,10 +1996,10 @@ pub struct MergedExportError {
     #[serde(rename = "attributeValue", default, skip_serializing_if = "Option::is_none")]
     pub attribute_value: Option<String>,
     #[doc = "The date and time when the error occurred."]
-    #[serde(rename = "timeOccurred", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "timeOccurred", default, with = "azure_core::date::rfc3339::option")]
     pub time_occurred: Option<time::OffsetDateTime>,
     #[doc = "The time when the error first occurred."]
-    #[serde(rename = "timeFirstOccurred", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "timeFirstOccurred", default, with = "azure_core::date::rfc3339::option")]
     pub time_first_occurred: Option<time::OffsetDateTime>,
     #[doc = " the cs object Id."]
     #[serde(rename = "csObjectId", default, skip_serializing_if = "Option::is_none")]
@@ -2031,7 +2035,7 @@ pub struct MergedExportError {
     #[serde(rename = "mergedEntityId", default, skip_serializing_if = "Option::is_none")]
     pub merged_entity_id: Option<String>,
     #[doc = "The date and time, in UTC, when the error was created."]
-    #[serde(rename = "createdDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "createdDate", default, with = "azure_core::date::rfc3339::option")]
     pub created_date: Option<time::OffsetDateTime>,
     #[doc = "The export error status."]
     #[serde(rename = "exportErrorStatus", default, skip_serializing_if = "Option::is_none")]
@@ -2277,7 +2281,7 @@ pub struct ObjectWithSyncError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub mail: Option<String>,
     #[doc = "The date and time of occurrence."]
-    #[serde(rename = "timeOccured", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "timeOccured", default, with = "azure_core::date::rfc3339::option")]
     pub time_occured: Option<time::OffsetDateTime>,
     #[doc = "The error type."]
     #[serde(rename = "errorType", default, skip_serializing_if = "Option::is_none")]
@@ -2346,10 +2350,10 @@ pub struct Partition {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub enabled: Option<bool>,
     #[doc = "The date and time when the partition is created."]
-    #[serde(rename = "timeCreated", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "timeCreated", default, with = "azure_core::date::rfc3339::option")]
     pub time_created: Option<time::OffsetDateTime>,
     #[doc = "The time and date when the partition was last modified."]
-    #[serde(rename = "timeLastModified", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "timeLastModified", default, with = "azure_core::date::rfc3339::option")]
     pub time_last_modified: Option<time::OffsetDateTime>,
     #[doc = "The connector partition scope."]
     #[serde(rename = "partitionScope", default, skip_serializing_if = "Option::is_none")]
@@ -2547,10 +2551,10 @@ pub struct ReplicationSummary {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<i64>,
     #[doc = "The last time when a sync was attempted for a given domain controller."]
-    #[serde(rename = "lastAttemptedSync", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastAttemptedSync", default, with = "azure_core::date::rfc3339::option")]
     pub last_attempted_sync: Option<time::OffsetDateTime>,
     #[doc = "The time when the last successful sync happened for a given domain controller."]
-    #[serde(rename = "lastSuccessfulSync", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastSuccessfulSync", default, with = "azure_core::date::rfc3339::option")]
     pub last_successful_sync: Option<time::OffsetDateTime>,
     #[doc = "List of individual domain controller neighbor's inbound replication status."]
     #[serde(rename = "inboundNeighborCollection", default, skip_serializing_if = "Vec::is_empty")]
@@ -2604,10 +2608,10 @@ pub struct RiskyIpBlobUri {
     #[serde(rename = "resultSasUri", default, skip_serializing_if = "Option::is_none")]
     pub result_sas_uri: Option<String>,
     #[doc = "Time at which the new Risky IP report was requested."]
-    #[serde(rename = "blobCreateDateTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "blobCreateDateTime", default, with = "azure_core::date::rfc3339::option")]
     pub blob_create_date_time: Option<time::OffsetDateTime>,
     #[doc = "Time at which the blob creation job for the new Risky IP report was completed."]
-    #[serde(rename = "jobCompletionTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "jobCompletionTime", default, with = "azure_core::date::rfc3339::option")]
     pub job_completion_time: Option<time::OffsetDateTime>,
     #[doc = "Status of the Risky IP report generation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2775,7 +2779,7 @@ pub struct ServiceMember {
     #[serde(rename = "additionalInformation", default, skip_serializing_if = "Option::is_none")]
     pub additional_information: Option<String>,
     #[doc = "The date time , in UTC, when the server was onboarded to Azure Active Directory Connect Health."]
-    #[serde(rename = "createdDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "createdDate", default, with = "azure_core::date::rfc3339::option")]
     pub created_date: Option<time::OffsetDateTime>,
     #[doc = "The server specific configuration related dimensions."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2790,16 +2794,20 @@ pub struct ServiceMember {
     #[serde(rename = "installedQfes", default, skip_serializing_if = "Option::is_none")]
     pub installed_qfes: Option<serde_json::Value>,
     #[doc = "The date and time , in UTC, when the server was last disabled."]
-    #[serde(rename = "lastDisabled", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastDisabled", default, with = "azure_core::date::rfc3339::option")]
     pub last_disabled: Option<time::OffsetDateTime>,
     #[doc = "The date and time, in UTC, when the server was last rebooted."]
-    #[serde(rename = "lastReboot", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastReboot", default, with = "azure_core::date::rfc3339::option")]
     pub last_reboot: Option<time::OffsetDateTime>,
     #[doc = "The date and time, in UTC, when the server's data monitoring configuration was last changed."]
-    #[serde(rename = "lastServerReportedMonitoringLevelChange", with = "azure_core::date::rfc3339::option")]
+    #[serde(
+        rename = "lastServerReportedMonitoringLevelChange",
+        default,
+        with = "azure_core::date::rfc3339::option"
+    )]
     pub last_server_reported_monitoring_level_change: Option<time::OffsetDateTime>,
     #[doc = "The date and time, in UTC, when the server properties were last updated."]
-    #[serde(rename = "lastUpdated", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastUpdated", default, with = "azure_core::date::rfc3339::option")]
     pub last_updated: Option<time::OffsetDateTime>,
     #[doc = "The id of the machine."]
     #[serde(rename = "machineId", default, skip_serializing_if = "Option::is_none")]
@@ -2893,7 +2901,7 @@ pub struct ServiceProperties {
     #[serde(rename = "additionalInformation", default, skip_serializing_if = "Option::is_none")]
     pub additional_information: Option<String>,
     #[doc = "The date and time, in UTC, when the service was onboarded to Azure Active Directory Connect Health."]
-    #[serde(rename = "createdDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "createdDate", default, with = "azure_core::date::rfc3339::option")]
     pub created_date: Option<time::OffsetDateTime>,
     #[doc = "The list of additional emails that are configured to receive notifications about the service."]
     #[serde(rename = "customNotificationEmails", default, skip_serializing_if = "Vec::is_empty")]
@@ -2908,10 +2916,10 @@ pub struct ServiceProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub health: Option<String>,
     #[doc = "The date and time, in UTC, when the service was last disabled."]
-    #[serde(rename = "lastDisabled", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastDisabled", default, with = "azure_core::date::rfc3339::option")]
     pub last_disabled: Option<time::OffsetDateTime>,
     #[doc = "The date or time , in UTC, when the service properties were last updated."]
-    #[serde(rename = "lastUpdated", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastUpdated", default, with = "azure_core::date::rfc3339::option")]
     pub last_updated: Option<time::OffsetDateTime>,
     #[doc = "The monitoring configuration of the service which determines what activities are monitored by Azure Active Directory Connect Health."]
     #[serde(rename = "monitoringConfigurationsComputed", default, skip_serializing_if = "Option::is_none")]
@@ -3042,10 +3050,10 @@ pub struct Tenant {
     #[serde(rename = "countryLetterCode", default, skip_serializing_if = "Option::is_none")]
     pub country_letter_code: Option<String>,
     #[doc = "The date, in UTC, when the tenant was onboarded to Azure Active Directory Connect Health."]
-    #[serde(rename = "createdDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "createdDate", default, with = "azure_core::date::rfc3339::option")]
     pub created_date: Option<time::OffsetDateTime>,
     #[doc = "The date and time, in UTC, till when the tenant data can be seen by Microsoft through Azure portal."]
-    #[serde(rename = "devOpsTtl", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "devOpsTtl", default, with = "azure_core::date::rfc3339::option")]
     pub dev_ops_ttl: Option<time::OffsetDateTime>,
     #[doc = "Indicates if the tenant is disabled in Azure Active Directory Connect Health."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -3060,10 +3068,10 @@ pub struct Tenant {
     #[serde(rename = "initialDomain", default, skip_serializing_if = "Option::is_none")]
     pub initial_domain: Option<String>,
     #[doc = "The date and time, in UTC, when the tenant was last disabled in Azure Active Directory Connect Health."]
-    #[serde(rename = "lastDisabled", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastDisabled", default, with = "azure_core::date::rfc3339::option")]
     pub last_disabled: Option<time::OffsetDateTime>,
     #[doc = "The date and time, in UTC, when the tenant onboarding status in Azure Active Directory Connect Health was last verified."]
-    #[serde(rename = "lastVerified", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastVerified", default, with = "azure_core::date::rfc3339::option")]
     pub last_verified: Option<time::OffsetDateTime>,
     #[doc = "Indicates if the tenant is allowed to  onboard to Azure Active Directory Connect Health."]
     #[serde(rename = "onboardingAllowed", default, skip_serializing_if = "Option::is_none")]

@@ -87,7 +87,7 @@ pub mod availability_status {
         #[serde(rename = "reasonType", default, skip_serializing_if = "Option::is_none")]
         pub reason_type: Option<String>,
         #[doc = "When the resource's availabilityState is Unavailable, it provides the Timestamp for when the health impacting event was received."]
-        #[serde(rename = "rootCauseAttributionTime", with = "azure_core::date::rfc3339::option")]
+        #[serde(rename = "rootCauseAttributionTime", default, with = "azure_core::date::rfc3339::option")]
         pub root_cause_attribution_time: Option<time::OffsetDateTime>,
         #[doc = "In case of an availability impacting event, it describes when the health impacting event was originated. Examples are Lifecycle, Downtime, Fault Analysis etc."]
         #[serde(rename = "healthEventType", default, skip_serializing_if = "Option::is_none")]
@@ -102,16 +102,16 @@ pub mod availability_status {
         #[serde(rename = "healthEventId", default, skip_serializing_if = "Option::is_none")]
         pub health_event_id: Option<String>,
         #[doc = "When the resource's availabilityState is Unavailable and the reasonType is not User Initiated, it provides the date and time for when the issue is expected to be resolved."]
-        #[serde(rename = "resolutionETA", with = "azure_core::date::rfc3339::option")]
+        #[serde(rename = "resolutionETA", default, with = "azure_core::date::rfc3339::option")]
         pub resolution_eta: Option<time::OffsetDateTime>,
         #[doc = "Timestamp for when last change in health status occurred."]
-        #[serde(rename = "occuredTime", with = "azure_core::date::rfc3339::option")]
+        #[serde(rename = "occuredTime", default, with = "azure_core::date::rfc3339::option")]
         pub occured_time: Option<time::OffsetDateTime>,
         #[doc = "Chronicity of the availability transition."]
         #[serde(rename = "reasonChronicity", default, skip_serializing_if = "Option::is_none")]
         pub reason_chronicity: Option<properties::ReasonChronicity>,
         #[doc = "Timestamp for when the health was last checked. "]
-        #[serde(rename = "reportedTime", with = "azure_core::date::rfc3339::option")]
+        #[serde(rename = "reportedTime", default, with = "azure_core::date::rfc3339::option")]
         pub reported_time: Option<time::OffsetDateTime>,
         #[doc = "An annotation describing a change in the availabilityState to Available from Unavailable with a reasonType of type Unplanned"]
         #[serde(rename = "recentlyResolvedState", default, skip_serializing_if = "Option::is_none")]
@@ -147,10 +147,10 @@ pub mod availability_status {
         #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
         pub struct RecentlyResolvedState {
             #[doc = "Timestamp for when the availabilityState changed to Unavailable"]
-            #[serde(rename = "unavailableOccurredTime", with = "azure_core::date::rfc3339::option")]
+            #[serde(rename = "unavailableOccurredTime", default, with = "azure_core::date::rfc3339::option")]
             pub unavailable_occurred_time: Option<time::OffsetDateTime>,
             #[doc = "Timestamp when the availabilityState changes to Available."]
-            #[serde(rename = "resolvedTime", with = "azure_core::date::rfc3339::option")]
+            #[serde(rename = "resolvedTime", default, with = "azure_core::date::rfc3339::option")]
             pub resolved_time: Option<time::OffsetDateTime>,
             #[doc = "Brief description of cause of the resource becoming unavailable."]
             #[serde(rename = "unavailabilitySummary", default, skip_serializing_if = "Option::is_none")]
@@ -187,7 +187,7 @@ impl AvailabilityStatusListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EmergingIssue {
     #[doc = "Timestamp for when last time refreshed for ongoing emerging issue."]
-    #[serde(rename = "refreshTimestamp", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "refreshTimestamp", default, with = "azure_core::date::rfc3339::option")]
     pub refresh_timestamp: Option<time::OffsetDateTime>,
     #[doc = "The list of emerging issues of banner type."]
     #[serde(rename = "statusBanners", default, skip_serializing_if = "Vec::is_empty")]
@@ -341,10 +341,10 @@ impl RecommendedAction {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServiceImpactingEvent {
     #[doc = "Timestamp for when the event started."]
-    #[serde(rename = "eventStartTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "eventStartTime", default, with = "azure_core::date::rfc3339::option")]
     pub event_start_time: Option<time::OffsetDateTime>,
     #[doc = "Timestamp for when event was submitted/detected."]
-    #[serde(rename = "eventStatusLastModifiedTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "eventStatusLastModifiedTime", default, with = "azure_core::date::rfc3339::option")]
     pub event_status_last_modified_time: Option<time::OffsetDateTime>,
     #[doc = "Correlation id for the event"]
     #[serde(rename = "correlationId", default, skip_serializing_if = "Option::is_none")]
@@ -410,7 +410,7 @@ pub struct StatusActiveEvent {
     #[serde(rename = "trackingId", default, skip_serializing_if = "Option::is_none")]
     pub tracking_id: Option<String>,
     #[doc = "The impact start time on this active event."]
-    #[serde(rename = "startTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
     pub start_time: Option<time::OffsetDateTime>,
     #[doc = "The cloud type of this active event."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -425,7 +425,7 @@ pub struct StatusActiveEvent {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub published: Option<bool>,
     #[doc = "The last time modified on this banner."]
-    #[serde(rename = "lastModifiedTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastModifiedTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_modified_time: Option<time::OffsetDateTime>,
     #[doc = "The list of emerging issues impacts."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -530,7 +530,7 @@ pub struct StatusBanner {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub cloud: Option<String>,
     #[doc = "The last time modified on this banner."]
-    #[serde(rename = "lastModifiedTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastModifiedTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_modified_time: Option<time::OffsetDateTime>,
 }
 impl StatusBanner {

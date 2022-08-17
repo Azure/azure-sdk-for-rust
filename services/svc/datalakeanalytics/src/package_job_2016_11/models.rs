@@ -347,13 +347,13 @@ pub struct JobInformationBasic {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub priority: Option<i32>,
     #[doc = "the time the job was submitted to the service."]
-    #[serde(rename = "submitTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "submitTime", default, with = "azure_core::date::rfc3339::option")]
     pub submit_time: Option<time::OffsetDateTime>,
     #[doc = "the start time of the job."]
-    #[serde(rename = "startTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
     pub start_time: Option<time::OffsetDateTime>,
     #[doc = "the completion time of the job."]
-    #[serde(rename = "endTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
     pub end_time: Option<time::OffsetDateTime>,
     #[doc = "the job state. When the job is in the Ended state, refer to Result and ErrorMessage for details."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -516,7 +516,7 @@ pub struct JobPipelineInformation {
     #[serde(rename = "auHoursSucceeded", default, skip_serializing_if = "Option::is_none")]
     pub au_hours_succeeded: Option<f64>,
     #[doc = "the last time a job in this pipeline was submitted."]
-    #[serde(rename = "lastSubmitTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastSubmitTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_submit_time: Option<time::OffsetDateTime>,
     #[doc = "the list of run identifiers representing each run of this pipeline."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -558,7 +558,7 @@ pub struct JobPipelineRunInformation {
     #[serde(rename = "runId", default, skip_serializing_if = "Option::is_none")]
     pub run_id: Option<String>,
     #[doc = "the time this instance was last submitted."]
-    #[serde(rename = "lastSubmitTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastSubmitTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_submit_time: Option<time::OffsetDateTime>,
 }
 impl JobPipelineRunInformation {
@@ -615,7 +615,7 @@ pub struct JobRecurrenceInformation {
     #[serde(rename = "auHoursSucceeded", default, skip_serializing_if = "Option::is_none")]
     pub au_hours_succeeded: Option<f64>,
     #[doc = "the last time a job in this recurrence was submitted."]
-    #[serde(rename = "lastSubmitTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastSubmitTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_submit_time: Option<time::OffsetDateTime>,
 }
 impl JobRecurrenceInformation {
@@ -716,7 +716,7 @@ pub struct JobStateAuditRecord {
     #[serde(rename = "newState", default, skip_serializing_if = "Option::is_none")]
     pub new_state: Option<String>,
     #[doc = "the time stamp that the state change took place."]
-    #[serde(rename = "timeStamp", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "timeStamp", default, with = "azure_core::date::rfc3339::option")]
     pub time_stamp: Option<time::OffsetDateTime>,
     #[doc = "the user who requests the change."]
     #[serde(rename = "requestedByUser", default, skip_serializing_if = "Option::is_none")]
@@ -734,10 +734,10 @@ impl JobStateAuditRecord {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobStatistics {
     #[doc = "the last update time for the statistics."]
-    #[serde(rename = "lastUpdateTimeUtc", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastUpdateTimeUtc", default, with = "azure_core::date::rfc3339::option")]
     pub last_update_time_utc: Option<time::OffsetDateTime>,
     #[doc = "the job finalizing start time."]
-    #[serde(rename = "finalizingTimeUtc", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "finalizingTimeUtc", default, with = "azure_core::date::rfc3339::option")]
     pub finalizing_time_utc: Option<time::OffsetDateTime>,
     #[doc = "the list of stages for the job."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]

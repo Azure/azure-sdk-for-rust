@@ -2344,7 +2344,7 @@ pub struct BackupInfo {
     #[serde(rename = "LsnOfLastBackupRecord", default, skip_serializing_if = "Option::is_none")]
     pub lsn_of_last_backup_record: Option<String>,
     #[doc = "The date time when this backup was taken."]
-    #[serde(rename = "CreationTimeUtc", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "CreationTimeUtc", default, with = "azure_core::date::rfc3339::option")]
     pub creation_time_utc: Option<time::OffsetDateTime>,
     #[doc = "Manifest Version of the service this partition backup belongs to."]
     #[serde(rename = "ServiceManifestVersion", default, skip_serializing_if = "Option::is_none")]
@@ -2458,7 +2458,7 @@ pub struct BackupProgressInfo {
     #[serde(rename = "BackupState", default, skip_serializing_if = "Option::is_none")]
     pub backup_state: Option<BackupState>,
     #[doc = "TimeStamp in UTC when operation succeeded or failed."]
-    #[serde(rename = "TimeStampUtc", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "TimeStampUtc", default, with = "azure_core::date::rfc3339::option")]
     pub time_stamp_utc: Option<time::OffsetDateTime>,
     #[doc = "Unique ID of the newly created backup."]
     #[serde(rename = "BackupId", default, skip_serializing_if = "Option::is_none")]
@@ -3202,10 +3202,10 @@ impl ChaosReplicaRestartScheduledEvent {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ChaosSchedule {
     #[doc = "The date and time Chaos will start using this schedule."]
-    #[serde(rename = "StartDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "StartDate", default, with = "azure_core::date::rfc3339::option")]
     pub start_date: Option<time::OffsetDateTime>,
     #[doc = "The date and time Chaos will continue to use this schedule until."]
-    #[serde(rename = "ExpiryDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "ExpiryDate", default, with = "azure_core::date::rfc3339::option")]
     pub expiry_date: Option<time::OffsetDateTime>,
     #[doc = "A mapping of string names to Chaos Parameters to be referenced by Chaos Schedule Jobs."]
     #[serde(rename = "ChaosParametersDictionary", default, skip_serializing_if = "Vec::is_empty")]
@@ -3768,10 +3768,10 @@ impl ClusterHealthReportExpiredEvent {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ClusterLoadInfo {
     #[doc = "The starting time of last resource balancing run."]
-    #[serde(rename = "LastBalancingStartTimeUtc", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "LastBalancingStartTimeUtc", default, with = "azure_core::date::rfc3339::option")]
     pub last_balancing_start_time_utc: Option<time::OffsetDateTime>,
     #[doc = "The end time of last resource balancing run."]
-    #[serde(rename = "LastBalancingEndTimeUtc", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "LastBalancingEndTimeUtc", default, with = "azure_core::date::rfc3339::option")]
     pub last_balancing_end_time_utc: Option<time::OffsetDateTime>,
     #[doc = "List that contains metrics and their load information in this cluster."]
     #[serde(rename = "LoadMetricInformation", default, skip_serializing_if = "Vec::is_empty")]
@@ -4167,7 +4167,7 @@ pub struct CodePackageEntryPoint {
     #[serde(rename = "Status", default, skip_serializing_if = "Option::is_none")]
     pub status: Option<EntryPointStatus>,
     #[doc = "The time (in UTC) when the entry point executable will be run next."]
-    #[serde(rename = "NextActivationTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "NextActivationTime", default, with = "azure_core::date::rfc3339::option")]
     pub next_activation_time: Option<time::OffsetDateTime>,
     #[doc = "The instance ID for current running entry point. For a code package setup entry point (if specified) runs first and after it finishes main entry point is started. Each time entry point executable is run, its instance id will change."]
     #[serde(rename = "InstanceId", default, skip_serializing_if = "Option::is_none")]
@@ -4185,16 +4185,16 @@ pub struct CodePackageEntryPointStatistics {
     #[serde(rename = "LastExitCode", default, skip_serializing_if = "Option::is_none")]
     pub last_exit_code: Option<String>,
     #[doc = "The last time (in UTC) when Service Fabric attempted to run the entry point."]
-    #[serde(rename = "LastActivationTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "LastActivationTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_activation_time: Option<time::OffsetDateTime>,
     #[doc = "The last time (in UTC) when the entry point finished running."]
-    #[serde(rename = "LastExitTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "LastExitTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_exit_time: Option<time::OffsetDateTime>,
     #[doc = "The last time (in UTC) when the entry point ran successfully."]
-    #[serde(rename = "LastSuccessfulActivationTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "LastSuccessfulActivationTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_successful_activation_time: Option<time::OffsetDateTime>,
     #[doc = "The last time (in UTC) when the entry point finished running gracefully."]
-    #[serde(rename = "LastSuccessfulExitTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "LastSuccessfulExitTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_successful_exit_time: Option<time::OffsetDateTime>,
     #[doc = "Number of times the entry point has run."]
     #[serde(rename = "ActivationCount", default, skip_serializing_if = "Option::is_none")]
@@ -4740,13 +4740,13 @@ pub struct ContainerState {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<String>,
     #[doc = "Date/time when the container state started."]
-    #[serde(rename = "startTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
     pub start_time: Option<time::OffsetDateTime>,
     #[doc = "The container exit code."]
     #[serde(rename = "exitCode", default, skip_serializing_if = "Option::is_none")]
     pub exit_code: Option<String>,
     #[doc = "Date/time when the container state finished."]
-    #[serde(rename = "finishTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "finishTime", default, with = "azure_core::date::rfc3339::option")]
     pub finish_time: Option<time::OffsetDateTime>,
     #[doc = "Human-readable status of this state."]
     #[serde(rename = "detailStatus", default, skip_serializing_if = "Option::is_none")]
@@ -5729,7 +5729,11 @@ pub struct DeployedServiceReplicaDetailInfo {
     #[serde(rename = "CurrentServiceOperation", default, skip_serializing_if = "Option::is_none")]
     pub current_service_operation: Option<ServiceOperationName>,
     #[doc = "The start time of the current service operation in UTC format."]
-    #[serde(rename = "CurrentServiceOperationStartTimeUtc", with = "azure_core::date::rfc3339::option")]
+    #[serde(
+        rename = "CurrentServiceOperationStartTimeUtc",
+        default,
+        with = "azure_core::date::rfc3339::option"
+    )]
     pub current_service_operation_start_time_utc: Option<time::OffsetDateTime>,
     #[doc = "List of load reported by replica."]
     #[serde(rename = "ReportedLoad", default, skip_serializing_if = "Option::is_none")]
@@ -7416,7 +7420,7 @@ pub struct FileInfo {
     #[serde(rename = "FileVersion", default, skip_serializing_if = "Option::is_none")]
     pub file_version: Option<FileVersion>,
     #[doc = "The date and time when the image store file was last modified."]
-    #[serde(rename = "ModifiedDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "ModifiedDate", default, with = "azure_core::date::rfc3339::option")]
     pub modified_date: Option<time::OffsetDateTime>,
     #[doc = "The file path relative to the image store root path."]
     #[serde(rename = "StoreRelativePath", default, skip_serializing_if = "Option::is_none")]
@@ -7608,10 +7612,10 @@ pub type GatewayResourceName = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GetBackupByStorageQueryDescription {
     #[doc = "Specifies the start date time in ISO8601 from which to enumerate backups. If not specified, backups are enumerated from the beginning."]
-    #[serde(rename = "StartDateTimeFilter", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "StartDateTimeFilter", default, with = "azure_core::date::rfc3339::option")]
     pub start_date_time_filter: Option<time::OffsetDateTime>,
     #[doc = "Specifies the end date time in ISO8601 till which to enumerate backups. If not specified, backups are enumerated till the end."]
-    #[serde(rename = "EndDateTimeFilter", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "EndDateTimeFilter", default, with = "azure_core::date::rfc3339::option")]
     pub end_date_time_filter: Option<time::OffsetDateTime>,
     #[doc = "If specified as true, gets the most recent backup (within the specified time range) for every partition under the specified backup entity."]
     #[serde(rename = "Latest", default, skip_serializing_if = "Option::is_none")]
@@ -7796,19 +7800,19 @@ pub struct HealthEvent {
     #[serde(rename = "IsExpired", default, skip_serializing_if = "Option::is_none")]
     pub is_expired: Option<bool>,
     #[doc = "The date and time when the health report was sent by the source."]
-    #[serde(rename = "SourceUtcTimestamp", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "SourceUtcTimestamp", default, with = "azure_core::date::rfc3339::option")]
     pub source_utc_timestamp: Option<time::OffsetDateTime>,
     #[doc = "The date and time when the health report was last modified by the health store."]
-    #[serde(rename = "LastModifiedUtcTimestamp", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "LastModifiedUtcTimestamp", default, with = "azure_core::date::rfc3339::option")]
     pub last_modified_utc_timestamp: Option<time::OffsetDateTime>,
     #[doc = "If the current health state is 'Ok', this property returns the time at which the health report was first reported with 'Ok'.\nFor periodic reporting, many reports with the same state may have been generated.\nThis property returns the date and time when the first 'Ok' health report was received.\n\nIf the current health state is 'Error' or 'Warning', returns the date and time at which the health state was last in 'Ok', before transitioning to a different state.\n\nIf the health state was never 'Ok', the value will be zero date-time."]
-    #[serde(rename = "LastOkTransitionAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "LastOkTransitionAt", default, with = "azure_core::date::rfc3339::option")]
     pub last_ok_transition_at: Option<time::OffsetDateTime>,
     #[doc = "If the current health state is 'Warning', this property returns the time at which the health report was first reported with 'Warning'. For periodic reporting, many reports with the same state may have been generated however, this property returns only the date and time at the first 'Warning' health report was received.\n\nIf the current health state is 'Ok' or 'Error', returns the date and time at which the health state was last in 'Warning', before transitioning to a different state.\n\nIf the health state was never 'Warning', the value will be zero date-time."]
-    #[serde(rename = "LastWarningTransitionAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "LastWarningTransitionAt", default, with = "azure_core::date::rfc3339::option")]
     pub last_warning_transition_at: Option<time::OffsetDateTime>,
     #[doc = "If the current health state is 'Error', this property returns the time at which the health report was first reported with 'Error'. For periodic reporting, many reports with the same state may have been generated however, this property returns only the date and time at the first 'Error' health report was received.\n\nIf the current health state is 'Ok' or 'Warning', returns the date and time at which the health state was last in 'Error', before transitioning to a different state.\n\nIf the health state was never 'Error', the value will be zero date-time."]
-    #[serde(rename = "LastErrorTransitionAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "LastErrorTransitionAt", default, with = "azure_core::date::rfc3339::option")]
     pub last_error_transition_at: Option<time::OffsetDateTime>,
 }
 impl HealthEvent {
@@ -8588,7 +8592,7 @@ impl LoadMetricInformation {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LoadMetricReport {
     #[doc = "Gets the UTC time when the load was reported."]
-    #[serde(rename = "LastReportedUtc", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "LastReportedUtc", default, with = "azure_core::date::rfc3339::option")]
     pub last_reported_utc: Option<time::OffsetDateTime>,
     #[doc = "The name of the load metric."]
     #[serde(rename = "Name", default, skip_serializing_if = "Option::is_none")]
@@ -8618,7 +8622,7 @@ pub struct LoadMetricReportInfo {
     #[serde(rename = "CurrentValue", default, skip_serializing_if = "Option::is_none")]
     pub current_value: Option<String>,
     #[doc = "The UTC time when the load is reported."]
-    #[serde(rename = "LastReportedUtc", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "LastReportedUtc", default, with = "azure_core::date::rfc3339::option")]
     pub last_reported_utc: Option<time::OffsetDateTime>,
 }
 impl LoadMetricReportInfo {
@@ -9738,10 +9742,10 @@ pub struct NodeInfo {
     #[serde(rename = "NodeDownTimeInSeconds", default, skip_serializing_if = "Option::is_none")]
     pub node_down_time_in_seconds: Option<String>,
     #[doc = "Date time in UTC when the node came up. If the node has never been up then this value will be zero date time."]
-    #[serde(rename = "NodeUpAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "NodeUpAt", default, with = "azure_core::date::rfc3339::option")]
     pub node_up_at: Option<time::OffsetDateTime>,
     #[doc = "Date time in UTC when the node went down. If node has never been down then this value will be zero date time."]
-    #[serde(rename = "NodeDownAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "NodeDownAt", default, with = "azure_core::date::rfc3339::option")]
     pub node_down_at: Option<time::OffsetDateTime>,
     #[doc = "List that contains tags, which will be applied to the nodes."]
     #[serde(rename = "NodeTags", default, skip_serializing_if = "Option::is_none")]
@@ -11974,7 +11978,7 @@ pub struct PropertyMetadata {
     #[serde(rename = "SizeInBytes", default, skip_serializing_if = "Option::is_none")]
     pub size_in_bytes: Option<i64>,
     #[doc = "Represents when the Property was last modified. Only write operations will cause this field to be updated."]
-    #[serde(rename = "LastModifiedUtcTimestamp", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "LastModifiedUtcTimestamp", default, with = "azure_core::date::rfc3339::option")]
     pub last_modified_utc_timestamp: Option<time::OffsetDateTime>,
     #[doc = "The version of the property. Every time a property is modified, its sequence number is increased."]
     #[serde(rename = "SequenceNumber", default, skip_serializing_if = "Option::is_none")]
@@ -12170,7 +12174,7 @@ pub struct ReconfigurationInformation {
     #[serde(rename = "ReconfigurationType", default, skip_serializing_if = "Option::is_none")]
     pub reconfiguration_type: Option<ReconfigurationType>,
     #[doc = "Start time (in UTC) of the ongoing reconfiguration. If no reconfiguration is taking place then this value will be zero date-time."]
-    #[serde(rename = "ReconfigurationStartTimeUtc", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "ReconfigurationStartTimeUtc", default, with = "azure_core::date::rfc3339::option")]
     pub reconfiguration_start_time_utc: Option<time::OffsetDateTime>,
 }
 impl ReconfigurationInformation {
@@ -12350,7 +12354,11 @@ pub struct RemoteReplicatorStatus {
     #[serde(rename = "ReplicaId", default, skip_serializing_if = "Option::is_none")]
     pub replica_id: Option<ReplicaId>,
     #[doc = "The last timestamp (in UTC) when an acknowledgement from the secondary replicator was processed on the primary.\nUTC 0 represents an invalid value, indicating that no acknowledgement messages were ever processed."]
-    #[serde(rename = "LastAcknowledgementProcessedTimeUtc", with = "azure_core::date::rfc3339::option")]
+    #[serde(
+        rename = "LastAcknowledgementProcessedTimeUtc",
+        default,
+        with = "azure_core::date::rfc3339::option"
+    )]
     pub last_acknowledgement_processed_time_utc: Option<time::OffsetDateTime>,
     #[doc = "The highest replication operation sequence number that the secondary has received from the primary."]
     #[serde(rename = "LastReceivedReplicationSequenceNumber", default, skip_serializing_if = "Option::is_none")]
@@ -12753,37 +12761,53 @@ impl Serialize for RepairTaskHealthCheckState {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RepairTaskHistory {
     #[doc = "The time when the repair task entered the Created state."]
-    #[serde(rename = "CreatedUtcTimestamp", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "CreatedUtcTimestamp", default, with = "azure_core::date::rfc3339::option")]
     pub created_utc_timestamp: Option<time::OffsetDateTime>,
     #[doc = "The time when the repair task entered the Claimed state."]
-    #[serde(rename = "ClaimedUtcTimestamp", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "ClaimedUtcTimestamp", default, with = "azure_core::date::rfc3339::option")]
     pub claimed_utc_timestamp: Option<time::OffsetDateTime>,
     #[doc = "The time when the repair task entered the Preparing state."]
-    #[serde(rename = "PreparingUtcTimestamp", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "PreparingUtcTimestamp", default, with = "azure_core::date::rfc3339::option")]
     pub preparing_utc_timestamp: Option<time::OffsetDateTime>,
     #[doc = "The time when the repair task entered the Approved state"]
-    #[serde(rename = "ApprovedUtcTimestamp", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "ApprovedUtcTimestamp", default, with = "azure_core::date::rfc3339::option")]
     pub approved_utc_timestamp: Option<time::OffsetDateTime>,
     #[doc = "The time when the repair task entered the Executing state"]
-    #[serde(rename = "ExecutingUtcTimestamp", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "ExecutingUtcTimestamp", default, with = "azure_core::date::rfc3339::option")]
     pub executing_utc_timestamp: Option<time::OffsetDateTime>,
     #[doc = "The time when the repair task entered the Restoring state"]
-    #[serde(rename = "RestoringUtcTimestamp", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "RestoringUtcTimestamp", default, with = "azure_core::date::rfc3339::option")]
     pub restoring_utc_timestamp: Option<time::OffsetDateTime>,
     #[doc = "The time when the repair task entered the Completed state"]
-    #[serde(rename = "CompletedUtcTimestamp", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "CompletedUtcTimestamp", default, with = "azure_core::date::rfc3339::option")]
     pub completed_utc_timestamp: Option<time::OffsetDateTime>,
     #[doc = "The time when the repair task started the health check in the Preparing state."]
-    #[serde(rename = "PreparingHealthCheckStartUtcTimestamp", with = "azure_core::date::rfc3339::option")]
+    #[serde(
+        rename = "PreparingHealthCheckStartUtcTimestamp",
+        default,
+        with = "azure_core::date::rfc3339::option"
+    )]
     pub preparing_health_check_start_utc_timestamp: Option<time::OffsetDateTime>,
     #[doc = "The time when the repair task completed the health check in the Preparing state."]
-    #[serde(rename = "PreparingHealthCheckEndUtcTimestamp", with = "azure_core::date::rfc3339::option")]
+    #[serde(
+        rename = "PreparingHealthCheckEndUtcTimestamp",
+        default,
+        with = "azure_core::date::rfc3339::option"
+    )]
     pub preparing_health_check_end_utc_timestamp: Option<time::OffsetDateTime>,
     #[doc = "The time when the repair task started the health check in the Restoring state."]
-    #[serde(rename = "RestoringHealthCheckStartUtcTimestamp", with = "azure_core::date::rfc3339::option")]
+    #[serde(
+        rename = "RestoringHealthCheckStartUtcTimestamp",
+        default,
+        with = "azure_core::date::rfc3339::option"
+    )]
     pub restoring_health_check_start_utc_timestamp: Option<time::OffsetDateTime>,
     #[doc = "The time when the repair task completed the health check in the Restoring state."]
-    #[serde(rename = "RestoringHealthCheckEndUtcTimestamp", with = "azure_core::date::rfc3339::option")]
+    #[serde(
+        rename = "RestoringHealthCheckEndUtcTimestamp",
+        default,
+        with = "azure_core::date::rfc3339::option"
+    )]
     pub restoring_health_check_end_utc_timestamp: Option<time::OffsetDateTime>,
 }
 impl RepairTaskHistory {
@@ -13604,7 +13628,7 @@ pub struct RestoreProgressInfo {
     #[serde(rename = "RestoreState", default, skip_serializing_if = "Option::is_none")]
     pub restore_state: Option<RestoreState>,
     #[doc = "Timestamp when operation succeeded or failed."]
-    #[serde(rename = "TimeStampUtc", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "TimeStampUtc", default, with = "azure_core::date::rfc3339::option")]
     pub time_stamp_utc: Option<time::OffsetDateTime>,
     #[doc = "An Epoch is a configuration number for the partition as a whole. When the configuration of the replica set changes, for example when the Primary replica changes, the operations that are replicated from the new Primary replica are said to be a new Epoch from the ones which were sent by the old Primary replica."]
     #[serde(rename = "RestoredEpoch", default, skip_serializing_if = "Option::is_none")]
@@ -14084,7 +14108,11 @@ pub struct SecondaryReplicatorStatus {
     #[serde(rename = "ReplicationQueueStatus", default, skip_serializing_if = "Option::is_none")]
     pub replication_queue_status: Option<ReplicatorQueueStatus>,
     #[doc = "The last time-stamp (UTC) at which a replication operation was received from the primary.\nUTC 0 represents an invalid value, indicating that a replication operation message was never received."]
-    #[serde(rename = "LastReplicationOperationReceivedTimeUtc", with = "azure_core::date::rfc3339::option")]
+    #[serde(
+        rename = "LastReplicationOperationReceivedTimeUtc",
+        default,
+        with = "azure_core::date::rfc3339::option"
+    )]
     pub last_replication_operation_received_time_utc: Option<time::OffsetDateTime>,
     #[doc = "Value that indicates whether the replica is currently being built."]
     #[serde(rename = "IsInBuild", default, skip_serializing_if = "Option::is_none")]
@@ -14093,10 +14121,10 @@ pub struct SecondaryReplicatorStatus {
     #[serde(rename = "CopyQueueStatus", default, skip_serializing_if = "Option::is_none")]
     pub copy_queue_status: Option<ReplicatorQueueStatus>,
     #[doc = "The last time-stamp (UTC) at which a copy operation was received from the primary.\nUTC 0 represents an invalid value, indicating that a copy operation message was never received."]
-    #[serde(rename = "LastCopyOperationReceivedTimeUtc", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "LastCopyOperationReceivedTimeUtc", default, with = "azure_core::date::rfc3339::option")]
     pub last_copy_operation_received_time_utc: Option<time::OffsetDateTime>,
     #[doc = "The last time-stamp (UTC) at which an acknowledgment was sent to the primary replicator.\nUTC 0 represents an invalid value, indicating that an acknowledgment message was never sent."]
-    #[serde(rename = "LastAcknowledgementSentTimeUtc", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "LastAcknowledgementSentTimeUtc", default, with = "azure_core::date::rfc3339::option")]
     pub last_acknowledgement_sent_time_utc: Option<time::OffsetDateTime>,
 }
 impl SecondaryReplicatorStatus {
@@ -17513,7 +17541,7 @@ pub struct UploadSessionInfo {
     #[serde(rename = "SessionId", default, skip_serializing_if = "Option::is_none")]
     pub session_id: Option<String>,
     #[doc = "The date and time when the upload session was last modified."]
-    #[serde(rename = "ModifiedDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "ModifiedDate", default, with = "azure_core::date::rfc3339::option")]
     pub modified_date: Option<time::OffsetDateTime>,
     #[doc = "The size in bytes of the uploading file."]
     #[serde(rename = "FileSize", default, skip_serializing_if = "Option::is_none")]

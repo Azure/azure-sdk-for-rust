@@ -600,10 +600,10 @@ pub struct OperationalizationClusterProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[doc = "The date and time when the cluster was created."]
-    #[serde(rename = "createdOn", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "createdOn", default, with = "azure_core::date::rfc3339::option")]
     pub created_on: Option<time::OffsetDateTime>,
     #[doc = "The date and time when the cluster was last modified."]
-    #[serde(rename = "modifiedOn", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "modifiedOn", default, with = "azure_core::date::rfc3339::option")]
     pub modified_on: Option<time::OffsetDateTime>,
     #[doc = "The provision state of the cluster. Valid values are Unknown, Updating, Provisioning, Succeeded, and Failed."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
@@ -1038,10 +1038,10 @@ pub struct UpdateSystemServicesResponse {
     #[serde(rename = "updateStatus", default, skip_serializing_if = "Option::is_none")]
     pub update_status: Option<update_system_services_response::UpdateStatus>,
     #[doc = "The date and time when the last system services update was started."]
-    #[serde(rename = "updateStartedOn", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "updateStartedOn", default, with = "azure_core::date::rfc3339::option")]
     pub update_started_on: Option<time::OffsetDateTime>,
     #[doc = "The date and time when the last system services update completed."]
-    #[serde(rename = "updateCompletedOn", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "updateCompletedOn", default, with = "azure_core::date::rfc3339::option")]
     pub update_completed_on: Option<time::OffsetDateTime>,
 }
 impl UpdateSystemServicesResponse {

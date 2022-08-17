@@ -289,10 +289,10 @@ pub struct CommandResultProperties {
     #[serde(rename = "exitCode", default, skip_serializing_if = "Option::is_none")]
     pub exit_code: Option<i32>,
     #[doc = "The time when the command started."]
-    #[serde(rename = "startedAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "startedAt", default, with = "azure_core::date::rfc3339::option")]
     pub started_at: Option<time::OffsetDateTime>,
     #[doc = "The time when the command finished."]
-    #[serde(rename = "finishedAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "finishedAt", default, with = "azure_core::date::rfc3339::option")]
     pub finished_at: Option<time::OffsetDateTime>,
     #[doc = "The command output."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -4010,10 +4010,10 @@ impl TimeInWeek {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TimeSpan {
     #[doc = "The start of a time span"]
-    #[serde(with = "azure_core::date::rfc3339::option")]
+    #[serde(default, with = "azure_core::date::rfc3339::option")]
     pub start: Option<time::OffsetDateTime>,
     #[doc = "The end of a time span"]
-    #[serde(with = "azure_core::date::rfc3339::option")]
+    #[serde(default, with = "azure_core::date::rfc3339::option")]
     pub end: Option<time::OffsetDateTime>,
 }
 impl TimeSpan {
@@ -4172,7 +4172,7 @@ pub struct SystemData {
     #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
-    #[serde(rename = "createdAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
     pub created_at: Option<time::OffsetDateTime>,
     #[doc = "The identity that last modified the resource."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
@@ -4181,7 +4181,7 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
-    #[serde(rename = "lastModifiedAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
     pub last_modified_at: Option<time::OffsetDateTime>,
 }
 impl SystemData {

@@ -170,7 +170,7 @@ pub struct DigitalTwinsEndpointResourceProperties {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<digital_twins_endpoint_resource_properties::ProvisioningState>,
     #[doc = "Time when the Endpoint was added to DigitalTwinsInstance."]
-    #[serde(rename = "createdTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "createdTime", default, with = "azure_core::date::rfc3339::option")]
     pub created_time: Option<time::OffsetDateTime>,
     #[doc = "The resource tags."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -287,10 +287,10 @@ impl DigitalTwinsPatchDescription {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DigitalTwinsProperties {
     #[doc = "Time when DigitalTwinsInstance was created."]
-    #[serde(rename = "createdTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "createdTime", default, with = "azure_core::date::rfc3339::option")]
     pub created_time: Option<time::OffsetDateTime>,
     #[doc = "Time when DigitalTwinsInstance was created."]
-    #[serde(rename = "lastUpdatedTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastUpdatedTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_updated_time: Option<time::OffsetDateTime>,
     #[doc = "The provisioning state."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]

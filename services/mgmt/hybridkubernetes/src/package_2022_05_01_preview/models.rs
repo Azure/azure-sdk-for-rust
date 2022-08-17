@@ -137,10 +137,14 @@ pub struct ConnectedClusterProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub offering: Option<String>,
     #[doc = "Expiration time of the managed identity certificate"]
-    #[serde(rename = "managedIdentityCertificateExpirationTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(
+        rename = "managedIdentityCertificateExpirationTime",
+        default,
+        with = "azure_core::date::rfc3339::option"
+    )]
     pub managed_identity_certificate_expiration_time: Option<time::OffsetDateTime>,
     #[doc = "Time representing the last instance when heart beat was received from the cluster"]
-    #[serde(rename = "lastConnectivityTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastConnectivityTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_connectivity_time: Option<time::OffsetDateTime>,
     #[doc = "Represents the connectivity status of the connected cluster."]
     #[serde(rename = "connectivityStatus", default, skip_serializing_if = "Option::is_none")]
@@ -560,7 +564,7 @@ pub struct SystemData {
     #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
-    #[serde(rename = "createdAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
     pub created_at: Option<time::OffsetDateTime>,
     #[doc = "The identity that last modified the resource."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
@@ -569,7 +573,7 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource modification (UTC)."]
-    #[serde(rename = "lastModifiedAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
     pub last_modified_at: Option<time::OffsetDateTime>,
 }
 impl SystemData {

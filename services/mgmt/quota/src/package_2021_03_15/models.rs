@@ -267,7 +267,7 @@ pub struct QuotaRequestProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
     #[doc = "The quota request submission time. The date conforms to the following format specified by the ISO 8601 standard: yyyy-MM-ddTHH:mm:ssZ"]
-    #[serde(rename = "requestSubmitTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "requestSubmitTime", default, with = "azure_core::date::rfc3339::option")]
     pub request_submit_time: Option<time::OffsetDateTime>,
     #[doc = "Quota request details."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -751,7 +751,7 @@ pub struct QuotaRequestOneResourceProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
     #[doc = "Quota request submission time. The date conforms to the following ISO 8601 standard format: yyyy-MM-ddTHH:mm:ssZ."]
-    #[serde(rename = "requestSubmitTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "requestSubmitTime", default, with = "azure_core::date::rfc3339::option")]
     pub request_submit_time: Option<time::OffsetDateTime>,
     #[doc = "Quota limit."]
     #[serde(default, skip_serializing_if = "Option::is_none")]

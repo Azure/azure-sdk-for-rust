@@ -464,7 +464,7 @@ pub struct DirectoryObject {
     #[serde(rename = "objectType")]
     pub object_type: String,
     #[doc = "The time at which the directory object was deleted."]
-    #[serde(rename = "deletionTimestamp", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "deletionTimestamp", default, with = "azure_core::date::rfc3339::option")]
     pub deletion_timestamp: Option<time::OffsetDateTime>,
 }
 impl DirectoryObject {
@@ -754,10 +754,10 @@ impl InformationalUrl {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct KeyCredential {
     #[doc = "Start date."]
-    #[serde(rename = "startDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "startDate", default, with = "azure_core::date::rfc3339::option")]
     pub start_date: Option<time::OffsetDateTime>,
     #[doc = "End date."]
-    #[serde(rename = "endDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "endDate", default, with = "azure_core::date::rfc3339::option")]
     pub end_date: Option<time::OffsetDateTime>,
     #[doc = "Key value."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -995,10 +995,10 @@ impl OptionalClaims {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PasswordCredential {
     #[doc = "Start date."]
-    #[serde(rename = "startDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "startDate", default, with = "azure_core::date::rfc3339::option")]
     pub start_date: Option<time::OffsetDateTime>,
     #[doc = "End date."]
-    #[serde(rename = "endDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "endDate", default, with = "azure_core::date::rfc3339::option")]
     pub end_date: Option<time::OffsetDateTime>,
     #[doc = "Key ID."]
     #[serde(rename = "keyId", default, skip_serializing_if = "Option::is_none")]

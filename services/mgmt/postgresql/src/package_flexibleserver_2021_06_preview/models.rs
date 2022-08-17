@@ -56,7 +56,7 @@ pub struct Backup {
     #[serde(rename = "geoRedundantBackup", default, skip_serializing_if = "Option::is_none")]
     pub geo_redundant_backup: Option<backup::GeoRedundantBackup>,
     #[doc = "The earliest restore point time (ISO8601 format) for server."]
-    #[serde(rename = "earliestRestoreDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "earliestRestoreDate", default, with = "azure_core::date::rfc3339::option")]
     pub earliest_restore_date: Option<time::OffsetDateTime>,
 }
 impl Backup {
@@ -986,10 +986,10 @@ pub struct QueryStatisticProperties {
     #[serde(rename = "queryId", default, skip_serializing_if = "Option::is_none")]
     pub query_id: Option<String>,
     #[doc = "Observation start time."]
-    #[serde(rename = "startTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
     pub start_time: Option<time::OffsetDateTime>,
     #[doc = "Observation end time."]
-    #[serde(rename = "endTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
     pub end_time: Option<time::OffsetDateTime>,
     #[doc = "Aggregation function name."]
     #[serde(rename = "aggregationFunction", default, skip_serializing_if = "Option::is_none")]
@@ -1095,10 +1095,10 @@ pub struct RecommendationActionProperties {
     #[serde(rename = "actionId", default, skip_serializing_if = "Option::is_none")]
     pub action_id: Option<i32>,
     #[doc = "Recommendation action creation time."]
-    #[serde(rename = "createdTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "createdTime", default, with = "azure_core::date::rfc3339::option")]
     pub created_time: Option<time::OffsetDateTime>,
     #[doc = "Recommendation action expiration time."]
-    #[serde(rename = "expirationTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "expirationTime", default, with = "azure_core::date::rfc3339::option")]
     pub expiration_time: Option<time::OffsetDateTime>,
     #[doc = "Recommendation action reason."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1319,7 +1319,7 @@ pub struct ServerProperties {
     #[serde(rename = "sourceServerResourceId", default, skip_serializing_if = "Option::is_none")]
     pub source_server_resource_id: Option<String>,
     #[doc = "Restore point creation time (ISO8601 format), specifying the time to restore from. It's required when 'createMode' is 'PointInTimeRestore'."]
-    #[serde(rename = "pointInTimeUTC", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "pointInTimeUTC", default, with = "azure_core::date::rfc3339::option")]
     pub point_in_time_utc: Option<time::OffsetDateTime>,
     #[doc = "availability zone information of the server."]
     #[serde(rename = "availabilityZone", default, skip_serializing_if = "Option::is_none")]
@@ -1812,10 +1812,10 @@ impl WaitStatistic {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WaitStatisticProperties {
     #[doc = "Observation start time."]
-    #[serde(rename = "startTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
     pub start_time: Option<time::OffsetDateTime>,
     #[doc = "Observation end time."]
-    #[serde(rename = "endTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
     pub end_time: Option<time::OffsetDateTime>,
     #[doc = "Wait event name."]
     #[serde(rename = "eventName", default, skip_serializing_if = "Option::is_none")]
@@ -1912,7 +1912,7 @@ pub struct SystemData {
     #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
-    #[serde(rename = "createdAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
     pub created_at: Option<time::OffsetDateTime>,
     #[doc = "The identity that last modified the resource."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
@@ -1921,7 +1921,7 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
-    #[serde(rename = "lastModifiedAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
     pub last_modified_at: Option<time::OffsetDateTime>,
 }
 impl SystemData {

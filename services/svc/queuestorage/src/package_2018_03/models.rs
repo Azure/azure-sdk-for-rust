@@ -7,10 +7,10 @@ use std::str::FromStr;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AccessPolicy {
     #[doc = "the date-time the policy is active"]
-    #[serde(rename = "Start", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "Start", default, with = "azure_core::date::rfc3339::option")]
     pub start: Option<time::OffsetDateTime>,
     #[doc = "the date-time the policy expires"]
-    #[serde(rename = "Expiry", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "Expiry", default, with = "azure_core::date::rfc3339::option")]
     pub expiry: Option<time::OffsetDateTime>,
     #[doc = "the permissions for the acl policy"]
     #[serde(rename = "Permission", default, skip_serializing_if = "Option::is_none")]

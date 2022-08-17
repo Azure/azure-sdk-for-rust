@@ -101,7 +101,7 @@ pub struct ComponentEventDetails {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[doc = "Timestamp for component policy event record."]
-    #[serde(with = "azure_core::date::rfc3339::option")]
+    #[serde(default, with = "azure_core::date::rfc3339::option")]
     pub timestamp: Option<time::OffsetDateTime>,
     #[doc = "Tenant ID for the policy event record."]
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
@@ -131,7 +131,7 @@ pub struct ComponentStateDetails {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[doc = "Component compliance evaluation timestamp."]
-    #[serde(with = "azure_core::date::rfc3339::option")]
+    #[serde(default, with = "azure_core::date::rfc3339::option")]
     pub timestamp: Option<time::OffsetDateTime>,
     #[doc = "Component compliance state."]
     #[serde(rename = "complianceState", default, skip_serializing_if = "Option::is_none")]
@@ -494,7 +494,7 @@ pub struct PolicyEvent {
     #[serde(rename = "@odata.context", default, skip_serializing_if = "Option::is_none")]
     pub odata_context: Option<String>,
     #[doc = "Timestamp for the policy event record."]
-    #[serde(with = "azure_core::date::rfc3339::option")]
+    #[serde(default, with = "azure_core::date::rfc3339::option")]
     pub timestamp: Option<time::OffsetDateTime>,
     #[doc = "Resource ID."]
     #[serde(rename = "resourceId", default, skip_serializing_if = "Option::is_none")]
@@ -745,7 +745,7 @@ pub struct PolicyState {
     #[serde(rename = "@odata.context", default, skip_serializing_if = "Option::is_none")]
     pub odata_context: Option<String>,
     #[doc = "Timestamp for the policy state record."]
-    #[serde(with = "azure_core::date::rfc3339::option")]
+    #[serde(default, with = "azure_core::date::rfc3339::option")]
     pub timestamp: Option<time::OffsetDateTime>,
     #[doc = "Resource ID."]
     #[serde(rename = "resourceId", default, skip_serializing_if = "Option::is_none")]
@@ -889,7 +889,7 @@ pub struct PolicyTrackedResource {
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<TrackedResourceModificationDetails>,
     #[doc = "Timestamp of the last update to the tracked resource."]
-    #[serde(rename = "lastUpdateUtc", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastUpdateUtc", default, with = "azure_core::date::rfc3339::option")]
     pub last_update_utc: Option<time::OffsetDateTime>,
 }
 impl PolicyTrackedResource {
@@ -994,10 +994,10 @@ pub struct RemediationDeployment {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorDefinition>,
     #[doc = "The time at which the remediation was created."]
-    #[serde(rename = "createdOn", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "createdOn", default, with = "azure_core::date::rfc3339::option")]
     pub created_on: Option<time::OffsetDateTime>,
     #[doc = "The time at which the remediation deployment was last updated."]
-    #[serde(rename = "lastUpdatedOn", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastUpdatedOn", default, with = "azure_core::date::rfc3339::option")]
     pub last_updated_on: Option<time::OffsetDateTime>,
 }
 impl RemediationDeployment {
@@ -1093,10 +1093,10 @@ pub struct RemediationProperties {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
     #[doc = "The time at which the remediation was created."]
-    #[serde(rename = "createdOn", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "createdOn", default, with = "azure_core::date::rfc3339::option")]
     pub created_on: Option<time::OffsetDateTime>,
     #[doc = "The time at which the remediation was last updated."]
-    #[serde(rename = "lastUpdatedOn", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastUpdatedOn", default, with = "azure_core::date::rfc3339::option")]
     pub last_updated_on: Option<time::OffsetDateTime>,
     #[doc = "The filters that will be applied to determine which resources to remediate."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1247,7 +1247,7 @@ pub struct TrackedResourceModificationDetails {
     #[serde(rename = "deploymentId", default, skip_serializing_if = "Option::is_none")]
     pub deployment_id: Option<String>,
     #[doc = "Timestamp of the deployment that created or modified the tracked resource."]
-    #[serde(rename = "deploymentTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "deploymentTime", default, with = "azure_core::date::rfc3339::option")]
     pub deployment_time: Option<time::OffsetDateTime>,
 }
 impl TrackedResourceModificationDetails {

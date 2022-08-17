@@ -174,16 +174,16 @@ pub struct ContactInstanceProperties {
     #[serde(rename = "maximumElevationDegrees", default, skip_serializing_if = "Option::is_none")]
     pub maximum_elevation_degrees: Option<f64>,
     #[doc = "Time at which antenna transmit will be enabled."]
-    #[serde(rename = "txStartTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "txStartTime", default, with = "azure_core::date::rfc3339::option")]
     pub tx_start_time: Option<time::OffsetDateTime>,
     #[doc = "Time at which antenna transmit will be disabled."]
-    #[serde(rename = "txEndTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "txEndTime", default, with = "azure_core::date::rfc3339::option")]
     pub tx_end_time: Option<time::OffsetDateTime>,
     #[doc = "Earliest time to receive a signal."]
-    #[serde(rename = "rxStartTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "rxStartTime", default, with = "azure_core::date::rfc3339::option")]
     pub rx_start_time: Option<time::OffsetDateTime>,
     #[doc = "Time to lost receiving a signal."]
-    #[serde(rename = "rxEndTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "rxEndTime", default, with = "azure_core::date::rfc3339::option")]
     pub rx_end_time: Option<time::OffsetDateTime>,
     #[doc = "Azimuth of the antenna at the start of the contact in decimal degrees."]
     #[serde(rename = "startAzimuthDegrees", default, skip_serializing_if = "Option::is_none")]
@@ -511,16 +511,16 @@ pub struct ContactsProperties {
     #[serde(rename = "reservationEndTime", with = "azure_core::date::rfc3339")]
     pub reservation_end_time: time::OffsetDateTime,
     #[doc = "Receive start time of a contact."]
-    #[serde(rename = "rxStartTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "rxStartTime", default, with = "azure_core::date::rfc3339::option")]
     pub rx_start_time: Option<time::OffsetDateTime>,
     #[doc = "Receive end time of a contact."]
-    #[serde(rename = "rxEndTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "rxEndTime", default, with = "azure_core::date::rfc3339::option")]
     pub rx_end_time: Option<time::OffsetDateTime>,
     #[doc = "Transmit start time of a contact."]
-    #[serde(rename = "txStartTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "txStartTime", default, with = "azure_core::date::rfc3339::option")]
     pub tx_start_time: Option<time::OffsetDateTime>,
     #[doc = "Transmit end time of a contact."]
-    #[serde(rename = "txEndTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "txEndTime", default, with = "azure_core::date::rfc3339::option")]
     pub tx_end_time: Option<time::OffsetDateTime>,
     #[doc = "Any error message while scheduling a contact."]
     #[serde(rename = "errorMessage", default, skip_serializing_if = "Option::is_none")]
@@ -1113,7 +1113,7 @@ pub struct SystemData {
     #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
-    #[serde(rename = "createdAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
     pub created_at: Option<time::OffsetDateTime>,
     #[doc = "The identity that last modified the resource."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
@@ -1122,7 +1122,7 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
-    #[serde(rename = "lastModifiedAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
     pub last_modified_at: Option<time::OffsetDateTime>,
 }
 impl SystemData {

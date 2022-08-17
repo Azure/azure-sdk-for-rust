@@ -58,13 +58,13 @@ pub struct GrantDetailProperties {
     #[serde(rename = "offerCap", default, skip_serializing_if = "Option::is_none")]
     pub offer_cap: Option<Amount>,
     #[doc = "Grant Effective Date"]
-    #[serde(rename = "effectiveDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "effectiveDate", default, with = "azure_core::date::rfc3339::option")]
     pub effective_date: Option<time::OffsetDateTime>,
     #[doc = "Grant Offer Type"]
     #[serde(rename = "offerType", default, skip_serializing_if = "Option::is_none")]
     pub offer_type: Option<grant_detail_properties::OfferType>,
     #[doc = "Expiration Date"]
-    #[serde(rename = "expirationDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "expirationDate", default, with = "azure_core::date::rfc3339::option")]
     pub expiration_date: Option<time::OffsetDateTime>,
     #[doc = "Grant status"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -348,7 +348,7 @@ pub struct LabProperties {
     #[serde(rename = "expirationDate", with = "azure_core::date::rfc3339")]
     pub expiration_date: time::OffsetDateTime,
     #[doc = "Lab creation date"]
-    #[serde(rename = "effectiveDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "effectiveDate", default, with = "azure_core::date::rfc3339::option")]
     pub effective_date: Option<time::OffsetDateTime>,
     #[doc = "The status of this lab"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -666,7 +666,7 @@ pub struct StudentLabProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[doc = "Date the lab will expire and by default will be the expiration date for each student in this lab"]
-    #[serde(rename = "expirationDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "expirationDate", default, with = "azure_core::date::rfc3339::option")]
     pub expiration_date: Option<time::OffsetDateTime>,
     #[doc = "Student Role"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -681,7 +681,7 @@ pub struct StudentLabProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<student_lab_properties::Status>,
     #[doc = "User Added Date"]
-    #[serde(rename = "effectiveDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "effectiveDate", default, with = "azure_core::date::rfc3339::option")]
     pub effective_date: Option<time::OffsetDateTime>,
     #[doc = "Lab Scope. /providers/Microsoft.Billing/billingAccounts/{billingAccountName}/billingProfiles/{billingProfileName}/invoiceSections/{invoiceSectionName}/providers/Microsoft.Education/labs/default"]
     #[serde(rename = "labScope", default, skip_serializing_if = "Option::is_none")]
@@ -821,13 +821,13 @@ pub struct StudentProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<student_properties::Status>,
     #[doc = "Date student was added to the lab"]
-    #[serde(rename = "effectiveDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "effectiveDate", default, with = "azure_core::date::rfc3339::option")]
     pub effective_date: Option<time::OffsetDateTime>,
     #[doc = "Subscription alias"]
     #[serde(rename = "subscriptionAlias", default, skip_serializing_if = "Option::is_none")]
     pub subscription_alias: Option<String>,
     #[doc = "subscription invite last sent date"]
-    #[serde(rename = "subscriptionInviteLastSentDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "subscriptionInviteLastSentDate", default, with = "azure_core::date::rfc3339::option")]
     pub subscription_invite_last_sent_date: Option<time::OffsetDateTime>,
 }
 impl StudentProperties {
@@ -947,7 +947,7 @@ pub struct SystemData {
     #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
-    #[serde(rename = "createdAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
     pub created_at: Option<time::OffsetDateTime>,
     #[doc = "The identity that last modified the resource."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
@@ -956,7 +956,7 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
-    #[serde(rename = "lastModifiedAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
     pub last_modified_at: Option<time::OffsetDateTime>,
 }
 impl SystemData {

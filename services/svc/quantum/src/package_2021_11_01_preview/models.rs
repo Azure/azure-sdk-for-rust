@@ -93,16 +93,16 @@ pub struct JobDetails {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<job_details::Status>,
     #[doc = "The creation time of the job."]
-    #[serde(rename = "creationTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "creationTime", default, with = "azure_core::date::rfc3339::option")]
     pub creation_time: Option<time::OffsetDateTime>,
     #[doc = "The time when the job began execution."]
-    #[serde(rename = "beginExecutionTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "beginExecutionTime", default, with = "azure_core::date::rfc3339::option")]
     pub begin_execution_time: Option<time::OffsetDateTime>,
     #[doc = "The time when the job finished execution."]
-    #[serde(rename = "endExecutionTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "endExecutionTime", default, with = "azure_core::date::rfc3339::option")]
     pub end_execution_time: Option<time::OffsetDateTime>,
     #[doc = "The time when a job was successfully cancelled."]
-    #[serde(rename = "cancellationTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "cancellationTime", default, with = "azure_core::date::rfc3339::option")]
     pub cancellation_time: Option<time::OffsetDateTime>,
     #[doc = "The job cost billed by the provider. The final cost on your bill might be slightly different due to added taxes and currency conversion rates."]
     #[serde(rename = "costEstimate", default, skip_serializing_if = "Option::is_none")]

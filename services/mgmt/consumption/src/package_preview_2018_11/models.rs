@@ -378,10 +378,10 @@ impl DownloadUrl {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Enrollment {
     #[doc = "Enrollment Start Date"]
-    #[serde(rename = "startDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "startDate", default, with = "azure_core::date::rfc3339::option")]
     pub start_date: Option<time::OffsetDateTime>,
     #[doc = "Enrollment End Date"]
-    #[serde(rename = "endDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "endDate", default, with = "azure_core::date::rfc3339::option")]
     pub end_date: Option<time::OffsetDateTime>,
     #[doc = "The currency associated with enrollment"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -440,10 +440,10 @@ pub struct EnrollmentAccountProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
     #[doc = "Account Start Date"]
-    #[serde(rename = "startDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "startDate", default, with = "azure_core::date::rfc3339::option")]
     pub start_date: Option<time::OffsetDateTime>,
     #[doc = "Account End Date"]
-    #[serde(rename = "endDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "endDate", default, with = "azure_core::date::rfc3339::option")]
     pub end_date: Option<time::OffsetDateTime>,
     #[doc = "A department resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -512,7 +512,7 @@ impl ErrorResponse {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EventProperties {
     #[doc = "Transaction Date."]
-    #[serde(rename = "transactionDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "transactionDate", default, with = "azure_core::date::rfc3339::option")]
     pub transaction_date: Option<time::OffsetDateTime>,
     #[doc = "Transaction description."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -654,10 +654,10 @@ pub struct LotProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub source: Option<lot_properties::Source>,
     #[doc = "Start Date."]
-    #[serde(rename = "startDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "startDate", default, with = "azure_core::date::rfc3339::option")]
     pub start_date: Option<time::OffsetDateTime>,
     #[doc = "Expiration Date."]
-    #[serde(rename = "expirationDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "expirationDate", default, with = "azure_core::date::rfc3339::option")]
     pub expiration_date: Option<time::OffsetDateTime>,
     #[doc = "PO Number."]
     #[serde(rename = "poNumber", default, skip_serializing_if = "Option::is_none")]

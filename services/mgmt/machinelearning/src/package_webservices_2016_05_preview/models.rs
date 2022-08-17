@@ -258,7 +258,7 @@ pub struct DiagnosticsConfiguration {
     #[doc = "Specifies the verbosity of the diagnostic output. Valid values are: None - disables tracing; Error - collects only error (stderr) traces; All - collects all traces (stdout and stderr)."]
     pub level: diagnostics_configuration::Level,
     #[doc = "Specifies the date and time when the logging will cease. If null, diagnostic collection is not time limited."]
-    #[serde(with = "azure_core::date::rfc3339::option")]
+    #[serde(default, with = "azure_core::date::rfc3339::option")]
     pub expiry: Option<time::OffsetDateTime>,
 }
 impl DiagnosticsConfiguration {
@@ -802,10 +802,10 @@ pub struct WebServiceProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[doc = "Read Only: The date and time when the web service was created."]
-    #[serde(rename = "createdOn", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "createdOn", default, with = "azure_core::date::rfc3339::option")]
     pub created_on: Option<time::OffsetDateTime>,
     #[doc = "Read Only: The date and time when the web service was last modified."]
-    #[serde(rename = "modifiedOn", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "modifiedOn", default, with = "azure_core::date::rfc3339::option")]
     pub modified_on: Option<time::OffsetDateTime>,
     #[doc = "Read Only: The provision state of the web service. Valid values are Unknown, Provisioning, Succeeded, and Failed."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]

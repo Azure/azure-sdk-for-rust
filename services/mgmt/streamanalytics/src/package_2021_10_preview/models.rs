@@ -978,7 +978,7 @@ impl ClusterListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ClusterProperties {
     #[doc = "The date this cluster was created."]
-    #[serde(rename = "createdDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "createdDate", default, with = "azure_core::date::rfc3339::option")]
     pub created_date: Option<time::OffsetDateTime>,
     #[doc = "Unique identifier for the cluster."]
     #[serde(rename = "clusterId", default, skip_serializing_if = "Option::is_none")]
@@ -3586,7 +3586,7 @@ pub struct StartStreamingJobParameters {
     #[serde(rename = "outputStartMode", default, skip_serializing_if = "Option::is_none")]
     pub output_start_mode: Option<OutputStartMode>,
     #[doc = "Value is either an ISO-8601 formatted time stamp that indicates the starting point of the output event stream, or null to indicate that the output event stream will start whenever the streaming job is started. This property must have a value if outputStartMode is set to CustomTime."]
-    #[serde(rename = "outputStartTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "outputStartTime", default, with = "azure_core::date::rfc3339::option")]
     pub output_start_time: Option<time::OffsetDateTime>,
 }
 impl StartStreamingJobParameters {
@@ -3701,10 +3701,10 @@ pub struct StreamingJobProperties {
     #[serde(rename = "outputStartMode", default, skip_serializing_if = "Option::is_none")]
     pub output_start_mode: Option<OutputStartMode>,
     #[doc = "Value is either an ISO-8601 formatted time stamp that indicates the starting point of the output event stream, or null to indicate that the output event stream will start whenever the streaming job is started. This property must have a value if outputStartMode is set to CustomTime."]
-    #[serde(rename = "outputStartTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "outputStartTime", default, with = "azure_core::date::rfc3339::option")]
     pub output_start_time: Option<time::OffsetDateTime>,
     #[doc = "Value is either an ISO-8601 formatted timestamp indicating the last output event time of the streaming job or null indicating that output has not yet been produced. In case of multiple outputs or multiple streams, this shows the latest value in that set."]
-    #[serde(rename = "lastOutputEventTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastOutputEventTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_output_event_time: Option<time::OffsetDateTime>,
     #[doc = "Indicates the policy to apply to events that arrive out of order in the input event stream."]
     #[serde(rename = "eventsOutOfOrderPolicy", default, skip_serializing_if = "Option::is_none")]
@@ -3725,7 +3725,7 @@ pub struct StreamingJobProperties {
     #[serde(rename = "compatibilityLevel", default, skip_serializing_if = "Option::is_none")]
     pub compatibility_level: Option<CompatibilityLevel>,
     #[doc = "Value is an ISO-8601 formatted UTC timestamp indicating when the streaming job was created."]
-    #[serde(rename = "createdDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "createdDate", default, with = "azure_core::date::rfc3339::option")]
     pub created_date: Option<time::OffsetDateTime>,
     #[doc = "A list of one or more inputs to the streaming job. The name property for each input is required when specifying this property in a PUT request. This property cannot be modify via a PATCH operation. You must use the PATCH API available for the individual input."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]

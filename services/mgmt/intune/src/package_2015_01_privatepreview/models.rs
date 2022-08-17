@@ -480,7 +480,7 @@ pub struct MamPolicyProperties {
     pub num_of_apps: Option<i64>,
     #[serde(rename = "groupStatus", default, skip_serializing_if = "Option::is_none")]
     pub group_status: Option<mam_policy_properties::GroupStatus>,
-    #[serde(rename = "lastModifiedTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastModifiedTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_modified_time: Option<time::OffsetDateTime>,
 }
 impl MamPolicyProperties {
@@ -743,7 +743,7 @@ pub struct StatusesProperties {
     pub enrolled_users: Option<i64>,
     #[serde(rename = "flaggedUsers", default, skip_serializing_if = "Option::is_none")]
     pub flagged_users: Option<i64>,
-    #[serde(rename = "lastModifiedTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastModifiedTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_modified_time: Option<time::OffsetDateTime>,
     #[serde(rename = "policyAppliedUsers", default, skip_serializing_if = "Option::is_none")]
     pub policy_applied_users: Option<i64>,

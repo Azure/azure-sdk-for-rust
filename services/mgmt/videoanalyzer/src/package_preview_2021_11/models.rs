@@ -405,7 +405,7 @@ impl EdgeModuleProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EdgeModuleProvisioningToken {
     #[doc = "The expiration date of the registration token. The Azure Video Analyzer IoT edge module must be initialized and connected to the Internet prior to the token expiration date."]
-    #[serde(rename = "expirationDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "expirationDate", default, with = "azure_core::date::rfc3339::option")]
     pub expiration_date: Option<time::OffsetDateTime>,
     #[doc = "The token blob to be provided to the Azure Video Analyzer IoT edge module through the Azure IoT Edge module twin properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1531,7 +1531,7 @@ pub struct PipelineJobProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<pipeline_job_properties::State>,
     #[doc = "The date-time by when this pipeline job will be automatically deleted from your account."]
-    #[serde(with = "azure_core::date::rfc3339::option")]
+    #[serde(default, with = "azure_core::date::rfc3339::option")]
     pub expiration: Option<time::OffsetDateTime>,
     #[doc = "Details about the error for a failed pipeline job."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1609,7 +1609,7 @@ pub struct PipelineJobPropertiesUpdate {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<pipeline_job_properties_update::State>,
     #[doc = "The date-time by when this pipeline job will be automatically deleted from your account."]
-    #[serde(with = "azure_core::date::rfc3339::option")]
+    #[serde(default, with = "azure_core::date::rfc3339::option")]
     pub expiration: Option<time::OffsetDateTime>,
     #[doc = "Details about the error for a failed pipeline job."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2995,7 +2995,7 @@ impl VideoArchival {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VideoContentToken {
     #[doc = "The content token expiration date in ISO8601 format (eg. 2021-01-01T00:00:00Z)."]
-    #[serde(rename = "expirationDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "expirationDate", default, with = "azure_core::date::rfc3339::option")]
     pub expiration_date: Option<time::OffsetDateTime>,
     #[doc = "The content token value to be added to the video content URL as the value for the \"token\" query string parameter. The token is specific to a single video."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -3389,7 +3389,7 @@ pub struct SystemData {
     #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
-    #[serde(rename = "createdAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
     pub created_at: Option<time::OffsetDateTime>,
     #[doc = "The identity that last modified the resource."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
@@ -3398,7 +3398,7 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
-    #[serde(rename = "lastModifiedAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
     pub last_modified_at: Option<time::OffsetDateTime>,
 }
 impl SystemData {

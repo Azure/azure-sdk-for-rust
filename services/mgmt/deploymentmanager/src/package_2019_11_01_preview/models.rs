@@ -185,7 +185,7 @@ impl Identity {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Message {
     #[doc = "Time in UTC this message was provided."]
-    #[serde(rename = "timeStamp", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "timeStamp", default, with = "azure_core::date::rfc3339::option")]
     pub time_stamp: Option<time::OffsetDateTime>,
     #[doc = "The actual message text."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -494,10 +494,10 @@ pub struct RolloutOperationInfo {
     #[serde(rename = "skipSucceededOnRetry", default, skip_serializing_if = "Option::is_none")]
     pub skip_succeeded_on_retry: Option<bool>,
     #[doc = "The start time of the rollout in UTC."]
-    #[serde(rename = "startTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
     pub start_time: Option<time::OffsetDateTime>,
     #[doc = "The start time of the rollout in UTC. This property will not be set if the rollout has not completed yet."]
-    #[serde(rename = "endTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
     pub end_time: Option<time::OffsetDateTime>,
     #[doc = "Detailed error information of any failure."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -850,13 +850,13 @@ pub struct StepOperationInfo {
     #[serde(rename = "correlationId", default, skip_serializing_if = "Option::is_none")]
     pub correlation_id: Option<String>,
     #[doc = "Start time of the action in UTC."]
-    #[serde(rename = "startTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
     pub start_time: Option<time::OffsetDateTime>,
     #[doc = "End time of the action in UTC."]
-    #[serde(rename = "endTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
     pub end_time: Option<time::OffsetDateTime>,
     #[doc = "Last time in UTC this operation was updated."]
-    #[serde(rename = "lastUpdatedTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastUpdatedTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_updated_time: Option<time::OffsetDateTime>,
     #[doc = "Detailed error information of any failure."]
     #[serde(default, skip_serializing_if = "Option::is_none")]

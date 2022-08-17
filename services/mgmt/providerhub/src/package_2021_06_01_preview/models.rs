@@ -243,7 +243,7 @@ pub struct DefaultRolloutStatus {
     pub rollout_status_base: RolloutStatusBase,
     #[serde(rename = "nextTrafficRegion", default, skip_serializing_if = "Option::is_none")]
     pub next_traffic_region: Option<default_rollout_status::NextTrafficRegion>,
-    #[serde(rename = "nextTrafficRegionScheduledTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "nextTrafficRegionScheduledTime", default, with = "azure_core::date::rfc3339::option")]
     pub next_traffic_region_scheduled_time: Option<time::OffsetDateTime>,
     #[serde(rename = "subscriptionReregistrationResult", default, skip_serializing_if = "Option::is_none")]
     pub subscription_reregistration_result: Option<default_rollout_status::SubscriptionReregistrationResult>,
@@ -3167,7 +3167,7 @@ pub struct SystemData {
     #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
-    #[serde(rename = "createdAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
     pub created_at: Option<time::OffsetDateTime>,
     #[doc = "The identity that last modified the resource."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
@@ -3176,7 +3176,7 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
-    #[serde(rename = "lastModifiedAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
     pub last_modified_at: Option<time::OffsetDateTime>,
 }
 impl SystemData {

@@ -937,7 +937,7 @@ pub struct USqlSecret {
     #[serde(rename = "secretName", default, skip_serializing_if = "Option::is_none")]
     pub secret_name: Option<String>,
     #[doc = "the creation time of the credential object. This is the only information returned about a secret from a GET."]
-    #[serde(rename = "creationTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "creationTime", default, with = "azure_core::date::rfc3339::option")]
     pub creation_time: Option<time::OffsetDateTime>,
     #[doc = "the URI identifier for the secret in the format <hostname>:<port>"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1020,7 +1020,7 @@ pub struct USqlTableFragment {
     #[serde(rename = "rowCount", default, skip_serializing_if = "Option::is_none")]
     pub row_count: Option<i64>,
     #[doc = "the creation time of the table fragment."]
-    #[serde(rename = "createDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "createDate", default, with = "azure_core::date::rfc3339::option")]
     pub create_date: Option<time::OffsetDateTime>,
     #[doc = "the relative path for the table fragment location."]
     #[serde(rename = "streamPath", default, skip_serializing_if = "Option::is_none")]
@@ -1095,7 +1095,7 @@ pub struct USqlTablePartition {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub label: Vec<String>,
     #[doc = "the creation time of the partition"]
-    #[serde(rename = "createDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "createDate", default, with = "azure_core::date::rfc3339::option")]
     pub create_date: Option<time::OffsetDateTime>,
 }
 impl USqlTablePartition {
@@ -1171,10 +1171,10 @@ pub struct USqlTableStatistics {
     #[serde(rename = "statDataPath", default, skip_serializing_if = "Option::is_none")]
     pub stat_data_path: Option<String>,
     #[doc = "the creation time of the statistics."]
-    #[serde(rename = "createTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "createTime", default, with = "azure_core::date::rfc3339::option")]
     pub create_time: Option<time::OffsetDateTime>,
     #[doc = "the last time the statistics were updated."]
-    #[serde(rename = "updateTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "updateTime", default, with = "azure_core::date::rfc3339::option")]
     pub update_time: Option<time::OffsetDateTime>,
     #[doc = "the switch indicating if these statistics are user created."]
     #[serde(rename = "isUserCreated", default, skip_serializing_if = "Option::is_none")]

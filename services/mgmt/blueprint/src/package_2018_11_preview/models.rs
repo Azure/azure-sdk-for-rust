@@ -548,10 +548,10 @@ impl BlueprintResourcePropertiesBase {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BlueprintResourceStatusBase {
     #[doc = "Creation time of this blueprint definition."]
-    #[serde(rename = "timeCreated", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "timeCreated", default, with = "azure_core::date::rfc3339::option")]
     pub time_created: Option<time::OffsetDateTime>,
     #[doc = "Last modified time of this blueprint definition."]
-    #[serde(rename = "lastModified", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastModified", default, with = "azure_core::date::rfc3339::option")]
     pub last_modified: Option<time::OffsetDateTime>,
 }
 impl BlueprintResourceStatusBase {

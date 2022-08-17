@@ -1128,10 +1128,10 @@ pub struct ManagementGroupProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
     #[doc = "The datetime that the management group was created."]
-    #[serde(with = "azure_core::date::rfc3339::option")]
+    #[serde(default, with = "azure_core::date::rfc3339::option")]
     pub created: Option<time::OffsetDateTime>,
     #[doc = "The last datetime that the management group received data."]
-    #[serde(rename = "dataReceived", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "dataReceived", default, with = "azure_core::date::rfc3339::option")]
     pub data_received: Option<time::OffsetDateTime>,
     #[doc = "The version of System Center that is managing the management group."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1345,10 +1345,10 @@ impl Resource {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RestoredLogs {
     #[doc = "The timestamp to start the restore from (UTC)."]
-    #[serde(rename = "startRestoreTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "startRestoreTime", default, with = "azure_core::date::rfc3339::option")]
     pub start_restore_time: Option<time::OffsetDateTime>,
     #[doc = "The timestamp to end the restore by (UTC)."]
-    #[serde(rename = "endRestoreTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "endRestoreTime", default, with = "azure_core::date::rfc3339::option")]
     pub end_restore_time: Option<time::OffsetDateTime>,
     #[doc = "The table to restore data from."]
     #[serde(rename = "sourceTable", default, skip_serializing_if = "Option::is_none")]
@@ -1652,10 +1652,10 @@ pub struct SearchMetadata {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
     #[doc = "The start time for the search."]
-    #[serde(rename = "startTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
     pub start_time: Option<time::OffsetDateTime>,
     #[doc = "The time of last update."]
-    #[serde(rename = "lastUpdated", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastUpdated", default, with = "azure_core::date::rfc3339::option")]
     pub last_updated: Option<time::OffsetDateTime>,
     #[doc = "The ETag of the search results."]
     #[serde(rename = "eTag", default, skip_serializing_if = "Option::is_none")]
@@ -1715,10 +1715,10 @@ pub struct SearchResults {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub limit: Option<i32>,
     #[doc = "The timestamp to start the search from (UTC)"]
-    #[serde(rename = "startSearchTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "startSearchTime", default, with = "azure_core::date::rfc3339::option")]
     pub start_search_time: Option<time::OffsetDateTime>,
     #[doc = "The timestamp to end the search by (UTC)"]
-    #[serde(rename = "endSearchTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "endSearchTime", default, with = "azure_core::date::rfc3339::option")]
     pub end_search_time: Option<time::OffsetDateTime>,
     #[doc = "The table used in the search job."]
     #[serde(rename = "sourceTable", default, skip_serializing_if = "Option::is_none")]
@@ -2174,7 +2174,7 @@ pub struct UsageMetric {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub limit: Option<f64>,
     #[doc = "The time that the metric's value will reset."]
-    #[serde(rename = "nextResetTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "nextResetTime", default, with = "azure_core::date::rfc3339::option")]
     pub next_reset_time: Option<time::OffsetDateTime>,
     #[doc = "The quota period that determines the length of time between value resets."]
     #[serde(rename = "quotaPeriod", default, skip_serializing_if = "Option::is_none")]
@@ -2733,7 +2733,7 @@ pub struct SystemData {
     #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
-    #[serde(rename = "createdAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
     pub created_at: Option<time::OffsetDateTime>,
     #[doc = "The identity that last modified the resource."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
@@ -2742,7 +2742,7 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
-    #[serde(rename = "lastModifiedAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
     pub last_modified_at: Option<time::OffsetDateTime>,
 }
 impl SystemData {

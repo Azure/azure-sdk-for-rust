@@ -347,10 +347,10 @@ pub struct NamespaceProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
     #[doc = "The time the namespace was created."]
-    #[serde(rename = "createdAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
     pub created_at: Option<time::OffsetDateTime>,
     #[doc = "The time the namespace was updated."]
-    #[serde(rename = "updatedAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "updatedAt", default, with = "azure_core::date::rfc3339::option")]
     pub updated_at: Option<time::OffsetDateTime>,
     #[doc = "Endpoint you can use to perform NotificationHub operations."]
     #[serde(rename = "serviceBusEndpoint", default, skip_serializing_if = "Option::is_none")]
