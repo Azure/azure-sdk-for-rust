@@ -101,15 +101,16 @@ pub struct Blob {
 #[serde(rename_all = "PascalCase")]
 pub struct BlobProperties {
     #[cfg(not(feature = "azurite_workaround"))]
-    #[serde(rename = "Creation-Time")]
-    #[serde(with = "azure_core::date::rfc1123")]
+    #[serde(with = "azure_core::date::rfc1123", rename = "Creation-Time")]
     pub creation_time: OffsetDateTime,
     #[cfg(feature = "azurite_workaround")]
-    #[serde(rename = "Creation-Time")]
-    #[serde(default, with = "azure_core::date::rfc1123::option")]
+    #[serde(
+        default,
+        with = "azure_core::date::rfc1123::option",
+        rename = "Creation-Time"
+    )]
     pub creation_time: Option<OffsetDateTime>,
-    #[serde(rename = "Last-Modified")]
-    #[serde(with = "azure_core::date::rfc1123")]
+    #[serde(with = "azure_core::date::rfc1123", rename = "Last-Modified")]
     pub last_modified: OffsetDateTime,
     #[serde(default, with = "azure_core::date::rfc1123::option")]
     pub last_access_time: Option<OffsetDateTime>,
@@ -124,13 +125,17 @@ pub struct BlobProperties {
     pub content_language: Option<String>,
     #[serde(rename = "Content-Disposition")]
     pub content_disposition: Option<String>,
-    #[serde(rename = "Content-MD5")]
-    #[serde(default)]
-    #[serde(deserialize_with = "deserialize_md5_optional")]
+    #[serde(
+        default,
+        deserialize_with = "deserialize_md5_optional",
+        rename = "Content-MD5"
+    )]
     pub content_md5: Option<ConsistencyMD5>,
-    #[serde(rename = "Content-CRC64")]
-    #[serde(default)]
-    #[serde(deserialize_with = "deserialize_crc64_optional")]
+    #[serde(
+        default,
+        deserialize_with = "deserialize_crc64_optional",
+        rename = "Content-CRC64"
+    )]
     pub content_crc64: Option<ConsistencyCRC64>,
     #[serde(rename = "Cache-Control")]
     pub cache_control: Option<String>,
@@ -160,8 +165,11 @@ pub struct BlobProperties {
     pub remaining_retention_days: Option<u32>,
     pub tag_count: Option<u32>,
     pub rehydrate_priority: Option<RehydratePriority>,
-    #[serde(rename = "Expiry-Time")]
-    #[serde(default, with = "azure_core::date::rfc1123::option")]
+    #[serde(
+        default,
+        with = "azure_core::date::rfc1123::option",
+        rename = "Expiry-Time"
+    )]
     pub expiry_time: Option<OffsetDateTime>,
     #[serde(flatten)]
     extra: HashMap<String, String>, // For debug purposes, should be compiled out in the future
