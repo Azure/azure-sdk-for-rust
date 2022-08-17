@@ -17,7 +17,7 @@ pub use block_with_size_list::BlockWithSizeList;
 pub use lease_blob_options::{LeaseBlobOptions, LEASE_BLOB_OPTIONS_DEFAULT};
 pub use page_range_list::PageRangeList;
 
-use crate::options::{AccessTier, Tags};
+use crate::options::{AccessTier, Snapshot, Tags, SNAPSHOT};
 use azure_core::{
     content_type, date,
     headers::{self, Headers},
@@ -25,6 +25,7 @@ use azure_core::{
     Etag, LeaseDuration, LeaseState, LeaseStatus,
 };
 use azure_storage::{ConsistencyCRC64, ConsistencyMD5, CopyId, CopyProgress};
+use serde::{self, Deserialize, Deserializer};
 use std::collections::HashMap;
 use time::OffsetDateTime;
 
@@ -59,7 +60,6 @@ create_enum!(RehydratePriority, (High, "High"), (Standard, "Standard"));
 
 create_enum!(PageWriteType, (Update, "update"), (Clear, "clear"));
 
-use serde::{self, Deserialize, Deserializer};
 fn deserialize_crc64_optional<'de, D>(deserializer: D) -> Result<Option<ConsistencyCRC64>, D::Error>
 where
     D: Deserializer<'de>,
@@ -88,7 +88,7 @@ where
 #[serde(rename_all = "PascalCase")]
 pub struct Blob {
     pub name: String,
-    pub snapshot: Option<OffsetDateTime>,
+    pub snapshot: Option<Snapshot>,
     pub version_id: Option<String>,
     pub is_current_version: Option<bool>,
     pub deleted: Option<bool>,
@@ -230,9 +230,7 @@ impl Blob {
 
         let tags = h.get_optional_as(&headers::TAGS)?;
 
-        // TODO: Retrieve the snapshot time from
-        // the headers
-        let snapshot = None;
+        let snapshot = h.get_optional_as(&SNAPSHOT)?;
 
         Ok(Blob {
             name: blob_name.into(),

@@ -1,5 +1,5 @@
 use crate::prelude::*;
-use azure_core::headers::{etag_from_headers, HeaderName};
+use azure_core::headers::etag_from_headers;
 use azure_core::{
     headers::{date_from_headers, last_modified_from_headers, request_id_from_headers, Headers},
     prelude::*,
@@ -64,5 +64,3 @@ impl TryFrom<&Headers> for SnapshotBlobResponse {
         })
     }
 }
-
-pub const SNAPSHOT: HeaderName = HeaderName::from_static("x-ms-snapshot");

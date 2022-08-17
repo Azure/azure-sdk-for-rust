@@ -1,6 +1,6 @@
 use crate::{
     blob::operations::*,
-    options::{BA512Range, Tags},
+    options::{BA512Range, Snapshot, Tags},
     prelude::*,
 };
 use azure_core::{
