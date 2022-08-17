@@ -135,7 +135,7 @@ struct AadTokenResponse {
     access_token: String,
 }
 
-fn get_encoded_cert(cert: &X509) -> Result<String, azure_core::error::Error> {
+fn get_encoded_cert(cert: &X509) -> azure_core::Result<String> {
     Ok(format!(
         "\"{}\"",
         base64::encode(cert.to_pem().map_err(|_| openssl_error())?)
