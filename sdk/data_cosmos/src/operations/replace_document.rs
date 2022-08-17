@@ -69,7 +69,7 @@ impl<D: Serialize + Send + 'static> ReplaceDocumentBuilder<D> {
 #[derive(Debug, Clone)]
 pub struct ReplaceDocumentResponse {
     pub document_attributes: DocumentAttributes,
-    pub content_location: String,
+    pub content_location: Option<String>,
     pub last_state_change: OffsetDateTime,
     pub resource_quota: Vec<ResourceQuota>,
     pub resource_usage: Vec<ResourceQuota>,

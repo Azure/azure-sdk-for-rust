@@ -57,7 +57,7 @@ pub struct DeleteCollectionResponse {
     pub xp_role: u32,
     pub server: String,
     pub cosmos_quorum_acked_llsn: u64,
-    pub content_location: String,
+    pub content_location: Option<String>,
     pub content_type: String,
 }
 

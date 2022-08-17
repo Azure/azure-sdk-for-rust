@@ -50,7 +50,7 @@ pub struct GetAttachmentResponse {
     pub attachment: Attachment,
 
     pub content_type: String,
-    pub content_location: String,
+    pub content_location: Option<String>,
     pub last_change: OffsetDateTime,
     pub etag: String,
     pub resource_quota: Vec<ResourceQuota>,

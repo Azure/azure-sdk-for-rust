@@ -50,7 +50,7 @@ impl GetPartitionKeyRangesBuilder {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct GetPartitionKeyRangesResponse {
     pub rid: String,
-    pub content_location: String,
+    pub content_location: Option<String>,
     pub server: String,
     pub last_state_change: OffsetDateTime,
     pub lsn: u64,
