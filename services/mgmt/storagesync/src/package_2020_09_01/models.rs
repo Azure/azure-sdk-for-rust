@@ -101,7 +101,7 @@ impl CloudEndpointArray {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudEndpointChangeEnumerationActivity {
     #[doc = "Last updated timestamp"]
-    #[serde(rename = "lastUpdatedTimestamp", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastUpdatedTimestamp", default, with = "azure_core::date::rfc3339::option")]
     pub last_updated_timestamp: Option<time::OffsetDateTime>,
     #[doc = "State of change enumeration activity"]
     #[serde(rename = "operationState", default, skip_serializing_if = "Option::is_none")]
@@ -110,7 +110,7 @@ pub struct CloudEndpointChangeEnumerationActivity {
     #[serde(rename = "statusCode", default, skip_serializing_if = "Option::is_none")]
     pub status_code: Option<i32>,
     #[doc = "Timestamp when change enumeration started"]
-    #[serde(rename = "startedTimestamp", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "startedTimestamp", default, with = "azure_core::date::rfc3339::option")]
     pub started_timestamp: Option<time::OffsetDateTime>,
     #[doc = "Count of files processed"]
     #[serde(rename = "processedFilesCount", default, skip_serializing_if = "Option::is_none")]
@@ -190,7 +190,7 @@ impl Serialize for CloudEndpointChangeEnumerationActivityState {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudEndpointChangeEnumerationStatus {
     #[doc = "Last updated timestamp"]
-    #[serde(rename = "lastUpdatedTimestamp", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastUpdatedTimestamp", default, with = "azure_core::date::rfc3339::option")]
     pub last_updated_timestamp: Option<time::OffsetDateTime>,
     #[doc = "Cloud endpoint change enumeration status object"]
     #[serde(rename = "lastEnumerationStatus", default, skip_serializing_if = "Option::is_none")]
@@ -280,10 +280,10 @@ impl CloudEndpointCreateParametersProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudEndpointLastChangeEnumerationStatus {
     #[doc = "Timestamp when change enumeration started"]
-    #[serde(rename = "startedTimestamp", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "startedTimestamp", default, with = "azure_core::date::rfc3339::option")]
     pub started_timestamp: Option<time::OffsetDateTime>,
     #[doc = "Timestamp when change enumeration completed"]
-    #[serde(rename = "completedTimestamp", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "completedTimestamp", default, with = "azure_core::date::rfc3339::option")]
     pub completed_timestamp: Option<time::OffsetDateTime>,
     #[doc = "Count of files in the namespace"]
     #[serde(rename = "namespaceFilesCount", default, skip_serializing_if = "Option::is_none")]
@@ -295,7 +295,7 @@ pub struct CloudEndpointLastChangeEnumerationStatus {
     #[serde(rename = "namespaceSizeBytes", default, skip_serializing_if = "Option::is_none")]
     pub namespace_size_bytes: Option<i64>,
     #[doc = "Timestamp of when change enumeration is expected to run again"]
-    #[serde(rename = "nextRunTimestamp", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "nextRunTimestamp", default, with = "azure_core::date::rfc3339::option")]
     pub next_run_timestamp: Option<time::OffsetDateTime>,
 }
 impl CloudEndpointLastChangeEnumerationStatus {
@@ -346,7 +346,7 @@ impl CloudEndpointProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudTieringCachePerformance {
     #[doc = "Last updated timestamp"]
-    #[serde(rename = "lastUpdatedTimestamp", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastUpdatedTimestamp", default, with = "azure_core::date::rfc3339::option")]
     pub last_updated_timestamp: Option<time::OffsetDateTime>,
     #[doc = "Count of bytes that were served from the local server"]
     #[serde(rename = "cacheHitBytes", default, skip_serializing_if = "Option::is_none")]
@@ -367,10 +367,14 @@ impl CloudTieringCachePerformance {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudTieringDatePolicyStatus {
     #[doc = "Last updated timestamp"]
-    #[serde(rename = "lastUpdatedTimestamp", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastUpdatedTimestamp", default, with = "azure_core::date::rfc3339::option")]
     pub last_updated_timestamp: Option<time::OffsetDateTime>,
     #[doc = "Most recent access time of tiered files"]
-    #[serde(rename = "tieredFilesMostRecentAccessTimestamp", with = "azure_core::date::rfc3339::option")]
+    #[serde(
+        rename = "tieredFilesMostRecentAccessTimestamp",
+        default,
+        with = "azure_core::date::rfc3339::option"
+    )]
     pub tiered_files_most_recent_access_timestamp: Option<time::OffsetDateTime>,
 }
 impl CloudTieringDatePolicyStatus {
@@ -382,7 +386,7 @@ impl CloudTieringDatePolicyStatus {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudTieringFilesNotTiering {
     #[doc = "Last updated timestamp"]
-    #[serde(rename = "lastUpdatedTimestamp", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastUpdatedTimestamp", default, with = "azure_core::date::rfc3339::option")]
     pub last_updated_timestamp: Option<time::OffsetDateTime>,
     #[doc = "Last cloud tiering result (HResult)"]
     #[serde(rename = "totalFileCount", default, skip_serializing_if = "Option::is_none")]
@@ -400,7 +404,7 @@ impl CloudTieringFilesNotTiering {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudTieringSpaceSavings {
     #[doc = "Last updated timestamp"]
-    #[serde(rename = "lastUpdatedTimestamp", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastUpdatedTimestamp", default, with = "azure_core::date::rfc3339::option")]
     pub last_updated_timestamp: Option<time::OffsetDateTime>,
     #[doc = "Volume size"]
     #[serde(rename = "volumeSizeBytes", default, skip_serializing_if = "Option::is_none")]
@@ -427,7 +431,7 @@ impl CloudTieringSpaceSavings {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudTieringVolumeFreeSpacePolicyStatus {
     #[doc = "Last updated timestamp"]
-    #[serde(rename = "lastUpdatedTimestamp", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastUpdatedTimestamp", default, with = "azure_core::date::rfc3339::option")]
     pub last_updated_timestamp: Option<time::OffsetDateTime>,
     #[doc = "In the case where multiple server endpoints are present in a volume, an effective free space policy is applied."]
     #[serde(rename = "effectiveVolumeFreeSpacePolicy", default, skip_serializing_if = "Option::is_none")]
@@ -660,10 +664,10 @@ pub struct LocationOperationStatus {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
     #[doc = "Start time of the operation"]
-    #[serde(rename = "startTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
     pub start_time: Option<time::OffsetDateTime>,
     #[doc = "End time of the operation"]
-    #[serde(rename = "endTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
     pub end_time: Option<time::OffsetDateTime>,
     #[doc = "Error type"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -888,10 +892,10 @@ pub struct OperationStatus {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
     #[doc = "Start time of the operation"]
-    #[serde(rename = "startTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
     pub start_time: Option<time::OffsetDateTime>,
     #[doc = "End time of the operation"]
-    #[serde(rename = "endTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
     pub end_time: Option<time::OffsetDateTime>,
     #[doc = "Error type"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1418,7 +1422,7 @@ pub struct RegisteredServerProperties {
     #[serde(rename = "agentVersionStatus", default, skip_serializing_if = "Option::is_none")]
     pub agent_version_status: Option<RegisteredServerAgentVersionStatus>,
     #[doc = "Registered Server Agent Version Expiration Date"]
-    #[serde(rename = "agentVersionExpirationDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "agentVersionExpirationDate", default, with = "azure_core::date::rfc3339::option")]
     pub agent_version_expiration_date: Option<time::OffsetDateTime>,
     #[doc = "Registered Server OS Version"]
     #[serde(rename = "serverOSVersion", default, skip_serializing_if = "Option::is_none")]
@@ -1571,10 +1575,10 @@ impl ServerEndpointArray {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServerEndpointBackgroundDataDownloadActivity {
     #[doc = "Timestamp when properties were updated"]
-    #[serde(with = "azure_core::date::rfc3339::option")]
+    #[serde(default, with = "azure_core::date::rfc3339::option")]
     pub timestamp: Option<time::OffsetDateTime>,
     #[doc = "Timestamp when the operation started"]
-    #[serde(rename = "startedTimestamp", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "startedTimestamp", default, with = "azure_core::date::rfc3339::option")]
     pub started_timestamp: Option<time::OffsetDateTime>,
     #[doc = "Progress percentage"]
     #[serde(rename = "percentProgress", default, skip_serializing_if = "Option::is_none")]
@@ -1592,19 +1596,19 @@ impl ServerEndpointBackgroundDataDownloadActivity {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServerEndpointCloudTieringStatus {
     #[doc = "Last updated timestamp"]
-    #[serde(rename = "lastUpdatedTimestamp", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastUpdatedTimestamp", default, with = "azure_core::date::rfc3339::option")]
     pub last_updated_timestamp: Option<time::OffsetDateTime>,
     #[doc = "Type of the server endpoint health state"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub health: Option<ServerEndpointHealthState>,
     #[doc = "The last updated timestamp of health state"]
-    #[serde(rename = "healthLastUpdatedTimestamp", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "healthLastUpdatedTimestamp", default, with = "azure_core::date::rfc3339::option")]
     pub health_last_updated_timestamp: Option<time::OffsetDateTime>,
     #[doc = "Last cloud tiering result (HResult)"]
     #[serde(rename = "lastCloudTieringResult", default, skip_serializing_if = "Option::is_none")]
     pub last_cloud_tiering_result: Option<i32>,
     #[doc = "Last cloud tiering success timestamp"]
-    #[serde(rename = "lastSuccessTimestamp", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastSuccessTimestamp", default, with = "azure_core::date::rfc3339::option")]
     pub last_success_timestamp: Option<time::OffsetDateTime>,
     #[doc = "Server endpoint cloud tiering status object."]
     #[serde(rename = "spaceSavings", default, skip_serializing_if = "Option::is_none")]
@@ -1877,7 +1881,7 @@ impl ServerEndpointRecallError {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServerEndpointRecallStatus {
     #[doc = "Last updated timestamp"]
-    #[serde(rename = "lastUpdatedTimestamp", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastUpdatedTimestamp", default, with = "azure_core::date::rfc3339::option")]
     pub last_updated_timestamp: Option<time::OffsetDateTime>,
     #[doc = "Total count of recall errors."]
     #[serde(rename = "totalRecallErrorsCount", default, skip_serializing_if = "Option::is_none")]
@@ -1934,7 +1938,7 @@ impl Serialize for ServerEndpointSyncActivityState {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServerEndpointSyncActivityStatus {
     #[doc = "Timestamp when properties were updated"]
-    #[serde(with = "azure_core::date::rfc3339::option")]
+    #[serde(default, with = "azure_core::date::rfc3339::option")]
     pub timestamp: Option<time::OffsetDateTime>,
     #[doc = "Per item error count"]
     #[serde(rename = "perItemErrorCount", default, skip_serializing_if = "Option::is_none")]
@@ -2013,10 +2017,10 @@ pub struct ServerEndpointSyncSessionStatus {
     #[serde(rename = "lastSyncResult", default, skip_serializing_if = "Option::is_none")]
     pub last_sync_result: Option<i32>,
     #[doc = "Last sync timestamp"]
-    #[serde(rename = "lastSyncTimestamp", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastSyncTimestamp", default, with = "azure_core::date::rfc3339::option")]
     pub last_sync_timestamp: Option<time::OffsetDateTime>,
     #[doc = "Last sync success timestamp"]
-    #[serde(rename = "lastSyncSuccessTimestamp", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastSyncSuccessTimestamp", default, with = "azure_core::date::rfc3339::option")]
     pub last_sync_success_timestamp: Option<time::OffsetDateTime>,
     #[doc = "Last sync per item error count."]
     #[serde(rename = "lastSyncPerItemErrorCount", default, skip_serializing_if = "Option::is_none")]
@@ -2058,7 +2062,7 @@ pub struct ServerEndpointSyncStatus {
     #[serde(rename = "totalPersistentFilesNotSyncingCount", default, skip_serializing_if = "Option::is_none")]
     pub total_persistent_files_not_syncing_count: Option<i64>,
     #[doc = "Last Updated Timestamp"]
-    #[serde(rename = "lastUpdatedTimestamp", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastUpdatedTimestamp", default, with = "azure_core::date::rfc3339::option")]
     pub last_updated_timestamp: Option<time::OffsetDateTime>,
     #[doc = "Sync Session status object."]
     #[serde(rename = "uploadStatus", default, skip_serializing_if = "Option::is_none")]
@@ -2640,10 +2644,10 @@ pub struct WorkflowProperties {
     #[serde(rename = "commandName", default, skip_serializing_if = "Option::is_none")]
     pub command_name: Option<String>,
     #[doc = "workflow created timestamp."]
-    #[serde(rename = "createdTimestamp", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "createdTimestamp", default, with = "azure_core::date::rfc3339::option")]
     pub created_timestamp: Option<time::OffsetDateTime>,
     #[doc = "workflow last status timestamp."]
-    #[serde(rename = "lastStatusTimestamp", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastStatusTimestamp", default, with = "azure_core::date::rfc3339::option")]
     pub last_status_timestamp: Option<time::OffsetDateTime>,
 }
 impl WorkflowProperties {
@@ -2709,7 +2713,7 @@ pub struct SystemData {
     #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
-    #[serde(rename = "createdAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
     pub created_at: Option<time::OffsetDateTime>,
     #[doc = "The identity that last modified the resource."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
@@ -2718,7 +2722,7 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
-    #[serde(rename = "lastModifiedAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
     pub last_modified_at: Option<time::OffsetDateTime>,
 }
 impl SystemData {

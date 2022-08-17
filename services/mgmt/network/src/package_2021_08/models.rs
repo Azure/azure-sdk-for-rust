@@ -4041,7 +4041,7 @@ impl AzureReachabilityReportItem {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureReachabilityReportLatencyInfo {
     #[doc = "The time stamp."]
-    #[serde(rename = "timeStamp", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "timeStamp", default, with = "azure_core::date::rfc3339::option")]
     pub time_stamp: Option<time::OffsetDateTime>,
     #[doc = "The relative latency score between 1 and 100, higher values indicating a faster connection."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -5707,7 +5707,7 @@ pub struct ConnectionMonitorResultProperties {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "The date and time when the connection monitor was started."]
-    #[serde(rename = "startTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
     pub start_time: Option<time::OffsetDateTime>,
     #[doc = "The monitoring status of the connection monitor."]
     #[serde(rename = "monitoringStatus", default, skip_serializing_if = "Option::is_none")]
@@ -6083,10 +6083,10 @@ pub struct ConnectionStateSnapshot {
     #[serde(rename = "connectionState", default, skip_serializing_if = "Option::is_none")]
     pub connection_state: Option<connection_state_snapshot::ConnectionState>,
     #[doc = "The start time of the connection snapshot."]
-    #[serde(rename = "startTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
     pub start_time: Option<time::OffsetDateTime>,
     #[doc = "The end time of the connection snapshot."]
-    #[serde(rename = "endTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
     pub end_time: Option<time::OffsetDateTime>,
     #[doc = "Connectivity analysis evaluation state."]
     #[serde(rename = "evaluationState", default, skip_serializing_if = "Option::is_none")]
@@ -15824,7 +15824,7 @@ pub struct PacketCaptureQueryStatusResult {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
     #[doc = "The start time of the packet capture session."]
-    #[serde(rename = "captureStartTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "captureStartTime", default, with = "azure_core::date::rfc3339::option")]
     pub capture_start_time: Option<time::OffsetDateTime>,
     #[doc = "The status of the packet capture session."]
     #[serde(rename = "packetCaptureStatus", default, skip_serializing_if = "Option::is_none")]
@@ -19723,10 +19723,10 @@ pub struct Topology {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
     #[doc = "The datetime when the topology was initially created for the resource group."]
-    #[serde(rename = "createdDateTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "createdDateTime", default, with = "azure_core::date::rfc3339::option")]
     pub created_date_time: Option<time::OffsetDateTime>,
     #[doc = "The datetime when the topology was last modified."]
-    #[serde(rename = "lastModified", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastModified", default, with = "azure_core::date::rfc3339::option")]
     pub last_modified: Option<time::OffsetDateTime>,
     #[doc = "A list of topology resources."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -20057,10 +20057,10 @@ impl TroubleshootingRecommendedActions {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TroubleshootingResult {
     #[doc = "The start time of the troubleshooting."]
-    #[serde(rename = "startTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
     pub start_time: Option<time::OffsetDateTime>,
     #[doc = "The end time of the troubleshooting."]
-    #[serde(rename = "endTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
     pub end_time: Option<time::OffsetDateTime>,
     #[doc = "The result code of the troubleshooting."]
     #[serde(default, skip_serializing_if = "Option::is_none")]

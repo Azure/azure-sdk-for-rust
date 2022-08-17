@@ -254,7 +254,7 @@ pub struct BudgetTimePeriod {
     #[serde(rename = "startDate", with = "azure_core::date::rfc3339")]
     pub start_date: time::OffsetDateTime,
     #[doc = "The end date for the budget. If not provided, we default this to 10 years from the start date."]
-    #[serde(rename = "endDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "endDate", default, with = "azure_core::date::rfc3339::option")]
     pub end_date: Option<time::OffsetDateTime>,
 }
 impl BudgetTimePeriod {
@@ -571,10 +571,10 @@ pub struct ManagementGroupAggregatedCostProperties {
     #[serde(rename = "billingPeriodId", default, skip_serializing_if = "Option::is_none")]
     pub billing_period_id: Option<String>,
     #[doc = "The start of the date time range covered by aggregated cost."]
-    #[serde(rename = "usageStart", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "usageStart", default, with = "azure_core::date::rfc3339::option")]
     pub usage_start: Option<time::OffsetDateTime>,
     #[doc = "The end of the date time range covered by the aggregated cost."]
-    #[serde(rename = "usageEnd", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "usageEnd", default, with = "azure_core::date::rfc3339::option")]
     pub usage_end: Option<time::OffsetDateTime>,
     #[doc = "Azure Charges."]
     #[serde(rename = "azureCharges", default, skip_serializing_if = "Option::is_none")]
@@ -638,10 +638,10 @@ pub struct MarketplaceProperties {
     #[serde(rename = "billingPeriodId", default, skip_serializing_if = "Option::is_none")]
     pub billing_period_id: Option<String>,
     #[doc = "The start of the date time range covered by the usage detail."]
-    #[serde(rename = "usageStart", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "usageStart", default, with = "azure_core::date::rfc3339::option")]
     pub usage_start: Option<time::OffsetDateTime>,
     #[doc = "The end of the date time range covered by the usage detail."]
-    #[serde(rename = "usageEnd", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "usageEnd", default, with = "azure_core::date::rfc3339::option")]
     pub usage_end: Option<time::OffsetDateTime>,
     #[doc = "The marketplace resource rate."]
     #[serde(rename = "resourceRate", default, skip_serializing_if = "Option::is_none")]
@@ -1042,7 +1042,7 @@ pub struct ReservationDetailProperties {
     #[serde(rename = "reservedHours", default, skip_serializing_if = "Option::is_none")]
     pub reserved_hours: Option<f64>,
     #[doc = "The date on which consumption occurred."]
-    #[serde(rename = "usageDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "usageDate", default, with = "azure_core::date::rfc3339::option")]
     pub usage_date: Option<time::OffsetDateTime>,
     #[doc = "This is the total hours used by the instance."]
     #[serde(rename = "usedHours", default, skip_serializing_if = "Option::is_none")]
@@ -1121,7 +1121,7 @@ pub struct ReservationRecommendationProperties {
     #[serde(rename = "netSavings", default, skip_serializing_if = "Option::is_none")]
     pub net_savings: Option<f64>,
     #[doc = "The usage date for looking back."]
-    #[serde(rename = "firstUsageDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "firstUsageDate", default, with = "azure_core::date::rfc3339::option")]
     pub first_usage_date: Option<time::OffsetDateTime>,
     #[doc = "Shared or single recommendation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1204,7 +1204,7 @@ pub struct ReservationSummaryProperties {
     #[serde(rename = "reservedHours", default, skip_serializing_if = "Option::is_none")]
     pub reserved_hours: Option<f64>,
     #[doc = "Data corresponding to the utilization record. If the grain of data is monthly, it will be first day of month."]
-    #[serde(rename = "usageDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "usageDate", default, with = "azure_core::date::rfc3339::option")]
     pub usage_date: Option<time::OffsetDateTime>,
     #[doc = "Total used hours by the reservation"]
     #[serde(rename = "usedHours", default, skip_serializing_if = "Option::is_none")]
@@ -1322,10 +1322,10 @@ pub struct UsageDetailProperties {
     #[serde(rename = "billingAccountName", default, skip_serializing_if = "Option::is_none")]
     pub billing_account_name: Option<String>,
     #[doc = "The billing period start date."]
-    #[serde(rename = "billingPeriodStartDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "billingPeriodStartDate", default, with = "azure_core::date::rfc3339::option")]
     pub billing_period_start_date: Option<time::OffsetDateTime>,
     #[doc = "The billing period end date."]
-    #[serde(rename = "billingPeriodEndDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "billingPeriodEndDate", default, with = "azure_core::date::rfc3339::option")]
     pub billing_period_end_date: Option<time::OffsetDateTime>,
     #[doc = "Billing Profile identifier."]
     #[serde(rename = "billingProfileId", default, skip_serializing_if = "Option::is_none")]
@@ -1346,7 +1346,7 @@ pub struct UsageDetailProperties {
     #[serde(rename = "subscriptionName", default, skip_serializing_if = "Option::is_none")]
     pub subscription_name: Option<String>,
     #[doc = "Date for the usage record."]
-    #[serde(with = "azure_core::date::rfc3339::option")]
+    #[serde(default, with = "azure_core::date::rfc3339::option")]
     pub date: Option<time::OffsetDateTime>,
     #[doc = "Product name for the consumed service or purchase. Not available for Marketplace."]
     #[serde(default, skip_serializing_if = "Option::is_none")]

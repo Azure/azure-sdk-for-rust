@@ -1463,7 +1463,7 @@ pub struct QuotaRequestProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
     #[doc = "The quota request submit time. The date conforms to the following format: yyyy-MM-ddTHH:mm:ssZ as specified by the ISO 8601 standard."]
-    #[serde(rename = "requestSubmitTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "requestSubmitTime", default, with = "azure_core::date::rfc3339::option")]
     pub request_submit_time: Option<time::OffsetDateTime>,
     #[doc = "The quotaRequests."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -1734,10 +1734,10 @@ pub struct ReservationOrderProperties {
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
     #[doc = "This is the DateTime when the reservation was initially requested for purchase."]
-    #[serde(rename = "requestDateTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "requestDateTime", default, with = "azure_core::date::rfc3339::option")]
     pub request_date_time: Option<time::OffsetDateTime>,
     #[doc = "This is the DateTime when the reservation was created."]
-    #[serde(rename = "createdDateTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "createdDateTime", default, with = "azure_core::date::rfc3339::option")]
     pub created_date_time: Option<time::OffsetDateTime>,
     #[doc = "This is the date when the Reservation will expire."]
     #[serde(rename = "expiryDate", default, skip_serializing_if = "Option::is_none")]
@@ -1810,10 +1810,10 @@ pub struct ReservationProperties {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
     #[doc = "DateTime of the Reservation starting when this version is effective from."]
-    #[serde(rename = "effectiveDateTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "effectiveDateTime", default, with = "azure_core::date::rfc3339::option")]
     pub effective_date_time: Option<time::OffsetDateTime>,
     #[doc = "DateTime of the last time the Reservation was updated."]
-    #[serde(rename = "lastUpdatedDateTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastUpdatedDateTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_updated_date_time: Option<time::OffsetDateTime>,
     #[doc = "This is the date when the Reservation will expire."]
     #[serde(rename = "expiryDate", default, skip_serializing_if = "Option::is_none")]
@@ -2522,7 +2522,7 @@ pub struct QuotaRequestOneResourceProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
     #[doc = "The quota request submit time. The date conforms to the following format: yyyy-MM-ddTHH:mm:ssZ as specified by the ISO 8601 standard."]
-    #[serde(rename = "requestSubmitTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "requestSubmitTime", default, with = "azure_core::date::rfc3339::option")]
     pub request_submit_time: Option<time::OffsetDateTime>,
     #[doc = "Quota limits."]
     #[serde(default, skip_serializing_if = "Option::is_none")]

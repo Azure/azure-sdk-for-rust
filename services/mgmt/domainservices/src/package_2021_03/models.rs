@@ -556,10 +556,10 @@ pub struct HealthAlert {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub severity: Option<String>,
     #[doc = "Health Alert Raised DateTime"]
-    #[serde(with = "azure_core::date::rfc3339::option")]
+    #[serde(default, with = "azure_core::date::rfc3339::option")]
     pub raised: Option<time::OffsetDateTime>,
     #[doc = "Health Alert Last Detected DateTime"]
-    #[serde(rename = "lastDetected", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastDetected", default, with = "azure_core::date::rfc3339::option")]
     pub last_detected: Option<time::OffsetDateTime>,
     #[doc = "Health Alert TSG Link"]
     #[serde(rename = "resolutionUri", default, skip_serializing_if = "Option::is_none")]
@@ -607,7 +607,7 @@ pub struct LdapsSettings {
     #[serde(rename = "certificateThumbprint", default, skip_serializing_if = "Option::is_none")]
     pub certificate_thumbprint: Option<String>,
     #[doc = "NotAfter DateTime of configure ldaps certificate."]
-    #[serde(rename = "certificateNotAfter", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "certificateNotAfter", default, with = "azure_core::date::rfc3339::option")]
     pub certificate_not_after: Option<time::OffsetDateTime>,
     #[doc = "A flag to determine whether or not Secure LDAP access over the internet is enabled or disabled."]
     #[serde(rename = "externalAccess", default, skip_serializing_if = "Option::is_none")]
@@ -986,7 +986,7 @@ pub struct ReplicaSet {
     #[serde(rename = "serviceStatus", default, skip_serializing_if = "Option::is_none")]
     pub service_status: Option<String>,
     #[doc = "Last domain evaluation run DateTime"]
-    #[serde(rename = "healthLastEvaluated", with = "azure_core::date::rfc1123::option")]
+    #[serde(rename = "healthLastEvaluated", default, with = "azure_core::date::rfc1123::option")]
     pub health_last_evaluated: Option<time::OffsetDateTime>,
     #[doc = "List of Domain Health Monitors"]
     #[serde(rename = "healthMonitors", default, skip_serializing_if = "Vec::is_empty")]
@@ -1055,7 +1055,7 @@ pub struct SystemData {
     #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
-    #[serde(rename = "createdAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
     pub created_at: Option<time::OffsetDateTime>,
     #[doc = "The identity that last modified the resource."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
@@ -1064,7 +1064,7 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
-    #[serde(rename = "lastModifiedAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
     pub last_modified_at: Option<time::OffsetDateTime>,
 }
 impl SystemData {

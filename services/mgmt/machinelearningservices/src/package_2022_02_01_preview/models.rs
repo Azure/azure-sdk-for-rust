@@ -398,7 +398,7 @@ pub struct AmlComputeProperties {
     #[serde(rename = "allocationState", default, skip_serializing_if = "Option::is_none")]
     pub allocation_state: Option<aml_compute_properties::AllocationState>,
     #[doc = "The time at which the compute entered its current allocation state."]
-    #[serde(rename = "allocationStateTransitionTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "allocationStateTransitionTime", default, with = "azure_core::date::rfc3339::option")]
     pub allocation_state_transition_time: Option<time::OffsetDateTime>,
     #[doc = "Collection of errors encountered by various compute nodes during node setup."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -1923,10 +1923,10 @@ pub struct Compute {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[doc = "The time at which the compute was created."]
-    #[serde(rename = "createdOn", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "createdOn", default, with = "azure_core::date::rfc3339::option")]
     pub created_on: Option<time::OffsetDateTime>,
     #[doc = "The time at which the compute was last modified."]
-    #[serde(rename = "modifiedOn", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "modifiedOn", default, with = "azure_core::date::rfc3339::option")]
     pub modified_on: Option<time::OffsetDateTime>,
     #[doc = "ARM resource id of the underlying compute"]
     #[serde(rename = "resourceId", default, skip_serializing_if = "Option::is_none")]
@@ -2309,7 +2309,7 @@ pub struct ComputeInstanceDataMount {
     #[serde(rename = "mountState", default, skip_serializing_if = "Option::is_none")]
     pub mount_state: Option<compute_instance_data_mount::MountState>,
     #[doc = "The time when the disk mounted."]
-    #[serde(rename = "mountedOn", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "mountedOn", default, with = "azure_core::date::rfc3339::option")]
     pub mounted_on: Option<time::OffsetDateTime>,
     #[doc = "Error of this data mount."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2467,7 +2467,7 @@ pub struct ComputeInstanceLastOperation {
     #[serde(rename = "operationName", default, skip_serializing_if = "Option::is_none")]
     pub operation_name: Option<compute_instance_last_operation::OperationName>,
     #[doc = "Time of the last operation."]
-    #[serde(rename = "operationTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "operationTime", default, with = "azure_core::date::rfc3339::option")]
     pub operation_time: Option<time::OffsetDateTime>,
     #[doc = "Operation status."]
     #[serde(rename = "operationStatus", default, skip_serializing_if = "Option::is_none")]
@@ -9575,7 +9575,7 @@ impl Serialize for ScaleType {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ScheduleBase {
     #[doc = "Specifies end time of schedule in ISO 8601 format.\r\nIf not present, the schedule will run indefinitely"]
-    #[serde(rename = "endTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
     pub end_time: Option<time::OffsetDateTime>,
     #[doc = "Enum to describe status of schedule"]
     #[serde(rename = "scheduleStatus", default, skip_serializing_if = "Option::is_none")]
@@ -9584,7 +9584,7 @@ pub struct ScheduleBase {
     #[serde(rename = "scheduleType")]
     pub schedule_type: ScheduleType,
     #[doc = "Specifies start time of schedule in ISO 8601 format."]
-    #[serde(rename = "startTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
     pub start_time: Option<time::OffsetDateTime>,
     #[doc = "Specifies time zone in which the schedule runs.\r\nTimeZone should follow Windows time zone format."]
     #[serde(rename = "timeZone", default, skip_serializing_if = "Option::is_none")]
@@ -12069,7 +12069,7 @@ pub struct SystemData {
     #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
-    #[serde(rename = "createdAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
     pub created_at: Option<time::OffsetDateTime>,
     #[doc = "The identity that last modified the resource."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
@@ -12078,7 +12078,7 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
-    #[serde(rename = "lastModifiedAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
     pub last_modified_at: Option<time::OffsetDateTime>,
 }
 impl SystemData {

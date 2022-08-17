@@ -86,7 +86,7 @@ pub struct DeviceServiceProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub notes: Option<String>,
     #[doc = "Windows IoT Device Service start date,"]
-    #[serde(rename = "startDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "startDate", default, with = "azure_core::date::rfc3339::option")]
     pub start_date: Option<time::OffsetDateTime>,
     #[doc = "Windows IoT Device Service device allocation,"]
     #[serde(default, skip_serializing_if = "Option::is_none")]

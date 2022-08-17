@@ -84,7 +84,7 @@ pub struct CommunicationDetailsProperties {
     #[doc = "Body of the communication"]
     pub body: String,
     #[doc = "Time in UTC (ISO 8601 format) when the communication was created."]
-    #[serde(rename = "createdDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "createdDate", default, with = "azure_core::date::rfc3339::option")]
     pub created_date: Option<time::OffsetDateTime>,
 }
 impl CommunicationDetailsProperties {
@@ -519,10 +519,10 @@ impl ServiceErrorDetail {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServiceLevelAgreement {
     #[doc = "Time in UTC (ISO 8601 format) when service level agreement starts."]
-    #[serde(rename = "startTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
     pub start_time: Option<time::OffsetDateTime>,
     #[doc = "Time in UTC (ISO 8601 format) when service level agreement expires."]
-    #[serde(rename = "expirationTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "expirationTime", default, with = "azure_core::date::rfc3339::option")]
     pub expiration_time: Option<time::OffsetDateTime>,
     #[doc = "Service Level Agreement in minutes"]
     #[serde(rename = "slaMinutes", default, skip_serializing_if = "Option::is_none")]
@@ -636,7 +636,7 @@ pub struct SupportTicketDetailsProperties {
     #[doc = "Title of the support ticket."]
     pub title: String,
     #[doc = "Time in UTC (ISO 8601 format) when the problem started."]
-    #[serde(rename = "problemStartTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "problemStartTime", default, with = "azure_core::date::rfc3339::option")]
     pub problem_start_time: Option<time::OffsetDateTime>,
     #[doc = "This is the resource id of the Azure service resource associated with the support ticket."]
     #[serde(rename = "serviceId")]
@@ -648,10 +648,10 @@ pub struct SupportTicketDetailsProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
     #[doc = "Time in UTC (ISO 8601 format) when support ticket was created."]
-    #[serde(rename = "createdDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "createdDate", default, with = "azure_core::date::rfc3339::option")]
     pub created_date: Option<time::OffsetDateTime>,
     #[doc = "Time in UTC (ISO 8601 format) when support ticket was last modified."]
-    #[serde(rename = "modifiedDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "modifiedDate", default, with = "azure_core::date::rfc3339::option")]
     pub modified_date: Option<time::OffsetDateTime>,
     #[doc = "Additional information for technical support ticket."]
     #[serde(rename = "technicalTicketDetails", default, skip_serializing_if = "Option::is_none")]

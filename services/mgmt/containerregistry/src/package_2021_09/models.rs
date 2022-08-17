@@ -1122,7 +1122,7 @@ pub struct EventContent {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
     #[doc = "The time at which the event occurred."]
-    #[serde(with = "azure_core::date::rfc3339::option")]
+    #[serde(default, with = "azure_core::date::rfc3339::option")]
     pub timestamp: Option<time::OffsetDateTime>,
     #[doc = "The action that encompasses the provided event."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1497,7 +1497,7 @@ pub struct ImageUpdateTrigger {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
     #[doc = "The timestamp when the image update happened."]
-    #[serde(with = "azure_core::date::rfc3339::option")]
+    #[serde(default, with = "azure_core::date::rfc3339::option")]
     pub timestamp: Option<time::OffsetDateTime>,
     #[doc = "The list of image updates that caused the build."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -1648,7 +1648,7 @@ pub struct KeyVaultProperties {
     #[serde(rename = "keyRotationEnabled", default, skip_serializing_if = "Option::is_none")]
     pub key_rotation_enabled: Option<bool>,
     #[doc = "Timestamp of the last successful key rotation."]
-    #[serde(rename = "lastKeyRotationTimestamp", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastKeyRotationTimestamp", default, with = "azure_core::date::rfc3339::option")]
     pub last_key_rotation_timestamp: Option<time::OffsetDateTime>,
 }
 impl KeyVaultProperties {
@@ -2726,7 +2726,7 @@ pub struct RegistryProperties {
     #[serde(rename = "loginServer", default, skip_serializing_if = "Option::is_none")]
     pub login_server: Option<String>,
     #[doc = "The creation date of the container registry in ISO8601 format."]
-    #[serde(rename = "creationDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "creationDate", default, with = "azure_core::date::rfc3339::option")]
     pub creation_date: Option<time::OffsetDateTime>,
     #[doc = "The provisioning state of the container registry at the time the operation was called."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
@@ -3386,7 +3386,7 @@ pub struct RetentionPolicy {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub days: Option<i32>,
     #[doc = "The timestamp when the policy was last updated."]
-    #[serde(rename = "lastUpdatedTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastUpdatedTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_updated_time: Option<time::OffsetDateTime>,
     #[doc = "The value that indicates whether the policy is enabled or not."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -3471,10 +3471,10 @@ pub struct RunFilter {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<run_filter::Status>,
     #[doc = "The create time for a run."]
-    #[serde(rename = "createTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "createTime", default, with = "azure_core::date::rfc3339::option")]
     pub create_time: Option<time::OffsetDateTime>,
     #[doc = "The time the run finished."]
-    #[serde(rename = "finishTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "finishTime", default, with = "azure_core::date::rfc3339::option")]
     pub finish_time: Option<time::OffsetDateTime>,
     #[doc = "The list of comma-separated image manifests that were generated from the run. This is applicable if the run is of\r\nbuild type."]
     #[serde(rename = "outputImageManifests", default, skip_serializing_if = "Option::is_none")]
@@ -3633,7 +3633,7 @@ pub struct RunProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<run_properties::Status>,
     #[doc = "The last updated time for the run."]
-    #[serde(rename = "lastUpdatedTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastUpdatedTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_updated_time: Option<time::OffsetDateTime>,
     #[doc = "The type of run."]
     #[serde(rename = "runType", default, skip_serializing_if = "Option::is_none")]
@@ -3642,13 +3642,13 @@ pub struct RunProperties {
     #[serde(rename = "agentPoolName", default, skip_serializing_if = "Option::is_none")]
     pub agent_pool_name: Option<String>,
     #[doc = "The time the run was scheduled."]
-    #[serde(rename = "createTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "createTime", default, with = "azure_core::date::rfc3339::option")]
     pub create_time: Option<time::OffsetDateTime>,
     #[doc = "The time the run started."]
-    #[serde(rename = "startTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
     pub start_time: Option<time::OffsetDateTime>,
     #[doc = "The time the run finished."]
-    #[serde(rename = "finishTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "finishTime", default, with = "azure_core::date::rfc3339::option")]
     pub finish_time: Option<time::OffsetDateTime>,
     #[doc = "The list of all images that were generated from the run. This is applicable if the run generates base image dependencies."]
     #[serde(rename = "outputImages", default, skip_serializing_if = "Vec::is_empty")]
@@ -4436,7 +4436,7 @@ pub struct Status {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
     #[doc = "The timestamp when the status was changed to the current value."]
-    #[serde(with = "azure_core::date::rfc3339::option")]
+    #[serde(default, with = "azure_core::date::rfc3339::option")]
     pub timestamp: Option<time::OffsetDateTime>,
 }
 impl Status {
@@ -4465,7 +4465,7 @@ pub struct SystemData {
     #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
-    #[serde(rename = "createdAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
     pub created_at: Option<time::OffsetDateTime>,
     #[doc = "The identity that last modified the resource."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
@@ -4474,7 +4474,7 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource modification (UTC)."]
-    #[serde(rename = "lastModifiedAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
     pub last_modified_at: Option<time::OffsetDateTime>,
 }
 impl SystemData {
@@ -4652,7 +4652,7 @@ pub struct TaskProperties {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<task_properties::ProvisioningState>,
     #[doc = "The creation date of task."]
-    #[serde(rename = "creationDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "creationDate", default, with = "azure_core::date::rfc3339::option")]
     pub creation_date: Option<time::OffsetDateTime>,
     #[doc = "The current status of task."]
     #[serde(default, skip_serializing_if = "Option::is_none")]

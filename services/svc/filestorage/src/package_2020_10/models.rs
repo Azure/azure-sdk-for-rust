@@ -7,10 +7,10 @@ use std::str::FromStr;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AccessPolicy {
     #[doc = "The date-time the policy is active."]
-    #[serde(rename = "Start", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "Start", default, with = "azure_core::date::rfc3339::option")]
     pub start: Option<time::OffsetDateTime>,
     #[doc = "The date-time the policy expires."]
-    #[serde(rename = "Expiry", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "Expiry", default, with = "azure_core::date::rfc3339::option")]
     pub expiry: Option<time::OffsetDateTime>,
     #[doc = "The permissions for the ACL policy."]
     #[serde(rename = "Permission", default, skip_serializing_if = "Option::is_none")]
@@ -303,15 +303,15 @@ pub struct FileProperty {
     #[doc = "Content length of the file. This value may not be up-to-date since an SMB client may have modified the file locally. The value of Content-Length may not reflect that fact until the handle is closed or the op-lock is broken. To retrieve current property values, call Get File Properties."]
     #[serde(rename = "Content-Length")]
     pub content_length: i64,
-    #[serde(rename = "CreationTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "CreationTime", default, with = "azure_core::date::rfc3339::option")]
     pub creation_time: Option<time::OffsetDateTime>,
-    #[serde(rename = "LastAccessTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "LastAccessTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_access_time: Option<time::OffsetDateTime>,
-    #[serde(rename = "LastWriteTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "LastWriteTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_write_time: Option<time::OffsetDateTime>,
-    #[serde(rename = "ChangeTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "ChangeTime", default, with = "azure_core::date::rfc3339::option")]
     pub change_time: Option<time::OffsetDateTime>,
-    #[serde(rename = "Last-Modified", with = "azure_core::date::rfc1123::option")]
+    #[serde(rename = "Last-Modified", default, with = "azure_core::date::rfc1123::option")]
     pub last_modified: Option<time::OffsetDateTime>,
     #[serde(rename = "Etag", default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
@@ -385,7 +385,7 @@ pub struct HandleItem {
     #[serde(rename = "OpenTime", with = "azure_core::date::rfc1123")]
     pub open_time: time::OffsetDateTime,
     #[doc = "Time handle was last connected to (UTC)"]
-    #[serde(rename = "LastReconnectTime", with = "azure_core::date::rfc1123::option")]
+    #[serde(rename = "LastReconnectTime", default, with = "azure_core::date::rfc1123::option")]
     pub last_reconnect_time: Option<time::OffsetDateTime>,
 }
 impl HandleItem {
@@ -668,15 +668,15 @@ pub struct SharePropertiesInternal {
     pub provisioned_ingress_m_bps: Option<i64>,
     #[serde(rename = "ProvisionedEgressMBps", default, skip_serializing_if = "Option::is_none")]
     pub provisioned_egress_m_bps: Option<i64>,
-    #[serde(rename = "NextAllowedQuotaDowngradeTime", with = "azure_core::date::rfc1123::option")]
+    #[serde(rename = "NextAllowedQuotaDowngradeTime", default, with = "azure_core::date::rfc1123::option")]
     pub next_allowed_quota_downgrade_time: Option<time::OffsetDateTime>,
-    #[serde(rename = "DeletedTime", with = "azure_core::date::rfc1123::option")]
+    #[serde(rename = "DeletedTime", default, with = "azure_core::date::rfc1123::option")]
     pub deleted_time: Option<time::OffsetDateTime>,
     #[serde(rename = "RemainingRetentionDays", default, skip_serializing_if = "Option::is_none")]
     pub remaining_retention_days: Option<i64>,
     #[serde(rename = "AccessTier", default, skip_serializing_if = "Option::is_none")]
     pub access_tier: Option<String>,
-    #[serde(rename = "AccessTierChangeTime", with = "azure_core::date::rfc1123::option")]
+    #[serde(rename = "AccessTierChangeTime", default, with = "azure_core::date::rfc1123::option")]
     pub access_tier_change_time: Option<time::OffsetDateTime>,
     #[serde(rename = "AccessTierTransitionState", default, skip_serializing_if = "Option::is_none")]
     pub access_tier_transition_state: Option<String>,

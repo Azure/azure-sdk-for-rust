@@ -118,7 +118,7 @@ pub struct MigrateProjectProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub summary: Option<serde_json::Value>,
     #[doc = "Last summary refresh time."]
-    #[serde(rename = "lastSummaryRefreshedTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastSummaryRefreshedTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_summary_refreshed_time: Option<time::OffsetDateTime>,
     #[doc = "Refresh summary state."]
     #[serde(rename = "refreshSummaryState", default, skip_serializing_if = "Option::is_none")]
@@ -469,7 +469,7 @@ pub struct ProjectSummary {
     #[serde(rename = "refreshSummaryState", default, skip_serializing_if = "Option::is_none")]
     pub refresh_summary_state: Option<project_summary::RefreshSummaryState>,
     #[doc = "Last summary refresh time."]
-    #[serde(rename = "lastSummaryRefreshedTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastSummaryRefreshedTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_summary_refreshed_time: Option<time::OffsetDateTime>,
     #[doc = "Extended summary."]
     #[serde(rename = "extendedSummary", default, skip_serializing_if = "Option::is_none")]
@@ -511,7 +511,7 @@ pub struct SystemData {
     #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
-    #[serde(rename = "createdAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
     pub created_at: Option<time::OffsetDateTime>,
     #[doc = "The identity that last modified the resource."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
@@ -520,7 +520,7 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The type of identity that last modified the resource."]
-    #[serde(rename = "lastModifiedAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
     pub last_modified_at: Option<time::OffsetDateTime>,
 }
 impl SystemData {

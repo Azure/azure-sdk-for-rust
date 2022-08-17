@@ -535,10 +535,10 @@ pub struct AssessedMachineProperties {
     #[serde(rename = "suitabilityDetail", default, skip_serializing_if = "Option::is_none")]
     pub suitability_detail: Option<assessed_machine_properties::SuitabilityDetail>,
     #[doc = "Time when this machine was created. Date-Time represented in ISO-8601 format."]
-    #[serde(rename = "createdTimestamp", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "createdTimestamp", default, with = "azure_core::date::rfc3339::option")]
     pub created_timestamp: Option<time::OffsetDateTime>,
     #[doc = "Time when this machine was last updated. Date-Time represented in ISO-8601 format."]
-    #[serde(rename = "updatedTimestamp", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "updatedTimestamp", default, with = "azure_core::date::rfc3339::option")]
     pub updated_timestamp: Option<time::OffsetDateTime>,
 }
 impl AssessedMachineProperties {
@@ -1574,10 +1574,10 @@ pub struct AssessmentProperties {
     #[serde(rename = "timeRange")]
     pub time_range: assessment_properties::TimeRange,
     #[doc = "Start time to consider performance data for assessment"]
-    #[serde(rename = "perfDataStartTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "perfDataStartTime", default, with = "azure_core::date::rfc3339::option")]
     pub perf_data_start_time: Option<time::OffsetDateTime>,
     #[doc = "End time to consider performance data for assessment"]
-    #[serde(rename = "perfDataEndTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "perfDataEndTime", default, with = "azure_core::date::rfc3339::option")]
     pub perf_data_end_time: Option<time::OffsetDateTime>,
     #[doc = "User configurable setting that describes the status of the assessment."]
     pub stage: assessment_properties::Stage,
@@ -1607,13 +1607,13 @@ pub struct AssessmentProperties {
     #[serde(rename = "vmUptime")]
     pub vm_uptime: VmUptime,
     #[doc = "Time when the Azure Prices were queried. Date-Time represented in ISO-8601 format."]
-    #[serde(rename = "pricesTimestamp", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "pricesTimestamp", default, with = "azure_core::date::rfc3339::option")]
     pub prices_timestamp: Option<time::OffsetDateTime>,
     #[doc = "Time when this project was created. Date-Time represented in ISO-8601 format."]
-    #[serde(rename = "createdTimestamp", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "createdTimestamp", default, with = "azure_core::date::rfc3339::option")]
     pub created_timestamp: Option<time::OffsetDateTime>,
     #[doc = "Time when this project was last updated. Date-Time represented in ISO-8601 format."]
-    #[serde(rename = "updatedTimestamp", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "updatedTimestamp", default, with = "azure_core::date::rfc3339::option")]
     pub updated_timestamp: Option<time::OffsetDateTime>,
     #[doc = "Monthly compute cost estimate for the machines that are part of this assessment as a group, for a 31-day month."]
     #[serde(rename = "monthlyComputeCost", default, skip_serializing_if = "Option::is_none")]
@@ -2540,7 +2540,7 @@ pub struct CollectorAgentProperties {
     pub id: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
-    #[serde(rename = "lastHeartbeatUtc", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastHeartbeatUtc", default, with = "azure_core::date::rfc3339::option")]
     pub last_heartbeat_utc: Option<time::OffsetDateTime>,
     #[serde(rename = "spnDetails", default, skip_serializing_if = "Option::is_none")]
     pub spn_details: Option<CollectorBodyAgentSpnProperties>,
@@ -2614,7 +2614,7 @@ pub struct DownloadUrl {
     #[serde(rename = "assessmentReportUrl", default, skip_serializing_if = "Option::is_none")]
     pub assessment_report_url: Option<String>,
     #[doc = "Expiry date of download url."]
-    #[serde(rename = "expirationTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "expirationTime", default, with = "azure_core::date::rfc3339::option")]
     pub expiration_time: Option<time::OffsetDateTime>,
 }
 impl DownloadUrl {
@@ -2722,10 +2722,10 @@ pub struct GroupProperties {
     #[serde(rename = "areAssessmentsRunning", default, skip_serializing_if = "Option::is_none")]
     pub are_assessments_running: Option<bool>,
     #[doc = "Time when this group was created. Date-Time represented in ISO-8601 format."]
-    #[serde(rename = "createdTimestamp", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "createdTimestamp", default, with = "azure_core::date::rfc3339::option")]
     pub created_timestamp: Option<time::OffsetDateTime>,
     #[doc = "Time when this group was last updated. Date-Time represented in ISO-8601 format."]
-    #[serde(rename = "updatedTimestamp", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "updatedTimestamp", default, with = "azure_core::date::rfc3339::option")]
     pub updated_timestamp: Option<time::OffsetDateTime>,
     #[doc = "The type of group."]
     #[serde(rename = "groupType", default, skip_serializing_if = "Option::is_none")]
@@ -2950,10 +2950,10 @@ pub struct MachineProperties {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub groups: Vec<String>,
     #[doc = "Time when this machine was created. Date-Time represented in ISO-8601 format."]
-    #[serde(rename = "createdTimestamp", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "createdTimestamp", default, with = "azure_core::date::rfc3339::option")]
     pub created_timestamp: Option<time::OffsetDateTime>,
     #[doc = "Time when this machine was last updated. Date-Time represented in ISO-8601 format."]
-    #[serde(rename = "updatedTimestamp", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "updatedTimestamp", default, with = "azure_core::date::rfc3339::option")]
     pub updated_timestamp: Option<time::OffsetDateTime>,
     #[doc = "Dictionary of disks attached to the machine. Key is ID of disk. Value is a disk object"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -3295,10 +3295,10 @@ impl Project {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProjectProperties {
     #[doc = "Time when this project was created. Date-Time represented in ISO-8601 format."]
-    #[serde(rename = "createdTimestamp", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "createdTimestamp", default, with = "azure_core::date::rfc3339::option")]
     pub created_timestamp: Option<time::OffsetDateTime>,
     #[doc = "Time when this project was last updated. Date-Time represented in ISO-8601 format."]
-    #[serde(rename = "updatedTimestamp", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "updatedTimestamp", default, with = "azure_core::date::rfc3339::option")]
     pub updated_timestamp: Option<time::OffsetDateTime>,
     #[doc = "Endpoint at which the collector agent can call agent REST API."]
     #[serde(rename = "serviceEndpoint", default, skip_serializing_if = "Option::is_none")]
@@ -3325,7 +3325,7 @@ pub struct ProjectProperties {
     #[serde(rename = "numberOfAssessments", default, skip_serializing_if = "Option::is_none")]
     pub number_of_assessments: Option<i32>,
     #[doc = "Time when last assessment was created. Date-Time represented in ISO-8601 format. This value will be null until assessment is created."]
-    #[serde(rename = "lastAssessmentTimestamp", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastAssessmentTimestamp", default, with = "azure_core::date::rfc3339::option")]
     pub last_assessment_timestamp: Option<time::OffsetDateTime>,
     #[doc = "This value can be set to 'enabled' to avoid breaking changes on existing customer resources and templates. If set to 'disabled', traffic over public interface is not allowed, and private endpoint connections would be the exclusive access method."]
     #[serde(rename = "publicNetworkAccess", default, skip_serializing_if = "Option::is_none")]

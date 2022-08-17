@@ -6,10 +6,10 @@ use std::str::FromStr;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AccessPolicy {
     #[doc = "Start time of the access policy"]
-    #[serde(rename = "startTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
     pub start_time: Option<time::OffsetDateTime>,
     #[doc = "Expiry time of the access policy"]
-    #[serde(rename = "expiryTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "expiryTime", default, with = "azure_core::date::rfc3339::option")]
     pub expiry_time: Option<time::OffsetDateTime>,
     #[doc = "List of abbreviated permissions."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -99,7 +99,7 @@ pub struct AccountSasParameters {
     #[serde(rename = "signedProtocol", default, skip_serializing_if = "Option::is_none")]
     pub signed_protocol: Option<account_sas_parameters::SignedProtocol>,
     #[doc = "The time at which the SAS becomes valid."]
-    #[serde(rename = "signedStart", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "signedStart", default, with = "azure_core::date::rfc3339::option")]
     pub signed_start: Option<time::OffsetDateTime>,
     #[doc = "The time at which the shared access signature becomes invalid."]
     #[serde(rename = "signedExpiry", with = "azure_core::date::rfc3339")]
@@ -676,7 +676,7 @@ impl BlobInventoryPolicyFilter {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BlobInventoryPolicyProperties {
     #[doc = "Returns the last modified date and time of the blob inventory policy."]
-    #[serde(rename = "lastModifiedTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastModifiedTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_modified_time: Option<time::OffsetDateTime>,
     #[doc = "The storage account blob inventory policy rules."]
     pub policy: BlobInventoryPolicySchema,
@@ -1033,7 +1033,7 @@ pub struct ContainerProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub deleted: Option<bool>,
     #[doc = "Blob container deletion time."]
-    #[serde(rename = "deletedTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "deletedTime", default, with = "azure_core::date::rfc3339::option")]
     pub deleted_time: Option<time::OffsetDateTime>,
     #[doc = "Remaining retention days for soft deleted blob container."]
     #[serde(rename = "remainingRetentionDays", default, skip_serializing_if = "Option::is_none")]
@@ -1048,7 +1048,7 @@ pub struct ContainerProperties {
     #[serde(rename = "publicAccess", default, skip_serializing_if = "Option::is_none")]
     pub public_access: Option<container_properties::PublicAccess>,
     #[doc = "Returns the date and time the container was last modified."]
-    #[serde(rename = "lastModifiedTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastModifiedTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_modified_time: Option<time::OffsetDateTime>,
     #[doc = "The lease status of the container."]
     #[serde(rename = "leaseStatus", default, skip_serializing_if = "Option::is_none")]
@@ -1546,7 +1546,7 @@ pub struct EncryptionScopeKeyVaultProperties {
     #[serde(rename = "currentVersionedKeyIdentifier", default, skip_serializing_if = "Option::is_none")]
     pub current_versioned_key_identifier: Option<String>,
     #[doc = "Timestamp of last rotation of the Key Vault Key."]
-    #[serde(rename = "lastKeyRotationTimestamp", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastKeyRotationTimestamp", default, with = "azure_core::date::rfc3339::option")]
     pub last_key_rotation_timestamp: Option<time::OffsetDateTime>,
 }
 impl EncryptionScopeKeyVaultProperties {
@@ -1585,10 +1585,10 @@ pub struct EncryptionScopeProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<encryption_scope_properties::State>,
     #[doc = "Gets the creation date and time of the encryption scope in UTC."]
-    #[serde(rename = "creationTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "creationTime", default, with = "azure_core::date::rfc3339::option")]
     pub creation_time: Option<time::OffsetDateTime>,
     #[doc = "Gets the last modification date and time of the encryption scope in UTC."]
-    #[serde(rename = "lastModifiedTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastModifiedTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_modified_time: Option<time::OffsetDateTime>,
     #[doc = "The key vault properties for the encryption scope. This is a required field if encryption scope 'source' attribute is set to 'Microsoft.KeyVault'."]
     #[serde(rename = "keyVaultProperties", default, skip_serializing_if = "Option::is_none")]
@@ -1688,7 +1688,7 @@ pub struct EncryptionService {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub enabled: Option<bool>,
     #[doc = "Gets a rough estimate of the date/time when the encryption was last enabled by the user. Data is encrypted at rest by default today and cannot be disabled."]
-    #[serde(rename = "lastEnabledTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastEnabledTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_enabled_time: Option<time::OffsetDateTime>,
     #[doc = "Encryption key type to be used for the encryption service. 'Account' key type implies that an account-scoped encryption key will be used. 'Service' key type implies that a default service key is used."]
     #[serde(rename = "keyType", default, skip_serializing_if = "Option::is_none")]
@@ -1978,7 +1978,7 @@ impl FileShareItems {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FileShareProperties {
     #[doc = "Returns the date and time the share was last modified."]
-    #[serde(rename = "lastModifiedTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastModifiedTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_modified_time: Option<time::OffsetDateTime>,
     #[doc = "A name-value pair to associate with the share as metadata."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1999,7 +1999,7 @@ pub struct FileShareProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub deleted: Option<bool>,
     #[doc = "The deleted time if the share was deleted."]
-    #[serde(rename = "deletedTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "deletedTime", default, with = "azure_core::date::rfc3339::option")]
     pub deleted_time: Option<time::OffsetDateTime>,
     #[doc = "Remaining retention days for share that was soft deleted."]
     #[serde(rename = "remainingRetentionDays", default, skip_serializing_if = "Option::is_none")]
@@ -2008,7 +2008,7 @@ pub struct FileShareProperties {
     #[serde(rename = "accessTier", default, skip_serializing_if = "Option::is_none")]
     pub access_tier: Option<file_share_properties::AccessTier>,
     #[doc = "Indicates the last modification time for share access tier."]
-    #[serde(rename = "accessTierChangeTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "accessTierChangeTime", default, with = "azure_core::date::rfc3339::option")]
     pub access_tier_change_time: Option<time::OffsetDateTime>,
     #[doc = "Indicates if there is a pending transition for access tier."]
     #[serde(rename = "accessTierStatus", default, skip_serializing_if = "Option::is_none")]
@@ -2029,7 +2029,7 @@ pub struct FileShareProperties {
     #[serde(rename = "signedIdentifiers", default, skip_serializing_if = "Vec::is_empty")]
     pub signed_identifiers: Vec<SignedIdentifier>,
     #[doc = "Creation time of share snapshot returned in the response of list shares with expand param \"snapshots\"."]
-    #[serde(rename = "snapshotTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "snapshotTime", default, with = "azure_core::date::rfc3339::option")]
     pub snapshot_time: Option<time::OffsetDateTime>,
 }
 impl FileShareProperties {
@@ -2283,7 +2283,7 @@ pub struct GeoReplicationStats {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<geo_replication_stats::Status>,
     #[doc = "All primary writes preceding this UTC date/time value are guaranteed to be available for read operations. Primary writes following this point in time may or may not be available for reads. Element may be default value if value of LastSyncTime is not available, this can happen if secondary is offline or we are in bootstrap."]
-    #[serde(rename = "lastSyncTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastSyncTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_sync_time: Option<time::OffsetDateTime>,
     #[doc = "A boolean flag which indicates whether or not account failover is supported for the account."]
     #[serde(rename = "canFailover", default, skip_serializing_if = "Option::is_none")]
@@ -2551,7 +2551,7 @@ pub struct ImmutableStorageWithVersioning {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub enabled: Option<bool>,
     #[doc = "Returns the date and time the object level immutability was enabled."]
-    #[serde(rename = "timeStamp", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "timeStamp", default, with = "azure_core::date::rfc3339::option")]
     pub time_stamp: Option<time::OffsetDateTime>,
     #[doc = "This property denotes the container level immutability to object level immutability migration state."]
     #[serde(rename = "migrationState", default, skip_serializing_if = "Option::is_none")]
@@ -2605,9 +2605,9 @@ pub mod immutable_storage_with_versioning {
 #[doc = "Storage account keys creation time."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct KeyCreationTime {
-    #[serde(with = "azure_core::date::rfc3339::option")]
+    #[serde(default, with = "azure_core::date::rfc3339::option")]
     pub key1: Option<time::OffsetDateTime>,
-    #[serde(with = "azure_core::date::rfc3339::option")]
+    #[serde(default, with = "azure_core::date::rfc3339::option")]
     pub key2: Option<time::OffsetDateTime>,
 }
 impl KeyCreationTime {
@@ -2645,10 +2645,14 @@ pub struct KeyVaultProperties {
     #[serde(rename = "currentVersionedKeyIdentifier", default, skip_serializing_if = "Option::is_none")]
     pub current_versioned_key_identifier: Option<String>,
     #[doc = "Timestamp of last rotation of the Key Vault Key."]
-    #[serde(rename = "lastKeyRotationTimestamp", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastKeyRotationTimestamp", default, with = "azure_core::date::rfc3339::option")]
     pub last_key_rotation_timestamp: Option<time::OffsetDateTime>,
     #[doc = "This is a read only property that represents the expiration time of the current version of the customer managed key used for encryption."]
-    #[serde(rename = "currentVersionedKeyExpirationTimestamp", with = "azure_core::date::rfc3339::option")]
+    #[serde(
+        rename = "currentVersionedKeyExpirationTimestamp",
+        default,
+        with = "azure_core::date::rfc3339::option"
+    )]
     pub current_versioned_key_expiration_timestamp: Option<time::OffsetDateTime>,
 }
 impl KeyVaultProperties {
@@ -3253,7 +3257,7 @@ impl ManagementPolicyFilter {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ManagementPolicyProperties {
     #[doc = "Returns the date and time the ManagementPolicies was last modified."]
-    #[serde(rename = "lastModifiedTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastModifiedTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_modified_time: Option<time::OffsetDateTime>,
     #[doc = "The Storage Account ManagementPolicies Rules. See more details in: https://docs.microsoft.com/en-us/azure/storage/common/storage-lifecycle-managment-concepts."]
     pub policy: ManagementPolicySchema,
@@ -3567,7 +3571,7 @@ pub struct ObjectReplicationPolicyProperties {
     #[serde(rename = "policyId", default, skip_serializing_if = "Option::is_none")]
     pub policy_id: Option<String>,
     #[doc = "Indicates when the policy is enabled on the source account."]
-    #[serde(rename = "enabledTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "enabledTime", default, with = "azure_core::date::rfc3339::option")]
     pub enabled_time: Option<time::OffsetDateTime>,
     #[doc = "Required. Source account name. It should be full resource id if allowCrossTenantReplication set to false."]
     #[serde(rename = "sourceAccount")]
@@ -3925,7 +3929,7 @@ pub struct ProtectedAppendWritesHistory {
     #[serde(rename = "allowProtectedAppendWritesAll", default, skip_serializing_if = "Option::is_none")]
     pub allow_protected_append_writes_all: Option<bool>,
     #[doc = "Returns the date and time the tag was added."]
-    #[serde(with = "azure_core::date::rfc3339::option")]
+    #[serde(default, with = "azure_core::date::rfc3339::option")]
     pub timestamp: Option<time::OffsetDateTime>,
 }
 impl ProtectedAppendWritesHistory {
@@ -4041,10 +4045,10 @@ pub struct RestorePolicyProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub days: Option<i64>,
     #[doc = "Deprecated in favor of minRestoreTime property."]
-    #[serde(rename = "lastEnabledTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastEnabledTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_enabled_time: Option<time::OffsetDateTime>,
     #[doc = "Returns the minimum date and time that the restore can be started."]
-    #[serde(rename = "minRestoreTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "minRestoreTime", default, with = "azure_core::date::rfc3339::option")]
     pub min_restore_time: Option<time::OffsetDateTime>,
 }
 impl RestorePolicyProperties {
@@ -4268,10 +4272,10 @@ pub struct ServiceSasParameters {
     #[serde(rename = "signedProtocol", default, skip_serializing_if = "Option::is_none")]
     pub signed_protocol: Option<service_sas_parameters::SignedProtocol>,
     #[doc = "The time at which the SAS becomes valid."]
-    #[serde(rename = "signedStart", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "signedStart", default, with = "azure_core::date::rfc3339::option")]
     pub signed_start: Option<time::OffsetDateTime>,
     #[doc = "The time at which the shared access signature becomes invalid."]
-    #[serde(rename = "signedExpiry", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "signedExpiry", default, with = "azure_core::date::rfc3339::option")]
     pub signed_expiry: Option<time::OffsetDateTime>,
     #[doc = "A unique value up to 64 characters in length that correlates to an access policy specified for the container, queue, or table."]
     #[serde(rename = "signedIdentifier", default, skip_serializing_if = "Option::is_none")]
@@ -4880,7 +4884,7 @@ pub struct StorageAccountKey {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub permissions: Option<storage_account_key::Permissions>,
     #[doc = "Creation time of the key, in round trip date format."]
-    #[serde(rename = "creationTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "creationTime", default, with = "azure_core::date::rfc3339::option")]
     pub creation_time: Option<time::OffsetDateTime>,
 }
 impl StorageAccountKey {
@@ -4973,7 +4977,7 @@ pub struct StorageAccountProperties {
     #[serde(rename = "statusOfPrimary", default, skip_serializing_if = "Option::is_none")]
     pub status_of_primary: Option<storage_account_properties::StatusOfPrimary>,
     #[doc = "Gets the timestamp of the most recent instance of a failover to the secondary location. Only the most recent timestamp is retained. This element is not returned if there has never been a failover instance. Only available if the accountType is Standard_GRS or Standard_RAGRS."]
-    #[serde(rename = "lastGeoFailoverTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastGeoFailoverTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_geo_failover_time: Option<time::OffsetDateTime>,
     #[doc = "Gets the location of the geo-replicated secondary for the storage account. Only available if the accountType is Standard_GRS or Standard_RAGRS."]
     #[serde(rename = "secondaryLocation", default, skip_serializing_if = "Option::is_none")]
@@ -4982,7 +4986,7 @@ pub struct StorageAccountProperties {
     #[serde(rename = "statusOfSecondary", default, skip_serializing_if = "Option::is_none")]
     pub status_of_secondary: Option<storage_account_properties::StatusOfSecondary>,
     #[doc = "Gets the creation date and time of the storage account in UTC."]
-    #[serde(rename = "creationTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "creationTime", default, with = "azure_core::date::rfc3339::option")]
     pub creation_time: Option<time::OffsetDateTime>,
     #[doc = "The custom domain assigned to this storage account. This can be set via Update."]
     #[serde(rename = "customDomain", default, skip_serializing_if = "Option::is_none")]
@@ -6049,10 +6053,10 @@ impl Table {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TableAccessPolicy {
     #[doc = "Start time of the access policy"]
-    #[serde(rename = "startTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
     pub start_time: Option<time::OffsetDateTime>,
     #[doc = "Expiry time of the access policy"]
-    #[serde(rename = "expiryTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "expiryTime", default, with = "azure_core::date::rfc3339::option")]
     pub expiry_time: Option<time::OffsetDateTime>,
     #[doc = "Required. List of abbreviated permissions. Supported permission values include 'r','a','u','d'"]
     pub permission: String,
@@ -6145,7 +6149,7 @@ pub struct TagProperty {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tag: Option<String>,
     #[doc = "Returns the date and time the tag was added."]
-    #[serde(with = "azure_core::date::rfc3339::option")]
+    #[serde(default, with = "azure_core::date::rfc3339::option")]
     pub timestamp: Option<time::OffsetDateTime>,
     #[doc = "Returns the Object ID of the user who added the tag."]
     #[serde(rename = "objectIdentifier", default, skip_serializing_if = "Option::is_none")]
@@ -6198,7 +6202,7 @@ pub struct UpdateHistoryProperty {
     #[serde(rename = "immutabilityPeriodSinceCreationInDays", default, skip_serializing_if = "Option::is_none")]
     pub immutability_period_since_creation_in_days: Option<i64>,
     #[doc = "Returns the date and time the ImmutabilityPolicy was updated."]
-    #[serde(with = "azure_core::date::rfc3339::option")]
+    #[serde(default, with = "azure_core::date::rfc3339::option")]
     pub timestamp: Option<time::OffsetDateTime>,
     #[doc = "Returns the Object ID of the user who updated the ImmutabilityPolicy."]
     #[serde(rename = "objectIdentifier", default, skip_serializing_if = "Option::is_none")]
@@ -6435,7 +6439,7 @@ pub struct SystemData {
     #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
-    #[serde(rename = "createdAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
     pub created_at: Option<time::OffsetDateTime>,
     #[doc = "The identity that last modified the resource."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
@@ -6444,7 +6448,7 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
-    #[serde(rename = "lastModifiedAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
     pub last_modified_at: Option<time::OffsetDateTime>,
 }
 impl SystemData {

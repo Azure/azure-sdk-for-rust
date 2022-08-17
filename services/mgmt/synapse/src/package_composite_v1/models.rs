@@ -147,7 +147,7 @@ pub struct AzureAdOnlyAuthenticationProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<azure_ad_only_authentication_properties::State>,
     #[doc = "property configuration date"]
-    #[serde(rename = "creationDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "creationDate", default, with = "azure_core::date::rfc3339::option")]
     pub creation_date: Option<time::OffsetDateTime>,
 }
 impl AzureAdOnlyAuthenticationProperties {
@@ -275,7 +275,7 @@ pub struct BigDataPoolResourceProperties {
     #[serde(rename = "autoScale", default, skip_serializing_if = "Option::is_none")]
     pub auto_scale: Option<AutoScaleProperties>,
     #[doc = "The time when the Big Data pool was created."]
-    #[serde(rename = "creationDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "creationDate", default, with = "azure_core::date::rfc3339::option")]
     pub creation_date: Option<time::OffsetDateTime>,
     #[doc = "Auto-pausing properties of a Big Data pool powered by Apache Spark"]
     #[serde(rename = "autoPause", default, skip_serializing_if = "Option::is_none")]
@@ -320,7 +320,7 @@ pub struct BigDataPoolResourceProperties {
     #[serde(rename = "nodeSizeFamily", default, skip_serializing_if = "Option::is_none")]
     pub node_size_family: Option<big_data_pool_resource_properties::NodeSizeFamily>,
     #[doc = "The time when the Big Data pool was updated successfully."]
-    #[serde(rename = "lastSucceededTimestamp", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastSucceededTimestamp", default, with = "azure_core::date::rfc3339::option")]
     pub last_succeeded_timestamp: Option<time::OffsetDateTime>,
 }
 impl BigDataPoolResourceProperties {
@@ -2329,7 +2329,7 @@ pub struct LibraryInfo {
     #[serde(rename = "containerName", default, skip_serializing_if = "Option::is_none")]
     pub container_name: Option<String>,
     #[doc = "The last update time of the library."]
-    #[serde(rename = "uploadedTimestamp", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "uploadedTimestamp", default, with = "azure_core::date::rfc3339::option")]
     pub uploaded_timestamp: Option<time::OffsetDateTime>,
     #[doc = "Type of the library."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
@@ -2370,7 +2370,7 @@ impl LibraryListResponse {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LibraryRequirements {
     #[doc = "The last update time of the library requirements file."]
-    #[serde(with = "azure_core::date::rfc3339::option")]
+    #[serde(default, with = "azure_core::date::rfc3339::option")]
     pub time: Option<time::OffsetDateTime>,
     #[doc = "The library requirements."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2434,7 +2434,7 @@ pub struct LinkedIntegrationRuntime {
     #[serde(rename = "dataFactoryLocation", default, skip_serializing_if = "Option::is_none")]
     pub data_factory_location: Option<String>,
     #[doc = "The creating time of the linked integration runtime."]
-    #[serde(rename = "createTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "createTime", default, with = "azure_core::date::rfc3339::option")]
     pub create_time: Option<time::OffsetDateTime>,
 }
 impl LinkedIntegrationRuntime {
@@ -2775,7 +2775,7 @@ impl ManagedIntegrationRuntime {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagedIntegrationRuntimeError {
     #[doc = "The time when the error occurred."]
-    #[serde(with = "azure_core::date::rfc3339::option")]
+    #[serde(default, with = "azure_core::date::rfc3339::option")]
     pub time: Option<time::OffsetDateTime>,
     #[doc = "Error code."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2879,7 +2879,7 @@ pub struct ManagedIntegrationRuntimeOperationResult {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
     #[doc = "The start time of the operation."]
-    #[serde(rename = "startTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
     pub start_time: Option<time::OffsetDateTime>,
     #[doc = "The operation result."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2923,7 +2923,7 @@ impl ManagedIntegrationRuntimeStatus {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagedIntegrationRuntimeStatusTypeProperties {
     #[doc = "The time at which the integration runtime was created, in ISO8601 format."]
-    #[serde(rename = "createTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "createTime", default, with = "azure_core::date::rfc3339::option")]
     pub create_time: Option<time::OffsetDateTime>,
     #[doc = "The list of nodes for managed integration runtime."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -3129,10 +3129,10 @@ pub struct OperationResource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorDetail>,
     #[doc = "Operation start time"]
-    #[serde(rename = "startTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
     pub start_time: Option<time::OffsetDateTime>,
     #[doc = "Operation start time"]
-    #[serde(rename = "endTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
     pub end_time: Option<time::OffsetDateTime>,
     #[doc = "Completion percentage of the operation"]
     #[serde(rename = "percentComplete", default, skip_serializing_if = "Option::is_none")]
@@ -3462,7 +3462,7 @@ impl PurviewConfiguration {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct QueryInterval {
     #[doc = "The start time of the measurement interval (ISO8601 format)."]
-    #[serde(rename = "intervalStartTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "intervalStartTime", default, with = "azure_core::date::rfc3339::option")]
     pub interval_start_time: Option<time::OffsetDateTime>,
     #[doc = "The number of times the query was executed during this interval."]
     #[serde(rename = "executionCount", default, skip_serializing_if = "Option::is_none")]
@@ -3624,7 +3624,7 @@ pub struct RecoverableSqlPoolProperties {
     #[serde(rename = "elasticPoolName", default, skip_serializing_if = "Option::is_none")]
     pub elastic_pool_name: Option<String>,
     #[doc = "The last available backup date of the database (ISO8601 format)"]
-    #[serde(rename = "lastAvailableBackupDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastAvailableBackupDate", default, with = "azure_core::date::rfc3339::option")]
     pub last_available_backup_date: Option<time::OffsetDateTime>,
 }
 impl RecoverableSqlPoolProperties {
@@ -3722,7 +3722,7 @@ pub struct ReplicationLinkProperties {
     #[serde(rename = "partnerRole", default, skip_serializing_if = "Option::is_none")]
     pub partner_role: Option<replication_link_properties::PartnerRole>,
     #[doc = "The start time for the replication link."]
-    #[serde(rename = "startTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
     pub start_time: Option<time::OffsetDateTime>,
     #[doc = "The percentage of seeding complete for the replication link."]
     #[serde(rename = "percentComplete", default, skip_serializing_if = "Option::is_none")]
@@ -3884,13 +3884,13 @@ pub struct RestorableDroppedSqlPoolProperties {
     #[serde(rename = "elasticPoolName", default, skip_serializing_if = "Option::is_none")]
     pub elastic_pool_name: Option<String>,
     #[doc = "The creation date of the database (ISO8601 format)"]
-    #[serde(rename = "creationDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "creationDate", default, with = "azure_core::date::rfc3339::option")]
     pub creation_date: Option<time::OffsetDateTime>,
     #[doc = "The deletion date of the database (ISO8601 format)"]
-    #[serde(rename = "deletionDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "deletionDate", default, with = "azure_core::date::rfc3339::option")]
     pub deletion_date: Option<time::OffsetDateTime>,
     #[doc = "The earliest restore date of the database (ISO8601 format)"]
-    #[serde(rename = "earliestRestoreDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "earliestRestoreDate", default, with = "azure_core::date::rfc3339::option")]
     pub earliest_restore_date: Option<time::OffsetDateTime>,
 }
 impl RestorableDroppedSqlPoolProperties {
@@ -3943,10 +3943,10 @@ pub struct RestorePointProperties {
     #[serde(rename = "restorePointType", default, skip_serializing_if = "Option::is_none")]
     pub restore_point_type: Option<restore_point_properties::RestorePointType>,
     #[doc = "The earliest time to which this database can be restored"]
-    #[serde(rename = "earliestRestoreDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "earliestRestoreDate", default, with = "azure_core::date::rfc3339::option")]
     pub earliest_restore_date: Option<time::OffsetDateTime>,
     #[doc = "The time the backup was taken"]
-    #[serde(rename = "restorePointCreationDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "restorePointCreationDate", default, with = "azure_core::date::rfc3339::option")]
     pub restore_point_creation_date: Option<time::OffsetDateTime>,
     #[doc = "The label of restore point for backup request by user"]
     #[serde(rename = "restorePointLabel", default, skip_serializing_if = "Option::is_none")]
@@ -4017,7 +4017,7 @@ pub struct SecurityAlertPolicyProperties {
     #[serde(rename = "retentionDays", default, skip_serializing_if = "Option::is_none")]
     pub retention_days: Option<i32>,
     #[doc = "Specifies the UTC creation time of the policy."]
-    #[serde(rename = "creationTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "creationTime", default, with = "azure_core::date::rfc3339::option")]
     pub creation_time: Option<time::OffsetDateTime>,
 }
 impl SecurityAlertPolicyProperties {
@@ -4086,28 +4086,28 @@ pub struct SelfHostedIntegrationRuntimeNode {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
     #[doc = "The time at which the integration runtime node was registered in ISO8601 format."]
-    #[serde(rename = "registerTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "registerTime", default, with = "azure_core::date::rfc3339::option")]
     pub register_time: Option<time::OffsetDateTime>,
     #[doc = "The most recent time at which the integration runtime was connected in ISO8601 format."]
-    #[serde(rename = "lastConnectTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastConnectTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_connect_time: Option<time::OffsetDateTime>,
     #[doc = "The time at which the integration runtime will expire in ISO8601 format."]
-    #[serde(rename = "expiryTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "expiryTime", default, with = "azure_core::date::rfc3339::option")]
     pub expiry_time: Option<time::OffsetDateTime>,
     #[doc = "The time the node last started up."]
-    #[serde(rename = "lastStartTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastStartTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_start_time: Option<time::OffsetDateTime>,
     #[doc = "The integration runtime node last stop time."]
-    #[serde(rename = "lastStopTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastStopTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_stop_time: Option<time::OffsetDateTime>,
     #[doc = "The result of the last integration runtime node update."]
     #[serde(rename = "lastUpdateResult", default, skip_serializing_if = "Option::is_none")]
     pub last_update_result: Option<self_hosted_integration_runtime_node::LastUpdateResult>,
     #[doc = "The last time for the integration runtime node update start."]
-    #[serde(rename = "lastStartUpdateTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastStartUpdateTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_start_update_time: Option<time::OffsetDateTime>,
     #[doc = "The last time for the integration runtime node update end."]
-    #[serde(rename = "lastEndUpdateTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastEndUpdateTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_end_update_time: Option<time::OffsetDateTime>,
     #[doc = "Indicates whether this node is the active dispatcher for integration runtime requests."]
     #[serde(rename = "isActiveDispatcher", default, skip_serializing_if = "Option::is_none")]
@@ -4237,7 +4237,7 @@ impl SelfHostedIntegrationRuntimeStatus {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SelfHostedIntegrationRuntimeStatusTypeProperties {
     #[doc = "The time at which the integration runtime was created, in ISO8601 format."]
-    #[serde(rename = "createTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "createTime", default, with = "azure_core::date::rfc3339::option")]
     pub create_time: Option<time::OffsetDateTime>,
     #[doc = "The task queue id of the integration runtime."]
     #[serde(rename = "taskQueueId", default, skip_serializing_if = "Option::is_none")]
@@ -4259,7 +4259,7 @@ pub struct SelfHostedIntegrationRuntimeStatusTypeProperties {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub nodes: Vec<SelfHostedIntegrationRuntimeNode>,
     #[doc = "The date at which the integration runtime will be scheduled to update, in ISO8601 format."]
-    #[serde(rename = "scheduledUpdateDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "scheduledUpdateDate", default, with = "azure_core::date::rfc3339::option")]
     pub scheduled_update_date: Option<time::OffsetDateTime>,
     #[doc = "The time in the date scheduled by service to update the integration runtime, e.g., PT03H is 3 hours"]
     #[serde(rename = "updateDelayOffset", default, skip_serializing_if = "Option::is_none")]
@@ -4289,7 +4289,7 @@ pub struct SelfHostedIntegrationRuntimeStatusTypeProperties {
     #[serde(rename = "latestVersion", default, skip_serializing_if = "Option::is_none")]
     pub latest_version: Option<String>,
     #[doc = "The estimated time when the self-hosted integration runtime will be updated."]
-    #[serde(rename = "autoUpdateETA", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "autoUpdateETA", default, with = "azure_core::date::rfc3339::option")]
     pub auto_update_eta: Option<time::OffsetDateTime>,
     #[doc = "The service region of the integration runtime"]
     #[serde(rename = "serviceRegion", default, skip_serializing_if = "Option::is_none")]
@@ -4653,7 +4653,7 @@ pub struct ServerSecurityAlertPolicyProperties {
     #[serde(rename = "retentionDays", default, skip_serializing_if = "Option::is_none")]
     pub retention_days: Option<i32>,
     #[doc = "Specifies the UTC creation time of the policy."]
-    #[serde(rename = "creationTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "creationTime", default, with = "azure_core::date::rfc3339::option")]
     pub creation_time: Option<time::OffsetDateTime>,
 }
 impl ServerSecurityAlertPolicyProperties {
@@ -4702,7 +4702,7 @@ pub struct ServerUsage {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub unit: Option<String>,
     #[doc = "The next reset time for the metric (ISO8601 format)."]
-    #[serde(rename = "nextResetTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "nextResetTime", default, with = "azure_core::date::rfc3339::option")]
     pub next_reset_time: Option<time::OffsetDateTime>,
 }
 impl ServerUsage {
@@ -4813,7 +4813,7 @@ impl Sku {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SparkConfigProperties {
     #[doc = "The last update time of the spark config properties file."]
-    #[serde(with = "azure_core::date::rfc3339::option")]
+    #[serde(default, with = "azure_core::date::rfc3339::option")]
     pub time: Option<time::OffsetDateTime>,
     #[doc = "The spark config properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -4888,7 +4888,7 @@ pub struct SparkConfigurationInfo {
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
     #[doc = "The timestamp of resource creation."]
-    #[serde(with = "azure_core::date::rfc3339::option")]
+    #[serde(default, with = "azure_core::date::rfc3339::option")]
     pub created: Option<time::OffsetDateTime>,
 }
 impl SparkConfigurationInfo {
@@ -5361,7 +5361,7 @@ pub struct SqlPoolOperationProperties {
     #[serde(rename = "serverName", default, skip_serializing_if = "Option::is_none")]
     pub server_name: Option<String>,
     #[doc = "The operation start time."]
-    #[serde(rename = "startTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
     pub start_time: Option<time::OffsetDateTime>,
     #[doc = "The operation state."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -5379,7 +5379,7 @@ pub struct SqlPoolOperationProperties {
     #[serde(rename = "isUserError", default, skip_serializing_if = "Option::is_none")]
     pub is_user_error: Option<bool>,
     #[doc = "The estimated completion time of the operation."]
-    #[serde(rename = "estimatedCompletionTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "estimatedCompletionTime", default, with = "azure_core::date::rfc3339::option")]
     pub estimated_completion_time: Option<time::OffsetDateTime>,
     #[doc = "The operation description."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -5484,19 +5484,19 @@ pub struct SqlPoolResourceProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
     #[doc = "Snapshot time to restore"]
-    #[serde(rename = "restorePointInTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "restorePointInTime", default, with = "azure_core::date::rfc3339::option")]
     pub restore_point_in_time: Option<time::OffsetDateTime>,
     #[doc = "Specifies the mode of sql pool creation.\n\nDefault: regular sql pool creation.\n\nPointInTimeRestore: Creates a sql pool by restoring a point in time backup of an existing sql pool. sourceDatabaseId must be specified as the resource ID of the existing sql pool, and restorePointInTime must be specified.\n\nRecovery: Creates a sql pool by a geo-replicated backup. sourceDatabaseId  must be specified as the recoverableDatabaseId to restore.\n\nRestore: Creates a sql pool by restoring a backup of a deleted sql  pool. SourceDatabaseId should be the sql pool's original resource ID. SourceDatabaseId and sourceDatabaseDeletionDate must be specified."]
     #[serde(rename = "createMode", default, skip_serializing_if = "Option::is_none")]
     pub create_mode: Option<sql_pool_resource_properties::CreateMode>,
     #[doc = "Date the SQL pool was created"]
-    #[serde(rename = "creationDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "creationDate", default, with = "azure_core::date::rfc3339::option")]
     pub creation_date: Option<time::OffsetDateTime>,
     #[doc = "The storage account type used to store backups for this sql pool."]
     #[serde(rename = "storageAccountType", default, skip_serializing_if = "Option::is_none")]
     pub storage_account_type: Option<sql_pool_resource_properties::StorageAccountType>,
     #[doc = "Specifies the time that the sql pool was deleted"]
-    #[serde(rename = "sourceDatabaseDeletionDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "sourceDatabaseDeletionDate", default, with = "azure_core::date::rfc3339::option")]
     pub source_database_deletion_date: Option<time::OffsetDateTime>,
 }
 impl SqlPoolResourceProperties {
@@ -5692,7 +5692,7 @@ pub struct SqlPoolUsage {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub unit: Option<String>,
     #[doc = "The next reset time for the usage metric (ISO8601 format)."]
-    #[serde(rename = "nextResetTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "nextResetTime", default, with = "azure_core::date::rfc3339::option")]
     pub next_reset_time: Option<time::OffsetDateTime>,
 }
 impl SqlPoolUsage {
@@ -6155,10 +6155,10 @@ pub struct TopQueries {
     #[serde(rename = "numberOfTopQueries", default, skip_serializing_if = "Option::is_none")]
     pub number_of_top_queries: Option<f64>,
     #[doc = "The start time for queries that are returned (ISO8601 format)"]
-    #[serde(rename = "observationStartTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "observationStartTime", default, with = "azure_core::date::rfc3339::option")]
     pub observation_start_time: Option<time::OffsetDateTime>,
     #[doc = "The end time for queries that are returned (ISO8601 format)"]
-    #[serde(rename = "observationEndTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "observationEndTime", default, with = "azure_core::date::rfc3339::option")]
     pub observation_end_time: Option<time::OffsetDateTime>,
     #[doc = "The type of metric to use for ordering the top metrics."]
     #[serde(rename = "observedMetric", default, skip_serializing_if = "Option::is_none")]
@@ -6448,10 +6448,10 @@ pub struct VulnerabilityAssessmentScanRecordProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<vulnerability_assessment_scan_record_properties::State>,
     #[doc = "The scan start time (UTC)."]
-    #[serde(rename = "startTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
     pub start_time: Option<time::OffsetDateTime>,
     #[doc = "The scan end time (UTC)."]
-    #[serde(rename = "endTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
     pub end_time: Option<time::OffsetDateTime>,
     #[doc = "The scan errors."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]

@@ -184,13 +184,13 @@ pub struct JobInformation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub priority: Option<i32>,
     #[doc = "Gets the time the job was submitted to the service."]
-    #[serde(rename = "submitTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "submitTime", default, with = "azure_core::date::rfc3339::option")]
     pub submit_time: Option<time::OffsetDateTime>,
     #[doc = "Gets the start time of the job."]
-    #[serde(rename = "startTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
     pub start_time: Option<time::OffsetDateTime>,
     #[doc = "Gets the completion time of the job."]
-    #[serde(rename = "endTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
     pub end_time: Option<time::OffsetDateTime>,
     #[doc = "Gets the job state. When the job is in the Ended state, refer to Result and ErrorMessage for details."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -366,7 +366,7 @@ pub struct JobStateAuditRecord {
     #[serde(rename = "newState", default, skip_serializing_if = "Option::is_none")]
     pub new_state: Option<String>,
     #[doc = "Gets the time stamp that the state change took place."]
-    #[serde(rename = "timeStamp", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "timeStamp", default, with = "azure_core::date::rfc3339::option")]
     pub time_stamp: Option<time::OffsetDateTime>,
     #[doc = "Gets the user who requests the change."]
     #[serde(rename = "requestedByUser", default, skip_serializing_if = "Option::is_none")]
@@ -384,7 +384,7 @@ impl JobStateAuditRecord {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobStatistics {
     #[doc = "Gets the last update time for the statistics."]
-    #[serde(rename = "lastUpdateTimeUtc", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastUpdateTimeUtc", default, with = "azure_core::date::rfc3339::option")]
     pub last_update_time_utc: Option<time::OffsetDateTime>,
     #[doc = "Gets the list of stages for the job."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]

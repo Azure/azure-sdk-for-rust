@@ -91,7 +91,7 @@ pub struct DataLakeStoreAccountProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<data_lake_store_account_properties::State>,
     #[doc = "the account creation time."]
-    #[serde(rename = "creationTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "creationTime", default, with = "azure_core::date::rfc3339::option")]
     pub creation_time: Option<time::OffsetDateTime>,
     #[doc = "The current state of encryption for this Data Lake store account."]
     #[serde(rename = "encryptionState", default, skip_serializing_if = "Option::is_none")]
@@ -102,7 +102,7 @@ pub struct DataLakeStoreAccountProperties {
     #[serde(rename = "encryptionConfig", default, skip_serializing_if = "Option::is_none")]
     pub encryption_config: Option<EncryptionConfig>,
     #[doc = "the account last modified time."]
-    #[serde(rename = "lastModifiedTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastModifiedTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_modified_time: Option<time::OffsetDateTime>,
     #[doc = "the gateway host."]
     #[serde(default, skip_serializing_if = "Option::is_none")]

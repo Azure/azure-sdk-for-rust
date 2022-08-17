@@ -262,7 +262,7 @@ pub struct NamespaceProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
     #[doc = "The time the namespace was created."]
-    #[serde(rename = "createdAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
     pub created_at: Option<time::OffsetDateTime>,
     #[doc = "Endpoint you can use to perform NotificationHub operations."]
     #[serde(rename = "serviceBusEndpoint", default, skip_serializing_if = "Option::is_none")]
@@ -535,10 +535,10 @@ pub struct SharedAccessAuthorizationRuleProperties {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub rights: Vec<String>,
     #[doc = "The time at which the authorization rule was created."]
-    #[serde(rename = "createdTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "createdTime", default, with = "azure_core::date::rfc3339::option")]
     pub created_time: Option<time::OffsetDateTime>,
     #[doc = "The most recent time the rule was updated."]
-    #[serde(rename = "modifiedTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "modifiedTime", default, with = "azure_core::date::rfc3339::option")]
     pub modified_time: Option<time::OffsetDateTime>,
     #[doc = "The revision number for the rule."]
     #[serde(default, skip_serializing_if = "Option::is_none")]

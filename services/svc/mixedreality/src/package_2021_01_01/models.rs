@@ -294,7 +294,7 @@ pub struct SessionProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<Error>,
     #[doc = "The time when the rendering session was created. Date and time in ISO 8601 format."]
-    #[serde(rename = "creationTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "creationTime", default, with = "azure_core::date::rfc3339::option")]
     pub creation_time: Option<time::OffsetDateTime>,
 }
 impl SessionProperties {

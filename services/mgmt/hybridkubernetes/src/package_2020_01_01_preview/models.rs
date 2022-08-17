@@ -224,10 +224,14 @@ pub struct ConnectedClusterProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub offering: Option<String>,
     #[doc = "Expiration time of the managed identity certificate"]
-    #[serde(rename = "managedIdentityCertificateExpirationTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(
+        rename = "managedIdentityCertificateExpirationTime",
+        default,
+        with = "azure_core::date::rfc3339::option"
+    )]
     pub managed_identity_certificate_expiration_time: Option<time::OffsetDateTime>,
     #[doc = "Time representing the last instance when heart beat was received from the cluster"]
-    #[serde(rename = "lastConnectivityTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastConnectivityTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_connectivity_time: Option<time::OffsetDateTime>,
     #[doc = "Represents the connectivity status of the connected cluster."]
     #[serde(rename = "connectivityStatus", default, skip_serializing_if = "Option::is_none")]

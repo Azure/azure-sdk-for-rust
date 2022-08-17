@@ -31,7 +31,7 @@ pub struct Annotation {
     #[serde(rename = "Category", default, skip_serializing_if = "Option::is_none")]
     pub category: Option<String>,
     #[doc = "Time when event occurred"]
-    #[serde(rename = "EventTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "EventTime", default, with = "azure_core::date::rfc3339::option")]
     pub event_time: Option<time::OffsetDateTime>,
     #[doc = "Unique Id for annotation"]
     #[serde(rename = "Id", default, skip_serializing_if = "Option::is_none")]
@@ -733,7 +733,7 @@ pub struct ApplicationInsightsComponentProperties {
     #[serde(rename = "InstrumentationKey", default, skip_serializing_if = "Option::is_none")]
     pub instrumentation_key: Option<String>,
     #[doc = "Creation Date for the Application Insights component, in ISO 8601 format."]
-    #[serde(rename = "CreationDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "CreationDate", default, with = "azure_core::date::rfc3339::option")]
     pub creation_date: Option<time::OffsetDateTime>,
     #[doc = "Azure Tenant Id."]
     #[serde(rename = "TenantId", default, skip_serializing_if = "Option::is_none")]
@@ -766,7 +766,7 @@ pub struct ApplicationInsightsComponentProperties {
     #[serde(rename = "WorkspaceResourceId", default, skip_serializing_if = "Option::is_none")]
     pub workspace_resource_id: Option<String>,
     #[doc = "The date which the component got migrated to LA, in ISO 8601 format."]
-    #[serde(rename = "LaMigrationDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "LaMigrationDate", default, with = "azure_core::date::rfc3339::option")]
     pub la_migration_date: Option<time::OffsetDateTime>,
     #[doc = "List of linked private link scope resources."]
     #[serde(rename = "PrivateLinkScopedResources", default, skip_serializing_if = "Vec::is_empty")]
@@ -1342,7 +1342,7 @@ pub struct InnerError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub diagnosticcontext: Option<String>,
     #[doc = "Request time"]
-    #[serde(with = "azure_core::date::rfc3339::option")]
+    #[serde(default, with = "azure_core::date::rfc3339::option")]
     pub time: Option<time::OffsetDateTime>,
 }
 impl InnerError {
@@ -2341,7 +2341,7 @@ pub struct WorkbookProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
     #[doc = "Date and time in UTC of the last modification that was made to this workbook definition."]
-    #[serde(rename = "timeModified", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "timeModified", default, with = "azure_core::date::rfc3339::option")]
     pub time_modified: Option<time::OffsetDateTime>,
     #[doc = "Workbook category, as defined by the user at creation time."]
     pub category: String,
@@ -2760,7 +2760,7 @@ pub struct SystemData {
     #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
-    #[serde(rename = "createdAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
     pub created_at: Option<time::OffsetDateTime>,
     #[doc = "The identity that last modified the resource."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
@@ -2769,7 +2769,7 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
-    #[serde(rename = "lastModifiedAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
     pub last_modified_at: Option<time::OffsetDateTime>,
 }
 impl SystemData {

@@ -1532,7 +1532,7 @@ impl ImportDiskDetails {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobDeliveryInfo {
     #[doc = "Scheduled date time."]
-    #[serde(rename = "scheduledDateTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "scheduledDateTime", default, with = "azure_core::date::rfc3339::option")]
     pub scheduled_date_time: Option<time::OffsetDateTime>,
 }
 impl JobDeliveryInfo {
@@ -1845,7 +1845,7 @@ pub struct JobProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<job_properties::Status>,
     #[doc = "Time at which the job was started in UTC ISO 8601 format."]
-    #[serde(rename = "startTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
     pub start_time: Option<time::OffsetDateTime>,
     #[doc = "Cloud error."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2104,7 +2104,7 @@ pub struct JobStages {
     #[serde(rename = "stageStatus", default, skip_serializing_if = "Option::is_none")]
     pub stage_status: Option<job_stages::StageStatus>,
     #[doc = "Time for the job stage in UTC ISO 8601 format."]
-    #[serde(rename = "stageTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "stageTime", default, with = "azure_core::date::rfc3339::option")]
     pub stage_time: Option<time::OffsetDateTime>,
     #[doc = "Job Stage Details"]
     #[serde(rename = "jobStageDetails", default, skip_serializing_if = "Option::is_none")]
@@ -2264,7 +2264,7 @@ pub mod key_encryption_key {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LastMitigationActionOnJob {
     #[doc = "Action performed date time"]
-    #[serde(rename = "actionDateTimeInUtc", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "actionDateTimeInUtc", default, with = "azure_core::date::rfc3339::option")]
     pub action_date_time_in_utc: Option<time::OffsetDateTime>,
     #[doc = "Action performed by customer,\r\npossibility is that mitigation might happen by customer or service or by ops"]
     #[serde(rename = "isPerformedByCustomer", default, skip_serializing_if = "Option::is_none")]
@@ -2811,7 +2811,7 @@ pub struct ShipmentPickUpResponse {
     #[serde(rename = "confirmationNumber", default, skip_serializing_if = "Option::is_none")]
     pub confirmation_number: Option<String>,
     #[doc = "Time by which shipment should be ready for pick up, this is in local time of pick up area."]
-    #[serde(rename = "readyByTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "readyByTime", default, with = "azure_core::date::rfc3339::option")]
     pub ready_by_time: Option<time::OffsetDateTime>,
 }
 impl ShipmentPickUpResponse {
@@ -3617,7 +3617,7 @@ pub struct SystemData {
     #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
     pub created_by_type: Option<String>,
     #[doc = "The timestamp of resource creation (UTC)"]
-    #[serde(rename = "createdAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
     pub created_at: Option<time::OffsetDateTime>,
     #[doc = "A string identifier for the identity that last modified the resource"]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
@@ -3626,7 +3626,7 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by_type: Option<String>,
     #[doc = "The timestamp of resource last modification (UTC)"]
-    #[serde(rename = "lastModifiedAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
     pub last_modified_at: Option<time::OffsetDateTime>,
 }
 impl SystemData {

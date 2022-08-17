@@ -682,10 +682,10 @@ pub struct CostAllocationRuleProperties {
     #[doc = "Current status of the rule."]
     pub status: RuleStatus,
     #[doc = "Time at which the rule was created. Rules that change cost for the same resource are applied in order of creation."]
-    #[serde(rename = "createdDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "createdDate", default, with = "azure_core::date::rfc3339::option")]
     pub created_date: Option<time::OffsetDateTime>,
     #[doc = "Time at which the rule was last updated."]
-    #[serde(rename = "updatedDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "updatedDate", default, with = "azure_core::date::rfc3339::option")]
     pub updated_date: Option<time::OffsetDateTime>,
 }
 impl CostAllocationRuleProperties {
@@ -731,10 +731,10 @@ pub struct DimensionProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub category: Option<String>,
     #[doc = "Usage start."]
-    #[serde(rename = "usageStart", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "usageStart", default, with = "azure_core::date::rfc3339::option")]
     pub usage_start: Option<time::OffsetDateTime>,
     #[doc = "Usage end."]
-    #[serde(rename = "usageEnd", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "usageEnd", default, with = "azure_core::date::rfc3339::option")]
     pub usage_end: Option<time::OffsetDateTime>,
     #[doc = "The link (url) to the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -2183,10 +2183,10 @@ pub struct ViewProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub scope: Option<String>,
     #[doc = "Date the user created this view."]
-    #[serde(rename = "createdOn", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "createdOn", default, with = "azure_core::date::rfc3339::option")]
     pub created_on: Option<time::OffsetDateTime>,
     #[doc = "Date when the user last modified this view."]
-    #[serde(rename = "modifiedOn", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "modifiedOn", default, with = "azure_core::date::rfc3339::option")]
     pub modified_on: Option<time::OffsetDateTime>,
     #[doc = "The definition of a report config."]
     #[serde(default, skip_serializing_if = "Option::is_none")]

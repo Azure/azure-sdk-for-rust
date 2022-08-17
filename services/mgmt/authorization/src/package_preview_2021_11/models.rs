@@ -118,7 +118,7 @@ pub struct AccessReviewContactedReviewerProperties {
     #[serde(rename = "userPrincipalName", default, skip_serializing_if = "Option::is_none")]
     pub user_principal_name: Option<String>,
     #[doc = "Date Time when the reviewer was contacted."]
-    #[serde(rename = "createdDateTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "createdDateTime", default, with = "azure_core::date::rfc3339::option")]
     pub created_date_time: Option<time::OffsetDateTime>,
 }
 impl AccessReviewContactedReviewerProperties {
@@ -251,7 +251,7 @@ pub struct AccessReviewDecisionProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub justification: Option<String>,
     #[doc = "Date Time when a decision was taken."]
-    #[serde(rename = "reviewedDateTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "reviewedDateTime", default, with = "azure_core::date::rfc3339::option")]
     pub reviewed_date_time: Option<time::OffsetDateTime>,
     #[doc = "Details of the actor identity"]
     #[serde(rename = "reviewedBy", default, skip_serializing_if = "Option::is_none")]
@@ -260,7 +260,7 @@ pub struct AccessReviewDecisionProperties {
     #[serde(rename = "applyResult", default, skip_serializing_if = "Option::is_none")]
     pub apply_result: Option<access_review_decision_properties::ApplyResult>,
     #[doc = "The date and time when the review decision was applied."]
-    #[serde(rename = "appliedDateTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "appliedDateTime", default, with = "azure_core::date::rfc3339::option")]
     pub applied_date_time: Option<time::OffsetDateTime>,
     #[doc = "Details of the actor identity"]
     #[serde(rename = "appliedBy", default, skip_serializing_if = "Option::is_none")]
@@ -606,10 +606,10 @@ pub struct AccessReviewHistoryDefinitionProperties {
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
     #[doc = "Date time used when selecting review data, all reviews included in data start on or after this date. For use only with one-time/non-recurring reports."]
-    #[serde(rename = "reviewHistoryPeriodStartDateTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "reviewHistoryPeriodStartDateTime", default, with = "azure_core::date::rfc3339::option")]
     pub review_history_period_start_date_time: Option<time::OffsetDateTime>,
     #[doc = "Date time used when selecting review data, all reviews included in data end on or before this date. For use only with one-time/non-recurring reports."]
-    #[serde(rename = "reviewHistoryPeriodEndDateTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "reviewHistoryPeriodEndDateTime", default, with = "azure_core::date::rfc3339::option")]
     pub review_history_period_end_date_time: Option<time::OffsetDateTime>,
     #[doc = "Collection of review decisions which the history data should be filtered on. For example if Approve and Deny are supplied the data will only contain review results in which the decision maker approved or denied a review request."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -618,7 +618,7 @@ pub struct AccessReviewHistoryDefinitionProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<access_review_history_definition_properties::Status>,
     #[doc = "Date time when history definition was created"]
-    #[serde(rename = "createdDateTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "createdDateTime", default, with = "azure_core::date::rfc3339::option")]
     pub created_date_time: Option<time::OffsetDateTime>,
     #[doc = "Details of the actor identity"]
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
@@ -707,10 +707,10 @@ impl AccessReviewHistoryInstance {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AccessReviewHistoryInstanceProperties {
     #[doc = "Date time used when selecting review data, all reviews included in data start on or after this date. For use only with one-time/non-recurring reports."]
-    #[serde(rename = "reviewHistoryPeriodStartDateTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "reviewHistoryPeriodStartDateTime", default, with = "azure_core::date::rfc3339::option")]
     pub review_history_period_start_date_time: Option<time::OffsetDateTime>,
     #[doc = "Date time used when selecting review data, all reviews included in data end on or before this date. For use only with one-time/non-recurring reports."]
-    #[serde(rename = "reviewHistoryPeriodEndDateTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "reviewHistoryPeriodEndDateTime", default, with = "azure_core::date::rfc3339::option")]
     pub review_history_period_end_date_time: Option<time::OffsetDateTime>,
     #[doc = "The display name for the parent history definition."]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
@@ -719,16 +719,16 @@ pub struct AccessReviewHistoryInstanceProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<access_review_history_instance_properties::Status>,
     #[doc = "Date time when the history data report is scheduled to be generated."]
-    #[serde(rename = "runDateTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "runDateTime", default, with = "azure_core::date::rfc3339::option")]
     pub run_date_time: Option<time::OffsetDateTime>,
     #[doc = "Date time when the history data report is scheduled to be generated."]
-    #[serde(rename = "fulfilledDateTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "fulfilledDateTime", default, with = "azure_core::date::rfc3339::option")]
     pub fulfilled_date_time: Option<time::OffsetDateTime>,
     #[doc = "Uri which can be used to retrieve review history data. To generate this Uri, generateDownloadUri() must be called for a specific accessReviewHistoryDefinitionInstance. The link expires after a 24 hour period. Callers can see the expiration date time by looking at the 'se' parameter in the generated uri."]
     #[serde(rename = "downloadUri", default, skip_serializing_if = "Option::is_none")]
     pub download_uri: Option<String>,
     #[doc = "Date time when history data report expires and the associated data is deleted."]
-    #[serde(with = "azure_core::date::rfc3339::option")]
+    #[serde(default, with = "azure_core::date::rfc3339::option")]
     pub expiration: Option<time::OffsetDateTime>,
 }
 impl AccessReviewHistoryInstanceProperties {
@@ -844,10 +844,10 @@ pub struct AccessReviewInstanceProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<access_review_instance_properties::Status>,
     #[doc = "The DateTime when the review instance is scheduled to be start."]
-    #[serde(rename = "startDateTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "startDateTime", default, with = "azure_core::date::rfc3339::option")]
     pub start_date_time: Option<time::OffsetDateTime>,
     #[doc = "The DateTime when the review instance is scheduled to end."]
-    #[serde(rename = "endDateTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "endDateTime", default, with = "azure_core::date::rfc3339::option")]
     pub end_date_time: Option<time::OffsetDateTime>,
     #[doc = "This is the collection of reviewers."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -1029,10 +1029,10 @@ pub struct AccessReviewRecurrenceRange {
     #[serde(rename = "numberOfOccurrences", default, skip_serializing_if = "Option::is_none")]
     pub number_of_occurrences: Option<i32>,
     #[doc = "The DateTime when the review is scheduled to be start. This could be a date in the future. Required on create."]
-    #[serde(rename = "startDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "startDate", default, with = "azure_core::date::rfc3339::option")]
     pub start_date: Option<time::OffsetDateTime>,
     #[doc = "The DateTime when the review is scheduled to end. Required if type is endDate"]
-    #[serde(rename = "endDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "endDate", default, with = "azure_core::date::rfc3339::option")]
     pub end_date: Option<time::OffsetDateTime>,
 }
 impl AccessReviewRecurrenceRange {

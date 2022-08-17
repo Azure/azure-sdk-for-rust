@@ -7,10 +7,10 @@ use std::str::FromStr;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AccessPolicy {
     #[doc = "the date-time the policy is active"]
-    #[serde(rename = "Start", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "Start", default, with = "azure_core::date::rfc3339::option")]
     pub start: Option<time::OffsetDateTime>,
     #[doc = "the date-time the policy expires"]
-    #[serde(rename = "Expiry", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "Expiry", default, with = "azure_core::date::rfc3339::option")]
     pub expiry: Option<time::OffsetDateTime>,
     #[doc = "the permissions for the acl policy"]
     #[serde(rename = "Permission", default, skip_serializing_if = "Option::is_none")]
@@ -258,7 +258,7 @@ impl BlobPrefix {
 #[doc = "Properties of a blob"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BlobPropertiesInternal {
-    #[serde(rename = "Creation-Time", with = "azure_core::date::rfc1123::option")]
+    #[serde(rename = "Creation-Time", default, with = "azure_core::date::rfc1123::option")]
     pub creation_time: Option<time::OffsetDateTime>,
     #[serde(rename = "Last-Modified", with = "azure_core::date::rfc1123")]
     pub last_modified: time::OffsetDateTime,
@@ -297,7 +297,7 @@ pub struct BlobPropertiesInternal {
     pub copy_source: Option<String>,
     #[serde(rename = "CopyProgress", default, skip_serializing_if = "Option::is_none")]
     pub copy_progress: Option<String>,
-    #[serde(rename = "CopyCompletionTime", with = "azure_core::date::rfc1123::option")]
+    #[serde(rename = "CopyCompletionTime", default, with = "azure_core::date::rfc1123::option")]
     pub copy_completion_time: Option<time::OffsetDateTime>,
     #[serde(rename = "CopyStatusDescription", default, skip_serializing_if = "Option::is_none")]
     pub copy_status_description: Option<String>,
@@ -307,7 +307,7 @@ pub struct BlobPropertiesInternal {
     pub incremental_copy: Option<bool>,
     #[serde(rename = "DestinationSnapshot", default, skip_serializing_if = "Option::is_none")]
     pub destination_snapshot: Option<String>,
-    #[serde(rename = "DeletedTime", with = "azure_core::date::rfc1123::option")]
+    #[serde(rename = "DeletedTime", default, with = "azure_core::date::rfc1123::option")]
     pub deleted_time: Option<time::OffsetDateTime>,
     #[serde(rename = "RemainingRetentionDays", default, skip_serializing_if = "Option::is_none")]
     pub remaining_retention_days: Option<i64>,
@@ -322,20 +322,20 @@ pub struct BlobPropertiesInternal {
     #[doc = "The name of the encryption scope under which the blob is encrypted."]
     #[serde(rename = "EncryptionScope", default, skip_serializing_if = "Option::is_none")]
     pub encryption_scope: Option<String>,
-    #[serde(rename = "AccessTierChangeTime", with = "azure_core::date::rfc1123::option")]
+    #[serde(rename = "AccessTierChangeTime", default, with = "azure_core::date::rfc1123::option")]
     pub access_tier_change_time: Option<time::OffsetDateTime>,
     #[serde(rename = "TagCount", default, skip_serializing_if = "Option::is_none")]
     pub tag_count: Option<i64>,
-    #[serde(rename = "Expiry-Time", with = "azure_core::date::rfc1123::option")]
+    #[serde(rename = "Expiry-Time", default, with = "azure_core::date::rfc1123::option")]
     pub expiry_time: Option<time::OffsetDateTime>,
     #[serde(rename = "Sealed", default, skip_serializing_if = "Option::is_none")]
     pub sealed: Option<bool>,
     #[doc = "If an object is in rehydrate pending state then this header is returned with priority of rehydrate. Valid values are High and Standard."]
     #[serde(rename = "RehydratePriority", default, skip_serializing_if = "Option::is_none")]
     pub rehydrate_priority: Option<RehydratePriority>,
-    #[serde(rename = "LastAccessTime", with = "azure_core::date::rfc1123::option")]
+    #[serde(rename = "LastAccessTime", default, with = "azure_core::date::rfc1123::option")]
     pub last_access_time: Option<time::OffsetDateTime>,
-    #[serde(rename = "ImmutabilityPolicyUntilDate", with = "azure_core::date::rfc1123::option")]
+    #[serde(rename = "ImmutabilityPolicyUntilDate", default, with = "azure_core::date::rfc1123::option")]
     pub immutability_policy_until_date: Option<time::OffsetDateTime>,
     #[serde(rename = "ImmutabilityPolicyMode", default, skip_serializing_if = "Option::is_none")]
     pub immutability_policy_mode: Option<blob_properties_internal::ImmutabilityPolicyMode>,
@@ -535,7 +535,7 @@ pub struct ContainerProperties {
     pub default_encryption_scope: Option<String>,
     #[serde(rename = "DenyEncryptionScopeOverride", default, skip_serializing_if = "Option::is_none")]
     pub deny_encryption_scope_override: Option<bool>,
-    #[serde(rename = "DeletedTime", with = "azure_core::date::rfc1123::option")]
+    #[serde(rename = "DeletedTime", default, with = "azure_core::date::rfc1123::option")]
     pub deleted_time: Option<time::OffsetDateTime>,
     #[serde(rename = "RemainingRetentionDays", default, skip_serializing_if = "Option::is_none")]
     pub remaining_retention_days: Option<i64>,

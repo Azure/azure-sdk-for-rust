@@ -404,10 +404,10 @@ pub struct AvailablePatchSummary {
     #[serde(rename = "otherPatchCount", default, skip_serializing_if = "Option::is_none")]
     pub other_patch_count: Option<i32>,
     #[doc = "The UTC timestamp when the operation began."]
-    #[serde(rename = "startTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
     pub start_time: Option<time::OffsetDateTime>,
     #[doc = "The UTC timestamp when the operation began."]
-    #[serde(rename = "lastModifiedTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastModifiedTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_modified_time: Option<time::OffsetDateTime>,
     #[doc = "Api error."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -693,7 +693,7 @@ pub struct CapacityReservationProperties {
     #[serde(rename = "virtualMachinesAssociated", default, skip_serializing_if = "Vec::is_empty")]
     pub virtual_machines_associated: Vec<SubResourceReadOnly>,
     #[doc = "The date time when the capacity reservation was last updated."]
-    #[serde(rename = "provisioningTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "provisioningTime", default, with = "azure_core::date::rfc3339::option")]
     pub provisioning_time: Option<time::OffsetDateTime>,
     #[doc = "The provisioning state, which only appears in the response."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
@@ -702,7 +702,7 @@ pub struct CapacityReservationProperties {
     #[serde(rename = "instanceView", default, skip_serializing_if = "Option::is_none")]
     pub instance_view: Option<CapacityReservationInstanceView>,
     #[doc = "Specifies the time at which the Capacity Reservation resource was created.<br><br>Minimum api-version: 2021-11-01."]
-    #[serde(rename = "timeCreated", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "timeCreated", default, with = "azure_core::date::rfc3339::option")]
     pub time_created: Option<time::OffsetDateTime>,
 }
 impl CapacityReservationProperties {
@@ -1184,7 +1184,7 @@ pub struct CommunityGalleryImageProperties {
     #[serde(rename = "osState")]
     pub os_state: community_gallery_image_properties::OsState,
     #[doc = "The end of life date of the gallery image definition. This property can be used for decommissioning purposes. This property is updatable."]
-    #[serde(rename = "endOfLifeDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "endOfLifeDate", default, with = "azure_core::date::rfc3339::option")]
     pub end_of_life_date: Option<time::OffsetDateTime>,
     #[doc = "This is the gallery image definition identifier."]
     pub identifier: GalleryImageIdentifier,
@@ -1293,10 +1293,10 @@ impl CommunityGalleryImageVersion {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CommunityGalleryImageVersionProperties {
     #[doc = "The published date of the gallery image version Definition. This property can be used for decommissioning purposes. This property is updatable."]
-    #[serde(rename = "publishedDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "publishedDate", default, with = "azure_core::date::rfc3339::option")]
     pub published_date: Option<time::OffsetDateTime>,
     #[doc = "The end of life date of the gallery image version Definition. This property can be used for decommissioning purposes. This property is updatable."]
-    #[serde(rename = "endOfLifeDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "endOfLifeDate", default, with = "azure_core::date::rfc3339::option")]
     pub end_of_life_date: Option<time::OffsetDateTime>,
 }
 impl CommunityGalleryImageVersionProperties {
@@ -1884,7 +1884,7 @@ pub struct DedicatedHostProperties {
     #[serde(rename = "licenseType", default, skip_serializing_if = "Option::is_none")]
     pub license_type: Option<DedicatedHostLicenseType>,
     #[doc = "The date when the host was first provisioned."]
-    #[serde(rename = "provisioningTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "provisioningTime", default, with = "azure_core::date::rfc3339::option")]
     pub provisioning_time: Option<time::OffsetDateTime>,
     #[doc = "The provisioning state, which only appears in the response."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
@@ -1893,7 +1893,7 @@ pub struct DedicatedHostProperties {
     #[serde(rename = "instanceView", default, skip_serializing_if = "Option::is_none")]
     pub instance_view: Option<DedicatedHostInstanceView>,
     #[doc = "Specifies the time at which the Dedicated Host resource was created.<br><br>Minimum api-version: 2021-11-01."]
-    #[serde(rename = "timeCreated", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "timeCreated", default, with = "azure_core::date::rfc3339::option")]
     pub time_created: Option<time::OffsetDateTime>,
 }
 impl DedicatedHostProperties {
@@ -2236,7 +2236,7 @@ pub struct DiskAccessProperties {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
     #[doc = "The time when the disk access was created."]
-    #[serde(rename = "timeCreated", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "timeCreated", default, with = "azure_core::date::rfc3339::option")]
     pub time_created: Option<time::OffsetDateTime>,
 }
 impl DiskAccessProperties {
@@ -2460,7 +2460,7 @@ impl DiskList {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DiskProperties {
     #[doc = "The time when the disk was created."]
-    #[serde(rename = "timeCreated", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "timeCreated", default, with = "azure_core::date::rfc3339::option")]
     pub time_created: Option<time::OffsetDateTime>,
     #[doc = "The Operating System type."]
     #[serde(rename = "osType", default, skip_serializing_if = "Option::is_none")]
@@ -2681,7 +2681,7 @@ impl DiskRestorePointList {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DiskRestorePointProperties {
     #[doc = "The timestamp of restorePoint creation"]
-    #[serde(rename = "timeCreated", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "timeCreated", default, with = "azure_core::date::rfc3339::option")]
     pub time_created: Option<time::OffsetDateTime>,
     #[doc = "arm id of source disk or source disk restore point."]
     #[serde(rename = "sourceResourceId", default, skip_serializing_if = "Option::is_none")]
@@ -3176,7 +3176,7 @@ pub struct EncryptionSetProperties {
     #[serde(rename = "rotationToLatestKeyVersionEnabled", default, skip_serializing_if = "Option::is_none")]
     pub rotation_to_latest_key_version_enabled: Option<bool>,
     #[doc = "The time when the active key of this disk encryption set was updated."]
-    #[serde(rename = "lastKeyRotationTimestamp", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastKeyRotationTimestamp", default, with = "azure_core::date::rfc3339::option")]
     pub last_key_rotation_timestamp: Option<time::OffsetDateTime>,
     #[doc = "Api error."]
     #[serde(rename = "autoKeyRotationError", default, skip_serializing_if = "Option::is_none")]
@@ -3403,7 +3403,7 @@ pub struct GalleryApplicationProperties {
     #[serde(rename = "releaseNoteUri", default, skip_serializing_if = "Option::is_none")]
     pub release_note_uri: Option<String>,
     #[doc = "The end of life date of the gallery Application Definition. This property can be used for decommissioning purposes. This property is updatable."]
-    #[serde(rename = "endOfLifeDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "endOfLifeDate", default, with = "azure_core::date::rfc3339::option")]
     pub end_of_life_date: Option<time::OffsetDateTime>,
     #[doc = "This property allows you to specify the supported type of the OS that application is built for. <br><br> Possible values are: <br><br> **Windows** <br><br> **Linux**"]
     #[serde(rename = "supportedOSType")]
@@ -3566,10 +3566,10 @@ pub struct GalleryArtifactPublishingProfileBase {
     #[serde(rename = "excludeFromLatest", default, skip_serializing_if = "Option::is_none")]
     pub exclude_from_latest: Option<bool>,
     #[doc = "The timestamp for when the gallery image version is published."]
-    #[serde(rename = "publishedDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "publishedDate", default, with = "azure_core::date::rfc3339::option")]
     pub published_date: Option<time::OffsetDateTime>,
     #[doc = "The end of life date of the gallery image version. This property can be used for decommissioning purposes. This property is updatable."]
-    #[serde(rename = "endOfLifeDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "endOfLifeDate", default, with = "azure_core::date::rfc3339::option")]
     pub end_of_life_date: Option<time::OffsetDateTime>,
     #[doc = "Specifies the storage account type to be used to store the image. This property is not updatable."]
     #[serde(rename = "storageAccountType", default, skip_serializing_if = "Option::is_none")]
@@ -3894,7 +3894,7 @@ pub struct GalleryImageProperties {
     #[serde(rename = "hyperVGeneration", default, skip_serializing_if = "Option::is_none")]
     pub hyper_v_generation: Option<gallery_image_properties::HyperVGeneration>,
     #[doc = "The end of life date of the gallery image definition. This property can be used for decommissioning purposes. This property is updatable."]
-    #[serde(rename = "endOfLifeDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "endOfLifeDate", default, with = "azure_core::date::rfc3339::option")]
     pub end_of_life_date: Option<time::OffsetDateTime>,
     #[doc = "This is the gallery image definition identifier."]
     pub identifier: GalleryImageIdentifier,
@@ -5267,7 +5267,7 @@ pub struct InstanceViewStatus {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
     #[doc = "The time of the status."]
-    #[serde(with = "azure_core::date::rfc3339::option")]
+    #[serde(default, with = "azure_core::date::rfc3339::option")]
     pub time: Option<time::OffsetDateTime>,
 }
 impl InstanceViewStatus {
@@ -5400,10 +5400,10 @@ pub struct LastPatchInstallationSummary {
     #[serde(rename = "failedPatchCount", default, skip_serializing_if = "Option::is_none")]
     pub failed_patch_count: Option<i32>,
     #[doc = "The UTC timestamp when the operation began."]
-    #[serde(rename = "startTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
     pub start_time: Option<time::OffsetDateTime>,
     #[doc = "The UTC timestamp when the operation began."]
-    #[serde(rename = "lastModifiedTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastModifiedTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_modified_time: Option<time::OffsetDateTime>,
     #[doc = "Api error."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -5747,16 +5747,16 @@ pub struct MaintenanceRedeployStatus {
     #[serde(rename = "isCustomerInitiatedMaintenanceAllowed", default, skip_serializing_if = "Option::is_none")]
     pub is_customer_initiated_maintenance_allowed: Option<bool>,
     #[doc = "Start Time for the Pre Maintenance Window."]
-    #[serde(rename = "preMaintenanceWindowStartTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "preMaintenanceWindowStartTime", default, with = "azure_core::date::rfc3339::option")]
     pub pre_maintenance_window_start_time: Option<time::OffsetDateTime>,
     #[doc = "End Time for the Pre Maintenance Window."]
-    #[serde(rename = "preMaintenanceWindowEndTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "preMaintenanceWindowEndTime", default, with = "azure_core::date::rfc3339::option")]
     pub pre_maintenance_window_end_time: Option<time::OffsetDateTime>,
     #[doc = "Start Time for the Maintenance Window."]
-    #[serde(rename = "maintenanceWindowStartTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "maintenanceWindowStartTime", default, with = "azure_core::date::rfc3339::option")]
     pub maintenance_window_start_time: Option<time::OffsetDateTime>,
     #[doc = "End Time for the Maintenance Window."]
-    #[serde(rename = "maintenanceWindowEndTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "maintenanceWindowEndTime", default, with = "azure_core::date::rfc3339::option")]
     pub maintenance_window_end_time: Option<time::OffsetDateTime>,
     #[doc = "The Last Maintenance Operation Result Code."]
     #[serde(rename = "lastOperationResultCode", default, skip_serializing_if = "Option::is_none")]
@@ -7556,7 +7556,7 @@ pub struct ResourceInstanceViewStatus {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
     #[doc = "The time of the status."]
-    #[serde(with = "azure_core::date::rfc3339::option")]
+    #[serde(default, with = "azure_core::date::rfc3339::option")]
     pub time: Option<time::OffsetDateTime>,
     #[doc = "The level code."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -8005,7 +8005,7 @@ pub struct RestorePointProperties {
     #[serde(rename = "consistencyMode", default, skip_serializing_if = "Option::is_none")]
     pub consistency_mode: Option<restore_point_properties::ConsistencyMode>,
     #[doc = "Gets the creation time of the restore point."]
-    #[serde(rename = "timeCreated", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "timeCreated", default, with = "azure_core::date::rfc3339::option")]
     pub time_created: Option<time::OffsetDateTime>,
     #[doc = "The API entity reference."]
     #[serde(rename = "sourceRestorePoint", default, skip_serializing_if = "Option::is_none")]
@@ -8396,13 +8396,13 @@ pub struct RollingUpgradeRunningStatus {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<rolling_upgrade_running_status::Code>,
     #[doc = "Start time of the upgrade."]
-    #[serde(rename = "startTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
     pub start_time: Option<time::OffsetDateTime>,
     #[doc = "The last action performed on the rolling upgrade."]
     #[serde(rename = "lastAction", default, skip_serializing_if = "Option::is_none")]
     pub last_action: Option<rolling_upgrade_running_status::LastAction>,
     #[doc = "Last action time of the upgrade."]
-    #[serde(rename = "lastActionTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastActionTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_action_time: Option<time::OffsetDateTime>,
 }
 impl RollingUpgradeRunningStatus {
@@ -8774,7 +8774,7 @@ pub struct SharedGalleryImageProperties {
     #[serde(rename = "osState")]
     pub os_state: shared_gallery_image_properties::OsState,
     #[doc = "The end of life date of the gallery image definition. This property can be used for decommissioning purposes. This property is updatable."]
-    #[serde(rename = "endOfLifeDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "endOfLifeDate", default, with = "azure_core::date::rfc3339::option")]
     pub end_of_life_date: Option<time::OffsetDateTime>,
     #[doc = "This is the gallery image definition identifier."]
     pub identifier: GalleryImageIdentifier,
@@ -8903,10 +8903,10 @@ impl SharedGalleryImageVersionList {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SharedGalleryImageVersionProperties {
     #[doc = "The published date of the gallery image version Definition. This property can be used for decommissioning purposes. This property is updatable."]
-    #[serde(rename = "publishedDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "publishedDate", default, with = "azure_core::date::rfc3339::option")]
     pub published_date: Option<time::OffsetDateTime>,
     #[doc = "The end of life date of the gallery image version Definition. This property can be used for decommissioning purposes. This property is updatable."]
-    #[serde(rename = "endOfLifeDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "endOfLifeDate", default, with = "azure_core::date::rfc3339::option")]
     pub end_of_life_date: Option<time::OffsetDateTime>,
 }
 impl SharedGalleryImageVersionProperties {
@@ -9239,7 +9239,7 @@ impl SnapshotList {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SnapshotProperties {
     #[doc = "The time when the snapshot was created."]
-    #[serde(rename = "timeCreated", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "timeCreated", default, with = "azure_core::date::rfc3339::option")]
     pub time_created: Option<time::OffsetDateTime>,
     #[doc = "The Operating System type."]
     #[serde(rename = "osType", default, skip_serializing_if = "Option::is_none")]
@@ -10062,10 +10062,10 @@ pub struct UpgradeOperationHistoryStatus {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<upgrade_operation_history_status::Code>,
     #[doc = "Start time of the upgrade."]
-    #[serde(rename = "startTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
     pub start_time: Option<time::OffsetDateTime>,
     #[doc = "End time of the upgrade."]
-    #[serde(rename = "endTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
     pub end_time: Option<time::OffsetDateTime>,
 }
 impl UpgradeOperationHistoryStatus {
@@ -10419,7 +10419,7 @@ pub struct VirtualMachineAssessPatchesResult {
     #[serde(rename = "otherPatchCount", default, skip_serializing_if = "Option::is_none")]
     pub other_patch_count: Option<i32>,
     #[doc = "The UTC timestamp when the operation began."]
-    #[serde(rename = "startDateTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "startDateTime", default, with = "azure_core::date::rfc3339::option")]
     pub start_date_time: Option<time::OffsetDateTime>,
     #[doc = "The list of patches that have been detected as available for installation."]
     #[serde(rename = "availablePatches", default, skip_serializing_if = "Vec::is_empty")]
@@ -10977,7 +10977,7 @@ pub struct VirtualMachineInstallPatchesResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub patches: Vec<PatchInstallationDetail>,
     #[doc = "The UTC timestamp when the operation began."]
-    #[serde(rename = "startDateTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "startDateTime", default, with = "azure_core::date::rfc3339::option")]
     pub start_date_time: Option<time::OffsetDateTime>,
     #[doc = "Api error."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -11495,7 +11495,7 @@ pub struct VirtualMachineProperties {
     #[serde(rename = "applicationProfile", default, skip_serializing_if = "Option::is_none")]
     pub application_profile: Option<ApplicationProfile>,
     #[doc = "Specifies the time at which the Virtual Machine resource was created.<br><br>Minimum api-version: 2021-11-01."]
-    #[serde(rename = "timeCreated", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "timeCreated", default, with = "azure_core::date::rfc3339::option")]
     pub time_created: Option<time::OffsetDateTime>,
 }
 impl VirtualMachineProperties {
@@ -11727,10 +11727,10 @@ pub struct VirtualMachineRunCommandInstanceView {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<String>,
     #[doc = "Script start time."]
-    #[serde(rename = "startTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
     pub start_time: Option<time::OffsetDateTime>,
     #[doc = "Script end time."]
-    #[serde(rename = "endTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
     pub end_time: Option<time::OffsetDateTime>,
     #[doc = "The resource status information."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -12687,7 +12687,7 @@ pub struct VirtualMachineScaleSetProperties {
     #[serde(rename = "spotRestorePolicy", default, skip_serializing_if = "Option::is_none")]
     pub spot_restore_policy: Option<SpotRestorePolicy>,
     #[doc = "Specifies the time at which the Virtual Machine Scale Set resource was created.<br><br>Minimum api-version: 2021-11-01."]
-    #[serde(rename = "timeCreated", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "timeCreated", default, with = "azure_core::date::rfc3339::option")]
     pub time_created: Option<time::OffsetDateTime>,
 }
 impl VirtualMachineScaleSetProperties {
@@ -13801,10 +13801,10 @@ pub struct VirtualMachineSoftwarePatchProperties {
     #[serde(rename = "activityId", default, skip_serializing_if = "Option::is_none")]
     pub activity_id: Option<String>,
     #[doc = "The UTC timestamp when the repository published this patch."]
-    #[serde(rename = "publishedDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "publishedDate", default, with = "azure_core::date::rfc3339::option")]
     pub published_date: Option<time::OffsetDateTime>,
     #[doc = "The UTC timestamp of the last update to this patch record."]
-    #[serde(rename = "lastModifiedDateTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastModifiedDateTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_modified_date_time: Option<time::OffsetDateTime>,
     #[doc = "Describes the availability of a given patch."]
     #[serde(rename = "assessmentState", default, skip_serializing_if = "Option::is_none")]
@@ -14013,7 +14013,7 @@ pub struct WindowsParameters {
     #[serde(rename = "excludeKbsRequiringReboot", default, skip_serializing_if = "Option::is_none")]
     pub exclude_kbs_requiring_reboot: Option<bool>,
     #[doc = "This is used to install patches that were published on or before this given max published date."]
-    #[serde(rename = "maxPatchPublishDate", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "maxPatchPublishDate", default, with = "azure_core::date::rfc3339::option")]
     pub max_patch_publish_date: Option<time::OffsetDateTime>,
 }
 impl WindowsParameters {

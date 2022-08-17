@@ -425,10 +425,10 @@ pub mod certificate {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub issuer: Option<String>,
         #[doc = "Certificate issue Date."]
-        #[serde(rename = "issueDate", with = "azure_core::date::rfc3339::option")]
+        #[serde(rename = "issueDate", default, with = "azure_core::date::rfc3339::option")]
         pub issue_date: Option<time::OffsetDateTime>,
         #[doc = "Certificate expiration date."]
-        #[serde(rename = "expirationDate", with = "azure_core::date::rfc3339::option")]
+        #[serde(rename = "expirationDate", default, with = "azure_core::date::rfc3339::option")]
         pub expiration_date: Option<time::OffsetDateTime>,
         #[doc = "Certificate thumbprint."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2218,7 +2218,7 @@ pub mod replica {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Properties {
         #[doc = "Timestamp describing when the pod was created by controller"]
-        #[serde(rename = "createdTime", with = "azure_core::date::rfc3339::option")]
+        #[serde(rename = "createdTime", default, with = "azure_core::date::rfc3339::option")]
         pub created_time: Option<time::OffsetDateTime>,
         #[doc = "The containers collection under a replica."]
         #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -2306,7 +2306,7 @@ pub mod revision {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Properties {
         #[doc = "Timestamp describing when the revision was created\nby controller"]
-        #[serde(rename = "createdTime", with = "azure_core::date::rfc3339::option")]
+        #[serde(rename = "createdTime", default, with = "azure_core::date::rfc3339::option")]
         pub created_time: Option<time::OffsetDateTime>,
         #[doc = "Fully qualified domain name of the revision"]
         #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2848,7 +2848,7 @@ pub struct SystemData {
     #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
-    #[serde(rename = "createdAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
     pub created_at: Option<time::OffsetDateTime>,
     #[doc = "The identity that last modified the resource."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
@@ -2857,7 +2857,7 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
-    #[serde(rename = "lastModifiedAt", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
     pub last_modified_at: Option<time::OffsetDateTime>,
 }
 impl SystemData {

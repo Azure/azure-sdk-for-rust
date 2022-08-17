@@ -393,7 +393,7 @@ pub struct DeploymentOperationProperties {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
     #[doc = "The date and time of the operation."]
-    #[serde(with = "azure_core::date::rfc3339::option")]
+    #[serde(default, with = "azure_core::date::rfc3339::option")]
     pub timestamp: Option<time::OffsetDateTime>,
     #[doc = "The duration of the operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -520,7 +520,7 @@ pub struct DeploymentPropertiesExtended {
     #[serde(rename = "correlationId", default, skip_serializing_if = "Option::is_none")]
     pub correlation_id: Option<String>,
     #[doc = "The timestamp of the template deployment."]
-    #[serde(with = "azure_core::date::rfc3339::option")]
+    #[serde(default, with = "azure_core::date::rfc3339::option")]
     pub timestamp: Option<time::OffsetDateTime>,
     #[doc = "The duration of the template deployment."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -902,10 +902,10 @@ pub struct GenericResourceExpanded {
     #[serde(flatten)]
     pub generic_resource: GenericResource,
     #[doc = "The created time of the resource. This is only present if requested via the $expand query parameter."]
-    #[serde(rename = "createdTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "createdTime", default, with = "azure_core::date::rfc3339::option")]
     pub created_time: Option<time::OffsetDateTime>,
     #[doc = "The changed time of the resource. This is only present if requested via the $expand query parameter."]
-    #[serde(rename = "changedTime", with = "azure_core::date::rfc3339::option")]
+    #[serde(rename = "changedTime", default, with = "azure_core::date::rfc3339::option")]
     pub changed_time: Option<time::OffsetDateTime>,
     #[doc = "The provisioning state of the resource. This is only present if requested via the $expand query parameter."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
