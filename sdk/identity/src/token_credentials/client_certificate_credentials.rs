@@ -3,7 +3,7 @@ use azure_core::{
     auth::{AccessToken, TokenCredential, TokenResponse},
     content_type,
     error::{Error, ErrorKind},
-    headers, new_http_client, Method, Request, StatusCode,
+    headers, new_http_client, Method, Request,
 };
 use base64::{CharacterSet, Config};
 use openssl::{
