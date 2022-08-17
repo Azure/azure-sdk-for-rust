@@ -4,11 +4,9 @@ use time::OffsetDateTime;
 #[derive(Deserialize, Debug)]
 pub(crate) struct KeyVaultCertificateBaseIdentifierAttributedRaw {
     pub enabled: bool,
-    #[serde(default)]
-    #[serde(with = "azure_core::date::timestamp::option")]
+    #[serde(default, with = "azure_core::date::timestamp::option")]
     pub exp: Option<OffsetDateTime>,
-    #[serde(default)]
-    #[serde(with = "azure_core::date::timestamp::option")]
+    #[serde(default, with = "azure_core::date::timestamp::option")]
     pub nbf: Option<OffsetDateTime>,
     #[serde(with = "azure_core::date::timestamp")]
     pub created: OffsetDateTime,
@@ -45,11 +43,9 @@ pub(crate) struct KeyVaultGetCertificateResponse {
 #[derive(Deserialize, Debug)]
 pub(crate) struct KeyVaultGetCertificateResponseAttributes {
     pub enabled: bool,
-    #[serde(default)]
-    #[serde(with = "azure_core::date::timestamp::option")]
+    #[serde(default, with = "azure_core::date::timestamp::option")]
     pub exp: Option<OffsetDateTime>,
-    #[serde(default)]
-    #[serde(with = "azure_core::date::timestamp::option")]
+    #[serde(default, with = "azure_core::date::timestamp::option")]
     pub nbf: Option<OffsetDateTime>,
     #[serde(with = "azure_core::date::timestamp")]
     pub created: OffsetDateTime,

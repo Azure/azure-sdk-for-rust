@@ -106,13 +106,12 @@ pub struct BlobProperties {
     pub creation_time: OffsetDateTime,
     #[cfg(feature = "azurite_workaround")]
     #[serde(rename = "Creation-Time")]
-    #[serde(with = "azure_core::date::rfc1123::option")]
+    #[serde(default, with = "azure_core::date::rfc1123::option")]
     pub creation_time: Option<OffsetDateTime>,
     #[serde(rename = "Last-Modified")]
     #[serde(with = "azure_core::date::rfc1123")]
     pub last_modified: OffsetDateTime,
-    #[serde(default)]
-    #[serde(with = "azure_core::date::rfc1123::option")]
+    #[serde(default, with = "azure_core::date::rfc1123::option")]
     pub last_access_time: Option<OffsetDateTime>,
     pub etag: Etag,
     #[serde(rename = "Content-Length")]
@@ -139,8 +138,7 @@ pub struct BlobProperties {
     pub blob_sequence_number: Option<u64>,
     pub blob_type: BlobType,
     pub access_tier: Option<AccessTier>,
-    #[serde(default)]
-    #[serde(with = "azure_core::date::rfc1123::option")]
+    #[serde(default, with = "azure_core::date::rfc1123::option")]
     pub access_tier_change_time: Option<OffsetDateTime>,
     pub lease_status: LeaseStatus,
     pub lease_state: LeaseState,
@@ -149,8 +147,7 @@ pub struct BlobProperties {
     pub copy_status: Option<CopyStatus>,
     pub copy_source: Option<String>,
     pub copy_progress: Option<CopyProgress>,
-    #[serde(default)]
-    #[serde(with = "azure_core::date::rfc1123::option")]
+    #[serde(default, with = "azure_core::date::rfc1123::option")]
     pub copy_completion_time: Option<OffsetDateTime>,
     pub copy_status_description: Option<String>,
     pub server_encrypted: bool,
@@ -158,15 +155,13 @@ pub struct BlobProperties {
     pub encryption_scope: Option<String>,
     pub incremental_copy: Option<bool>,
     pub access_tier_inferred: Option<bool>,
-    #[serde(default)]
-    #[serde(with = "azure_core::date::rfc1123::option")]
+    #[serde(default, with = "azure_core::date::rfc1123::option")]
     pub deleted_time: Option<OffsetDateTime>,
     pub remaining_retention_days: Option<u32>,
     pub tag_count: Option<u32>,
     pub rehydrate_priority: Option<RehydratePriority>,
-    #[serde(default)]
     #[serde(rename = "Expiry-Time")]
-    #[serde(with = "azure_core::date::rfc1123::option")]
+    #[serde(default, with = "azure_core::date::rfc1123::option")]
     pub expiry_time: Option<OffsetDateTime>,
     #[serde(flatten)]
     extra: HashMap<String, String>, // For debug purposes, should be compiled out in the future
