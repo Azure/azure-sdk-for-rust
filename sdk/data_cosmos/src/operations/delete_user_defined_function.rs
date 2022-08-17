@@ -39,7 +39,7 @@ impl DeleteUserDefinedFunctionBuilder {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct DeleteUserDefinedFunctionResponse {
-    pub content_location: String,
+    pub content_location: Option<String>,
     pub server: String,
     pub last_state_change: OffsetDateTime,
     pub resource_quota: Vec<ResourceQuota>,

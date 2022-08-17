@@ -65,7 +65,7 @@ pub type ListUserDefinedFunctions =
 pub struct ListUserDefinedFunctionsResponse {
     pub rid: String,
     pub user_defined_functions: Vec<UserDefinedFunction>,
-    pub content_location: String,
+    pub content_location: Option<String>,
     pub server: String,
     pub last_state_change: OffsetDateTime,
     pub continuation_token: Option<Continuation>,

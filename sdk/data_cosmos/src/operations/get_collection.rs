@@ -61,7 +61,7 @@ pub struct GetCollectionResponse {
     pub server: String,
     pub xp_role: u32,
     pub content_type: String,
-    pub content_location: String,
+    pub content_location: Option<String>,
     pub date: OffsetDateTime,
 }
 
