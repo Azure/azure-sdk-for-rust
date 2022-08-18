@@ -33,8 +33,7 @@ pub(crate) struct KeyVaultGetSecretResponse {
 #[derive(Deserialize, Debug)]
 pub(crate) struct KeyVaultGetSecretResponseAttributes {
     pub enabled: bool,
-    #[serde(default)]
-    #[serde(with = "azure_core::date::timestamp::option")]
+    #[serde(default, with = "azure_core::date::timestamp::option")]
     pub exp: Option<OffsetDateTime>,
     #[serde(with = "azure_core::date::timestamp")]
     pub created: OffsetDateTime,
