@@ -1,5 +1,6 @@
 use azure_core::headers::HeaderName;
 
+mod common_headers;
 pub(crate) mod from_headers;
 
 pub(crate) const HEADER_DOCUMENTDB_IS_UPSERT: HeaderName =
@@ -69,3 +70,5 @@ pub(crate) const HEADER_MAX_MEDIA_STORAGE_USAGE_MB: HeaderName =
     HeaderName::from_static("x-ms-max-media-storage-usage-mb");
 pub(crate) const HEADER_MEDIA_STORAGE_USAGE_MB: HeaderName =
     HeaderName::from_static("x-ms-media-storage-usage-mb");
+
+pub use common_headers::CommonHeaders;

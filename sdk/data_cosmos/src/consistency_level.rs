@@ -31,6 +31,21 @@ impl ConsistencyLevel {
         }
     }
 }
+macro_rules! implement_from2 {
+    ($response_type:path) => {
+        impl From<&$response_type> for ConsistencyLevel {
+            fn from(a: &$response_type) -> Self {
+                ConsistencyLevel::Session(a.common.session_token.clone())
+            }
+        }
+
+        impl From<$response_type> for ConsistencyLevel {
+            fn from(a: $response_type) -> Self {
+                ConsistencyLevel::Session(a.common.session_token.clone())
+            }
+        }
+    };
+}
 
 macro_rules! implement_from {
     ($response_type:path) => {
@@ -61,10 +76,10 @@ macro_rules! implement_from {
     };
 }
 
-implement_from!(CreateOrReplaceSlugAttachmentResponse);
-implement_from!(GetCollectionResponse);
-implement_from!(UserResponse);
-implement_from!(DeleteAttachmentResponse);
+implement_from2!(CreateOrReplaceSlugAttachmentResponse);
+implement_from2!(GetCollectionResponse);
+implement_from2!(UserResponse);
+implement_from2!(DeleteAttachmentResponse);
 implement_from!(CreateOrReplaceAttachmentResponse);
 implement_from!(ListAttachmentsResponse);
 implement_from!(GetAttachmentResponse);

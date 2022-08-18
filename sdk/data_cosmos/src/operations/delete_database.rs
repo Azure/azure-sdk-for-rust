@@ -1,7 +1,5 @@
-use crate::headers::from_headers::*;
+use crate::headers::CommonHeaders;
 use crate::prelude::*;
-use crate::ResourceQuota;
-use azure_core::headers::session_token_from_headers;
 use azure_core::Response as HttpResponse;
 
 operation! {
@@ -30,26 +28,15 @@ impl DeleteDatabaseBuilder {
 
 #[derive(Debug, Clone)]
 pub struct DeleteDatabaseResponse {
-    pub charge: f64,
-    pub activity_id: uuid::Uuid,
-    pub session_token: String,
-    pub resource_quota: Vec<ResourceQuota>,
-    pub resource_usage: Vec<ResourceQuota>,
+    pub common: CommonHeaders,
 }
 
 impl DeleteDatabaseResponse {
     pub async fn try_from(response: HttpResponse) -> azure_core::Result<Self> {
         let headers = response.headers();
 
-        let charge = request_charge_from_headers(headers)?;
-        let activity_id = activity_id_from_headers(headers)?;
-
         Ok(Self {
-            charge,
-            activity_id,
-            session_token: session_token_from_headers(headers)?,
-            resource_quota: resource_quota_from_headers(headers)?,
-            resource_usage: resource_usage_from_headers(headers)?,
+            common: CommonHeaders::try_from(headers)?,
         })
     }
 }
