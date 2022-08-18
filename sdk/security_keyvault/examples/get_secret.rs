@@ -13,6 +13,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let secret_name = env::var("SECRET_NAME").expect("Missing SECRET_NAME environment variable.");
 
     let creds = std::sync::Arc::new(ClientSecretCredential::new(
+        azure_core::new_http_client(),
         tenant_id,
         client_id,
         client_secret,

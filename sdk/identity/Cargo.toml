@@ -39,11 +39,9 @@ azure_security_keyvault = { path = "../security_keyvault", default_features = fa
 [features]
 default = ["development", "enable_reqwest"]
 enable_reqwest = [
-  "oauth2/native-tls",
   "azure_core/enable_reqwest",
 ]
 enable_reqwest_rustls = [
-  "oauth2/rustls-tls",
   "azure_core/enable_reqwest_rustls",
 ]
 development = []

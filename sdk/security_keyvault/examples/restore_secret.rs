@@ -14,6 +14,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let backup_blob = env::var("BACKUP_BLOB").expect("Missing BACKUP_BLOB environment variable.");
 
     let creds = Arc::new(ClientSecretCredential::new(
+        azure_core::new_http_client(),
         tenant_id,
         client_id,
         client_secret,

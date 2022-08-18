@@ -13,6 +13,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         env::var("KEYVAULT_URL").expect("Missing KEYVAULT_URL environment variable.");
 
     let creds = Arc::new(ClientSecretCredential::new(
+        azure_core::new_http_client(),
         tenant_id,
         client_id,
         client_secret,
