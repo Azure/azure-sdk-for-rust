@@ -91,7 +91,8 @@ impl<T: DeserializeOwned + Send> ExecuteStoredProcedureBuilder<T> {
     }
 }
 
-pub type ExecuteStoredProcedure<T> = futures::future::BoxFuture<'static, azure_core::Result<ExecuteStoredProcedureResponse<T>>>;
+pub type ExecuteStoredProcedure<T> =
+    futures::future::BoxFuture<'static, azure_core::Result<ExecuteStoredProcedureResponse<T>>>;
 
 #[cfg(feature = "into_future")]
 impl<T: DeserializeOwned + Send> std::future::IntoFuture for ExecuteStoredProcedureBuilder<T> {

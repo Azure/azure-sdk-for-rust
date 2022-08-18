@@ -61,7 +61,8 @@ impl CreateFileSystemBuilder {
     }
 }
 
-pub type CreateFileSystem = futures::future::BoxFuture<'static, azure_core::Result<CreateFileSystemResponse>>;
+pub type CreateFileSystem =
+    futures::future::BoxFuture<'static, azure_core::Result<CreateFileSystemResponse>>;
 
 #[derive(Debug, Clone)]
 pub struct CreateFileSystemResponse {
