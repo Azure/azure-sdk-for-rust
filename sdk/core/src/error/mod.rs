@@ -133,6 +133,23 @@ impl Error {
         }
     }
 
+    /// Wrap this error in additional `message`
+    pub fn context<C>(self, message: C) -> Self
+    where
+        C: Into<Cow<'static, str>>,
+    {
+        Self::full(self.kind().clone(), self, message)
+    }
+
+    /// Wrap this error in additional message
+    pub fn with_context<F, C>(self, f: F) -> Self
+    where
+        F: FnOnce() -> C,
+        C: Into<Cow<'static, str>>,
+    {
+        self.context(f())
+    }
+
     /// Get the `ErrorKind` of this `Error`
     pub fn kind(&self) -> &ErrorKind {
         match &self.context {

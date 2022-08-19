@@ -53,7 +53,7 @@ where
             let result = next[0].send(ctx, request, &next[1..]).await;
             // only start keeping track of time after the first request is made
             let start = start.get_or_insert_with(OffsetDateTime::now_utc);
-            let error = match result {
+            let last_error = match result {
                 Ok(response) if response.status().is_success() => {
                     log::trace!(
                         "Successful response. Request={:?} response={:?}",
@@ -67,13 +67,9 @@ where
                     let status = response.status();
                     let http_error = HttpError::new(response).await;
 
-                    let error = Error::full(
-                        ErrorKind::http_response(
-                            status,
-                            http_error.error_code().map(std::borrow::ToOwned::to_owned),
-                        ),
-                        http_error,
-                        format!("server returned error status which will not be retried: {status}"),
+                    let error_kind = ErrorKind::http_response(
+                        status,
+                        http_error.error_code().map(std::borrow::ToOwned::to_owned),
                     );
 
                     if !RETRY_STATUSES.contains(&status) {
@@ -82,13 +78,20 @@ where
                             status
                         );
                         // Server didn't return a status we retry on so return early
+                        let error = Error::full(
+                            error_kind,
+                            http_error,
+                            format!(
+                                "server returned error status which will not be retried: {status}"
+                            ),
+                        );
                         return Err(error);
                     }
                     log::debug!(
                         "server returned error status which requires retry: {}",
                         status
                     );
-                    error
+                    Error::new(error_kind, http_error)
                 }
                 Err(error) => {
                     if error.kind() == &ErrorKind::Io {
@@ -108,7 +111,8 @@ where
                 .try_into()
                 .unwrap_or_default();
             if self.is_expired(time_since_start, retry_count) {
-                return Err(error);
+                return Err(last_error
+                    .context("retry policy expired and the request will no longer be retried"));
             }
             retry_count += 1;
 
