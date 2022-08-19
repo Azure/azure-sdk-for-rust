@@ -73,7 +73,7 @@ where
                     );
 
                     if !RETRY_STATUSES.contains(&status) {
-                        log::error!(
+                        log::debug!(
                             "server returned error status which will not be retried: {}",
                             status
                         );
