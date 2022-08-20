@@ -37,12 +37,8 @@ pub fn parse_rfc3339(s: &str) -> crate::Result<OffsetDateTime> {
 ///
 /// 1985-04-12T23:20:50.52Z
 pub fn to_rfc3339(date: &OffsetDateTime) -> String {
-    date.replace_nanosecond(0)
-        // setting nanonsecond to 0 is also known to not panic.
-        .unwrap()
-        // known format does not panic
-        .format(&Rfc3339)
-        .unwrap()
+    // known format does not panic
+    date.format(&Rfc3339).unwrap()
 }
 
 /// RFC 1123: Requirements for Internet Hosts - Application and Support
@@ -161,7 +157,7 @@ mod tests {
 
     #[test]
     fn test_roundtrip_rfc3339() -> crate::Result<()> {
-        let s = "2019-10-12T07:20:50Z";
+        let s = "2019-10-12T07:20:50.52Z";
         let dt = parse_rfc3339(s)?;
         assert_eq!(s, to_rfc3339(&dt));
         Ok(())

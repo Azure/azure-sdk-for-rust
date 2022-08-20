@@ -10,7 +10,8 @@ pub trait SasToken {
 }
 
 pub(crate) fn format_date(d: OffsetDateTime) -> String {
-    azure_core::date::to_rfc3339(&d)
+    // replacing nanosecond with 0 is known to not panic
+    azure_core::date::to_rfc3339(&d.replace_nanosecond(0).unwrap())
 }
 
 pub(crate) fn format_form(d: String) -> String {
