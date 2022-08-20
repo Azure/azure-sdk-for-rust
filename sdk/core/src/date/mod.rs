@@ -161,7 +161,7 @@ mod tests {
 
     #[test]
     fn test_roundtrip_rfc3339() -> crate::Result<()> {
-        let s = "2019-10-12T07:20:50.52Z";
+        let s = "2019-10-12T07:20:50Z";
         let dt = parse_rfc3339(s)?;
         assert_eq!(s, to_rfc3339(&dt));
         Ok(())
