@@ -219,10 +219,10 @@ pub fn create_operations(cg: &CodeGen) -> Result<TokenStream> {
             Some(operation_code) => {
                 let OperationCode {
                     mut builder_instances,
-                    module_code,
+                    mut module_code,
                 } = code;
                 operation_code.builder_instances.append(&mut builder_instances);
-                operation_code.module_code.extend(module_code);
+                operation_code.module_code.append(&mut module_code);
             }
             None => {
                 operations_code.insert(module_name, code);
@@ -249,7 +249,7 @@ pub fn create_operations(cg: &CodeGen) -> Result<TokenStream> {
                         impl Client {
                             #builders
                         }
-                        #module_code
+                        #(#module_code)*
                     }
                 });
             }
@@ -258,7 +258,7 @@ pub fn create_operations(cg: &CodeGen) -> Result<TokenStream> {
                     impl Client {
                         #builders
                     }
-                    #module_code
+                    #(#module_code)*
                 });
             }
         }
@@ -266,9 +266,17 @@ pub fn create_operations(cg: &CodeGen) -> Result<TokenStream> {
     Ok(file)
 }
 
+struct OperationModuleCode {
+    module_name: Ident,
+    response_enum: TokenStream,
+    builder_struct_code: BuilderStructCode,
+    builder_setters_code: BuilderSettersCode,
+    fut: TokenStream,
+}
+
 struct OperationCode {
     builder_instances: Vec<BuilderInstanceCode>,
-    module_code: TokenStream,
+    module_code: Vec<OperationModuleCode>,
 }
 
 struct WebOperationGen(WebOperation);
@@ -811,29 +819,45 @@ fn create_operation_code(cg: &CodeGen, operation: &WebOperationGen) -> Result<Op
         basic_future
     };
 
-    let fname = operation.function_name()?;
-    let module_code = quote! {
-
-        pub mod #fname {
-            use super::models;
-
-            #response_enum
-
-            #builder_struct_code
-
-            impl Builder {
-                #builder_setters_code
-                #fut
-            }
-
-        }
-
+    let module_code = OperationModuleCode {
+        module_name: operation.function_name()?,
+        response_enum,
+        builder_struct_code,
+        builder_setters_code,
+        fut,
     };
 
     Ok(OperationCode {
         builder_instances: vec![builder_instance_code],
-        module_code,
+        module_code: vec![module_code],
     })
+}
+
+impl ToTokens for OperationModuleCode {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        let Self {
+            module_name,
+            response_enum,
+            builder_struct_code,
+            builder_setters_code,
+            fut,
+        } = &self;
+        tokens.extend(quote! {
+            pub mod #module_name {
+                use super::models;
+
+                #response_enum
+
+                #builder_struct_code
+
+                impl Builder {
+                    #builder_setters_code
+                    #fut
+                }
+
+            }
+        })
+    }
 }
 
 fn create_rsp_value(tp: Option<&TokenStream>) -> TokenStream {
