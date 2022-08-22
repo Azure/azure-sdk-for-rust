@@ -3,6 +3,7 @@ use crate::policies::{Policy, PolicyResult, Request};
 use crate::sleep::sleep;
 use crate::{Context, StatusCode};
 
+use async_trait::async_trait;
 use time::OffsetDateTime;
 
 use std::sync::Arc;
@@ -13,6 +14,7 @@ use std::time::Duration;
 /// All retry policies follow a similar pattern only differing in how
 /// they determine if the retry has expired and for how long they should
 /// sleep between retries.
+#[async_trait]
 pub trait RetryPolicy {
     /// Determine if no more retries should be performed.
     ///
@@ -21,11 +23,8 @@ pub trait RetryPolicy {
     /// Determine how long before the next retry should be attempted.
     fn sleep_duration(&self, retry_count: u32) -> Duration;
     /// A Future that will wait until the request can be retried.
-    fn wait(
-        &self,
-        retry_count: u32,
-    ) -> std::pin::Pin<std::boxed::Box<dyn std::future::Future<Output = ()> + Send>> {
-        Box::pin(sleep(self.sleep_duration(retry_count)))
+    async fn wait(&self, retry_count: u32) {
+        sleep(self.sleep_duration(retry_count)).await;
     }
 }
 
