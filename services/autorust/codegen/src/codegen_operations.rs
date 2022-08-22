@@ -329,6 +329,12 @@ impl WebOperationGen {
     fn produces(&self) -> Vec<&str> {
         self.0.produces.iter().map(String::as_str).collect()
     }
+
+    fn pageable(&self) -> Option<Pageable> {
+        self.0.pageable.as_ref().map(|p| Pageable {
+            next_link_name: p.next_link_name.clone(),
+        })
+    }
 }
 
 /// Creating a function name from the path and verb when an operationId is not specified.
@@ -644,12 +650,9 @@ impl ResponseCode {
                 response_type: create_response_type(rsp)?,
             });
         }
-        let pageable = operation.0.pageable.as_ref().map(|p| Pageable {
-            next_link_name: p.next_link_name.clone(),
-        });
         Ok(Self {
             status_responses,
-            pageable,
+            pageable: operation.pageable(),
         })
     }
 
