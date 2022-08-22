@@ -776,45 +776,30 @@ impl ToTokens for BuilderFutureCode {
             let status_code_name = &status_response.status_code_name;
             let response_type_name = &status_response.name;
 
-            if self.is_single_response() {
+            let status_code_code = if self.is_single_response() {
                 match response_type {
-                    Some(_) => {
-                        match_status.extend(quote! {
-                            azure_core::StatusCode::#status_code_name => {
-                                let rsp_body = rsp_stream.collect().await?;
-                                #rsp_value
-                                Ok(rsp_value)
-                            }
-                        });
-                    }
-                    None => {
-                        match_status.extend(quote! {
-                            azure_core::StatusCode::#status_code_name => {
-                                Ok(())
-                            }
-                        });
-                    }
+                    Some(_) => quote! {
+                        let rsp_body = rsp_stream.collect().await?;
+                        #rsp_value
+                        Ok(rsp_value)
+                    },
+                    None => quote! { Ok(()) },
                 }
             } else {
                 match response_type {
-                    Some(_) => {
-                        match_status.extend(quote! {
-                            azure_core::StatusCode::#status_code_name => {
-                                let rsp_body = rsp_stream.collect().await?;
-                                #rsp_value
-                                Ok(Response::#response_type_name(rsp_value))
-                            }
-                        });
-                    }
-                    None => {
-                        match_status.extend(quote! {
-                            azure_core::StatusCode::#status_code_name => {
-                                Ok(Response::#response_type_name)
-                            }
-                        });
-                    }
+                    Some(_) => quote! {
+                        let rsp_body = rsp_stream.collect().await?;
+                        #rsp_value
+                        Ok(Response::#response_type_name(rsp_value))
+                    },
+                    None => quote! { Ok(Response::#response_type_name) },
                 }
-            }
+            };
+            match_status.extend(quote! {
+                azure_core::StatusCode::#status_code_name => {
+                    #status_code_code
+                }
+            });
         }
         match_status.extend(quote! {
             status_code => {
