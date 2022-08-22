@@ -11,9 +11,12 @@ use std::time::Duration;
 
 /// A retry policy.
 ///
-/// All retry policies follow a similar pattern only differing in how
+/// In the simple form, the policies need only differ in how
 /// they determine if the retry has expired and for how long they should
 /// sleep between retries.
+///
+/// `wait` can be implemented in more complex cases where a simple test of time
+/// is not enough.
 #[async_trait]
 pub trait RetryPolicy {
     /// Determine if no more retries should be performed.
