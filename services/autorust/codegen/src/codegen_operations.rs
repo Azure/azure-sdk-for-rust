@@ -684,17 +684,15 @@ impl ToTokens for ResponseCode {
             let mut success_responses_ts = TokenStream::new();
             let mut continuation_response = TokenStream::new();
             for status_response in &self.status_responses {
-                let tp = &status_response.response_type;
-                let has_tp = tp.is_some();
-
-                let tp = match tp {
-                    Some(tp) => quote! { (#tp) },
+                let response_type = &status_response.response_type;
+                let code = match response_type {
+                    Some(response_type) => quote! { (#response_type) },
                     None => quote! {},
                 };
                 let enum_type_name = &status_response.name;
-                success_responses_ts.extend(quote! { #enum_type_name#tp, });
+                success_responses_ts.extend(quote! { #enum_type_name#code, });
 
-                if has_tp {
+                if response_type.is_some() {
                     continuation_response.extend(quote! {
                         Self::#enum_type_name(x) => x.continuation(),
                     });
@@ -772,13 +770,13 @@ impl ToTokens for BuilderFutureCode {
 
         let mut match_status = TokenStream::new();
         for status_response in &self.response_code.status_responses {
-            let tp = &status_response.response_type;
-            let rsp_value = create_rsp_value(tp.as_ref());
+            let response_type = &status_response.response_type;
+            let rsp_value = create_rsp_value(response_type.as_ref());
             let status_code_name = &status_response.status_code_name;
             let response_type_name = &status_response.name;
 
             if self.is_single_response() {
-                match tp {
+                match response_type {
                     Some(_) => {
                         match_status.extend(quote! {
                             azure_core::StatusCode::#status_code_name => {
@@ -797,7 +795,7 @@ impl ToTokens for BuilderFutureCode {
                     }
                 }
             } else {
-                match tp {
+                match response_type {
                     Some(_) => {
                         match_status.extend(quote! {
                             azure_core::StatusCode::#status_code_name => {
