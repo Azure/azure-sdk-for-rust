@@ -692,13 +692,14 @@ impl ToTokens for ResponseCode {
                 let enum_type_name = &status_response.name;
                 success_responses_ts.extend(quote! { #enum_type_name#code, });
 
-                if response_type.is_some() {
-                    continuation_response.extend(quote! {
+                let continuation = if response_type.is_some() {
+                    quote! {
                         Self::#enum_type_name(x) => x.continuation(),
-                    });
+                    }
                 } else {
-                    continuation_response.extend(quote! { Self::#enum_type_name => None, });
-                }
+                    quote! { Self::#enum_type_name => None, }
+                };
+                continuation_response.extend(continuation);
             }
             tokens.extend(quote! {
                 #[derive(Debug)]
