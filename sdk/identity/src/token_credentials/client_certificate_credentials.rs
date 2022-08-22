@@ -3,7 +3,7 @@ use azure_core::{
     auth::{AccessToken, TokenCredential, TokenResponse},
     content_type,
     error::{Error, ErrorKind},
-    headers, new_http_client, Method, Request,
+    headers, new_http_client, HttpClient, Method, Request,
 };
 use base64::{CharacterSet, Config};
 use openssl::{
@@ -15,8 +15,8 @@ use openssl::{
     x509::X509,
 };
 use serde::Deserialize;
-use std::str;
 use std::time::Duration;
+use std::{str, sync::Arc};
 use time::OffsetDateTime;
 use url::{form_urlencoded, Url};
 
@@ -84,6 +84,7 @@ pub struct ClientCertificateCredential {
     client_id: String,
     client_certificate: String,
     client_certificate_pass: String,
+    http_client: Arc<dyn HttpClient>,
     options: CertificateCredentialOptions,
 }
 
@@ -101,6 +102,7 @@ impl ClientCertificateCredential {
             client_id,
             client_certificate,
             client_certificate_pass,
+            http_client: new_http_client(),
             options,
         }
     }
@@ -138,12 +140,12 @@ struct AadTokenResponse {
 fn get_encoded_cert(cert: &X509) -> azure_core::Result<String> {
     Ok(format!(
         "\"{}\"",
-        base64::encode(cert.to_pem().map_err(|_| openssl_error())?)
+        base64::encode(cert.to_pem().map_err(openssl_error)?)
     ))
 }
 
-fn openssl_error() -> azure_core::error::Error {
-    Error::message(ErrorKind::Credential, "Openssl decode error")
+fn openssl_error(err: ErrorStack) -> azure_core::error::Error {
+    Error::new(ErrorKind::Credential, err)
 }
 
 #[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
@@ -160,12 +162,12 @@ impl TokenCredential for ClientCertificateCredential {
         let certificate = base64::decode(&self.client_certificate)
             .map_err(|_| Error::message(ErrorKind::Credential, "Base64 decode failed"))?;
         let certificate = Pkcs12::from_der(&certificate)
-            .map_err(|_| openssl_error())?
+            .map_err(openssl_error)?
             .parse(&self.client_certificate_pass)
-            .map_err(|_| openssl_error())?;
+            .map_err(openssl_error)?;
 
         let thumbprint = ClientCertificateCredential::get_thumbprint(&certificate.cert)
-            .map_err(|_| openssl_error())?;
+            .map_err(openssl_error)?;
 
         let uuid = uuid::Uuid::new_v4();
         let current_time = OffsetDateTime::now_utc().unix_timestamp();
@@ -180,7 +182,7 @@ impl TokenCredential for ClientCertificateCredential {
                         let chain = chain
                             .into_iter()
                             .map(|x| get_encoded_cert(&x))
-                            .collect::<Result<Vec<String>, azure_core::error::Error>>()?
+                            .collect::<azure_core::Result<Vec<String>>>()?
                             .join(",");
                         format! {"{},{}", base_signature, chain}
                     }
@@ -202,8 +204,8 @@ impl TokenCredential for ClientCertificateCredential {
         let payload = ClientCertificateCredential::as_jwt_part(payload.as_bytes());
 
         let jwt = format!("{}.{}", header, payload);
-        let signature = ClientCertificateCredential::sign(&jwt, &certificate.pkey)
-            .map_err(|_| openssl_error())?;
+        let signature =
+            ClientCertificateCredential::sign(&jwt, &certificate.pkey).map_err(openssl_error)?;
         let sig = ClientCertificateCredential::as_jwt_part(&signature);
         let client_assertion = format!("{}.{}", jwt, sig);
 
@@ -229,8 +231,7 @@ impl TokenCredential for ClientCertificateCredential {
         );
         req.set_body(encoded);
 
-        let http_client = new_http_client();
-        let rsp = http_client.execute_request(&req).await?;
+        let rsp = self.http_client.execute_request(&req).await?;
         let rsp_status = rsp.status();
         let rsp_body = rsp.into_body().collect().await?;
 
