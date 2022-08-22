@@ -345,13 +345,14 @@ fn create_function_name(verb: &WebVerb, path: &str) -> String {
     path.join("_")
 }
 
-struct RequestCode {
+/// Calls `azure_core::Request::new` and set the authentication.
+struct NewRequestCode {
     auth: AuthCode,
     verb: WebVerb,
     path: String,
 }
 
-impl ToTokens for RequestCode {
+impl ToTokens for NewRequestCode {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         let auth = &self.auth;
         let verb = verb_to_tokens(&self.verb);
@@ -362,8 +363,10 @@ impl ToTokens for RequestCode {
     }
 }
 
-// Only bearer token authentication is supported right now.
+/// Sets the authentication.
+/// Only bearer token authentication is supported right now.
 struct AuthCode {}
+
 impl ToTokens for AuthCode {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         tokens.extend(quote! {
@@ -388,12 +391,13 @@ fn verb_to_tokens(verb: &WebVerb) -> TokenStream {
     }
 }
 
-struct BuildRequestParamsCode {
+/// Sets all of the request parameters.
+struct SetRequestParamsCode {
     content_type: String,
     params: FunctionParams,
 }
 
-impl ToTokens for BuildRequestParamsCode {
+impl ToTokens for SetRequestParamsCode {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         for param in self.params.params() {
             let FunctionParam {
@@ -538,7 +542,7 @@ fn create_operation_code(cg: &CodeGen, operation: &WebOperationGen) -> Result<Op
     let verb = operation.0.verb.clone();
     let is_post = verb == WebVerb::Post;
     let auth = AuthCode {};
-    let new_request_code = RequestCode {
+    let new_request_code = NewRequestCode {
         verb,
         auth,
         path: operation.0.path.clone(),
@@ -549,7 +553,7 @@ fn create_operation_code(cg: &CodeGen, operation: &WebOperationGen) -> Result<Op
         .pick_consumes()
         .unwrap_or_else(|| cg.spec.pick_consumes().unwrap_or(content_type::APPLICATION_JSON))
         .to_string();
-    let request_builder = RequestBuilderCode {
+    let request_builder = SetRequestCode {
         has_param_api_version: parameters.has_api_version,
         api_version: operation.api_version().to_string(),
         consumes,
@@ -557,13 +561,13 @@ fn create_operation_code(cg: &CodeGen, operation: &WebOperationGen) -> Result<Op
         has_body_parameter: operation.0.has_body_parameter(),
         is_post,
     };
-    let in_group = operation.0.in_group();
-    let builder_instance_code = BuilderInstanceCode::new(operation, &parameters, in_group)?;
-    let builder_struct_code = BuilderStructCode::new(&parameters, in_group);
+    let in_operation_group = operation.0.in_group();
+    let builder_instance_code = BuilderInstanceCode::new(operation, &parameters, in_operation_group)?;
+    let builder_struct_code = BuilderStructCode::new(&parameters, in_operation_group);
     let builder_setters_code = BuilderSettersCode::new(&parameters);
     let response_code = ResponseCode::new(operation)?;
     let long_running_operation = operation.0.long_running_operation;
-    let builder_future_code = BuilderFutureCode::new(request_builder, new_request_code, response_code.clone(), long_running_operation)?;
+    let builder_future_code = BuilderFutureCode::new(new_request_code, request_builder, response_code.clone(), long_running_operation)?;
 
     let module_code = OperationModuleCode {
         module_name: operation.function_name()?,
@@ -579,7 +583,8 @@ fn create_operation_code(cg: &CodeGen, operation: &WebOperationGen) -> Result<Op
     })
 }
 
-struct RequestBuilderCode {
+/// Set all body and parameters for the request.
+struct SetRequestCode {
     has_param_api_version: bool,
     api_version: String,
     consumes: String,
@@ -588,7 +593,7 @@ struct RequestBuilderCode {
     is_post: bool,
 }
 
-impl ToTokens for RequestBuilderCode {
+impl ToTokens for SetRequestCode {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         // api-version param
         if self.has_param_api_version {
@@ -599,7 +604,7 @@ impl ToTokens for RequestBuilderCode {
         }
 
         // params
-        let build_request_params = BuildRequestParamsCode {
+        let build_request_params = SetRequestParamsCode {
             content_type: self.consumes.clone(),
             params: self.parameters.clone(),
         };
@@ -620,6 +625,8 @@ impl ToTokens for RequestBuilderCode {
     }
 }
 
+/// The response for an operation.
+/// An operation may have multiple valid status codes.
 #[derive(Clone)]
 struct ResponseCode {
     status_responses: Vec<StatusResponseCode>,
@@ -631,6 +638,7 @@ struct Pageable {
     next_link_name: Option<String>,
 }
 
+/// A single status code response of an operation.
 #[derive(Clone)]
 struct StatusResponseCode {
     name: Ident,
@@ -717,9 +725,10 @@ impl ToTokens for ResponseCode {
     }
 }
 
+/// The `into_future` function of the request builder.
 struct BuilderFutureCode {
-    request_builder: RequestBuilderCode,
-    new_request_code: RequestCode,
+    new_request_code: NewRequestCode,
+    request_builder: SetRequestCode,
     response_code: ResponseCode,
     url_args: Vec<Ident>,
     long_running_operation: bool,
@@ -727,8 +736,8 @@ struct BuilderFutureCode {
 
 impl BuilderFutureCode {
     fn new(
-        request_builder: RequestBuilderCode,
-        new_request_code: RequestCode,
+        new_request_code: NewRequestCode,
+        request_builder: SetRequestCode,
         response_code: ResponseCode,
         long_running_operation: bool,
     ) -> Result<Self> {
@@ -736,8 +745,8 @@ impl BuilderFutureCode {
         let url_args: Result<Vec<_>> = params.iter().map(|s| s.to_snake_case_ident()).collect();
         let url_args = url_args?;
         Ok(Self {
-            request_builder,
             new_request_code,
+            request_builder,
             response_code,
             url_args,
             long_running_operation,
@@ -754,13 +763,9 @@ impl ToTokens for BuilderFutureCode {
         let new_request_code = &self.new_request_code;
         let request_builder = &self.request_builder;
 
-        let url_args: Vec<_> = self
-            .url_args
-            .iter()
-            .map(|url_arg| {
-                quote! { &this.#url_arg }
-            })
-            .collect();
+        let url_args = self.url_args.iter().map(|url_arg| {
+            quote! { &this.#url_arg }
+        });
         let url_str_args = quote! { #(#url_args),* };
 
         let fpath = format!("{{}}{}", &format_path(&new_request_code.path));
@@ -1084,6 +1089,7 @@ impl ToTokens for FunctionCallParamsCode {
     }
 }
 
+/// Create the client function that produces the request builder instance.
 #[derive(Clone)]
 struct BuilderInstanceCode {
     summary: Option<String>,
@@ -1186,17 +1192,18 @@ impl ToTokens for BuilderInstanceCode {
     }
 }
 
+/// The request builder struct type, not the impl.
 #[derive(Clone)]
 struct BuilderStructCode {
     parameters: FunctionParams,
-    in_group: bool,
+    in_operation_group: bool,
 }
 
 impl BuilderStructCode {
-    fn new(parameters: &FunctionParams, in_group: bool) -> Self {
+    fn new(parameters: &FunctionParams, in_operation_group: bool) -> Self {
         Self {
             parameters: parameters.clone(),
-            in_group,
+            in_operation_group,
         }
     }
 }
@@ -1204,7 +1211,7 @@ impl BuilderStructCode {
 impl ToTokens for BuilderStructCode {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         let mut params: Vec<TokenStream> = Vec::new();
-        if self.in_group {
+        if self.in_operation_group {
             params.push(quote! { pub(crate) client: super::super::Client });
         } else {
             params.push(quote! { pub(crate) client: super::Client });
@@ -1234,6 +1241,7 @@ impl ToTokens for BuilderStructCode {
     }
 }
 
+/// The setter functions for the request builder.
 #[derive(Clone)]
 struct BuilderSettersCode {
     parameters: FunctionParams,
