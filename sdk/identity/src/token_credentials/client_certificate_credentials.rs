@@ -145,7 +145,7 @@ fn get_encoded_cert(cert: &X509) -> azure_core::Result<String> {
 }
 
 fn openssl_error(err: ErrorStack) -> azure_core::error::Error {
-    Error::new(ErrorKind::DataConversion, err)
+    Error::new(ErrorKind::Credential, err)
 }
 
 #[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
