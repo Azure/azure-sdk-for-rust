@@ -714,7 +714,6 @@ impl ToTokens for ResponseCode {
     }
 }
 
-/// Code to execute the HTTP request when
 struct BuilderFutureCode {
     request_builder: RequestBuilderCode,
     new_request_code: RequestCode,
