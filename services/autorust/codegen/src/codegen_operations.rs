@@ -650,8 +650,7 @@ impl ResponseCode {
     fn new(operation: &WebOperationGen) -> Result<Self> {
         let mut status_responses = Vec::new();
         let responses = &operation.0.responses;
-        let success_responses = get_success_responses(responses);
-        for (status_code, rsp) in &success_responses {
+        for (status_code, rsp) in &get_success_responses(responses) {
             status_responses.push(StatusResponseCode {
                 name: get_response_type_ident(status_code)?,
                 status_code_name: get_status_code_ident(status_code)?,
