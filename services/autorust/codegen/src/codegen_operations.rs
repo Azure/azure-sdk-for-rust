@@ -1090,12 +1090,11 @@ struct BuilderInstanceCode {
     description: Option<String>,
     fname: Ident,
     parameters: FunctionParams,
-    /// If in an operation group
-    in_group: bool,
+    in_operation_group: bool,
 }
 
 impl BuilderInstanceCode {
-    fn new(operation: &WebOperationGen, parameters: &FunctionParams, in_group: bool) -> Result<Self> {
+    fn new(operation: &WebOperationGen, parameters: &FunctionParams, in_operation_group: bool) -> Result<Self> {
         let fname = operation.function_name()?;
         let summary = operation.0.summary.clone();
         let description = operation.0.description.clone();
@@ -1104,7 +1103,7 @@ impl BuilderInstanceCode {
             description,
             fname,
             parameters: parameters.clone(),
-            in_group,
+            in_operation_group,
         })
     }
 }
@@ -1112,7 +1111,7 @@ impl BuilderInstanceCode {
 impl ToTokens for BuilderInstanceCode {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         let mut params: Vec<TokenStream> = Vec::new();
-        if self.in_group {
+        if self.in_operation_group {
             params.push(quote! { client: self.0.clone() });
         } else {
             params.push(quote! { client: self.clone() });
