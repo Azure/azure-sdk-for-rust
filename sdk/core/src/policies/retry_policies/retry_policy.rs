@@ -20,6 +20,13 @@ pub trait RetryPolicy {
     fn is_expired(&self, duration_since_start: Duration, retry_count: u32) -> bool;
     /// Determine how long before the next retry should be attempted.
     fn sleep_duration(&self, retry_count: u32) -> Duration;
+    /// A Future that will wait until the request can be retried.
+    fn wait(
+        &self,
+        retry_count: u32,
+    ) -> std::pin::Pin<std::boxed::Box<dyn std::future::Future<Output = ()> + Send>> {
+        Box::pin(sleep(self.sleep_duration(retry_count)))
+    }
 }
 
 /// The status codes where a retry should be attempted.
@@ -116,7 +123,7 @@ where
             }
             retry_count += 1;
 
-            sleep(self.sleep_duration(retry_count)).await;
+            self.wait(retry_count).await;
         }
     }
 }
