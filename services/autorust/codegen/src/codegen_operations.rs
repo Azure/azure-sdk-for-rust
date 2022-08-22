@@ -14,7 +14,7 @@ use heck::ToSnakeCase;
 use indexmap::IndexMap;
 use proc_macro2::{Ident, TokenStream};
 use quote::{quote, ToTokens};
-use std::collections::{BTreeSet, HashSet};
+use std::collections::BTreeSet;
 
 pub mod query_param {
     pub const API_VERSION: &str = "api-version";
@@ -1017,14 +1017,13 @@ struct FunctionParams {
 impl FunctionParams {
     fn new(operation: &WebOperationGen) -> Result<Self> {
         let parameters = operation.0.parameters();
-        let param_names: HashSet<_> = parameters.iter().map(|p| p.name()).collect();
-        let has_api_version = param_names.contains(query_param::API_VERSION);
+        let has_api_version = parameters.iter().any(|p| p.name() == query_param::API_VERSION);
         let mut skip = parse_query_params(&operation.0.path)?;
         skip.insert(query_param::API_VERSION.to_string());
         let parameters: Vec<&WebParameter> = parameters.clone().into_iter().filter(|p| !skip.contains(p.name())).collect();
 
         let mut params = Vec::new();
-        for param in parameters.iter() {
+        for param in parameters.iter().filter(|p| !skip.contains(p.name())) {
             let name = param.name().to_owned();
             let description = param.description().clone();
             let variable_name = name.to_snake_case_ident()?;
