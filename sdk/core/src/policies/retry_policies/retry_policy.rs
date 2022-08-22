@@ -26,7 +26,7 @@ pub trait RetryPolicy {
     /// Determine how long before the next retry should be attempted.
     fn sleep_duration(&self, retry_count: u32) -> Duration;
     /// A Future that will wait until the request can be retried.
-    /// `error` is the [`Error`] value the led a retry attempt.
+    /// `error` is the [`Error`] value the led to a retry attempt.
     async fn wait(&self, _error: &Error, retry_count: u32) {
         sleep(self.sleep_duration(retry_count)).await;
     }
