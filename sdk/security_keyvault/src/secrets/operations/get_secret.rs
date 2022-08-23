@@ -16,7 +16,6 @@ impl GetSecretBuilder {
             uri.set_path(&format!("secrets/{}/{}", self.name, version));
             let headers = Headers::new();
 
-            println!("uri: {}", uri);
             let mut request =
                 self.client
                     .client
