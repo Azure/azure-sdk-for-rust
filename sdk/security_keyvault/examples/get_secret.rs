@@ -19,8 +19,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let mut versions = client.get_versions(&secret_name).into_stream();
     while let Some(version) = versions.next().await {
-        let version = version?;
-        println!("{:?}", version);
+        println!("{:?}", version?);
     }
 
     let secret = client.get(secret_name).into_future().await?;

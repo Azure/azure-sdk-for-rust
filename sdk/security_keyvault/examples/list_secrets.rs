@@ -18,8 +18,7 @@ async fn main() -> azure_core::Result<()> {
 
     let mut stream = client.list_secrets().into_stream();
     while let Some(response) = stream.next().await {
-        let response = response?;
-        dbg!(&response);
+        dbg!(&response?);
     }
 
     Ok(())
