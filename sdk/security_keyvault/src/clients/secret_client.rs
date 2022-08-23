@@ -4,7 +4,7 @@ use std::sync::Arc;
 
 #[derive(Clone, Debug)]
 pub struct SecretClient {
-    pub(crate) client: KeyvaultClient,
+    pub(crate) keyvault_client: KeyvaultClient,
 }
 
 impl SecretClient {
@@ -12,12 +12,12 @@ impl SecretClient {
         vault_url: &str,
         token_credential: Arc<dyn TokenCredential>,
     ) -> azure_core::Result<Self> {
-        let client = KeyvaultClient::new(vault_url, token_credential)?;
-        Ok(Self { client })
+        let keyvault_client = KeyvaultClient::new(vault_url, token_credential)?;
+        Ok(Self::new_with_client(keyvault_client))
     }
 
-    pub(crate) fn new_with_client(client: KeyvaultClient) -> Self {
-        Self { client }
+    pub(crate) fn new_with_client(keyvault_client: KeyvaultClient) -> Self {
+        Self { keyvault_client }
     }
 
     /// Gets a secret from the Key Vault.

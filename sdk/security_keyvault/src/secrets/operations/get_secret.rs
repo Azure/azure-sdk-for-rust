@@ -11,19 +11,19 @@ operation! {
 impl GetSecretBuilder {
     pub fn into_future(mut self) -> GetSecret {
         Box::pin(async move {
-            let mut uri = self.client.client.vault_url.clone();
+            let mut uri = self.client.keyvault_client.vault_url.clone();
             let version = self.version.unwrap_or_default();
             uri.set_path(&format!("secrets/{}/{}", self.name, version));
             let headers = Headers::new();
 
             let mut request =
                 self.client
-                    .client
+                    .keyvault_client
                     .finalize_request(uri, Method::Get, headers, None)?;
 
             let response = self
                 .client
-                .client
+                .keyvault_client
                 .send(&mut self.context, &mut request)
                 .await?;
 

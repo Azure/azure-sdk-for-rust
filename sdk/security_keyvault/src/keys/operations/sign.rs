@@ -16,7 +16,7 @@ impl SignBuilder {
         Box::pin(async move {
             // POST {vaultBaseUrl}/keys/{key-name}/{key-version}/sign?api-version=7.1
             let version = self.version.unwrap_or_default();
-            let mut uri = self.client.client.vault_url.clone();
+            let mut uri = self.client.keyvault_client.vault_url.clone();
             uri.set_path(&format!("keys/{}/{}/sign", self.name, version));
 
             let mut request_body = Map::new();
@@ -24,7 +24,7 @@ impl SignBuilder {
             request_body.insert("value".to_owned(), Value::String(self.digest.to_owned()));
 
             let headers = Headers::new();
-            let mut request = self.client.client.finalize_request(
+            let mut request = self.client.keyvault_client.finalize_request(
                 uri,
                 Method::Post,
                 headers,
@@ -33,7 +33,7 @@ impl SignBuilder {
 
             let response = self
                 .client
-                .client
+                .keyvault_client
                 .send(&mut self.context, &mut request)
                 .await?;
 

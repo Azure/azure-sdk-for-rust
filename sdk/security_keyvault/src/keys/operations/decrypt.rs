@@ -15,7 +15,7 @@ impl DecryptBuilder {
         Box::pin(async move {
             // POST {vaultBaseUrl}/keys/{key-name}/{key-version}/decrypt?api-version=7.2
             let version = self.version.unwrap_or_default();
-            let mut uri = self.client.client.vault_url.clone();
+            let mut uri = self.client.keyvault_client.vault_url.clone();
             let path = format!("keys/{}/{}/decrypt", self.name, version);
 
             uri.set_path(&path);
@@ -59,7 +59,7 @@ impl DecryptBuilder {
             };
 
             let headers = Headers::new();
-            let mut request = self.client.client.finalize_request(
+            let mut request = self.client.keyvault_client.finalize_request(
                 uri,
                 Method::Post,
                 headers,
@@ -68,7 +68,7 @@ impl DecryptBuilder {
 
             let response = self
                 .client
-                .client
+                .keyvault_client
                 .send(&mut self.context, &mut request)
                 .await?;
 

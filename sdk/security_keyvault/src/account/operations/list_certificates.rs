@@ -16,7 +16,7 @@ impl ListCertificatesBuilder {
             let this = self.clone();
             let mut ctx = self.context.clone();
             async move {
-                let mut uri = this.client.client.vault_url.clone();
+                let mut uri = this.client.keyvault_client.vault_url.clone();
                 uri.set_path("certificates");
 
                 if let Some(continuation) = continuation {
@@ -24,12 +24,18 @@ impl ListCertificatesBuilder {
                 }
 
                 let headers = Headers::new();
-                let mut request =
-                    this.client
-                        .client
-                        .finalize_request(uri, Method::Get, headers, None)?;
+                let mut request = this.client.keyvault_client.finalize_request(
+                    uri,
+                    Method::Get,
+                    headers,
+                    None,
+                )?;
 
-                let response = this.client.client.send(&mut ctx, &mut request).await?;
+                let response = this
+                    .client
+                    .keyvault_client
+                    .send(&mut ctx, &mut request)
+                    .await?;
 
                 let response = CollectedResponse::from_response(response).await?;
                 let body = response.body();

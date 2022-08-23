@@ -10,14 +10,14 @@ operation! {
 impl RestoreCertificateBuilder {
     pub fn into_future(mut self) -> RestoreCertificate {
         Box::pin(async move {
-            let mut uri = self.client.client.vault_url.clone();
+            let mut uri = self.client.keyvault_client.vault_url.clone();
             uri.set_path("certificates/restore");
 
             let mut request_body = serde_json::Map::new();
             request_body.insert("value".to_owned(), self.backup_blob.into());
 
             let headers = Headers::new();
-            let mut request = self.client.client.finalize_request(
+            let mut request = self.client.keyvault_client.finalize_request(
                 uri,
                 Method::Post,
                 headers,
@@ -25,7 +25,7 @@ impl RestoreCertificateBuilder {
             )?;
 
             self.client
-                .client
+                .keyvault_client
                 .send(&mut self.context, &mut request)
                 .await?;
 
