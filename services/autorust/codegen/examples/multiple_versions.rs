@@ -24,26 +24,35 @@ fn check(readmes: &[SpecReadme]) -> Result<()> {
             let input_files = io::join_several(readme_path, &tag.input_files())?;
             match Spec::read_files(&input_files) {
                 Ok(spec) => {
-                    let versions = spec.api_versions();
-                    if versions.len() > 1 {
-                        println!("{} {}", readme.spec(), &tag.name());
-                        for version in versions {
-                            println!("  {}", version);
+                    for operation in spec.operations()? {
+                        let respones = autorust_codegen::status_codes::get_success_responses(&operation.responses);
+                        if respones.len() > 1 {
+                            let mut codes: Vec<_> = respones.into_iter().map(|(sc, rsp)| sc).collect();
+                            codes.sort();
+                            // println!("{} {} {:?}", readme.spec(), &tag.name(), codes);
+                            services.insert(codes);
                         }
-                        tags += 1;
-                        services.insert(readme.spec());
                     }
+                    // let versions = spec.api_versions();
+                    // if versions.len() > 1 {
+                    //     println!("{} {}", readme.spec(), &tag.name());
+                    //     for version in versions {
+                    //         println!("  {}", version);
+                    //     }
+                    //     tags += 1;
+                    //     services.insert(readme.spec());
+                    // }
                 }
                 // Err(err) => println!("Error {}", err),
                 Err(_err) => {}
             }
         }
     }
-    println!();
-    println!("{} tags", tags);
+    // println!();
+    // println!("{} tags", tags);
     println!("{} services:", services.len());
     for service in services {
-        println!("  {}", service);
+        println!("  {:?}", service);
     }
     Ok(())
 }

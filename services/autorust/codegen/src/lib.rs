@@ -14,7 +14,7 @@ pub mod jinja;
 pub mod lib_rs;
 pub mod readme_md;
 pub mod spec;
-mod status_codes;
+pub mod status_codes;
 use autorust_toml::PackageConfig;
 use camino::{Utf8Path, Utf8PathBuf};
 use config_parser::Configuration;
