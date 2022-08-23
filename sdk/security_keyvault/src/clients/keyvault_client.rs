@@ -27,7 +27,6 @@ const API_VERSION_PARAM: &str = formatcp!("api-version={}", API_VERSION);
 #[derive(Clone)]
 pub struct KeyvaultClient {
     pub(crate) vault_url: Url,
-    pub(crate) endpoint: String,
     pub(crate) pipeline: Pipeline,
 }
 
@@ -35,7 +34,6 @@ impl std::fmt::Debug for KeyvaultClient {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("KeyvaultClient")
             .field("vault_url", &self.vault_url)
-            .field("endpoint", &self.endpoint)
             .finish_non_exhaustive()
     }
 }
@@ -61,7 +59,6 @@ impl KeyvaultClient {
         let pipeline = new_pipeline_from_options(token_credential.clone(), endpoint.clone());
         let client = Self {
             vault_url,
-            endpoint,
             pipeline,
         };
         Ok(client)
