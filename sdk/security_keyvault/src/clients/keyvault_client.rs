@@ -56,7 +56,7 @@ impl KeyvaultClient {
     ) -> azure_core::Result<Self> {
         let vault_url = Url::parse(vault_url)?;
         let endpoint = extract_endpoint(&vault_url)?;
-        let pipeline = new_pipeline_from_options(token_credential.clone(), endpoint.clone());
+        let pipeline = new_pipeline_from_options(token_credential.clone(), endpoint);
         let client = Self {
             vault_url,
             pipeline,
