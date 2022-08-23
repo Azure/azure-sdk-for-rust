@@ -101,8 +101,9 @@ where
                         );
                         error
                     } else {
-                        log::debug!("non-io error occurred which will not be retried: {}", error);
-                        return Err(error);
+                        return Err(
+                            error.context("non-io error occurred which will not be retried")
+                        );
                     }
                 }
             };
