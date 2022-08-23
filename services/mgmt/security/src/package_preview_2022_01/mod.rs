@@ -133,8 +133,8 @@ pub mod governance_rule {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: Azure subscription ID"]
-        pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
-            list::Builder {
+        pub fn list(&self, subscription_id: impl Into<String>) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
@@ -144,11 +144,11 @@ pub mod governance_rule {
         use super::models;
         type Response = models::GovernanceRuleList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -224,8 +224,8 @@ pub mod governance_rules {
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: Azure subscription ID"]
         #[doc = "* `rule_id`: The security GovernanceRule key - unique key for the standard GovernanceRule"]
-        pub fn get(&self, subscription_id: impl Into<String>, rule_id: impl Into<String>) -> get::Builder {
-            get::Builder {
+        pub fn get(&self, subscription_id: impl Into<String>, rule_id: impl Into<String>) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 rule_id: rule_id.into(),
@@ -242,8 +242,8 @@ pub mod governance_rules {
             subscription_id: impl Into<String>,
             rule_id: impl Into<String>,
             governance_rule: impl Into<models::GovernanceRule>,
-        ) -> create_or_update::Builder {
-            create_or_update::Builder {
+        ) -> create_or_update::RequestBuilder {
+            create_or_update::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 rule_id: rule_id.into(),
@@ -255,8 +255,8 @@ pub mod governance_rules {
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: Azure subscription ID"]
         #[doc = "* `rule_id`: The security GovernanceRule key - unique key for the standard GovernanceRule"]
-        pub fn delete(&self, subscription_id: impl Into<String>, rule_id: impl Into<String>) -> delete::Builder {
-            delete::Builder {
+        pub fn delete(&self, subscription_id: impl Into<String>, rule_id: impl Into<String>) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 rule_id: rule_id.into(),
@@ -271,8 +271,8 @@ pub mod governance_rules {
             &self,
             subscription_id: impl Into<String>,
             rule_id: impl Into<String>,
-        ) -> rule_id_execute_single_subscription::Builder {
-            rule_id_execute_single_subscription::Builder {
+        ) -> rule_id_execute_single_subscription::RequestBuilder {
+            rule_id_execute_single_subscription::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 rule_id: rule_id.into(),
@@ -292,8 +292,8 @@ pub mod governance_rules {
             resource_group_name: impl Into<String>,
             security_connector_name: impl Into<String>,
             rule_id: impl Into<String>,
-        ) -> rule_id_execute_single_security_connector::Builder {
-            rule_id_execute_single_security_connector::Builder {
+        ) -> rule_id_execute_single_security_connector::RequestBuilder {
+            rule_id_execute_single_security_connector::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -307,12 +307,12 @@ pub mod governance_rules {
         use super::models;
         type Response = models::GovernanceRule;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) rule_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -361,13 +361,13 @@ pub mod governance_rules {
             Ok200(models::GovernanceRule),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) rule_id: String,
             pub(crate) governance_rule: models::GovernanceRule,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -422,12 +422,12 @@ pub mod governance_rules {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) rule_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -469,13 +469,13 @@ pub mod governance_rules {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) rule_id: String,
             pub(crate) execute_governance_rule_params: Option<models::ExecuteGovernanceRuleParams>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "GovernanceRule over a subscription scope"]
             pub fn execute_governance_rule_params(
                 mut self,
@@ -530,7 +530,7 @@ pub mod governance_rules {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -538,7 +538,7 @@ pub mod governance_rules {
             pub(crate) rule_id: String,
             pub(crate) execute_governance_rule_params: Option<models::ExecuteGovernanceRuleParams>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "GovernanceRule over a subscription scope"]
             pub fn execute_governance_rule_params(
                 mut self,
@@ -600,8 +600,8 @@ pub mod security_connector_governance_rule {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             security_connector_name: impl Into<String>,
-        ) -> list::Builder {
-            list::Builder {
+        ) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -613,13 +613,13 @@ pub mod security_connector_governance_rule {
         use super::models;
         type Response = models::GovernanceRuleList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) security_connector_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -699,8 +699,8 @@ pub mod security_connector_governance_rules {
             resource_group_name: impl Into<String>,
             security_connector_name: impl Into<String>,
             rule_id: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -723,8 +723,8 @@ pub mod security_connector_governance_rules {
             security_connector_name: impl Into<String>,
             rule_id: impl Into<String>,
             governance_rule: impl Into<models::GovernanceRule>,
-        ) -> create_or_update::Builder {
-            create_or_update::Builder {
+        ) -> create_or_update::RequestBuilder {
+            create_or_update::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -746,8 +746,8 @@ pub mod security_connector_governance_rules {
             resource_group_name: impl Into<String>,
             security_connector_name: impl Into<String>,
             rule_id: impl Into<String>,
-        ) -> delete::Builder {
-            delete::Builder {
+        ) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -760,14 +760,14 @@ pub mod security_connector_governance_rules {
         use super::models;
         type Response = models::GovernanceRule;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) security_connector_name: String,
             pub(crate) rule_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -811,7 +811,7 @@ pub mod security_connector_governance_rules {
             Ok200(models::GovernanceRule),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -819,7 +819,7 @@ pub mod security_connector_governance_rules {
             pub(crate) rule_id: String,
             pub(crate) governance_rule: models::GovernanceRule,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -869,14 +869,14 @@ pub mod security_connector_governance_rules {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) security_connector_name: String,
             pub(crate) rule_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -920,8 +920,13 @@ pub mod subscription_governance_rules_execute_status {
         #[doc = "* `subscription_id`: Azure subscription ID"]
         #[doc = "* `rule_id`: The security GovernanceRule key - unique key for the standard GovernanceRule"]
         #[doc = "* `operation_id`: The security GovernanceRule execution key - unique key for the execution of GovernanceRule"]
-        pub fn get(&self, subscription_id: impl Into<String>, rule_id: impl Into<String>, operation_id: impl Into<String>) -> get::Builder {
-            get::Builder {
+        pub fn get(
+            &self,
+            subscription_id: impl Into<String>,
+            rule_id: impl Into<String>,
+            operation_id: impl Into<String>,
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 rule_id: rule_id.into(),
@@ -937,13 +942,13 @@ pub mod subscription_governance_rules_execute_status {
             Accepted202,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) rule_id: String,
             pub(crate) operation_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -1007,8 +1012,8 @@ pub mod security_connector_governance_rules_execute_status {
             security_connector_name: impl Into<String>,
             rule_id: impl Into<String>,
             operation_id: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -1026,7 +1031,7 @@ pub mod security_connector_governance_rules_execute_status {
             Accepted202,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -1034,7 +1039,7 @@ pub mod security_connector_governance_rules_execute_status {
             pub(crate) rule_id: String,
             pub(crate) operation_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -1082,8 +1087,8 @@ pub mod governance_assignments {
         #[doc = "Arguments:"]
         #[doc = "* `scope`: Scope of the query, can be subscription (/subscriptions/0b06d9ea-afe6-4779-bd59-30e5c2d9d13f) or management group (/providers/Microsoft.Management/managementGroups/mgName)."]
         #[doc = "* `assessment_name`: The Assessment Key - Unique key for the assessment type"]
-        pub fn list(&self, scope: impl Into<String>, assessment_name: impl Into<String>) -> list::Builder {
-            list::Builder {
+        pub fn list(&self, scope: impl Into<String>, assessment_name: impl Into<String>) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 scope: scope.into(),
                 assessment_name: assessment_name.into(),
@@ -1095,8 +1100,13 @@ pub mod governance_assignments {
         #[doc = "* `scope`: Scope of the query, can be subscription (/subscriptions/0b06d9ea-afe6-4779-bd59-30e5c2d9d13f) or management group (/providers/Microsoft.Management/managementGroups/mgName)."]
         #[doc = "* `assessment_name`: The Assessment Key - Unique key for the assessment type"]
         #[doc = "* `assignment_key`: The security governance assignment key - the assessment key of the required governance assignment"]
-        pub fn get(&self, scope: impl Into<String>, assessment_name: impl Into<String>, assignment_key: impl Into<String>) -> get::Builder {
-            get::Builder {
+        pub fn get(
+            &self,
+            scope: impl Into<String>,
+            assessment_name: impl Into<String>,
+            assignment_key: impl Into<String>,
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 scope: scope.into(),
                 assessment_name: assessment_name.into(),
@@ -1116,8 +1126,8 @@ pub mod governance_assignments {
             assessment_name: impl Into<String>,
             assignment_key: impl Into<String>,
             governance_assignment: impl Into<models::GovernanceAssignment>,
-        ) -> create_or_update::Builder {
-            create_or_update::Builder {
+        ) -> create_or_update::RequestBuilder {
+            create_or_update::RequestBuilder {
                 client: self.0.clone(),
                 scope: scope.into(),
                 assessment_name: assessment_name.into(),
@@ -1136,8 +1146,8 @@ pub mod governance_assignments {
             scope: impl Into<String>,
             assessment_name: impl Into<String>,
             assignment_key: impl Into<String>,
-        ) -> delete::Builder {
-            delete::Builder {
+        ) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 scope: scope.into(),
                 assessment_name: assessment_name.into(),
@@ -1149,12 +1159,12 @@ pub mod governance_assignments {
         use super::models;
         type Response = models::GovernanceAssignmentsList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) scope: String,
             pub(crate) assessment_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -1225,13 +1235,13 @@ pub mod governance_assignments {
         use super::models;
         type Response = models::GovernanceAssignment;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) scope: String,
             pub(crate) assessment_name: String,
             pub(crate) assignment_key: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1281,14 +1291,14 @@ pub mod governance_assignments {
             Created201(models::GovernanceAssignment),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) scope: String,
             pub(crate) assessment_name: String,
             pub(crate) assignment_key: String,
             pub(crate) governance_assignment: models::GovernanceAssignment,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1344,13 +1354,13 @@ pub mod governance_assignments {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) scope: String,
             pub(crate) assessment_name: String,
             pub(crate) assignment_key: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();

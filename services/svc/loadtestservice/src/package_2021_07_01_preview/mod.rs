@@ -127,8 +127,8 @@ pub mod app_component {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `name`: Unique identifier for app component name, must be a valid URL character ^[a-z0-9_-]*$"]
-        pub fn get_app_component_by_name(&self, name: impl Into<String>) -> get_app_component_by_name::Builder {
-            get_app_component_by_name::Builder {
+        pub fn get_app_component_by_name(&self, name: impl Into<String>) -> get_app_component_by_name::RequestBuilder {
+            get_app_component_by_name::RequestBuilder {
                 client: self.0.clone(),
                 name: name.into(),
             }
@@ -142,8 +142,8 @@ pub mod app_component {
             &self,
             name: impl Into<String>,
             body: impl Into<models::AppComponentsMap>,
-        ) -> create_or_update_app_components::Builder {
-            create_or_update_app_components::Builder {
+        ) -> create_or_update_app_components::RequestBuilder {
+            create_or_update_app_components::RequestBuilder {
                 client: self.0.clone(),
                 name: name.into(),
                 body: body.into(),
@@ -153,15 +153,15 @@ pub mod app_component {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `name`: Unique identifier for app component name, must be a valid URL character ^[a-z0-9_-]*$"]
-        pub fn delete_app_component(&self, name: impl Into<String>) -> delete_app_component::Builder {
-            delete_app_component::Builder {
+        pub fn delete_app_component(&self, name: impl Into<String>) -> delete_app_component::RequestBuilder {
+            delete_app_component::RequestBuilder {
                 client: self.0.clone(),
                 name: name.into(),
             }
         }
         #[doc = "Get App components for a test model or a test run of given name in query param."]
-        pub fn get_app_component(&self) -> get_app_component::Builder {
-            get_app_component::Builder {
+        pub fn get_app_component(&self) -> get_app_component::RequestBuilder {
+            get_app_component::RequestBuilder {
                 client: self.0.clone(),
                 test_id: None,
                 test_run_id: None,
@@ -172,11 +172,11 @@ pub mod app_component {
         use super::models;
         type Response = models::AppComponentsMap;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -220,12 +220,12 @@ pub mod app_component {
             Created201(models::AppComponentsMap),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) name: String,
             pub(crate) body: models::AppComponentsMap,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -271,11 +271,11 @@ pub mod app_component {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -311,12 +311,12 @@ pub mod app_component {
         use super::models;
         type Response = models::AppComponentsMap;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) test_id: Option<String>,
             pub(crate) test_run_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Required testId, if testRunId name is not provided"]
             pub fn test_id(mut self, test_id: impl Into<String>) -> Self {
                 self.test_id = Some(test_id.into());
@@ -378,8 +378,8 @@ pub mod file {
         #[doc = "Arguments:"]
         #[doc = "* `file_id`: Unique identifier for test file, must be a valid URL character ^[a-z0-9_-]*$"]
         #[doc = "* `file`: Input test file"]
-        pub fn file_validate(&self, file_id: impl Into<String>, file: impl Into<bytes::Bytes>) -> file_validate::Builder {
-            file_validate::Builder {
+        pub fn file_validate(&self, file_id: impl Into<String>, file: impl Into<bytes::Bytes>) -> file_validate::RequestBuilder {
+            file_validate::RequestBuilder {
                 client: self.0.clone(),
                 file_id: file_id.into(),
                 file: file.into(),
@@ -390,12 +390,12 @@ pub mod file {
         use super::models;
         type Response = models::FileValidateResponse;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) file_id: String,
             pub(crate) file: bytes::Bytes,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -442,8 +442,8 @@ pub mod server_metrics {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `name`: Unique identifier for server metric name, must be a valid URL character ^[a-z0-9_-]*$"]
-        pub fn get_server_metrics_by_name(&self, name: impl Into<String>) -> get_server_metrics_by_name::Builder {
-            get_server_metrics_by_name::Builder {
+        pub fn get_server_metrics_by_name(&self, name: impl Into<String>) -> get_server_metrics_by_name::RequestBuilder {
+            get_server_metrics_by_name::RequestBuilder {
                 client: self.0.clone(),
                 name: name.into(),
             }
@@ -457,8 +457,8 @@ pub mod server_metrics {
             &self,
             name: impl Into<String>,
             body: impl Into<models::ServerMetricsModel>,
-        ) -> create_or_update_server_metrics_config::Builder {
-            create_or_update_server_metrics_config::Builder {
+        ) -> create_or_update_server_metrics_config::RequestBuilder {
+            create_or_update_server_metrics_config::RequestBuilder {
                 client: self.0.clone(),
                 name: name.into(),
                 body: body.into(),
@@ -468,38 +468,38 @@ pub mod server_metrics {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `name`: Unique identifier for server metric name, must be a valid URL character ^[a-z0-9_-]*$"]
-        pub fn delete_server_metrics(&self, name: impl Into<String>) -> delete_server_metrics::Builder {
-            delete_server_metrics::Builder {
+        pub fn delete_server_metrics(&self, name: impl Into<String>) -> delete_server_metrics::RequestBuilder {
+            delete_server_metrics::RequestBuilder {
                 client: self.0.clone(),
                 name: name.into(),
             }
         }
         #[doc = "Get server metrics config for a test model or test run of given name in query param."]
-        pub fn get_server_metrics(&self) -> get_server_metrics::Builder {
-            get_server_metrics::Builder {
+        pub fn get_server_metrics(&self) -> get_server_metrics::RequestBuilder {
+            get_server_metrics::RequestBuilder {
                 client: self.0.clone(),
                 test_id: None,
                 test_run_id: None,
             }
         }
         #[doc = "Get all default server metrics config with supported resource type"]
-        pub fn get_server_default_metrics(&self) -> get_server_default_metrics::Builder {
-            get_server_default_metrics::Builder { client: self.0.clone() }
+        pub fn get_server_default_metrics(&self) -> get_server_default_metrics::RequestBuilder {
+            get_server_default_metrics::RequestBuilder { client: self.0.clone() }
         }
         #[doc = "Get all supported resource types for app components(azure resource types)"]
-        pub fn list_supported_resource_type(&self) -> list_supported_resource_type::Builder {
-            list_supported_resource_type::Builder { client: self.0.clone() }
+        pub fn list_supported_resource_type(&self) -> list_supported_resource_type::RequestBuilder {
+            list_supported_resource_type::RequestBuilder { client: self.0.clone() }
         }
     }
     pub mod get_server_metrics_by_name {
         use super::models;
         type Response = models::ServerMetricsModel;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -543,12 +543,12 @@ pub mod server_metrics {
             Created201(models::ServerMetricsModel),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) name: String,
             pub(crate) body: models::ServerMetricsModel,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -594,11 +594,11 @@ pub mod server_metrics {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -634,12 +634,12 @@ pub mod server_metrics {
         use super::models;
         type Response = models::ServerMetricsModel;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) test_id: Option<String>,
             pub(crate) test_run_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Required testId, if testRunId name is not provided"]
             pub fn test_id(mut self, test_id: impl Into<String>) -> Self {
                 self.test_id = Some(test_id.into());
@@ -695,10 +695,10 @@ pub mod server_metrics {
         use super::models;
         type Response = models::DefaultServerMetricsConfigListModel;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -738,10 +738,10 @@ pub mod server_metrics {
         use super::models;
         type Response = models::SupportedResourceType;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -787,8 +787,8 @@ pub mod test {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `test_id`: Unique identifier for load test name, must be a valid URL character ^[a-z0-9_-]*$"]
-        pub fn get_load_test(&self, test_id: impl Into<String>) -> get_load_test::Builder {
-            get_load_test::Builder {
+        pub fn get_load_test(&self, test_id: impl Into<String>) -> get_load_test::RequestBuilder {
+            get_load_test::RequestBuilder {
                 client: self.0.clone(),
                 test_id: test_id.into(),
             }
@@ -802,8 +802,8 @@ pub mod test {
             &self,
             test_id: impl Into<String>,
             body: impl Into<models::TestModel>,
-        ) -> create_or_update_test::Builder {
-            create_or_update_test::Builder {
+        ) -> create_or_update_test::RequestBuilder {
+            create_or_update_test::RequestBuilder {
                 client: self.0.clone(),
                 test_id: test_id.into(),
                 body: body.into(),
@@ -813,15 +813,15 @@ pub mod test {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `test_id`: Unique identifier for load test name, must be a valid URL character ^[a-z0-9_-]*$"]
-        pub fn delete_load_test(&self, test_id: impl Into<String>) -> delete_load_test::Builder {
-            delete_load_test::Builder {
+        pub fn delete_load_test(&self, test_id: impl Into<String>) -> delete_load_test::RequestBuilder {
+            delete_load_test::RequestBuilder {
                 client: self.0.clone(),
                 test_id: test_id.into(),
             }
         }
         #[doc = "Get all load tests for a given Fully qualified resource Id e.g subscriptions/{subId}/resourceGroups/{rg}/providers/Microsoft.LoadTestService/loadtests/{resName}"]
-        pub fn list_load_test_search(&self) -> list_load_test_search::Builder {
-            list_load_test_search::Builder {
+        pub fn list_load_test_search(&self) -> list_load_test_search::RequestBuilder {
+            list_load_test_search::RequestBuilder {
                 client: self.0.clone(),
                 order_by: None,
                 search: None,
@@ -836,8 +836,8 @@ pub mod test {
         #[doc = "Arguments:"]
         #[doc = "* `test_id`: Unique identifier for load test name, must be a valid URL character ^[a-z0-9_-]*$"]
         #[doc = "* `file_id`: Unique identifier for test file, must be a valid URL character ^[a-z0-9_-]*$"]
-        pub fn get_test_file(&self, test_id: impl Into<String>, file_id: impl Into<String>) -> get_test_file::Builder {
-            get_test_file::Builder {
+        pub fn get_test_file(&self, test_id: impl Into<String>, file_id: impl Into<String>) -> get_test_file::RequestBuilder {
+            get_test_file::RequestBuilder {
                 client: self.0.clone(),
                 test_id: test_id.into(),
                 file_id: file_id.into(),
@@ -854,8 +854,8 @@ pub mod test {
             test_id: impl Into<String>,
             file_id: impl Into<String>,
             file: impl Into<bytes::Bytes>,
-        ) -> upload_test_file::Builder {
-            upload_test_file::Builder {
+        ) -> upload_test_file::RequestBuilder {
+            upload_test_file::RequestBuilder {
                 client: self.0.clone(),
                 test_id: test_id.into(),
                 file_id: file_id.into(),
@@ -867,8 +867,8 @@ pub mod test {
         #[doc = "Arguments:"]
         #[doc = "* `test_id`: Unique identifier for load test name, must be a valid URL character ^[a-z0-9_-]*$"]
         #[doc = "* `file_id`: Unique identifier for test file, must be a valid URL character ^[a-z0-9_-]*$"]
-        pub fn delete_test_file(&self, test_id: impl Into<String>, file_id: impl Into<String>) -> delete_test_file::Builder {
-            delete_test_file::Builder {
+        pub fn delete_test_file(&self, test_id: impl Into<String>, file_id: impl Into<String>) -> delete_test_file::RequestBuilder {
+            delete_test_file::RequestBuilder {
                 client: self.0.clone(),
                 test_id: test_id.into(),
                 file_id: file_id.into(),
@@ -878,8 +878,8 @@ pub mod test {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `test_id`: Unique identifier for load test name, must be a valid URL character ^[a-z0-9_-]*$"]
-        pub fn get_all_test_files(&self, test_id: impl Into<String>) -> get_all_test_files::Builder {
-            get_all_test_files::Builder {
+        pub fn get_all_test_files(&self, test_id: impl Into<String>) -> get_all_test_files::RequestBuilder {
+            get_all_test_files::RequestBuilder {
                 client: self.0.clone(),
                 test_id: test_id.into(),
             }
@@ -889,11 +889,11 @@ pub mod test {
         use super::models;
         type Response = models::TestModel;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) test_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -937,12 +937,12 @@ pub mod test {
             Created201(models::TestModel),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) test_id: String,
             pub(crate) body: models::TestModel,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -988,11 +988,11 @@ pub mod test {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) test_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1028,7 +1028,7 @@ pub mod test {
         use super::models;
         type Response = models::TestModelResourceList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) order_by: Option<String>,
             pub(crate) search: Option<String>,
@@ -1037,7 +1037,7 @@ pub mod test {
             pub(crate) next_link: Option<String>,
             pub(crate) max_page_size: Option<i32>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Sort on one of the field - lastModifiedDateTime, displayName, createdBy in (field asc/desc) format. eg: displayName asc"]
             pub fn order_by(mut self, order_by: impl Into<String>) -> Self {
                 self.order_by = Some(order_by.into());
@@ -1131,12 +1131,12 @@ pub mod test {
         use super::models;
         type Response = models::FileUrlPath;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) test_id: String,
             pub(crate) file_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1181,13 +1181,13 @@ pub mod test {
         use super::models;
         type Response = models::TestModel;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) test_id: String,
             pub(crate) file_id: String,
             pub(crate) file: bytes::Bytes,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1233,12 +1233,12 @@ pub mod test {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) test_id: String,
             pub(crate) file_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1279,11 +1279,11 @@ pub mod test {
         use super::models;
         type Response = models::FileUrlList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) test_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1328,8 +1328,8 @@ pub mod test_run {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `test_run_id`: Unique identifier for load test run name, must be a valid URL character ^[a-z0-9_-]*$"]
-        pub fn get_test_run(&self, test_run_id: impl Into<String>) -> get_test_run::Builder {
-            get_test_run::Builder {
+        pub fn get_test_run(&self, test_run_id: impl Into<String>) -> get_test_run::RequestBuilder {
+            get_test_run::RequestBuilder {
                 client: self.0.clone(),
                 test_run_id: test_run_id.into(),
             }
@@ -1343,8 +1343,8 @@ pub mod test_run {
             &self,
             test_run_id: impl Into<String>,
             body: impl Into<models::TestRunModel>,
-        ) -> create_and_update_test::Builder {
-            create_and_update_test::Builder {
+        ) -> create_and_update_test::RequestBuilder {
+            create_and_update_test::RequestBuilder {
                 client: self.0.clone(),
                 test_run_id: test_run_id.into(),
                 body: body.into(),
@@ -1355,8 +1355,8 @@ pub mod test_run {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `test_run_id`: Unique identifier for load test run name, must be a valid URL character ^[a-z0-9_-]*$"]
-        pub fn delete_test_run(&self, test_run_id: impl Into<String>) -> delete_test_run::Builder {
-            delete_test_run::Builder {
+        pub fn delete_test_run(&self, test_run_id: impl Into<String>) -> delete_test_run::RequestBuilder {
+            delete_test_run::RequestBuilder {
                 client: self.0.clone(),
                 test_run_id: test_run_id.into(),
             }
@@ -1366,16 +1366,16 @@ pub mod test_run {
         #[doc = "Arguments:"]
         #[doc = "* `test_run_id`: Unique identifier for load test run name, must be a valid URL character ^[a-z0-9_-]*$"]
         #[doc = "* `file_id`: Unique identifier for test run file, must be a valid URL character ^[a-z0-9_-]*$"]
-        pub fn get_test_run_file(&self, test_run_id: impl Into<String>, file_id: impl Into<String>) -> get_test_run_file::Builder {
-            get_test_run_file::Builder {
+        pub fn get_test_run_file(&self, test_run_id: impl Into<String>, file_id: impl Into<String>) -> get_test_run_file::RequestBuilder {
+            get_test_run_file::RequestBuilder {
                 client: self.0.clone(),
                 test_run_id: test_run_id.into(),
                 file_id: file_id.into(),
             }
         }
         #[doc = "Get all test runs with given filters"]
-        pub fn get_app_test_runs_search(&self) -> get_app_test_runs_search::Builder {
-            get_app_test_runs_search::Builder {
+        pub fn get_app_test_runs_search(&self) -> get_app_test_runs_search::RequestBuilder {
+            get_app_test_runs_search::RequestBuilder {
                 client: self.0.clone(),
                 order_by: None,
                 next_link: None,
@@ -1391,8 +1391,8 @@ pub mod test_run {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `test_run_id`: Unique identifier for load test run name, must be a valid URL character ^[a-z0-9_-]*$"]
-        pub fn stop_test_run(&self, test_run_id: impl Into<String>) -> stop_test_run::Builder {
-            stop_test_run::Builder {
+        pub fn stop_test_run(&self, test_run_id: impl Into<String>) -> stop_test_run::RequestBuilder {
+            stop_test_run::RequestBuilder {
                 client: self.0.clone(),
                 test_run_id: test_run_id.into(),
             }
@@ -1401,8 +1401,8 @@ pub mod test_run {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `test_run_id`: Unique identifier for load test run name, must be a valid URL character ^[a-z0-9_-]*$"]
-        pub fn get_test_run_client_metrics(&self, test_run_id: impl Into<String>) -> get_test_run_client_metrics::Builder {
-            get_test_run_client_metrics::Builder {
+        pub fn get_test_run_client_metrics(&self, test_run_id: impl Into<String>) -> get_test_run_client_metrics::RequestBuilder {
+            get_test_run_client_metrics::RequestBuilder {
                 client: self.0.clone(),
                 test_run_id: test_run_id.into(),
                 filter: None,
@@ -1413,8 +1413,11 @@ pub mod test_run {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `test_run_id`: Unique identifier for load test run name, must be a valid URL character ^[a-z0-9_-]*$"]
-        pub fn get_test_run_client_metrics_filters(&self, test_run_id: impl Into<String>) -> get_test_run_client_metrics_filters::Builder {
-            get_test_run_client_metrics_filters::Builder {
+        pub fn get_test_run_client_metrics_filters(
+            &self,
+            test_run_id: impl Into<String>,
+        ) -> get_test_run_client_metrics_filters::RequestBuilder {
+            get_test_run_client_metrics_filters::RequestBuilder {
                 client: self.0.clone(),
                 test_run_id: test_run_id.into(),
             }
@@ -1424,11 +1427,11 @@ pub mod test_run {
         use super::models;
         type Response = models::TestRunModel;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) test_run_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1468,13 +1471,13 @@ pub mod test_run {
         use super::models;
         type Response = models::TestRunModel;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) test_run_id: String,
             pub(crate) body: models::TestRunModel,
             pub(crate) old_test_run_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Existing testRunId to re run new test"]
             pub fn old_test_run_id(mut self, old_test_run_id: impl Into<String>) -> Self {
                 self.old_test_run_id = Some(old_test_run_id.into());
@@ -1523,11 +1526,11 @@ pub mod test_run {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) test_run_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1563,12 +1566,12 @@ pub mod test_run {
         use super::models;
         type Response = models::FileUrlPath;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) test_run_id: String,
             pub(crate) file_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1613,7 +1616,7 @@ pub mod test_run {
         use super::models;
         type Response = models::TestRunModelResourceList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) order_by: Option<String>,
             pub(crate) next_link: Option<String>,
@@ -1624,7 +1627,7 @@ pub mod test_run {
             pub(crate) status: Option<String>,
             pub(crate) max_page_size: Option<i32>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Sort on one of the field - status, displayName, executedDateTime in (field asc/desc) format. eg: displayName asc"]
             pub fn order_by(mut self, order_by: impl Into<String>) -> Self {
                 self.order_by = Some(order_by.into());
@@ -1734,11 +1737,11 @@ pub mod test_run {
         use super::models;
         type Response = models::TestRunModel;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) test_run_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1779,13 +1782,13 @@ pub mod test_run {
         use super::models;
         type Response = models::ClientMetricsResults;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) test_run_id: String,
             pub(crate) filter: Option<String>,
             pub(crate) group_by_interval: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Filter to be used in metrics queries, filters can be applied on following fields : request, error, percentile( possible values : 90, 99, 95) or time (can be between start and end time). Request and error filter values can be get from /clientMetricsFilter API. Example of filter : (request eq 'HTTP Request1' or request eq 'total-4bec6d5b-c3c3-4f5f-be09-5c4abb28aedd') and (error eq 'Non HTTP response code: org.apache.http.conn.ConnectTimeoutException' or error eq 'total-4bec6d5b-c3c3-4f5f-be09-5c4abb28aedd') and (percentile eq 90) and (time ge 1626346535054 and time le 1626346924744)"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -1842,11 +1845,11 @@ pub mod test_run {
         use super::models;
         type Response = models::ClientMetricsFilters;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) test_run_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();

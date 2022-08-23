@@ -123,8 +123,8 @@ pub mod service {
         #[doc = "Arguments:"]
         #[doc = "* `resource`: The value must be \"account\" for all account operations."]
         #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
-        pub fn list_file_systems(&self, resource: impl Into<String>, x_ms_version: impl Into<String>) -> list_file_systems::Builder {
-            list_file_systems::Builder {
+        pub fn list_file_systems(&self, resource: impl Into<String>, x_ms_version: impl Into<String>) -> list_file_systems::RequestBuilder {
+            list_file_systems::RequestBuilder {
                 client: self.0.clone(),
                 resource: resource.into(),
                 x_ms_version: x_ms_version.into(),
@@ -140,7 +140,7 @@ pub mod service {
         use super::models;
         type Response = models::FileSystemList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource: String,
             pub(crate) x_ms_version: String,
@@ -150,7 +150,7 @@ pub mod service {
             pub(crate) x_ms_client_request_id: Option<String>,
             pub(crate) timeout: Option<i64>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Filters results to filesystems within the specified prefix."]
             pub fn prefix(mut self, prefix: impl Into<String>) -> Self {
                 self.prefix = Some(prefix.into());
@@ -244,8 +244,8 @@ pub mod file_system {
             filesystem: impl Into<String>,
             resource: impl Into<String>,
             x_ms_version: impl Into<String>,
-        ) -> create::Builder {
-            create::Builder {
+        ) -> create::RequestBuilder {
+            create::RequestBuilder {
                 client: self.0.clone(),
                 filesystem: filesystem.into(),
                 resource: resource.into(),
@@ -267,8 +267,8 @@ pub mod file_system {
             filesystem: impl Into<String>,
             resource: impl Into<String>,
             x_ms_version: impl Into<String>,
-        ) -> set_properties::Builder {
-            set_properties::Builder {
+        ) -> set_properties::RequestBuilder {
+            set_properties::RequestBuilder {
                 client: self.0.clone(),
                 filesystem: filesystem.into(),
                 resource: resource.into(),
@@ -292,8 +292,8 @@ pub mod file_system {
             filesystem: impl Into<String>,
             resource: impl Into<String>,
             x_ms_version: impl Into<String>,
-        ) -> delete::Builder {
-            delete::Builder {
+        ) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 filesystem: filesystem.into(),
                 resource: resource.into(),
@@ -316,8 +316,8 @@ pub mod file_system {
             filesystem: impl Into<String>,
             resource: impl Into<String>,
             x_ms_version: impl Into<String>,
-        ) -> get_properties::Builder {
-            get_properties::Builder {
+        ) -> get_properties::RequestBuilder {
+            get_properties::RequestBuilder {
                 client: self.0.clone(),
                 filesystem: filesystem.into(),
                 resource: resource.into(),
@@ -333,8 +333,13 @@ pub mod file_system {
         #[doc = "* `filesystem`: The filesystem identifier."]
         #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         #[doc = "* `recursive`: Required"]
-        pub fn list_paths(&self, filesystem: impl Into<String>, x_ms_version: impl Into<String>, recursive: bool) -> list_paths::Builder {
-            list_paths::Builder {
+        pub fn list_paths(
+            &self,
+            filesystem: impl Into<String>,
+            x_ms_version: impl Into<String>,
+            recursive: bool,
+        ) -> list_paths::RequestBuilder {
+            list_paths::RequestBuilder {
                 client: self.0.clone(),
                 filesystem: filesystem.into(),
                 x_ms_version: x_ms_version.into(),
@@ -356,8 +361,8 @@ pub mod file_system {
             &self,
             filesystem: impl Into<String>,
             x_ms_version: impl Into<String>,
-        ) -> list_blob_hierarchy_segment::Builder {
-            list_blob_hierarchy_segment::Builder {
+        ) -> list_blob_hierarchy_segment::RequestBuilder {
+            list_blob_hierarchy_segment::RequestBuilder {
                 client: self.0.clone(),
                 filesystem: filesystem.into(),
                 x_ms_version: x_ms_version.into(),
@@ -376,7 +381,7 @@ pub mod file_system {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) filesystem: String,
             pub(crate) resource: String,
@@ -385,7 +390,7 @@ pub mod file_system {
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_properties: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Provides a client-generated, opaque value with a 1 KB character limit that is recorded in the analytics logs when storage analytics logging is enabled."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
@@ -445,7 +450,7 @@ pub mod file_system {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) filesystem: String,
             pub(crate) resource: String,
@@ -456,7 +461,7 @@ pub mod file_system {
             pub(crate) if_modified_since: Option<time::OffsetDateTime>,
             pub(crate) if_unmodified_since: Option<time::OffsetDateTime>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Provides a client-generated, opaque value with a 1 KB character limit that is recorded in the analytics logs when storage analytics logging is enabled."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
@@ -532,7 +537,7 @@ pub mod file_system {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) filesystem: String,
             pub(crate) resource: String,
@@ -542,7 +547,7 @@ pub mod file_system {
             pub(crate) if_modified_since: Option<time::OffsetDateTime>,
             pub(crate) if_unmodified_since: Option<time::OffsetDateTime>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Provides a client-generated, opaque value with a 1 KB character limit that is recorded in the analytics logs when storage analytics logging is enabled."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
@@ -610,7 +615,7 @@ pub mod file_system {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) filesystem: String,
             pub(crate) resource: String,
@@ -618,7 +623,7 @@ pub mod file_system {
             pub(crate) x_ms_client_request_id: Option<String>,
             pub(crate) timeout: Option<i64>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Provides a client-generated, opaque value with a 1 KB character limit that is recorded in the analytics logs when storage analytics logging is enabled."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
@@ -670,7 +675,7 @@ pub mod file_system {
         use super::models;
         type Response = models::PathList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) filesystem: String,
             pub(crate) x_ms_version: String,
@@ -682,7 +687,7 @@ pub mod file_system {
             pub(crate) max_results: Option<i32>,
             pub(crate) upn: Option<bool>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Provides a client-generated, opaque value with a 1 KB character limit that is recorded in the analytics logs when storage analytics logging is enabled."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
@@ -771,7 +776,7 @@ pub mod file_system {
         use super::models;
         type Response = models::ListBlobsHierarchySegmentResponse;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) filesystem: String,
             pub(crate) x_ms_version: String,
@@ -784,7 +789,7 @@ pub mod file_system {
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Filters results to filesystems within the specified prefix."]
             pub fn prefix(mut self, prefix: impl Into<String>) -> Self {
                 self.prefix = Some(prefix.into());
@@ -914,8 +919,13 @@ pub mod path {
         #[doc = "* `filesystem`: The filesystem identifier."]
         #[doc = "* `path`: The file or directory path."]
         #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
-        pub fn read(&self, filesystem: impl Into<String>, path: impl Into<String>, x_ms_version: impl Into<String>) -> read::Builder {
-            read::Builder {
+        pub fn read(
+            &self,
+            filesystem: impl Into<String>,
+            path: impl Into<String>,
+            x_ms_version: impl Into<String>,
+        ) -> read::RequestBuilder {
+            read::RequestBuilder {
                 client: self.0.clone(),
                 filesystem: filesystem.into(),
                 path: path.into(),
@@ -945,8 +955,8 @@ pub mod path {
             path: impl Into<String>,
             x_ms_version: impl Into<String>,
             x_ms_lease_action: impl Into<String>,
-        ) -> lease::Builder {
-            lease::Builder {
+        ) -> lease::RequestBuilder {
+            lease::RequestBuilder {
                 client: self.0.clone(),
                 filesystem: filesystem.into(),
                 path: path.into(),
@@ -971,8 +981,13 @@ pub mod path {
         #[doc = "* `filesystem`: The filesystem identifier."]
         #[doc = "* `path`: The file or directory path."]
         #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
-        pub fn create(&self, filesystem: impl Into<String>, path: impl Into<String>, x_ms_version: impl Into<String>) -> create::Builder {
-            create::Builder {
+        pub fn create(
+            &self,
+            filesystem: impl Into<String>,
+            path: impl Into<String>,
+            x_ms_version: impl Into<String>,
+        ) -> create::RequestBuilder {
+            create::RequestBuilder {
                 client: self.0.clone(),
                 filesystem: filesystem.into(),
                 path: path.into(),
@@ -1021,8 +1036,8 @@ pub mod path {
             action: impl Into<String>,
             mode: impl Into<String>,
             body: impl Into<serde_json::Value>,
-        ) -> update::Builder {
-            update::Builder {
+        ) -> update::RequestBuilder {
+            update::RequestBuilder {
                 client: self.0.clone(),
                 filesystem: filesystem.into(),
                 path: path.into(),
@@ -1064,8 +1079,13 @@ pub mod path {
         #[doc = "* `filesystem`: The filesystem identifier."]
         #[doc = "* `path`: The file or directory path."]
         #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
-        pub fn delete(&self, filesystem: impl Into<String>, path: impl Into<String>, x_ms_version: impl Into<String>) -> delete::Builder {
-            delete::Builder {
+        pub fn delete(
+            &self,
+            filesystem: impl Into<String>,
+            path: impl Into<String>,
+            x_ms_version: impl Into<String>,
+        ) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 filesystem: filesystem.into(),
                 path: path.into(),
@@ -1093,8 +1113,8 @@ pub mod path {
             filesystem: impl Into<String>,
             path: impl Into<String>,
             x_ms_version: impl Into<String>,
-        ) -> get_properties::Builder {
-            get_properties::Builder {
+        ) -> get_properties::RequestBuilder {
+            get_properties::RequestBuilder {
                 client: self.0.clone(),
                 filesystem: filesystem.into(),
                 path: path.into(),
@@ -1121,8 +1141,8 @@ pub mod path {
             filesystem: impl Into<String>,
             path: impl Into<String>,
             x_ms_version: impl Into<String>,
-        ) -> set_access_control::Builder {
-            set_access_control::Builder {
+        ) -> set_access_control::RequestBuilder {
+            set_access_control::RequestBuilder {
                 client: self.0.clone(),
                 filesystem: filesystem.into(),
                 path: path.into(),
@@ -1153,8 +1173,8 @@ pub mod path {
             path: impl Into<String>,
             mode: impl Into<String>,
             x_ms_version: impl Into<String>,
-        ) -> set_access_control_recursive::Builder {
-            set_access_control_recursive::Builder {
+        ) -> set_access_control_recursive::RequestBuilder {
+            set_access_control_recursive::RequestBuilder {
                 client: self.0.clone(),
                 filesystem: filesystem.into(),
                 path: path.into(),
@@ -1179,8 +1199,8 @@ pub mod path {
             filesystem: impl Into<String>,
             path: impl Into<String>,
             x_ms_version: impl Into<String>,
-        ) -> flush_data::Builder {
-            flush_data::Builder {
+        ) -> flush_data::RequestBuilder {
+            flush_data::RequestBuilder {
                 client: self.0.clone(),
                 filesystem: filesystem.into(),
                 path: path.into(),
@@ -1217,8 +1237,8 @@ pub mod path {
             path: impl Into<String>,
             body: impl Into<serde_json::Value>,
             x_ms_version: impl Into<String>,
-        ) -> append_data::Builder {
-            append_data::Builder {
+        ) -> append_data::RequestBuilder {
+            append_data::RequestBuilder {
                 client: self.0.clone(),
                 filesystem: filesystem.into(),
                 path: path.into(),
@@ -1246,8 +1266,8 @@ pub mod path {
             path: impl Into<String>,
             x_ms_version: impl Into<String>,
             x_ms_expiry_option: impl Into<String>,
-        ) -> set_expiry::Builder {
-            set_expiry::Builder {
+        ) -> set_expiry::RequestBuilder {
+            set_expiry::RequestBuilder {
                 client: self.0.clone(),
                 filesystem: filesystem.into(),
                 path: path.into(),
@@ -1269,8 +1289,8 @@ pub mod path {
             filesystem: impl Into<String>,
             path: impl Into<String>,
             x_ms_version: impl Into<String>,
-        ) -> undelete::Builder {
-            undelete::Builder {
+        ) -> undelete::RequestBuilder {
+            undelete::RequestBuilder {
                 client: self.0.clone(),
                 filesystem: filesystem.into(),
                 path: path.into(),
@@ -1289,7 +1309,7 @@ pub mod path {
             PartialContent206(serde_json::Value),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) filesystem: String,
             pub(crate) path: String,
@@ -1304,7 +1324,7 @@ pub mod path {
             pub(crate) if_modified_since: Option<time::OffsetDateTime>,
             pub(crate) if_unmodified_since: Option<time::OffsetDateTime>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Provides a client-generated, opaque value with a 1 KB character limit that is recorded in the analytics logs when storage analytics logging is enabled."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
@@ -1424,7 +1444,7 @@ pub mod path {
             Accepted202,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) filesystem: String,
             pub(crate) path: String,
@@ -1441,7 +1461,7 @@ pub mod path {
             pub(crate) if_modified_since: Option<time::OffsetDateTime>,
             pub(crate) if_unmodified_since: Option<time::OffsetDateTime>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Provides a client-generated, opaque value with a 1 KB character limit that is recorded in the analytics logs when storage analytics logging is enabled."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
@@ -1559,7 +1579,7 @@ pub mod path {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) filesystem: String,
             pub(crate) path: String,
@@ -1589,7 +1609,7 @@ pub mod path {
             pub(crate) x_ms_source_if_modified_since: Option<time::OffsetDateTime>,
             pub(crate) x_ms_source_if_unmodified_since: Option<time::OffsetDateTime>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Provides a client-generated, opaque value with a 1 KB character limit that is recorded in the analytics logs when storage analytics logging is enabled."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
@@ -1819,7 +1839,7 @@ pub mod path {
             Accepted202,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) filesystem: String,
             pub(crate) path: String,
@@ -1853,7 +1873,7 @@ pub mod path {
             pub(crate) if_modified_since: Option<time::OffsetDateTime>,
             pub(crate) if_unmodified_since: Option<time::OffsetDateTime>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Provides a client-generated, opaque value with a 1 KB character limit that is recorded in the analytics logs when storage analytics logging is enabled."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
@@ -2099,7 +2119,7 @@ pub mod path {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) filesystem: String,
             pub(crate) path: String,
@@ -2114,7 +2134,7 @@ pub mod path {
             pub(crate) if_modified_since: Option<time::OffsetDateTime>,
             pub(crate) if_unmodified_since: Option<time::OffsetDateTime>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Provides a client-generated, opaque value with a 1 KB character limit that is recorded in the analytics logs when storage analytics logging is enabled."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
@@ -2220,7 +2240,7 @@ pub mod path {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) filesystem: String,
             pub(crate) path: String,
@@ -2235,7 +2255,7 @@ pub mod path {
             pub(crate) if_modified_since: Option<time::OffsetDateTime>,
             pub(crate) if_unmodified_since: Option<time::OffsetDateTime>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Provides a client-generated, opaque value with a 1 KB character limit that is recorded in the analytics logs when storage analytics logging is enabled."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
@@ -2341,7 +2361,7 @@ pub mod path {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) filesystem: String,
             pub(crate) path: String,
@@ -2358,7 +2378,7 @@ pub mod path {
             pub(crate) if_unmodified_since: Option<time::OffsetDateTime>,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\">Setting Timeouts for Blob Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
@@ -2485,7 +2505,7 @@ pub mod path {
         use super::models;
         type Response = models::SetAccessControlRecursiveResponse;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) filesystem: String,
             pub(crate) path: String,
@@ -2498,7 +2518,7 @@ pub mod path {
             pub(crate) x_ms_acl: Option<String>,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\">Setting Timeouts for Blob Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
@@ -2591,7 +2611,7 @@ pub mod path {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) filesystem: String,
             pub(crate) path: String,
@@ -2614,7 +2634,7 @@ pub mod path {
             pub(crate) if_unmodified_since: Option<time::OffsetDateTime>,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\">Setting Timeouts for Blob Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
@@ -2791,7 +2811,7 @@ pub mod path {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) filesystem: String,
             pub(crate) path: String,
@@ -2805,7 +2825,7 @@ pub mod path {
             pub(crate) x_ms_lease_id: Option<String>,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "This parameter allows the caller to upload data in parallel and control the order in which it is appended to the file.  It is required when uploading data to be appended to the file and when flushing previously uploaded data to the file.  The value must be the position where the data is to be appended.  Uploaded data is not immediately flushed, or written, to the file.  To flush, the previously uploaded data must be contiguous, the position parameter must be specified and equal to the length of the file after all data has been written, and there must not be a request entity body included with the request."]
             pub fn position(mut self, position: i64) -> Self {
                 self.position = Some(position);
@@ -2901,7 +2921,7 @@ pub mod path {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) filesystem: String,
             pub(crate) path: String,
@@ -2911,7 +2931,7 @@ pub mod path {
             pub(crate) x_ms_client_request_id: Option<String>,
             pub(crate) x_ms_expiry_time: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\">Setting Timeouts for Blob Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
@@ -2975,7 +2995,7 @@ pub mod path {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) filesystem: String,
             pub(crate) path: String,
@@ -2984,7 +3004,7 @@ pub mod path {
             pub(crate) x_ms_undelete_source: Option<String>,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/setting-timeouts-for-blob-service-operations\">Setting Timeouts for Blob Service Operations.</a>"]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);

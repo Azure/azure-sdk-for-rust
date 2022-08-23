@@ -130,18 +130,18 @@ pub mod operations {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Lists all of the available IoT Hub REST API operations."]
-        pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.0.clone() }
+        pub fn list(&self) -> list::RequestBuilder {
+            list::RequestBuilder { client: self.0.clone() }
         }
     }
     pub mod list {
         use super::models;
         type Response = models::OperationListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -221,8 +221,8 @@ pub mod iot_hub_resource {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             resource_name: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -243,8 +243,8 @@ pub mod iot_hub_resource {
             resource_group_name: impl Into<String>,
             resource_name: impl Into<String>,
             iot_hub_description: impl Into<models::IotHubDescription>,
-        ) -> create_or_update::Builder {
-            create_or_update::Builder {
+        ) -> create_or_update::RequestBuilder {
+            create_or_update::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -267,8 +267,8 @@ pub mod iot_hub_resource {
             resource_group_name: impl Into<String>,
             resource_name: impl Into<String>,
             iot_hub_tags: impl Into<models::TagsResource>,
-        ) -> update::Builder {
-            update::Builder {
+        ) -> update::RequestBuilder {
+            update::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -288,8 +288,8 @@ pub mod iot_hub_resource {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             resource_name: impl Into<String>,
-        ) -> delete::Builder {
-            delete::Builder {
+        ) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -301,8 +301,8 @@ pub mod iot_hub_resource {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: The subscription identifier."]
-        pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
-            list_by_subscription::Builder {
+        pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::RequestBuilder {
+            list_by_subscription::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
@@ -317,8 +317,8 @@ pub mod iot_hub_resource {
             &self,
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
-        ) -> list_by_resource_group::Builder {
-            list_by_resource_group::Builder {
+        ) -> list_by_resource_group::RequestBuilder {
+            list_by_resource_group::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -336,8 +336,8 @@ pub mod iot_hub_resource {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             resource_name: impl Into<String>,
-        ) -> get_stats::Builder {
-            get_stats::Builder {
+        ) -> get_stats::RequestBuilder {
+            get_stats::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -356,8 +356,8 @@ pub mod iot_hub_resource {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             resource_name: impl Into<String>,
-        ) -> get_valid_skus::Builder {
-            get_valid_skus::Builder {
+        ) -> get_valid_skus::RequestBuilder {
+            get_valid_skus::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -378,8 +378,8 @@ pub mod iot_hub_resource {
             resource_group_name: impl Into<String>,
             resource_name: impl Into<String>,
             event_hub_endpoint_name: impl Into<String>,
-        ) -> list_event_hub_consumer_groups::Builder {
-            list_event_hub_consumer_groups::Builder {
+        ) -> list_event_hub_consumer_groups::RequestBuilder {
+            list_event_hub_consumer_groups::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -403,8 +403,8 @@ pub mod iot_hub_resource {
             resource_name: impl Into<String>,
             event_hub_endpoint_name: impl Into<String>,
             name: impl Into<String>,
-        ) -> get_event_hub_consumer_group::Builder {
-            get_event_hub_consumer_group::Builder {
+        ) -> get_event_hub_consumer_group::RequestBuilder {
+            get_event_hub_consumer_group::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -431,8 +431,8 @@ pub mod iot_hub_resource {
             event_hub_endpoint_name: impl Into<String>,
             name: impl Into<String>,
             consumer_group_body: impl Into<models::EventHubConsumerGroupBodyDescription>,
-        ) -> create_event_hub_consumer_group::Builder {
-            create_event_hub_consumer_group::Builder {
+        ) -> create_event_hub_consumer_group::RequestBuilder {
+            create_event_hub_consumer_group::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -458,8 +458,8 @@ pub mod iot_hub_resource {
             resource_name: impl Into<String>,
             event_hub_endpoint_name: impl Into<String>,
             name: impl Into<String>,
-        ) -> delete_event_hub_consumer_group::Builder {
-            delete_event_hub_consumer_group::Builder {
+        ) -> delete_event_hub_consumer_group::RequestBuilder {
+            delete_event_hub_consumer_group::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -480,8 +480,8 @@ pub mod iot_hub_resource {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             resource_name: impl Into<String>,
-        ) -> list_jobs::Builder {
-            list_jobs::Builder {
+        ) -> list_jobs::RequestBuilder {
+            list_jobs::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -502,8 +502,8 @@ pub mod iot_hub_resource {
             resource_group_name: impl Into<String>,
             resource_name: impl Into<String>,
             job_id: impl Into<String>,
-        ) -> get_job::Builder {
-            get_job::Builder {
+        ) -> get_job::RequestBuilder {
+            get_job::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -523,8 +523,8 @@ pub mod iot_hub_resource {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             resource_name: impl Into<String>,
-        ) -> get_quota_metrics::Builder {
-            get_quota_metrics::Builder {
+        ) -> get_quota_metrics::RequestBuilder {
+            get_quota_metrics::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -541,8 +541,8 @@ pub mod iot_hub_resource {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             iot_hub_name: impl Into<String>,
-        ) -> get_endpoint_health::Builder {
-            get_endpoint_health::Builder {
+        ) -> get_endpoint_health::RequestBuilder {
+            get_endpoint_health::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -559,8 +559,8 @@ pub mod iot_hub_resource {
             &self,
             subscription_id: impl Into<String>,
             operation_inputs: impl Into<models::OperationInputs>,
-        ) -> check_name_availability::Builder {
-            check_name_availability::Builder {
+        ) -> check_name_availability::RequestBuilder {
+            check_name_availability::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 operation_inputs: operation_inputs.into(),
@@ -580,8 +580,8 @@ pub mod iot_hub_resource {
             iot_hub_name: impl Into<String>,
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
-        ) -> test_all_routes::Builder {
-            test_all_routes::Builder {
+        ) -> test_all_routes::RequestBuilder {
+            test_all_routes::RequestBuilder {
                 client: self.0.clone(),
                 input: input.into(),
                 iot_hub_name: iot_hub_name.into(),
@@ -603,8 +603,8 @@ pub mod iot_hub_resource {
             iot_hub_name: impl Into<String>,
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
-        ) -> test_route::Builder {
-            test_route::Builder {
+        ) -> test_route::RequestBuilder {
+            test_route::RequestBuilder {
                 client: self.0.clone(),
                 input: input.into(),
                 iot_hub_name: iot_hub_name.into(),
@@ -624,8 +624,8 @@ pub mod iot_hub_resource {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             resource_name: impl Into<String>,
-        ) -> list_keys::Builder {
-            list_keys::Builder {
+        ) -> list_keys::RequestBuilder {
+            list_keys::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -646,8 +646,8 @@ pub mod iot_hub_resource {
             resource_group_name: impl Into<String>,
             resource_name: impl Into<String>,
             key_name: impl Into<String>,
-        ) -> get_keys_for_key_name::Builder {
-            get_keys_for_key_name::Builder {
+        ) -> get_keys_for_key_name::RequestBuilder {
+            get_keys_for_key_name::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -669,8 +669,8 @@ pub mod iot_hub_resource {
             resource_group_name: impl Into<String>,
             resource_name: impl Into<String>,
             export_devices_parameters: impl Into<models::ExportDevicesRequest>,
-        ) -> export_devices::Builder {
-            export_devices::Builder {
+        ) -> export_devices::RequestBuilder {
+            export_devices::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -692,8 +692,8 @@ pub mod iot_hub_resource {
             resource_group_name: impl Into<String>,
             resource_name: impl Into<String>,
             import_devices_parameters: impl Into<models::ImportDevicesRequest>,
-        ) -> import_devices::Builder {
-            import_devices::Builder {
+        ) -> import_devices::RequestBuilder {
+            import_devices::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -706,13 +706,13 @@ pub mod iot_hub_resource {
         use super::models;
         type Response = models::IotHubDescription;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) resource_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -762,7 +762,7 @@ pub mod iot_hub_resource {
             Ok200(models::IotHubDescription),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -770,7 +770,7 @@ pub mod iot_hub_resource {
             pub(crate) iot_hub_description: models::IotHubDescription,
             pub(crate) if_match: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "ETag of the IoT Hub. Do not specify for creating a brand new IoT Hub. Required to update an existing IoT Hub."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
@@ -831,14 +831,14 @@ pub mod iot_hub_resource {
         use super::models;
         type Response = models::IotHubDescription;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) resource_name: String,
             pub(crate) iot_hub_tags: models::TagsResource,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -891,13 +891,13 @@ pub mod iot_hub_resource {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) resource_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -950,11 +950,11 @@ pub mod iot_hub_resource {
         use super::models;
         type Response = models::IotHubDescriptionListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -1024,12 +1024,12 @@ pub mod iot_hub_resource {
         use super::models;
         type Response = models::IotHubDescriptionListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -1100,13 +1100,13 @@ pub mod iot_hub_resource {
         use super::models;
         type Response = models::RegistryStatistics;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) resource_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1152,13 +1152,13 @@ pub mod iot_hub_resource {
         use super::models;
         type Response = models::IotHubSkuDescriptionListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) resource_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -1230,14 +1230,14 @@ pub mod iot_hub_resource {
         use super::models;
         type Response = models::EventHubConsumerGroupsListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) resource_name: String,
             pub(crate) event_hub_endpoint_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -1303,7 +1303,7 @@ pub mod iot_hub_resource {
         use super::models;
         type Response = models::EventHubConsumerGroupInfo;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -1311,7 +1311,7 @@ pub mod iot_hub_resource {
             pub(crate) event_hub_endpoint_name: String,
             pub(crate) name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1351,7 +1351,7 @@ pub mod iot_hub_resource {
         use super::models;
         type Response = models::EventHubConsumerGroupInfo;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -1360,7 +1360,7 @@ pub mod iot_hub_resource {
             pub(crate) name: String,
             pub(crate) consumer_group_body: models::EventHubConsumerGroupBodyDescription,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1401,7 +1401,7 @@ pub mod iot_hub_resource {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -1409,7 +1409,7 @@ pub mod iot_hub_resource {
             pub(crate) event_hub_endpoint_name: String,
             pub(crate) name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1445,13 +1445,13 @@ pub mod iot_hub_resource {
         use super::models;
         type Response = models::JobResponseListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) resource_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -1523,14 +1523,14 @@ pub mod iot_hub_resource {
         use super::models;
         type Response = models::JobResponse;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) resource_name: String,
             pub(crate) job_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1577,13 +1577,13 @@ pub mod iot_hub_resource {
         use super::models;
         type Response = models::IotHubQuotaMetricInfoListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) resource_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -1655,13 +1655,13 @@ pub mod iot_hub_resource {
         use super::models;
         type Response = models::EndpointHealthDataListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) iot_hub_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -1733,12 +1733,12 @@ pub mod iot_hub_resource {
         use super::models;
         type Response = models::IotHubNameAvailabilityInfo;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) operation_inputs: models::OperationInputs,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1783,14 +1783,14 @@ pub mod iot_hub_resource {
         use super::models;
         type Response = models::TestAllRoutesResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) input: models::TestAllRoutesInput,
             pub(crate) iot_hub_name: String,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1837,14 +1837,14 @@ pub mod iot_hub_resource {
         use super::models;
         type Response = models::TestRouteResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) input: models::TestRouteInput,
             pub(crate) iot_hub_name: String,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1891,13 +1891,13 @@ pub mod iot_hub_resource {
         use super::models;
         type Response = models::SharedAccessSignatureAuthorizationRuleListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) resource_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -1971,14 +1971,14 @@ pub mod iot_hub_resource {
         use super::models;
         type Response = models::SharedAccessSignatureAuthorizationRule;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) resource_name: String,
             pub(crate) key_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2026,14 +2026,14 @@ pub mod iot_hub_resource {
         use super::models;
         type Response = models::JobResponse;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) resource_name: String,
             pub(crate) export_devices_parameters: models::ExportDevicesRequest,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2080,14 +2080,14 @@ pub mod iot_hub_resource {
         use super::models;
         type Response = models::JobResponse;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) resource_name: String,
             pub(crate) import_devices_parameters: models::ImportDevicesRequest,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2140,8 +2140,8 @@ pub mod resource_provider_common {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: The subscription identifier."]
-        pub fn get_subscription_quota(&self, subscription_id: impl Into<String>) -> get_subscription_quota::Builder {
-            get_subscription_quota::Builder {
+        pub fn get_subscription_quota(&self, subscription_id: impl Into<String>) -> get_subscription_quota::RequestBuilder {
+            get_subscription_quota::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
@@ -2151,11 +2151,11 @@ pub mod resource_provider_common {
         use super::models;
         type Response = models::UserSubscriptionQuotaListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2212,8 +2212,8 @@ pub mod certificates {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             resource_name: impl Into<String>,
-        ) -> list_by_iot_hub::Builder {
-            list_by_iot_hub::Builder {
+        ) -> list_by_iot_hub::RequestBuilder {
+            list_by_iot_hub::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -2234,8 +2234,8 @@ pub mod certificates {
             resource_group_name: impl Into<String>,
             resource_name: impl Into<String>,
             certificate_name: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -2259,8 +2259,8 @@ pub mod certificates {
             resource_name: impl Into<String>,
             certificate_name: impl Into<String>,
             certificate_description: impl Into<models::CertificateDescription>,
-        ) -> create_or_update::Builder {
-            create_or_update::Builder {
+        ) -> create_or_update::RequestBuilder {
+            create_or_update::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -2286,8 +2286,8 @@ pub mod certificates {
             resource_name: impl Into<String>,
             certificate_name: impl Into<String>,
             if_match: impl Into<String>,
-        ) -> delete::Builder {
-            delete::Builder {
+        ) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -2312,8 +2312,8 @@ pub mod certificates {
             resource_name: impl Into<String>,
             certificate_name: impl Into<String>,
             if_match: impl Into<String>,
-        ) -> generate_verification_code::Builder {
-            generate_verification_code::Builder {
+        ) -> generate_verification_code::RequestBuilder {
+            generate_verification_code::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -2340,8 +2340,8 @@ pub mod certificates {
             certificate_name: impl Into<String>,
             certificate_verification_body: impl Into<models::CertificateVerificationDescription>,
             if_match: impl Into<String>,
-        ) -> verify::Builder {
-            verify::Builder {
+        ) -> verify::RequestBuilder {
+            verify::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -2356,13 +2356,13 @@ pub mod certificates {
         use super::models;
         type Response = models::CertificateListDescription;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) resource_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2408,14 +2408,14 @@ pub mod certificates {
         use super::models;
         type Response = models::CertificateDescription;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) resource_name: String,
             pub(crate) certificate_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2466,7 +2466,7 @@ pub mod certificates {
             Ok200(models::CertificateDescription),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -2475,7 +2475,7 @@ pub mod certificates {
             pub(crate) certificate_description: models::CertificateDescription,
             pub(crate) if_match: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "ETag of the Certificate. Do not specify for creating a brand new certificate. Required to update an existing certificate."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
@@ -2540,7 +2540,7 @@ pub mod certificates {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -2548,7 +2548,7 @@ pub mod certificates {
             pub(crate) certificate_name: String,
             pub(crate) if_match: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2593,7 +2593,7 @@ pub mod certificates {
         use super::models;
         type Response = models::CertificateWithNonceDescription;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -2601,7 +2601,7 @@ pub mod certificates {
             pub(crate) certificate_name: String,
             pub(crate) if_match: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2643,7 +2643,7 @@ pub mod certificates {
         use super::models;
         type Response = models::CertificateDescription;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -2652,7 +2652,7 @@ pub mod certificates {
             pub(crate) certificate_verification_body: models::CertificateVerificationDescription,
             pub(crate) if_match: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2716,8 +2716,8 @@ pub mod iot_hub {
             failover_input: impl Into<models::FailoverInput>,
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
-        ) -> manual_failover::Builder {
-            manual_failover::Builder {
+        ) -> manual_failover::RequestBuilder {
+            manual_failover::RequestBuilder {
                 client: self.0.clone(),
                 iot_hub_name: iot_hub_name.into(),
                 failover_input: failover_input.into(),
@@ -2734,14 +2734,14 @@ pub mod iot_hub {
             Accepted202,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) iot_hub_name: String,
             pub(crate) failover_input: models::FailoverInput,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -2799,8 +2799,8 @@ pub mod private_link_resources {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             resource_name: impl Into<String>,
-        ) -> list::Builder {
-            list::Builder {
+        ) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -2821,8 +2821,8 @@ pub mod private_link_resources {
             resource_group_name: impl Into<String>,
             resource_name: impl Into<String>,
             group_id: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -2835,13 +2835,13 @@ pub mod private_link_resources {
         use super::models;
         type Response = models::PrivateLinkResources;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) resource_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2887,14 +2887,14 @@ pub mod private_link_resources {
         use super::models;
         type Response = models::GroupIdInformation;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) resource_name: String,
             pub(crate) group_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2954,8 +2954,8 @@ pub mod private_endpoint_connections {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             resource_name: impl Into<String>,
-        ) -> list::Builder {
-            list::Builder {
+        ) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -2976,8 +2976,8 @@ pub mod private_endpoint_connections {
             resource_group_name: impl Into<String>,
             resource_name: impl Into<String>,
             private_endpoint_connection_name: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -3001,8 +3001,8 @@ pub mod private_endpoint_connections {
             resource_name: impl Into<String>,
             private_endpoint_connection_name: impl Into<String>,
             private_endpoint_connection: impl Into<models::PrivateEndpointConnection>,
-        ) -> update::Builder {
-            update::Builder {
+        ) -> update::RequestBuilder {
+            update::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -3025,8 +3025,8 @@ pub mod private_endpoint_connections {
             resource_group_name: impl Into<String>,
             resource_name: impl Into<String>,
             private_endpoint_connection_name: impl Into<String>,
-        ) -> delete::Builder {
-            delete::Builder {
+        ) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -3039,13 +3039,13 @@ pub mod private_endpoint_connections {
         use super::models;
         type Response = models::PrivateEndpointConnectionsList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) resource_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -3091,14 +3091,14 @@ pub mod private_endpoint_connections {
         use super::models;
         type Response = models::PrivateEndpointConnection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) resource_name: String,
             pub(crate) private_endpoint_connection_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -3149,7 +3149,7 @@ pub mod private_endpoint_connections {
             Ok200(models::PrivateEndpointConnection),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -3157,7 +3157,7 @@ pub mod private_endpoint_connections {
             pub(crate) private_endpoint_connection_name: String,
             pub(crate) private_endpoint_connection: models::PrivateEndpointConnection,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -3216,14 +3216,14 @@ pub mod private_endpoint_connections {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) resource_name: String,
             pub(crate) private_endpoint_connection_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({

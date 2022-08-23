@@ -122,8 +122,8 @@ pub mod partner {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `partner_id`: Id of the Partner"]
-        pub fn get(&self, partner_id: impl Into<String>) -> get::Builder {
-            get::Builder {
+        pub fn get(&self, partner_id: impl Into<String>) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 partner_id: partner_id.into(),
             }
@@ -133,8 +133,8 @@ pub mod partner {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `partner_id`: Id of the Partner"]
-        pub fn create(&self, partner_id: impl Into<String>) -> create::Builder {
-            create::Builder {
+        pub fn create(&self, partner_id: impl Into<String>) -> create::RequestBuilder {
+            create::RequestBuilder {
                 client: self.0.clone(),
                 partner_id: partner_id.into(),
             }
@@ -144,8 +144,8 @@ pub mod partner {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `partner_id`: Id of the Partner"]
-        pub fn update(&self, partner_id: impl Into<String>) -> update::Builder {
-            update::Builder {
+        pub fn update(&self, partner_id: impl Into<String>) -> update::RequestBuilder {
+            update::RequestBuilder {
                 client: self.0.clone(),
                 partner_id: partner_id.into(),
             }
@@ -155,8 +155,8 @@ pub mod partner {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `partner_id`: Id of the Partner"]
-        pub fn delete(&self, partner_id: impl Into<String>) -> delete::Builder {
-            delete::Builder {
+        pub fn delete(&self, partner_id: impl Into<String>) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 partner_id: partner_id.into(),
             }
@@ -166,11 +166,11 @@ pub mod partner {
         use super::models;
         type Response = models::PartnerResponse;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) partner_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -214,11 +214,11 @@ pub mod partner {
         use super::models;
         type Response = models::PartnerResponse;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) partner_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -262,11 +262,11 @@ pub mod partner {
         use super::models;
         type Response = models::PartnerResponse;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) partner_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -310,11 +310,11 @@ pub mod partner {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) partner_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -357,18 +357,18 @@ pub mod operation {
     impl Client {
         #[doc = "Get operations."]
         #[doc = "List all the operations."]
-        pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.0.clone() }
+        pub fn list(&self) -> list::RequestBuilder {
+            list::RequestBuilder { client: self.0.clone() }
         }
     }
     pub mod list {
         use super::models;
         type Response = models::OperationList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -440,18 +440,18 @@ pub mod partners {
     impl Client {
         #[doc = "Get a specific `Partner`."]
         #[doc = "Get the management partner using the objectId and tenantId."]
-        pub fn get(&self) -> get::Builder {
-            get::Builder { client: self.0.clone() }
+        pub fn get(&self) -> get::RequestBuilder {
+            get::RequestBuilder { client: self.0.clone() }
         }
     }
     pub mod get {
         use super::models;
         type Response = models::PartnerResponse;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();

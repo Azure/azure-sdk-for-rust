@@ -113,18 +113,18 @@ pub mod operations {
     impl Client {
         #[doc = "List available operations."]
         #[doc = "List the available operations supported by the Microsoft.EventGrid resource provider."]
-        pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.0.clone() }
+        pub fn list(&self) -> list::RequestBuilder {
+            list::RequestBuilder { client: self.0.clone() }
         }
     }
     pub mod list {
         use super::models;
         type Response = models::OperationsListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -206,8 +206,8 @@ impl Client {
         geo_location_id: impl Into<String>,
         time_stamp: i64,
         download_as: impl Into<String>,
-    ) -> get_test_result_file::Builder {
-        get_test_result_file::Builder {
+    ) -> get_test_result_file::RequestBuilder {
+        get_test_result_file::RequestBuilder {
             client: self.clone(),
             resource_group_name: resource_group_name.into(),
             subscription_id: subscription_id.into(),
@@ -224,7 +224,7 @@ pub mod get_test_result_file {
     use super::models;
     type Response = models::TestResultFileResponse;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) resource_group_name: String,
         pub(crate) subscription_id: String,
@@ -235,7 +235,7 @@ pub mod get_test_result_file {
         pub(crate) test_successful_criteria: Option<bool>,
         pub(crate) continuation_token: Option<String>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The success state criteria for the webtest result."]
         pub fn test_successful_criteria(mut self, test_successful_criteria: bool) -> Self {
             self.test_successful_criteria = Some(test_successful_criteria);

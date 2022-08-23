@@ -115,8 +115,8 @@ pub mod catalog {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `parameters`: Parameters supplied to create or update an access control list (ACL) entry for a Data Lake Analytics catalog."]
-        pub fn grant_acl(&self, parameters: impl Into<models::AclCreateOrUpdateParameters>) -> grant_acl::Builder {
-            grant_acl::Builder {
+        pub fn grant_acl(&self, parameters: impl Into<models::AclCreateOrUpdateParameters>) -> grant_acl::RequestBuilder {
+            grant_acl::RequestBuilder {
                 client: self.0.clone(),
                 parameters: parameters.into(),
             }
@@ -130,8 +130,8 @@ pub mod catalog {
             &self,
             database_name: impl Into<String>,
             parameters: impl Into<models::AclCreateOrUpdateParameters>,
-        ) -> grant_acl_to_database::Builder {
-            grant_acl_to_database::Builder {
+        ) -> grant_acl_to_database::RequestBuilder {
+            grant_acl_to_database::RequestBuilder {
                 client: self.0.clone(),
                 database_name: database_name.into(),
                 parameters: parameters.into(),
@@ -141,8 +141,8 @@ pub mod catalog {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `parameters`: Parameters supplied to delete an access control list (ACL) entry from a Data Lake Analytics catalog."]
-        pub fn revoke_acl(&self, parameters: impl Into<models::AclDeleteParameters>) -> revoke_acl::Builder {
-            revoke_acl::Builder {
+        pub fn revoke_acl(&self, parameters: impl Into<models::AclDeleteParameters>) -> revoke_acl::RequestBuilder {
+            revoke_acl::RequestBuilder {
                 client: self.0.clone(),
                 parameters: parameters.into(),
             }
@@ -156,8 +156,8 @@ pub mod catalog {
             &self,
             database_name: impl Into<String>,
             parameters: impl Into<models::AclDeleteParameters>,
-        ) -> revoke_acl_from_database::Builder {
-            revoke_acl_from_database::Builder {
+        ) -> revoke_acl_from_database::RequestBuilder {
+            revoke_acl_from_database::RequestBuilder {
                 client: self.0.clone(),
                 database_name: database_name.into(),
                 parameters: parameters.into(),
@@ -168,8 +168,8 @@ pub mod catalog {
         #[doc = "Arguments:"]
         #[doc = "* `database_name`: The name of the database containing the secret."]
         #[doc = "* `secret_name`: The name of the secret to get"]
-        pub fn get_secret(&self, database_name: impl Into<String>, secret_name: impl Into<String>) -> get_secret::Builder {
-            get_secret::Builder {
+        pub fn get_secret(&self, database_name: impl Into<String>, secret_name: impl Into<String>) -> get_secret::RequestBuilder {
+            get_secret::RequestBuilder {
                 client: self.0.clone(),
                 database_name: database_name.into(),
                 secret_name: secret_name.into(),
@@ -186,8 +186,8 @@ pub mod catalog {
             database_name: impl Into<String>,
             secret_name: impl Into<String>,
             parameters: impl Into<models::DataLakeAnalyticsCatalogSecretCreateOrUpdateParameters>,
-        ) -> create_secret::Builder {
-            create_secret::Builder {
+        ) -> create_secret::RequestBuilder {
+            create_secret::RequestBuilder {
                 client: self.0.clone(),
                 database_name: database_name.into(),
                 secret_name: secret_name.into(),
@@ -205,8 +205,8 @@ pub mod catalog {
             database_name: impl Into<String>,
             secret_name: impl Into<String>,
             parameters: impl Into<models::DataLakeAnalyticsCatalogSecretCreateOrUpdateParameters>,
-        ) -> update_secret::Builder {
-            update_secret::Builder {
+        ) -> update_secret::RequestBuilder {
+            update_secret::RequestBuilder {
                 client: self.0.clone(),
                 database_name: database_name.into(),
                 secret_name: secret_name.into(),
@@ -218,8 +218,8 @@ pub mod catalog {
         #[doc = "Arguments:"]
         #[doc = "* `database_name`: The name of the database containing the secret."]
         #[doc = "* `secret_name`: The name of the secret to delete"]
-        pub fn delete_secret(&self, database_name: impl Into<String>, secret_name: impl Into<String>) -> delete_secret::Builder {
-            delete_secret::Builder {
+        pub fn delete_secret(&self, database_name: impl Into<String>, secret_name: impl Into<String>) -> delete_secret::RequestBuilder {
+            delete_secret::RequestBuilder {
                 client: self.0.clone(),
                 database_name: database_name.into(),
                 secret_name: secret_name.into(),
@@ -229,8 +229,8 @@ pub mod catalog {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `database_name`: The name of the database containing the secret."]
-        pub fn delete_all_secrets(&self, database_name: impl Into<String>) -> delete_all_secrets::Builder {
-            delete_all_secrets::Builder {
+        pub fn delete_all_secrets(&self, database_name: impl Into<String>) -> delete_all_secrets::RequestBuilder {
+            delete_all_secrets::RequestBuilder {
                 client: self.0.clone(),
                 database_name: database_name.into(),
             }
@@ -240,8 +240,12 @@ pub mod catalog {
         #[doc = "Arguments:"]
         #[doc = "* `database_name`: The name of the database containing the schema."]
         #[doc = "* `credential_name`: The name of the credential."]
-        pub fn get_credential(&self, database_name: impl Into<String>, credential_name: impl Into<String>) -> get_credential::Builder {
-            get_credential::Builder {
+        pub fn get_credential(
+            &self,
+            database_name: impl Into<String>,
+            credential_name: impl Into<String>,
+        ) -> get_credential::RequestBuilder {
+            get_credential::RequestBuilder {
                 client: self.0.clone(),
                 database_name: database_name.into(),
                 credential_name: credential_name.into(),
@@ -256,8 +260,8 @@ pub mod catalog {
             &self,
             database_name: impl Into<String>,
             credential_name: impl Into<String>,
-        ) -> delete_credential::Builder {
-            delete_credential::Builder {
+        ) -> delete_credential::RequestBuilder {
+            delete_credential::RequestBuilder {
                 client: self.0.clone(),
                 database_name: database_name.into(),
                 credential_name: credential_name.into(),
@@ -276,8 +280,8 @@ pub mod catalog {
             database_name: impl Into<String>,
             credential_name: impl Into<String>,
             parameters: impl Into<models::DataLakeAnalyticsCatalogCredentialCreateParameters>,
-        ) -> create_credential::Builder {
-            create_credential::Builder {
+        ) -> create_credential::RequestBuilder {
+            create_credential::RequestBuilder {
                 client: self.0.clone(),
                 database_name: database_name.into(),
                 credential_name: credential_name.into(),
@@ -295,8 +299,8 @@ pub mod catalog {
             database_name: impl Into<String>,
             credential_name: impl Into<String>,
             parameters: impl Into<models::DataLakeAnalyticsCatalogCredentialUpdateParameters>,
-        ) -> update_credential::Builder {
-            update_credential::Builder {
+        ) -> update_credential::RequestBuilder {
+            update_credential::RequestBuilder {
                 client: self.0.clone(),
                 database_name: database_name.into(),
                 credential_name: credential_name.into(),
@@ -307,8 +311,8 @@ pub mod catalog {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `database_name`: The name of the database containing the schema."]
-        pub fn list_credentials(&self, database_name: impl Into<String>) -> list_credentials::Builder {
-            list_credentials::Builder {
+        pub fn list_credentials(&self, database_name: impl Into<String>) -> list_credentials::RequestBuilder {
+            list_credentials::RequestBuilder {
                 client: self.0.clone(),
                 database_name: database_name.into(),
                 filter: None,
@@ -328,8 +332,8 @@ pub mod catalog {
             &self,
             database_name: impl Into<String>,
             external_data_source_name: impl Into<String>,
-        ) -> get_external_data_source::Builder {
-            get_external_data_source::Builder {
+        ) -> get_external_data_source::RequestBuilder {
+            get_external_data_source::RequestBuilder {
                 client: self.0.clone(),
                 database_name: database_name.into(),
                 external_data_source_name: external_data_source_name.into(),
@@ -339,8 +343,8 @@ pub mod catalog {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `database_name`: The name of the database containing the external data sources."]
-        pub fn list_external_data_sources(&self, database_name: impl Into<String>) -> list_external_data_sources::Builder {
-            list_external_data_sources::Builder {
+        pub fn list_external_data_sources(&self, database_name: impl Into<String>) -> list_external_data_sources::RequestBuilder {
+            list_external_data_sources::RequestBuilder {
                 client: self.0.clone(),
                 database_name: database_name.into(),
                 filter: None,
@@ -362,8 +366,8 @@ pub mod catalog {
             database_name: impl Into<String>,
             schema_name: impl Into<String>,
             procedure_name: impl Into<String>,
-        ) -> get_procedure::Builder {
-            get_procedure::Builder {
+        ) -> get_procedure::RequestBuilder {
+            get_procedure::RequestBuilder {
                 client: self.0.clone(),
                 database_name: database_name.into(),
                 schema_name: schema_name.into(),
@@ -375,8 +379,8 @@ pub mod catalog {
         #[doc = "Arguments:"]
         #[doc = "* `database_name`: The name of the database containing the procedures."]
         #[doc = "* `schema_name`: The name of the schema containing the procedures."]
-        pub fn list_procedures(&self, database_name: impl Into<String>, schema_name: impl Into<String>) -> list_procedures::Builder {
-            list_procedures::Builder {
+        pub fn list_procedures(&self, database_name: impl Into<String>, schema_name: impl Into<String>) -> list_procedures::RequestBuilder {
+            list_procedures::RequestBuilder {
                 client: self.0.clone(),
                 database_name: database_name.into(),
                 schema_name: schema_name.into(),
@@ -399,8 +403,8 @@ pub mod catalog {
             database_name: impl Into<String>,
             schema_name: impl Into<String>,
             table_name: impl Into<String>,
-        ) -> get_table::Builder {
-            get_table::Builder {
+        ) -> get_table::RequestBuilder {
+            get_table::RequestBuilder {
                 client: self.0.clone(),
                 database_name: database_name.into(),
                 schema_name: schema_name.into(),
@@ -418,8 +422,8 @@ pub mod catalog {
             database_name: impl Into<String>,
             schema_name: impl Into<String>,
             table_name: impl Into<String>,
-        ) -> list_table_fragments::Builder {
-            list_table_fragments::Builder {
+        ) -> list_table_fragments::RequestBuilder {
+            list_table_fragments::RequestBuilder {
                 client: self.0.clone(),
                 database_name: database_name.into(),
                 schema_name: schema_name.into(),
@@ -437,8 +441,8 @@ pub mod catalog {
         #[doc = "Arguments:"]
         #[doc = "* `database_name`: The name of the database containing the tables."]
         #[doc = "* `schema_name`: The name of the schema containing the tables."]
-        pub fn list_tables(&self, database_name: impl Into<String>, schema_name: impl Into<String>) -> list_tables::Builder {
-            list_tables::Builder {
+        pub fn list_tables(&self, database_name: impl Into<String>, schema_name: impl Into<String>) -> list_tables::RequestBuilder {
+            list_tables::RequestBuilder {
                 client: self.0.clone(),
                 database_name: database_name.into(),
                 schema_name: schema_name.into(),
@@ -460,8 +464,8 @@ pub mod catalog {
             &self,
             database_name: impl Into<String>,
             schema_name: impl Into<String>,
-        ) -> list_table_statistics_by_database_and_schema::Builder {
-            list_table_statistics_by_database_and_schema::Builder {
+        ) -> list_table_statistics_by_database_and_schema::RequestBuilder {
+            list_table_statistics_by_database_and_schema::RequestBuilder {
                 client: self.0.clone(),
                 database_name: database_name.into(),
                 schema_name: schema_name.into(),
@@ -484,8 +488,8 @@ pub mod catalog {
             database_name: impl Into<String>,
             schema_name: impl Into<String>,
             table_type_name: impl Into<String>,
-        ) -> get_table_type::Builder {
-            get_table_type::Builder {
+        ) -> get_table_type::RequestBuilder {
+            get_table_type::RequestBuilder {
                 client: self.0.clone(),
                 database_name: database_name.into(),
                 schema_name: schema_name.into(),
@@ -497,8 +501,12 @@ pub mod catalog {
         #[doc = "Arguments:"]
         #[doc = "* `database_name`: The name of the database containing the table types."]
         #[doc = "* `schema_name`: The name of the schema containing the table types."]
-        pub fn list_table_types(&self, database_name: impl Into<String>, schema_name: impl Into<String>) -> list_table_types::Builder {
-            list_table_types::Builder {
+        pub fn list_table_types(
+            &self,
+            database_name: impl Into<String>,
+            schema_name: impl Into<String>,
+        ) -> list_table_types::RequestBuilder {
+            list_table_types::RequestBuilder {
                 client: self.0.clone(),
                 database_name: database_name.into(),
                 schema_name: schema_name.into(),
@@ -521,8 +529,8 @@ pub mod catalog {
             database_name: impl Into<String>,
             schema_name: impl Into<String>,
             package_name: impl Into<String>,
-        ) -> get_package::Builder {
-            get_package::Builder {
+        ) -> get_package::RequestBuilder {
+            get_package::RequestBuilder {
                 client: self.0.clone(),
                 database_name: database_name.into(),
                 schema_name: schema_name.into(),
@@ -534,8 +542,8 @@ pub mod catalog {
         #[doc = "Arguments:"]
         #[doc = "* `database_name`: The name of the database containing the packages."]
         #[doc = "* `schema_name`: The name of the schema containing the packages."]
-        pub fn list_packages(&self, database_name: impl Into<String>, schema_name: impl Into<String>) -> list_packages::Builder {
-            list_packages::Builder {
+        pub fn list_packages(&self, database_name: impl Into<String>, schema_name: impl Into<String>) -> list_packages::RequestBuilder {
+            list_packages::RequestBuilder {
                 client: self.0.clone(),
                 database_name: database_name.into(),
                 schema_name: schema_name.into(),
@@ -558,8 +566,8 @@ pub mod catalog {
             database_name: impl Into<String>,
             schema_name: impl Into<String>,
             view_name: impl Into<String>,
-        ) -> get_view::Builder {
-            get_view::Builder {
+        ) -> get_view::RequestBuilder {
+            get_view::RequestBuilder {
                 client: self.0.clone(),
                 database_name: database_name.into(),
                 schema_name: schema_name.into(),
@@ -571,8 +579,8 @@ pub mod catalog {
         #[doc = "Arguments:"]
         #[doc = "* `database_name`: The name of the database containing the views."]
         #[doc = "* `schema_name`: The name of the schema containing the views."]
-        pub fn list_views(&self, database_name: impl Into<String>, schema_name: impl Into<String>) -> list_views::Builder {
-            list_views::Builder {
+        pub fn list_views(&self, database_name: impl Into<String>, schema_name: impl Into<String>) -> list_views::RequestBuilder {
+            list_views::RequestBuilder {
                 client: self.0.clone(),
                 database_name: database_name.into(),
                 schema_name: schema_name.into(),
@@ -597,8 +605,8 @@ pub mod catalog {
             schema_name: impl Into<String>,
             table_name: impl Into<String>,
             statistics_name: impl Into<String>,
-        ) -> get_table_statistic::Builder {
-            get_table_statistic::Builder {
+        ) -> get_table_statistic::RequestBuilder {
+            get_table_statistic::RequestBuilder {
                 client: self.0.clone(),
                 database_name: database_name.into(),
                 schema_name: schema_name.into(),
@@ -617,8 +625,8 @@ pub mod catalog {
             database_name: impl Into<String>,
             schema_name: impl Into<String>,
             table_name: impl Into<String>,
-        ) -> list_table_statistics::Builder {
-            list_table_statistics::Builder {
+        ) -> list_table_statistics::RequestBuilder {
+            list_table_statistics::RequestBuilder {
                 client: self.0.clone(),
                 database_name: database_name.into(),
                 schema_name: schema_name.into(),
@@ -644,8 +652,8 @@ pub mod catalog {
             schema_name: impl Into<String>,
             table_name: impl Into<String>,
             partition_name: impl Into<String>,
-        ) -> preview_table_partition::Builder {
-            preview_table_partition::Builder {
+        ) -> preview_table_partition::RequestBuilder {
+            preview_table_partition::RequestBuilder {
                 client: self.0.clone(),
                 database_name: database_name.into(),
                 schema_name: schema_name.into(),
@@ -668,8 +676,8 @@ pub mod catalog {
             schema_name: impl Into<String>,
             table_name: impl Into<String>,
             partition_name: impl Into<String>,
-        ) -> get_table_partition::Builder {
-            get_table_partition::Builder {
+        ) -> get_table_partition::RequestBuilder {
+            get_table_partition::RequestBuilder {
                 client: self.0.clone(),
                 database_name: database_name.into(),
                 schema_name: schema_name.into(),
@@ -688,8 +696,8 @@ pub mod catalog {
             database_name: impl Into<String>,
             schema_name: impl Into<String>,
             table_name: impl Into<String>,
-        ) -> preview_table::Builder {
-            preview_table::Builder {
+        ) -> preview_table::RequestBuilder {
+            preview_table::RequestBuilder {
                 client: self.0.clone(),
                 database_name: database_name.into(),
                 schema_name: schema_name.into(),
@@ -709,8 +717,8 @@ pub mod catalog {
             database_name: impl Into<String>,
             schema_name: impl Into<String>,
             table_name: impl Into<String>,
-        ) -> list_table_partitions::Builder {
-            list_table_partitions::Builder {
+        ) -> list_table_partitions::RequestBuilder {
+            list_table_partitions::RequestBuilder {
                 client: self.0.clone(),
                 database_name: database_name.into(),
                 schema_name: schema_name.into(),
@@ -728,8 +736,8 @@ pub mod catalog {
         #[doc = "Arguments:"]
         #[doc = "* `database_name`: The name of the database containing the types."]
         #[doc = "* `schema_name`: The name of the schema containing the types."]
-        pub fn list_types(&self, database_name: impl Into<String>, schema_name: impl Into<String>) -> list_types::Builder {
-            list_types::Builder {
+        pub fn list_types(&self, database_name: impl Into<String>, schema_name: impl Into<String>) -> list_types::RequestBuilder {
+            list_types::RequestBuilder {
                 client: self.0.clone(),
                 database_name: database_name.into(),
                 schema_name: schema_name.into(),
@@ -752,8 +760,8 @@ pub mod catalog {
             database_name: impl Into<String>,
             schema_name: impl Into<String>,
             table_valued_function_name: impl Into<String>,
-        ) -> get_table_valued_function::Builder {
-            get_table_valued_function::Builder {
+        ) -> get_table_valued_function::RequestBuilder {
+            get_table_valued_function::RequestBuilder {
                 client: self.0.clone(),
                 database_name: database_name.into(),
                 schema_name: schema_name.into(),
@@ -769,8 +777,8 @@ pub mod catalog {
             &self,
             database_name: impl Into<String>,
             schema_name: impl Into<String>,
-        ) -> list_table_valued_functions::Builder {
-            list_table_valued_functions::Builder {
+        ) -> list_table_valued_functions::RequestBuilder {
+            list_table_valued_functions::RequestBuilder {
                 client: self.0.clone(),
                 database_name: database_name.into(),
                 schema_name: schema_name.into(),
@@ -787,8 +795,8 @@ pub mod catalog {
         #[doc = "Arguments:"]
         #[doc = "* `database_name`: The name of the database containing the assembly."]
         #[doc = "* `assembly_name`: The name of the assembly."]
-        pub fn get_assembly(&self, database_name: impl Into<String>, assembly_name: impl Into<String>) -> get_assembly::Builder {
-            get_assembly::Builder {
+        pub fn get_assembly(&self, database_name: impl Into<String>, assembly_name: impl Into<String>) -> get_assembly::RequestBuilder {
+            get_assembly::RequestBuilder {
                 client: self.0.clone(),
                 database_name: database_name.into(),
                 assembly_name: assembly_name.into(),
@@ -798,8 +806,8 @@ pub mod catalog {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `database_name`: The name of the database containing the assembly."]
-        pub fn list_assemblies(&self, database_name: impl Into<String>) -> list_assemblies::Builder {
-            list_assemblies::Builder {
+        pub fn list_assemblies(&self, database_name: impl Into<String>) -> list_assemblies::RequestBuilder {
+            list_assemblies::RequestBuilder {
                 client: self.0.clone(),
                 database_name: database_name.into(),
                 filter: None,
@@ -815,8 +823,8 @@ pub mod catalog {
         #[doc = "Arguments:"]
         #[doc = "* `database_name`: The name of the database containing the schema."]
         #[doc = "* `schema_name`: The name of the schema."]
-        pub fn get_schema(&self, database_name: impl Into<String>, schema_name: impl Into<String>) -> get_schema::Builder {
-            get_schema::Builder {
+        pub fn get_schema(&self, database_name: impl Into<String>, schema_name: impl Into<String>) -> get_schema::RequestBuilder {
+            get_schema::RequestBuilder {
                 client: self.0.clone(),
                 database_name: database_name.into(),
                 schema_name: schema_name.into(),
@@ -826,8 +834,8 @@ pub mod catalog {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `database_name`: The name of the database containing the schema."]
-        pub fn list_schemas(&self, database_name: impl Into<String>) -> list_schemas::Builder {
-            list_schemas::Builder {
+        pub fn list_schemas(&self, database_name: impl Into<String>) -> list_schemas::RequestBuilder {
+            list_schemas::RequestBuilder {
                 client: self.0.clone(),
                 database_name: database_name.into(),
                 filter: None,
@@ -842,8 +850,11 @@ pub mod catalog {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `database_name`: The name of the database containing the table statistics."]
-        pub fn list_table_statistics_by_database(&self, database_name: impl Into<String>) -> list_table_statistics_by_database::Builder {
-            list_table_statistics_by_database::Builder {
+        pub fn list_table_statistics_by_database(
+            &self,
+            database_name: impl Into<String>,
+        ) -> list_table_statistics_by_database::RequestBuilder {
+            list_table_statistics_by_database::RequestBuilder {
                 client: self.0.clone(),
                 database_name: database_name.into(),
                 filter: None,
@@ -858,8 +869,8 @@ pub mod catalog {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `database_name`: The name of the database containing the tables."]
-        pub fn list_tables_by_database(&self, database_name: impl Into<String>) -> list_tables_by_database::Builder {
-            list_tables_by_database::Builder {
+        pub fn list_tables_by_database(&self, database_name: impl Into<String>) -> list_tables_by_database::RequestBuilder {
+            list_tables_by_database::RequestBuilder {
                 client: self.0.clone(),
                 database_name: database_name.into(),
                 filter: None,
@@ -878,8 +889,8 @@ pub mod catalog {
         pub fn list_table_valued_functions_by_database(
             &self,
             database_name: impl Into<String>,
-        ) -> list_table_valued_functions_by_database::Builder {
-            list_table_valued_functions_by_database::Builder {
+        ) -> list_table_valued_functions_by_database::RequestBuilder {
+            list_table_valued_functions_by_database::RequestBuilder {
                 client: self.0.clone(),
                 database_name: database_name.into(),
                 filter: None,
@@ -894,8 +905,8 @@ pub mod catalog {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `database_name`: The name of the database containing the views."]
-        pub fn list_views_by_database(&self, database_name: impl Into<String>) -> list_views_by_database::Builder {
-            list_views_by_database::Builder {
+        pub fn list_views_by_database(&self, database_name: impl Into<String>) -> list_views_by_database::RequestBuilder {
+            list_views_by_database::RequestBuilder {
                 client: self.0.clone(),
                 database_name: database_name.into(),
                 filter: None,
@@ -910,8 +921,8 @@ pub mod catalog {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `database_name`: The name of the database."]
-        pub fn list_acls_by_database(&self, database_name: impl Into<String>) -> list_acls_by_database::Builder {
-            list_acls_by_database::Builder {
+        pub fn list_acls_by_database(&self, database_name: impl Into<String>) -> list_acls_by_database::RequestBuilder {
+            list_acls_by_database::RequestBuilder {
                 client: self.0.clone(),
                 database_name: database_name.into(),
                 filter: None,
@@ -923,8 +934,8 @@ pub mod catalog {
             }
         }
         #[doc = "Retrieves the list of access control list (ACL) entries for the Data Lake Analytics catalog."]
-        pub fn list_acls(&self) -> list_acls::Builder {
-            list_acls::Builder {
+        pub fn list_acls(&self) -> list_acls::RequestBuilder {
+            list_acls::RequestBuilder {
                 client: self.0.clone(),
                 filter: None,
                 top: None,
@@ -938,15 +949,15 @@ pub mod catalog {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `database_name`: The name of the database."]
-        pub fn get_database(&self, database_name: impl Into<String>) -> get_database::Builder {
-            get_database::Builder {
+        pub fn get_database(&self, database_name: impl Into<String>) -> get_database::RequestBuilder {
+            get_database::RequestBuilder {
                 client: self.0.clone(),
                 database_name: database_name.into(),
             }
         }
         #[doc = "Retrieves the list of databases from the Data Lake Analytics catalog."]
-        pub fn list_databases(&self) -> list_databases::Builder {
-            list_databases::Builder {
+        pub fn list_databases(&self) -> list_databases::RequestBuilder {
+            list_databases::RequestBuilder {
                 client: self.0.clone(),
                 filter: None,
                 top: None,
@@ -961,11 +972,11 @@ pub mod catalog {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) parameters: models::AclCreateOrUpdateParameters,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1002,12 +1013,12 @@ pub mod catalog {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) database_name: String,
             pub(crate) parameters: models::AclCreateOrUpdateParameters,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1048,11 +1059,11 @@ pub mod catalog {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) parameters: models::AclDeleteParameters,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1089,12 +1100,12 @@ pub mod catalog {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) database_name: String,
             pub(crate) parameters: models::AclDeleteParameters,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1135,12 +1146,12 @@ pub mod catalog {
         use super::models;
         type Response = models::USqlSecret;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) database_name: String,
             pub(crate) secret_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1185,13 +1196,13 @@ pub mod catalog {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) database_name: String,
             pub(crate) secret_name: String,
             pub(crate) parameters: models::DataLakeAnalyticsCatalogSecretCreateOrUpdateParameters,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1233,13 +1244,13 @@ pub mod catalog {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) database_name: String,
             pub(crate) secret_name: String,
             pub(crate) parameters: models::DataLakeAnalyticsCatalogSecretCreateOrUpdateParameters,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1281,12 +1292,12 @@ pub mod catalog {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) database_name: String,
             pub(crate) secret_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1327,11 +1338,11 @@ pub mod catalog {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) database_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1371,12 +1382,12 @@ pub mod catalog {
         use super::models;
         type Response = models::USqlCredential;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) database_name: String,
             pub(crate) credential_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1421,14 +1432,14 @@ pub mod catalog {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) database_name: String,
             pub(crate) credential_name: String,
             pub(crate) parameters: Option<models::DataLakeAnalyticsCatalogCredentialDeleteParameters>,
             pub(crate) cascade: Option<bool>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The parameters to delete a credential if the current user is not the account owner."]
             pub fn parameters(mut self, parameters: impl Into<models::DataLakeAnalyticsCatalogCredentialDeleteParameters>) -> Self {
                 self.parameters = Some(parameters.into());
@@ -1487,13 +1498,13 @@ pub mod catalog {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) database_name: String,
             pub(crate) credential_name: String,
             pub(crate) parameters: models::DataLakeAnalyticsCatalogCredentialCreateParameters,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1535,13 +1546,13 @@ pub mod catalog {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) database_name: String,
             pub(crate) credential_name: String,
             pub(crate) parameters: models::DataLakeAnalyticsCatalogCredentialUpdateParameters,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1583,7 +1594,7 @@ pub mod catalog {
         use super::models;
         type Response = models::USqlCredentialList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) database_name: String,
             pub(crate) filter: Option<String>,
@@ -1593,7 +1604,7 @@ pub mod catalog {
             pub(crate) orderby: Option<String>,
             pub(crate) count: Option<bool>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "OData filter. Optional."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -1711,12 +1722,12 @@ pub mod catalog {
         use super::models;
         type Response = models::USqlExternalDataSource;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) database_name: String,
             pub(crate) external_data_source_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1761,7 +1772,7 @@ pub mod catalog {
         use super::models;
         type Response = models::USqlExternalDataSourceList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) database_name: String,
             pub(crate) filter: Option<String>,
@@ -1771,7 +1782,7 @@ pub mod catalog {
             pub(crate) orderby: Option<String>,
             pub(crate) count: Option<bool>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "OData filter. Optional."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -1889,13 +1900,13 @@ pub mod catalog {
         use super::models;
         type Response = models::USqlProcedure;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) database_name: String,
             pub(crate) schema_name: String,
             pub(crate) procedure_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1941,7 +1952,7 @@ pub mod catalog {
         use super::models;
         type Response = models::USqlProcedureList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) database_name: String,
             pub(crate) schema_name: String,
@@ -1952,7 +1963,7 @@ pub mod catalog {
             pub(crate) orderby: Option<String>,
             pub(crate) count: Option<bool>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "OData filter. Optional."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -2071,13 +2082,13 @@ pub mod catalog {
         use super::models;
         type Response = models::USqlTable;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) database_name: String,
             pub(crate) schema_name: String,
             pub(crate) table_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2123,7 +2134,7 @@ pub mod catalog {
         use super::models;
         type Response = models::USqlTableFragmentList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) database_name: String,
             pub(crate) schema_name: String,
@@ -2135,7 +2146,7 @@ pub mod catalog {
             pub(crate) orderby: Option<String>,
             pub(crate) count: Option<bool>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "OData filter. Optional."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -2255,7 +2266,7 @@ pub mod catalog {
         use super::models;
         type Response = models::USqlTableList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) database_name: String,
             pub(crate) schema_name: String,
@@ -2267,7 +2278,7 @@ pub mod catalog {
             pub(crate) count: Option<bool>,
             pub(crate) basic: Option<bool>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "OData filter. Optional."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -2394,7 +2405,7 @@ pub mod catalog {
         use super::models;
         type Response = models::USqlTableStatisticsList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) database_name: String,
             pub(crate) schema_name: String,
@@ -2405,7 +2416,7 @@ pub mod catalog {
             pub(crate) orderby: Option<String>,
             pub(crate) count: Option<bool>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "OData filter. Optional."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -2524,13 +2535,13 @@ pub mod catalog {
         use super::models;
         type Response = models::USqlTableType;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) database_name: String,
             pub(crate) schema_name: String,
             pub(crate) table_type_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2576,7 +2587,7 @@ pub mod catalog {
         use super::models;
         type Response = models::USqlTableTypeList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) database_name: String,
             pub(crate) schema_name: String,
@@ -2587,7 +2598,7 @@ pub mod catalog {
             pub(crate) orderby: Option<String>,
             pub(crate) count: Option<bool>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "OData filter. Optional."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -2706,13 +2717,13 @@ pub mod catalog {
         use super::models;
         type Response = models::USqlPackage;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) database_name: String,
             pub(crate) schema_name: String,
             pub(crate) package_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2758,7 +2769,7 @@ pub mod catalog {
         use super::models;
         type Response = models::USqlPackageList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) database_name: String,
             pub(crate) schema_name: String,
@@ -2769,7 +2780,7 @@ pub mod catalog {
             pub(crate) orderby: Option<String>,
             pub(crate) count: Option<bool>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "OData filter. Optional."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -2888,13 +2899,13 @@ pub mod catalog {
         use super::models;
         type Response = models::USqlView;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) database_name: String,
             pub(crate) schema_name: String,
             pub(crate) view_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2940,7 +2951,7 @@ pub mod catalog {
         use super::models;
         type Response = models::USqlViewList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) database_name: String,
             pub(crate) schema_name: String,
@@ -2951,7 +2962,7 @@ pub mod catalog {
             pub(crate) orderby: Option<String>,
             pub(crate) count: Option<bool>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "OData filter. Optional."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -3070,14 +3081,14 @@ pub mod catalog {
         use super::models;
         type Response = models::USqlTableStatistics;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) database_name: String,
             pub(crate) schema_name: String,
             pub(crate) table_name: String,
             pub(crate) statistics_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -3124,7 +3135,7 @@ pub mod catalog {
         use super::models;
         type Response = models::USqlTableStatisticsList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) database_name: String,
             pub(crate) schema_name: String,
@@ -3136,7 +3147,7 @@ pub mod catalog {
             pub(crate) orderby: Option<String>,
             pub(crate) count: Option<bool>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "OData filter. Optional."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -3256,7 +3267,7 @@ pub mod catalog {
         use super::models;
         type Response = models::USqlTablePreview;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) database_name: String,
             pub(crate) schema_name: String,
@@ -3265,7 +3276,7 @@ pub mod catalog {
             pub(crate) max_rows: Option<i64>,
             pub(crate) max_columns: Option<i64>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The maximum number of preview rows to be retrieved.Rows returned may be less than or equal to this number depending on row sizes and number of rows in the partition."]
             pub fn max_rows(mut self, max_rows: i64) -> Self {
                 self.max_rows = Some(max_rows);
@@ -3328,14 +3339,14 @@ pub mod catalog {
         use super::models;
         type Response = models::USqlTablePartition;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) database_name: String,
             pub(crate) schema_name: String,
             pub(crate) table_name: String,
             pub(crate) partition_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -3382,7 +3393,7 @@ pub mod catalog {
         use super::models;
         type Response = models::USqlTablePreview;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) database_name: String,
             pub(crate) schema_name: String,
@@ -3390,7 +3401,7 @@ pub mod catalog {
             pub(crate) max_rows: Option<i64>,
             pub(crate) max_columns: Option<i64>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The maximum number of preview rows to be retrieved. Rows returned may be less than or equal to this number depending on row sizes and number of rows in the table."]
             pub fn max_rows(mut self, max_rows: i64) -> Self {
                 self.max_rows = Some(max_rows);
@@ -3452,7 +3463,7 @@ pub mod catalog {
         use super::models;
         type Response = models::USqlTablePartitionList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) database_name: String,
             pub(crate) schema_name: String,
@@ -3464,7 +3475,7 @@ pub mod catalog {
             pub(crate) orderby: Option<String>,
             pub(crate) count: Option<bool>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "OData filter. Optional."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -3584,7 +3595,7 @@ pub mod catalog {
         use super::models;
         type Response = models::USqlTypeList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) database_name: String,
             pub(crate) schema_name: String,
@@ -3595,7 +3606,7 @@ pub mod catalog {
             pub(crate) orderby: Option<String>,
             pub(crate) count: Option<bool>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "OData filter. Optional."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -3714,13 +3725,13 @@ pub mod catalog {
         use super::models;
         type Response = models::USqlTableValuedFunction;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) database_name: String,
             pub(crate) schema_name: String,
             pub(crate) table_valued_function_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -3766,7 +3777,7 @@ pub mod catalog {
         use super::models;
         type Response = models::USqlTableValuedFunctionList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) database_name: String,
             pub(crate) schema_name: String,
@@ -3777,7 +3788,7 @@ pub mod catalog {
             pub(crate) orderby: Option<String>,
             pub(crate) count: Option<bool>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "OData filter. Optional."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -3896,12 +3907,12 @@ pub mod catalog {
         use super::models;
         type Response = models::USqlAssembly;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) database_name: String,
             pub(crate) assembly_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -3946,7 +3957,7 @@ pub mod catalog {
         use super::models;
         type Response = models::USqlAssemblyList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) database_name: String,
             pub(crate) filter: Option<String>,
@@ -3956,7 +3967,7 @@ pub mod catalog {
             pub(crate) orderby: Option<String>,
             pub(crate) count: Option<bool>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "OData filter. Optional."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -4074,12 +4085,12 @@ pub mod catalog {
         use super::models;
         type Response = models::USqlSchema;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) database_name: String,
             pub(crate) schema_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -4124,7 +4135,7 @@ pub mod catalog {
         use super::models;
         type Response = models::USqlSchemaList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) database_name: String,
             pub(crate) filter: Option<String>,
@@ -4134,7 +4145,7 @@ pub mod catalog {
             pub(crate) orderby: Option<String>,
             pub(crate) count: Option<bool>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "OData filter. Optional."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -4252,7 +4263,7 @@ pub mod catalog {
         use super::models;
         type Response = models::USqlTableStatisticsList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) database_name: String,
             pub(crate) filter: Option<String>,
@@ -4262,7 +4273,7 @@ pub mod catalog {
             pub(crate) orderby: Option<String>,
             pub(crate) count: Option<bool>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "OData filter. Optional."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -4380,7 +4391,7 @@ pub mod catalog {
         use super::models;
         type Response = models::USqlTableList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) database_name: String,
             pub(crate) filter: Option<String>,
@@ -4391,7 +4402,7 @@ pub mod catalog {
             pub(crate) count: Option<bool>,
             pub(crate) basic: Option<bool>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "OData filter. Optional."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -4517,7 +4528,7 @@ pub mod catalog {
         use super::models;
         type Response = models::USqlTableValuedFunctionList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) database_name: String,
             pub(crate) filter: Option<String>,
@@ -4527,7 +4538,7 @@ pub mod catalog {
             pub(crate) orderby: Option<String>,
             pub(crate) count: Option<bool>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "OData filter. Optional."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -4645,7 +4656,7 @@ pub mod catalog {
         use super::models;
         type Response = models::USqlViewList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) database_name: String,
             pub(crate) filter: Option<String>,
@@ -4655,7 +4666,7 @@ pub mod catalog {
             pub(crate) orderby: Option<String>,
             pub(crate) count: Option<bool>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "OData filter. Optional."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -4773,7 +4784,7 @@ pub mod catalog {
         use super::models;
         type Response = models::AclList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) database_name: String,
             pub(crate) filter: Option<String>,
@@ -4783,7 +4794,7 @@ pub mod catalog {
             pub(crate) orderby: Option<String>,
             pub(crate) count: Option<bool>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "OData filter. Optional."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -4901,7 +4912,7 @@ pub mod catalog {
         use super::models;
         type Response = models::AclList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) filter: Option<String>,
             pub(crate) top: Option<i32>,
@@ -4910,7 +4921,7 @@ pub mod catalog {
             pub(crate) orderby: Option<String>,
             pub(crate) count: Option<bool>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "OData filter. Optional."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -5024,11 +5035,11 @@ pub mod catalog {
         use super::models;
         type Response = models::USqlDatabase;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) database_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -5072,7 +5083,7 @@ pub mod catalog {
         use super::models;
         type Response = models::USqlDatabaseList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) filter: Option<String>,
             pub(crate) top: Option<i32>,
@@ -5081,7 +5092,7 @@ pub mod catalog {
             pub(crate) orderby: Option<String>,
             pub(crate) count: Option<bool>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "OData filter. Optional."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());

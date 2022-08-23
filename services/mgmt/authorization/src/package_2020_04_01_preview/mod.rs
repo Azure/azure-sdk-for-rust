@@ -136,8 +136,8 @@ pub mod classic_administrators {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: The ID of the target subscription."]
-        pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
-            list::Builder {
+        pub fn list(&self, subscription_id: impl Into<String>) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
@@ -147,11 +147,11 @@ pub mod classic_administrators {
         use super::models;
         type Response = models::ClassicAdministratorListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -223,18 +223,18 @@ pub mod global_administrator {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Elevates access for a Global Administrator."]
-        pub fn elevate_access(&self) -> elevate_access::Builder {
-            elevate_access::Builder { client: self.0.clone() }
+        pub fn elevate_access(&self) -> elevate_access::RequestBuilder {
+            elevate_access::RequestBuilder { client: self.0.clone() }
         }
     }
     pub mod elevate_access {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -279,16 +279,16 @@ pub mod provider_operations_metadata {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `resource_provider_namespace`: The namespace of the resource provider."]
-        pub fn get(&self, resource_provider_namespace: impl Into<String>) -> get::Builder {
-            get::Builder {
+        pub fn get(&self, resource_provider_namespace: impl Into<String>) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 resource_provider_namespace: resource_provider_namespace.into(),
                 expand: None,
             }
         }
         #[doc = "Gets provider operations metadata for all resource providers."]
-        pub fn list(&self) -> list::Builder {
-            list::Builder {
+        pub fn list(&self) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 expand: None,
             }
@@ -298,12 +298,12 @@ pub mod provider_operations_metadata {
         use super::models;
         type Response = models::ProviderOperationsMetadata;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_provider_namespace: String,
             pub(crate) expand: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Specifies whether to expand the values."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
@@ -355,11 +355,11 @@ pub mod provider_operations_metadata {
         use super::models;
         type Response = models::ProviderOperationsMetadataListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) expand: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Specifies whether to expand the values."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
@@ -441,8 +441,8 @@ pub mod role_definitions {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `role_id`: The fully qualified role definition ID. Use the format, /subscriptions/{guid}/providers/Microsoft.Authorization/roleDefinitions/{roleDefinitionId} for subscription level role definitions, or /providers/Microsoft.Authorization/roleDefinitions/{roleDefinitionId} for tenant level role definitions."]
-        pub fn get_by_id(&self, role_id: impl Into<String>) -> get_by_id::Builder {
-            get_by_id::Builder {
+        pub fn get_by_id(&self, role_id: impl Into<String>) -> get_by_id::RequestBuilder {
+            get_by_id::RequestBuilder {
                 client: self.0.clone(),
                 role_id: role_id.into(),
             }
@@ -452,8 +452,8 @@ pub mod role_definitions {
         #[doc = "Arguments:"]
         #[doc = "* `scope`: The scope of the role definition."]
         #[doc = "* `role_definition_id`: The ID of the role definition."]
-        pub fn get(&self, scope: impl Into<String>, role_definition_id: impl Into<String>) -> get::Builder {
-            get::Builder {
+        pub fn get(&self, scope: impl Into<String>, role_definition_id: impl Into<String>) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 scope: scope.into(),
                 role_definition_id: role_definition_id.into(),
@@ -470,8 +470,8 @@ pub mod role_definitions {
             scope: impl Into<String>,
             role_definition_id: impl Into<String>,
             role_definition: impl Into<models::RoleDefinition>,
-        ) -> create_or_update::Builder {
-            create_or_update::Builder {
+        ) -> create_or_update::RequestBuilder {
+            create_or_update::RequestBuilder {
                 client: self.0.clone(),
                 scope: scope.into(),
                 role_definition_id: role_definition_id.into(),
@@ -483,8 +483,8 @@ pub mod role_definitions {
         #[doc = "Arguments:"]
         #[doc = "* `scope`: The scope of the role definition."]
         #[doc = "* `role_definition_id`: The ID of the role definition to delete."]
-        pub fn delete(&self, scope: impl Into<String>, role_definition_id: impl Into<String>) -> delete::Builder {
-            delete::Builder {
+        pub fn delete(&self, scope: impl Into<String>, role_definition_id: impl Into<String>) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 scope: scope.into(),
                 role_definition_id: role_definition_id.into(),
@@ -494,8 +494,8 @@ pub mod role_definitions {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `scope`: The scope of the role definition."]
-        pub fn list(&self, scope: impl Into<String>) -> list::Builder {
-            list::Builder {
+        pub fn list(&self, scope: impl Into<String>) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 scope: scope.into(),
                 filter: None,
@@ -506,11 +506,11 @@ pub mod role_definitions {
         use super::models;
         type Response = models::RoleDefinition;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) role_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -550,12 +550,12 @@ pub mod role_definitions {
         use super::models;
         type Response = models::RoleDefinition;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) scope: String,
             pub(crate) role_definition_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -600,13 +600,13 @@ pub mod role_definitions {
         use super::models;
         type Response = models::RoleDefinition;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) scope: String,
             pub(crate) role_definition_id: String,
             pub(crate) role_definition: models::RoleDefinition,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -656,12 +656,12 @@ pub mod role_definitions {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) scope: String,
             pub(crate) role_definition_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -707,12 +707,12 @@ pub mod role_definitions {
         use super::models;
         type Response = models::RoleDefinitionListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) scope: String,
             pub(crate) filter: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The filter to apply on the operation. Use atScopeAndBelow filter to search below the given scope as well."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -800,8 +800,8 @@ pub mod permissions {
             &self,
             resource_group_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_for_resource_group::Builder {
-            list_for_resource_group::Builder {
+        ) -> list_for_resource_group::RequestBuilder {
+            list_for_resource_group::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 subscription_id: subscription_id.into(),
@@ -824,8 +824,8 @@ pub mod permissions {
             resource_type: impl Into<String>,
             resource_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_for_resource::Builder {
-            list_for_resource::Builder {
+        ) -> list_for_resource::RequestBuilder {
+            list_for_resource::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 resource_provider_namespace: resource_provider_namespace.into(),
@@ -840,12 +840,12 @@ pub mod permissions {
         use super::models;
         type Response = models::PermissionGetResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -916,7 +916,7 @@ pub mod permissions {
         use super::models;
         type Response = models::PermissionGetResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) resource_provider_namespace: String,
@@ -925,7 +925,7 @@ pub mod permissions {
             pub(crate) resource_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -1018,8 +1018,8 @@ pub mod deny_assignments {
             parent_resource_path: impl Into<String>,
             resource_type: impl Into<String>,
             resource_name: impl Into<String>,
-        ) -> list_for_resource::Builder {
-            list_for_resource::Builder {
+        ) -> list_for_resource::RequestBuilder {
+            list_for_resource::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -1039,8 +1039,8 @@ pub mod deny_assignments {
             &self,
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
-        ) -> list_for_resource_group::Builder {
-            list_for_resource_group::Builder {
+        ) -> list_for_resource_group::RequestBuilder {
+            list_for_resource_group::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -1051,8 +1051,8 @@ pub mod deny_assignments {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: The ID of the target subscription."]
-        pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
-            list::Builder {
+        pub fn list(&self, subscription_id: impl Into<String>) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 filter: None,
@@ -1063,8 +1063,8 @@ pub mod deny_assignments {
         #[doc = "Arguments:"]
         #[doc = "* `scope`: The scope of the deny assignment."]
         #[doc = "* `deny_assignment_id`: The ID of the deny assignment to get."]
-        pub fn get(&self, scope: impl Into<String>, deny_assignment_id: impl Into<String>) -> get::Builder {
-            get::Builder {
+        pub fn get(&self, scope: impl Into<String>, deny_assignment_id: impl Into<String>) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 scope: scope.into(),
                 deny_assignment_id: deny_assignment_id.into(),
@@ -1074,8 +1074,8 @@ pub mod deny_assignments {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `deny_assignment_id`: The fully qualified deny assignment ID. For example, use the format, /subscriptions/{guid}/providers/Microsoft.Authorization/denyAssignments/{denyAssignmentId} for subscription level deny assignments, or /providers/Microsoft.Authorization/denyAssignments/{denyAssignmentId} for tenant level deny assignments."]
-        pub fn get_by_id(&self, deny_assignment_id: impl Into<String>) -> get_by_id::Builder {
-            get_by_id::Builder {
+        pub fn get_by_id(&self, deny_assignment_id: impl Into<String>) -> get_by_id::RequestBuilder {
+            get_by_id::RequestBuilder {
                 client: self.0.clone(),
                 deny_assignment_id: deny_assignment_id.into(),
             }
@@ -1084,8 +1084,8 @@ pub mod deny_assignments {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `scope`: The scope of the deny assignments."]
-        pub fn list_for_scope(&self, scope: impl Into<String>) -> list_for_scope::Builder {
-            list_for_scope::Builder {
+        pub fn list_for_scope(&self, scope: impl Into<String>) -> list_for_scope::RequestBuilder {
+            list_for_scope::RequestBuilder {
                 client: self.0.clone(),
                 scope: scope.into(),
                 filter: None,
@@ -1096,7 +1096,7 @@ pub mod deny_assignments {
         use super::models;
         type Response = models::DenyAssignmentListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -1106,7 +1106,7 @@ pub mod deny_assignments {
             pub(crate) resource_name: String,
             pub(crate) filter: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The filter to apply on the operation. Use $filter=atScope() to return all deny assignments at or above the scope. Use $filter=denyAssignmentName eq '{name}' to search deny assignments by name at specified scope. Use $filter=principalId eq '{id}' to return all deny assignments at, above and below the scope for the specified principal. Use $filter=gdprExportPrincipalId eq '{id}' to return all deny assignments at, above and below the scope for the specified principal. This filter is different from the principalId filter as it returns not only those deny assignments that contain the specified principal is the Principals list but also those deny assignments that contain the specified principal is the ExcludePrincipals list. Additionally, when gdprExportPrincipalId filter is used, only the deny assignment name and description properties are returned."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -1189,13 +1189,13 @@ pub mod deny_assignments {
         use super::models;
         type Response = models::DenyAssignmentListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) filter: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The filter to apply on the operation. Use $filter=atScope() to return all deny assignments at or above the scope. Use $filter=denyAssignmentName eq '{name}' to search deny assignments by name at specified scope. Use $filter=principalId eq '{id}' to return all deny assignments at, above and below the scope for the specified principal. Use $filter=gdprExportPrincipalId eq '{id}' to return all deny assignments at, above and below the scope for the specified principal. This filter is different from the principalId filter as it returns not only those deny assignments that contain the specified principal is the Principals list but also those deny assignments that contain the specified principal is the ExcludePrincipals list. Additionally, when gdprExportPrincipalId filter is used, only the deny assignment name and description properties are returned."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -1274,12 +1274,12 @@ pub mod deny_assignments {
         use super::models;
         type Response = models::DenyAssignmentListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) filter: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The filter to apply on the operation. Use $filter=atScope() to return all deny assignments at or above the scope. Use $filter=denyAssignmentName eq '{name}' to search deny assignments by name at specified scope. Use $filter=principalId eq '{id}' to return all deny assignments at, above and below the scope for the specified principal. Use $filter=gdprExportPrincipalId eq '{id}' to return all deny assignments at, above and below the scope for the specified principal. This filter is different from the principalId filter as it returns not only those deny assignments that contain the specified principal is the Principals list but also those deny assignments that contain the specified principal is the ExcludePrincipals list. Additionally, when gdprExportPrincipalId filter is used, only the deny assignment name and description properties are returned."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -1357,12 +1357,12 @@ pub mod deny_assignments {
         use super::models;
         type Response = models::DenyAssignment;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) scope: String,
             pub(crate) deny_assignment_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1407,11 +1407,11 @@ pub mod deny_assignments {
         use super::models;
         type Response = models::DenyAssignment;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) deny_assignment_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1451,12 +1451,12 @@ pub mod deny_assignments {
         use super::models;
         type Response = models::DenyAssignmentListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) scope: String,
             pub(crate) filter: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The filter to apply on the operation. Use $filter=atScope() to return all deny assignments at or above the scope. Use $filter=denyAssignmentName eq '{name}' to search deny assignments by name at specified scope. Use $filter=principalId eq '{id}' to return all deny assignments at, above and below the scope for the specified principal. Use $filter=gdprExportPrincipalId eq '{id}' to return all deny assignments at, above and below the scope for the specified principal. This filter is different from the principalId filter as it returns not only those deny assignments that contain the specified principal is the Principals list but also those deny assignments that contain the specified principal is the ExcludePrincipals list. Additionally, when gdprExportPrincipalId filter is used, only the deny assignment name and description properties are returned."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -1539,8 +1539,8 @@ pub mod role_assignment_metrics {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: The ID of the target subscription."]
-        pub fn get_metrics_for_subscription(&self, subscription_id: impl Into<String>) -> get_metrics_for_subscription::Builder {
-            get_metrics_for_subscription::Builder {
+        pub fn get_metrics_for_subscription(&self, subscription_id: impl Into<String>) -> get_metrics_for_subscription::RequestBuilder {
+            get_metrics_for_subscription::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
@@ -1550,11 +1550,11 @@ pub mod role_assignment_metrics {
         use super::models;
         type Response = models::RoleAssignmentMetricsResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1616,8 +1616,8 @@ pub mod role_assignments {
             resource_type: impl Into<String>,
             resource_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_for_resource::Builder {
-            list_for_resource::Builder {
+        ) -> list_for_resource::RequestBuilder {
+            list_for_resource::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 resource_provider_namespace: resource_provider_namespace.into(),
@@ -1638,8 +1638,8 @@ pub mod role_assignments {
             &self,
             resource_group_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_for_resource_group::Builder {
-            list_for_resource_group::Builder {
+        ) -> list_for_resource_group::RequestBuilder {
+            list_for_resource_group::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 subscription_id: subscription_id.into(),
@@ -1652,8 +1652,8 @@ pub mod role_assignments {
         #[doc = "Arguments:"]
         #[doc = "* `scope`: The scope of the role assignment."]
         #[doc = "* `role_assignment_name`: The name of the role assignment to get."]
-        pub fn get(&self, scope: impl Into<String>, role_assignment_name: impl Into<String>) -> get::Builder {
-            get::Builder {
+        pub fn get(&self, scope: impl Into<String>, role_assignment_name: impl Into<String>) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 scope: scope.into(),
                 role_assignment_name: role_assignment_name.into(),
@@ -1671,8 +1671,8 @@ pub mod role_assignments {
             scope: impl Into<String>,
             role_assignment_name: impl Into<String>,
             parameters: impl Into<models::RoleAssignmentCreateParameters>,
-        ) -> create::Builder {
-            create::Builder {
+        ) -> create::RequestBuilder {
+            create::RequestBuilder {
                 client: self.0.clone(),
                 scope: scope.into(),
                 role_assignment_name: role_assignment_name.into(),
@@ -1684,8 +1684,8 @@ pub mod role_assignments {
         #[doc = "Arguments:"]
         #[doc = "* `scope`: The scope of the role assignment to delete."]
         #[doc = "* `role_assignment_name`: The name of the role assignment to delete."]
-        pub fn delete(&self, scope: impl Into<String>, role_assignment_name: impl Into<String>) -> delete::Builder {
-            delete::Builder {
+        pub fn delete(&self, scope: impl Into<String>, role_assignment_name: impl Into<String>) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 scope: scope.into(),
                 role_assignment_name: role_assignment_name.into(),
@@ -1696,8 +1696,8 @@ pub mod role_assignments {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `role_id`: The ID of the role assignment to get."]
-        pub fn get_by_id(&self, role_id: impl Into<String>) -> get_by_id::Builder {
-            get_by_id::Builder {
+        pub fn get_by_id(&self, role_id: impl Into<String>) -> get_by_id::RequestBuilder {
+            get_by_id::RequestBuilder {
                 client: self.0.clone(),
                 role_id: role_id.into(),
                 tenant_id: None,
@@ -1712,8 +1712,8 @@ pub mod role_assignments {
             &self,
             role_id: impl Into<String>,
             parameters: impl Into<models::RoleAssignmentCreateParameters>,
-        ) -> create_by_id::Builder {
-            create_by_id::Builder {
+        ) -> create_by_id::RequestBuilder {
+            create_by_id::RequestBuilder {
                 client: self.0.clone(),
                 role_id: role_id.into(),
                 parameters: parameters.into(),
@@ -1723,8 +1723,8 @@ pub mod role_assignments {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `role_id`: The ID of the role assignment to delete."]
-        pub fn delete_by_id(&self, role_id: impl Into<String>) -> delete_by_id::Builder {
-            delete_by_id::Builder {
+        pub fn delete_by_id(&self, role_id: impl Into<String>) -> delete_by_id::RequestBuilder {
+            delete_by_id::RequestBuilder {
                 client: self.0.clone(),
                 role_id: role_id.into(),
                 tenant_id: None,
@@ -1734,8 +1734,8 @@ pub mod role_assignments {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: The ID of the target subscription."]
-        pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
-            list::Builder {
+        pub fn list(&self, subscription_id: impl Into<String>) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 filter: None,
@@ -1746,8 +1746,8 @@ pub mod role_assignments {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `scope`: The scope of the role assignments."]
-        pub fn list_for_scope(&self, scope: impl Into<String>) -> list_for_scope::Builder {
-            list_for_scope::Builder {
+        pub fn list_for_scope(&self, scope: impl Into<String>) -> list_for_scope::RequestBuilder {
+            list_for_scope::RequestBuilder {
                 client: self.0.clone(),
                 scope: scope.into(),
                 filter: None,
@@ -1759,7 +1759,7 @@ pub mod role_assignments {
         use super::models;
         type Response = models::RoleAssignmentListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) resource_provider_namespace: String,
@@ -1770,7 +1770,7 @@ pub mod role_assignments {
             pub(crate) filter: Option<String>,
             pub(crate) tenant_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The filter to apply on the operation. Use $filter=atScope() to return all role assignments at or above the scope. Use $filter=principalId eq {id} to return all role assignments at, above or below the scope for the specified principal."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -1861,14 +1861,14 @@ pub mod role_assignments {
         use super::models;
         type Response = models::RoleAssignmentListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) subscription_id: String,
             pub(crate) filter: Option<String>,
             pub(crate) tenant_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The filter to apply on the operation. Use $filter=atScope() to return all role assignments at or above the scope. Use $filter=principalId eq {id} to return all role assignments at, above or below the scope for the specified principal."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -1955,13 +1955,13 @@ pub mod role_assignments {
         use super::models;
         type Response = models::RoleAssignment;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) scope: String,
             pub(crate) role_assignment_name: String,
             pub(crate) tenant_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Tenant ID for cross-tenant request"]
             pub fn tenant_id(mut self, tenant_id: impl Into<String>) -> Self {
                 self.tenant_id = Some(tenant_id.into());
@@ -2014,13 +2014,13 @@ pub mod role_assignments {
         use super::models;
         type Response = models::RoleAssignment;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) scope: String,
             pub(crate) role_assignment_name: String,
             pub(crate) parameters: models::RoleAssignmentCreateParameters,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2070,13 +2070,13 @@ pub mod role_assignments {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) scope: String,
             pub(crate) role_assignment_name: String,
             pub(crate) tenant_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Tenant ID for cross-tenant request"]
             pub fn tenant_id(mut self, tenant_id: impl Into<String>) -> Self {
                 self.tenant_id = Some(tenant_id.into());
@@ -2130,12 +2130,12 @@ pub mod role_assignments {
         use super::models;
         type Response = models::RoleAssignment;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) role_id: String,
             pub(crate) tenant_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Tenant ID for cross-tenant request"]
             pub fn tenant_id(mut self, tenant_id: impl Into<String>) -> Self {
                 self.tenant_id = Some(tenant_id.into());
@@ -2183,12 +2183,12 @@ pub mod role_assignments {
         use super::models;
         type Response = models::RoleAssignment;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) role_id: String,
             pub(crate) parameters: models::RoleAssignmentCreateParameters,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2233,12 +2233,12 @@ pub mod role_assignments {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) role_id: String,
             pub(crate) tenant_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Tenant ID for cross-tenant request"]
             pub fn tenant_id(mut self, tenant_id: impl Into<String>) -> Self {
                 self.tenant_id = Some(tenant_id.into());
@@ -2287,13 +2287,13 @@ pub mod role_assignments {
         use super::models;
         type Response = models::RoleAssignmentListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) filter: Option<String>,
             pub(crate) tenant_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The filter to apply on the operation. Use $filter=atScope() to return all role assignments at or above the scope. Use $filter=principalId eq {id} to return all role assignments at, above or below the scope for the specified principal."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -2379,13 +2379,13 @@ pub mod role_assignments {
         use super::models;
         type Response = models::RoleAssignmentListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) scope: String,
             pub(crate) filter: Option<String>,
             pub(crate) tenant_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The filter to apply on the operation. Use $filter=atScope() to return all role assignments at or above the scope. Use $filter=principalId eq {id} to return all role assignments at, above or below the scope for the specified principal."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());

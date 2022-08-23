@@ -121,8 +121,8 @@ pub mod digital_twin_models {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Retrieves model metadata and, optionally, model definitions.\nStatus codes:\n200 (OK): Success.\n400 (Bad Request): The request is invalid."]
-        pub fn list(&self) -> list::Builder {
-            list::Builder {
+        pub fn list(&self) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 dependencies_for: Vec::new(),
                 include_model_definition: None,
@@ -130,8 +130,8 @@ pub mod digital_twin_models {
             }
         }
         #[doc = "Uploads one or more models. When any error occurs, no models are uploaded.\nStatus codes:\n200 (OK): Success.\n400 (Bad Request): The request is invalid.\n409 (Conflict): One or more of the provided models already exist."]
-        pub fn add(&self) -> add::Builder {
-            add::Builder {
+        pub fn add(&self) -> add::RequestBuilder {
+            add::RequestBuilder {
                 client: self.0.clone(),
                 models: Vec::new(),
             }
@@ -140,8 +140,8 @@ pub mod digital_twin_models {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `id`: The id for the model. The id is globally unique and case sensitive."]
-        pub fn get_by_id(&self, id: impl Into<String>) -> get_by_id::Builder {
-            get_by_id::Builder {
+        pub fn get_by_id(&self, id: impl Into<String>) -> get_by_id::RequestBuilder {
+            get_by_id::RequestBuilder {
                 client: self.0.clone(),
                 id: id.into(),
                 include_model_definition: None,
@@ -152,8 +152,8 @@ pub mod digital_twin_models {
         #[doc = "Arguments:"]
         #[doc = "* `id`: The id for the model. The id is globally unique and case sensitive."]
         #[doc = "* `update_model`: An update specification described by JSON Patch. Only the decommissioned property can be replaced."]
-        pub fn update(&self, id: impl Into<String>, update_model: Vec<serde_json::Value>) -> update::Builder {
-            update::Builder {
+        pub fn update(&self, id: impl Into<String>, update_model: Vec<serde_json::Value>) -> update::RequestBuilder {
+            update::RequestBuilder {
                 client: self.0.clone(),
                 id: id.into(),
                 update_model,
@@ -163,8 +163,8 @@ pub mod digital_twin_models {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `id`: The id for the model. The id is globally unique and case sensitive."]
-        pub fn delete(&self, id: impl Into<String>) -> delete::Builder {
-            delete::Builder {
+        pub fn delete(&self, id: impl Into<String>) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 id: id.into(),
             }
@@ -174,13 +174,13 @@ pub mod digital_twin_models {
         use super::models;
         type Response = models::PagedModelDataCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) dependencies_for: Vec<String>,
             pub(crate) include_model_definition: Option<bool>,
             pub(crate) x_ms_max_item_count: Option<i64>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The set of the models which will have their dependencies retrieved. If omitted, all models are retrieved."]
             pub fn dependencies_for(mut self, dependencies_for: Vec<String>) -> Self {
                 self.dependencies_for = dependencies_for;
@@ -273,11 +273,11 @@ pub mod digital_twin_models {
         use super::models;
         type Response = models::NonPagedModelDataCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) models: Vec<serde_json::Value>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "An array of models to add."]
             pub fn models(mut self, models: Vec<serde_json::Value>) -> Self {
                 self.models = models;
@@ -323,12 +323,12 @@ pub mod digital_twin_models {
         use super::models;
         type Response = models::ModelData;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) id: String,
             pub(crate) include_model_definition: Option<bool>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "When true the model definition will be returned as part of the result."]
             pub fn include_model_definition(mut self, include_model_definition: bool) -> Self {
                 self.include_model_definition = Some(include_model_definition);
@@ -378,12 +378,12 @@ pub mod digital_twin_models {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) id: String,
             pub(crate) update_model: Vec<serde_json::Value>,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -420,11 +420,11 @@ pub mod digital_twin_models {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -465,8 +465,8 @@ pub mod query {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `query_specification`: The query specification to execute."]
-        pub fn query_twins(&self, query_specification: impl Into<models::QuerySpecification>) -> query_twins::Builder {
-            query_twins::Builder {
+        pub fn query_twins(&self, query_specification: impl Into<models::QuerySpecification>) -> query_twins::RequestBuilder {
+            query_twins::RequestBuilder {
                 client: self.0.clone(),
                 query_specification: query_specification.into(),
             }
@@ -476,11 +476,11 @@ pub mod query {
         use super::models;
         type Response = models::QueryResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) query_specification: models::QuerySpecification,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -526,8 +526,8 @@ pub mod digital_twins {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `id`: The id of the digital twin. The id is unique within the service and case sensitive."]
-        pub fn get_by_id(&self, id: impl Into<String>) -> get_by_id::Builder {
-            get_by_id::Builder {
+        pub fn get_by_id(&self, id: impl Into<String>) -> get_by_id::RequestBuilder {
+            get_by_id::RequestBuilder {
                 client: self.0.clone(),
                 id: id.into(),
             }
@@ -537,8 +537,8 @@ pub mod digital_twins {
         #[doc = "Arguments:"]
         #[doc = "* `id`: The id of the digital twin. The id is unique within the service and case sensitive."]
         #[doc = "* `twin`: The digital twin instance being added. If provided, the $dtId property is ignored."]
-        pub fn add(&self, id: impl Into<String>, twin: impl Into<serde_json::Value>) -> add::Builder {
-            add::Builder {
+        pub fn add(&self, id: impl Into<String>, twin: impl Into<serde_json::Value>) -> add::RequestBuilder {
+            add::RequestBuilder {
                 client: self.0.clone(),
                 id: id.into(),
                 twin: twin.into(),
@@ -550,8 +550,8 @@ pub mod digital_twins {
         #[doc = "Arguments:"]
         #[doc = "* `id`: The id of the digital twin. The id is unique within the service and case sensitive."]
         #[doc = "* `patch_document`: An update specification described by JSON Patch. Updates to property values and $model elements may happen in the same request. Operations are limited to add, replace and remove."]
-        pub fn update(&self, id: impl Into<String>, patch_document: Vec<serde_json::Value>) -> update::Builder {
-            update::Builder {
+        pub fn update(&self, id: impl Into<String>, patch_document: Vec<serde_json::Value>) -> update::RequestBuilder {
+            update::RequestBuilder {
                 client: self.0.clone(),
                 id: id.into(),
                 patch_document,
@@ -562,8 +562,8 @@ pub mod digital_twins {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `id`: The id of the digital twin. The id is unique within the service and case sensitive."]
-        pub fn delete(&self, id: impl Into<String>) -> delete::Builder {
-            delete::Builder {
+        pub fn delete(&self, id: impl Into<String>) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 id: id.into(),
                 if_match: None,
@@ -574,8 +574,12 @@ pub mod digital_twins {
         #[doc = "Arguments:"]
         #[doc = "* `id`: The id of the digital twin. The id is unique within the service and case sensitive."]
         #[doc = "* `relationship_id`: The id of the relationship. The id is unique within the digital twin and case sensitive."]
-        pub fn get_relationship_by_id(&self, id: impl Into<String>, relationship_id: impl Into<String>) -> get_relationship_by_id::Builder {
-            get_relationship_by_id::Builder {
+        pub fn get_relationship_by_id(
+            &self,
+            id: impl Into<String>,
+            relationship_id: impl Into<String>,
+        ) -> get_relationship_by_id::RequestBuilder {
+            get_relationship_by_id::RequestBuilder {
                 client: self.0.clone(),
                 id: id.into(),
                 relationship_id: relationship_id.into(),
@@ -586,8 +590,8 @@ pub mod digital_twins {
         #[doc = "Arguments:"]
         #[doc = "* `id`: The id of the digital twin. The id is unique within the service and case sensitive."]
         #[doc = "* `relationship_id`: The id of the relationship. The id is unique within the digital twin and case sensitive."]
-        pub fn add_relationship(&self, id: impl Into<String>, relationship_id: impl Into<String>) -> add_relationship::Builder {
-            add_relationship::Builder {
+        pub fn add_relationship(&self, id: impl Into<String>, relationship_id: impl Into<String>) -> add_relationship::RequestBuilder {
+            add_relationship::RequestBuilder {
                 client: self.0.clone(),
                 id: id.into(),
                 relationship_id: relationship_id.into(),
@@ -600,8 +604,12 @@ pub mod digital_twins {
         #[doc = "Arguments:"]
         #[doc = "* `id`: The id of the digital twin. The id is unique within the service and case sensitive."]
         #[doc = "* `relationship_id`: The id of the relationship. The id is unique within the digital twin and case sensitive."]
-        pub fn update_relationship(&self, id: impl Into<String>, relationship_id: impl Into<String>) -> update_relationship::Builder {
-            update_relationship::Builder {
+        pub fn update_relationship(
+            &self,
+            id: impl Into<String>,
+            relationship_id: impl Into<String>,
+        ) -> update_relationship::RequestBuilder {
+            update_relationship::RequestBuilder {
                 client: self.0.clone(),
                 id: id.into(),
                 relationship_id: relationship_id.into(),
@@ -614,8 +622,12 @@ pub mod digital_twins {
         #[doc = "Arguments:"]
         #[doc = "* `id`: The id of the digital twin. The id is unique within the service and case sensitive."]
         #[doc = "* `relationship_id`: The id of the relationship. The id is unique within the digital twin and case sensitive."]
-        pub fn delete_relationship(&self, id: impl Into<String>, relationship_id: impl Into<String>) -> delete_relationship::Builder {
-            delete_relationship::Builder {
+        pub fn delete_relationship(
+            &self,
+            id: impl Into<String>,
+            relationship_id: impl Into<String>,
+        ) -> delete_relationship::RequestBuilder {
+            delete_relationship::RequestBuilder {
                 client: self.0.clone(),
                 id: id.into(),
                 relationship_id: relationship_id.into(),
@@ -626,8 +638,8 @@ pub mod digital_twins {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `id`: The id of the digital twin. The id is unique within the service and case sensitive."]
-        pub fn list_relationships(&self, id: impl Into<String>) -> list_relationships::Builder {
-            list_relationships::Builder {
+        pub fn list_relationships(&self, id: impl Into<String>) -> list_relationships::RequestBuilder {
+            list_relationships::RequestBuilder {
                 client: self.0.clone(),
                 id: id.into(),
                 relationship_name: None,
@@ -637,8 +649,8 @@ pub mod digital_twins {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `id`: The id of the digital twin. The id is unique within the service and case sensitive."]
-        pub fn list_incoming_relationships(&self, id: impl Into<String>) -> list_incoming_relationships::Builder {
-            list_incoming_relationships::Builder {
+        pub fn list_incoming_relationships(&self, id: impl Into<String>) -> list_incoming_relationships::RequestBuilder {
+            list_incoming_relationships::RequestBuilder {
                 client: self.0.clone(),
                 id: id.into(),
             }
@@ -654,8 +666,8 @@ pub mod digital_twins {
             id: impl Into<String>,
             telemetry: impl Into<serde_json::Value>,
             dt_id: impl Into<String>,
-        ) -> send_telemetry::Builder {
-            send_telemetry::Builder {
+        ) -> send_telemetry::RequestBuilder {
+            send_telemetry::RequestBuilder {
                 client: self.0.clone(),
                 id: id.into(),
                 telemetry: telemetry.into(),
@@ -676,8 +688,8 @@ pub mod digital_twins {
             component_path: impl Into<String>,
             telemetry: impl Into<serde_json::Value>,
             dt_id: impl Into<String>,
-        ) -> send_component_telemetry::Builder {
-            send_component_telemetry::Builder {
+        ) -> send_component_telemetry::RequestBuilder {
+            send_component_telemetry::RequestBuilder {
                 client: self.0.clone(),
                 id: id.into(),
                 component_path: component_path.into(),
@@ -691,8 +703,8 @@ pub mod digital_twins {
         #[doc = "Arguments:"]
         #[doc = "* `id`: The id of the digital twin. The id is unique within the service and case sensitive."]
         #[doc = "* `component_path`: The name of the DTDL component."]
-        pub fn get_component(&self, id: impl Into<String>, component_path: impl Into<String>) -> get_component::Builder {
-            get_component::Builder {
+        pub fn get_component(&self, id: impl Into<String>, component_path: impl Into<String>) -> get_component::RequestBuilder {
+            get_component::RequestBuilder {
                 client: self.0.clone(),
                 id: id.into(),
                 component_path: component_path.into(),
@@ -703,8 +715,8 @@ pub mod digital_twins {
         #[doc = "Arguments:"]
         #[doc = "* `id`: The id of the digital twin. The id is unique within the service and case sensitive."]
         #[doc = "* `component_path`: The name of the DTDL component."]
-        pub fn update_component(&self, id: impl Into<String>, component_path: impl Into<String>) -> update_component::Builder {
-            update_component::Builder {
+        pub fn update_component(&self, id: impl Into<String>, component_path: impl Into<String>) -> update_component::RequestBuilder {
+            update_component::RequestBuilder {
                 client: self.0.clone(),
                 id: id.into(),
                 component_path: component_path.into(),
@@ -717,11 +729,11 @@ pub mod digital_twins {
         use super::models;
         type Response = serde_json::Value;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -765,13 +777,13 @@ pub mod digital_twins {
             Accepted202,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) id: String,
             pub(crate) twin: serde_json::Value,
             pub(crate) if_none_match: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Only perform the operation if the entity does not already exist."]
             pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
                 self.if_none_match = Some(if_none_match.into());
@@ -825,13 +837,13 @@ pub mod digital_twins {
             Accepted202,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) id: String,
             pub(crate) patch_document: Vec<serde_json::Value>,
             pub(crate) if_match: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Only perform the operation if the entity's etag matches one of the etags provided or * is provided."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
@@ -877,12 +889,12 @@ pub mod digital_twins {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) id: String,
             pub(crate) if_match: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Only perform the operation if the entity's etag matches one of the etags provided or * is provided."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
@@ -926,12 +938,12 @@ pub mod digital_twins {
         use super::models;
         type Response = serde_json::Value;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) id: String,
             pub(crate) relationship_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -976,14 +988,14 @@ pub mod digital_twins {
         use super::models;
         type Response = serde_json::Value;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) id: String,
             pub(crate) relationship_id: String,
             pub(crate) relationship: Option<serde_json::Value>,
             pub(crate) if_none_match: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The data for the relationship."]
             pub fn relationship(mut self, relationship: impl Into<serde_json::Value>) -> Self {
                 self.relationship = Some(relationship.into());
@@ -1046,14 +1058,14 @@ pub mod digital_twins {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) id: String,
             pub(crate) relationship_id: String,
             pub(crate) patch_document: Vec<serde_json::Value>,
             pub(crate) if_match: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "JSON Patch description of the update to the relationship properties."]
             pub fn patch_document(mut self, patch_document: Vec<serde_json::Value>) -> Self {
                 self.patch_document = patch_document;
@@ -1108,13 +1120,13 @@ pub mod digital_twins {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) id: String,
             pub(crate) relationship_id: String,
             pub(crate) if_match: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Only perform the operation if the entity's etag matches one of the etags provided or * is provided."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
@@ -1163,12 +1175,12 @@ pub mod digital_twins {
         use super::models;
         type Response = models::RelationshipCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) id: String,
             pub(crate) relationship_name: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The name of the relationship."]
             pub fn relationship_name(mut self, relationship_name: impl Into<String>) -> Self {
                 self.relationship_name = Some(relationship_name.into());
@@ -1243,11 +1255,11 @@ pub mod digital_twins {
         use super::models;
         type Response = models::IncomingRelationshipCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -1317,14 +1329,14 @@ pub mod digital_twins {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) id: String,
             pub(crate) telemetry: serde_json::Value,
             pub(crate) dt_id: String,
             pub(crate) dt_timestamp: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "An RFC 3339 timestamp that identifies the time the telemetry was measured."]
             pub fn dt_timestamp(mut self, dt_timestamp: impl Into<String>) -> Self {
                 self.dt_timestamp = Some(dt_timestamp.into());
@@ -1370,7 +1382,7 @@ pub mod digital_twins {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) id: String,
             pub(crate) component_path: String,
@@ -1378,7 +1390,7 @@ pub mod digital_twins {
             pub(crate) dt_id: String,
             pub(crate) dt_timestamp: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "An RFC 3339 timestamp that identifies the time the telemetry was measured."]
             pub fn dt_timestamp(mut self, dt_timestamp: impl Into<String>) -> Self {
                 self.dt_timestamp = Some(dt_timestamp.into());
@@ -1429,12 +1441,12 @@ pub mod digital_twins {
         use super::models;
         type Response = serde_json::Value;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) id: String,
             pub(crate) component_path: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1483,14 +1495,14 @@ pub mod digital_twins {
             Accepted202,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) id: String,
             pub(crate) component_path: String,
             pub(crate) patch_document: Vec<serde_json::Value>,
             pub(crate) if_match: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "An update specification described by JSON Patch. Updates to property values and $model elements may happen in the same request. Operations are limited to add, replace and remove."]
             pub fn patch_document(mut self, patch_document: Vec<serde_json::Value>) -> Self {
                 self.patch_document = patch_document;
@@ -1548,8 +1560,8 @@ pub mod event_routes {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Retrieves all event routes.\nStatus codes:\n200 (OK): Success.\n400 (Bad Request): The request is invalid."]
-        pub fn list(&self) -> list::Builder {
-            list::Builder {
+        pub fn list(&self) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 x_ms_max_item_count: None,
             }
@@ -1558,8 +1570,8 @@ pub mod event_routes {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `id`: The id for an event route. The id is unique within event routes and case sensitive."]
-        pub fn get_by_id(&self, id: impl Into<String>) -> get_by_id::Builder {
-            get_by_id::Builder {
+        pub fn get_by_id(&self, id: impl Into<String>) -> get_by_id::RequestBuilder {
+            get_by_id::RequestBuilder {
                 client: self.0.clone(),
                 id: id.into(),
             }
@@ -1568,8 +1580,8 @@ pub mod event_routes {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `id`: The id for an event route. The id is unique within event routes and case sensitive."]
-        pub fn add(&self, id: impl Into<String>) -> add::Builder {
-            add::Builder {
+        pub fn add(&self, id: impl Into<String>) -> add::RequestBuilder {
+            add::RequestBuilder {
                 client: self.0.clone(),
                 id: id.into(),
                 event_route: None,
@@ -1579,8 +1591,8 @@ pub mod event_routes {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `id`: The id for an event route. The id is unique within event routes and case sensitive."]
-        pub fn delete(&self, id: impl Into<String>) -> delete::Builder {
-            delete::Builder {
+        pub fn delete(&self, id: impl Into<String>) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 id: id.into(),
             }
@@ -1590,11 +1602,11 @@ pub mod event_routes {
         use super::models;
         type Response = models::EventRouteCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) x_ms_max_item_count: Option<i64>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The maximum number of items to retrieve per request. The server may choose to return less than the requested max."]
             pub fn x_ms_max_item_count(mut self, x_ms_max_item_count: i64) -> Self {
                 self.x_ms_max_item_count = Some(x_ms_max_item_count);
@@ -1668,11 +1680,11 @@ pub mod event_routes {
         use super::models;
         type Response = models::EventRoute;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1712,12 +1724,12 @@ pub mod event_routes {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) id: String,
             pub(crate) event_route: Option<models::EventRoute>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The event route data"]
             pub fn event_route(mut self, event_route: impl Into<models::EventRoute>) -> Self {
                 self.event_route = Some(event_route.into());
@@ -1763,11 +1775,11 @@ pub mod event_routes {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();

@@ -115,18 +115,18 @@ pub mod metadata_roles {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Lists roles for Purview Account"]
-        pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.0.clone() }
+        pub fn list(&self) -> list::RequestBuilder {
+            list::RequestBuilder { client: self.0.clone() }
         }
     }
     pub mod list {
         use super::models;
         type Response = models::MetadataRoleList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -194,8 +194,8 @@ pub mod metadata_policy {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "List or Get metadata policies"]
-        pub fn list_all(&self) -> list_all::Builder {
-            list_all::Builder {
+        pub fn list_all(&self) -> list_all::RequestBuilder {
+            list_all::RequestBuilder {
                 client: self.0.clone(),
                 collection_name: None,
             }
@@ -204,8 +204,8 @@ pub mod metadata_policy {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `policy_id`: Id of an existing policy that needs to be fetched."]
-        pub fn get(&self, policy_id: impl Into<String>) -> get::Builder {
-            get::Builder {
+        pub fn get(&self, policy_id: impl Into<String>) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 policy_id: policy_id.into(),
             }
@@ -214,8 +214,8 @@ pub mod metadata_policy {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `policy_id`: Unique policy id."]
-        pub fn update(&self, policy_id: impl Into<String>) -> update::Builder {
-            update::Builder {
+        pub fn update(&self, policy_id: impl Into<String>) -> update::RequestBuilder {
+            update::RequestBuilder {
                 client: self.0.clone(),
                 policy_id: policy_id.into(),
                 body: None,
@@ -226,11 +226,11 @@ pub mod metadata_policy {
         use super::models;
         type Response = models::MetadataPolicyList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) collection_name: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The name of an existing collection for which one policy needs to be fetched."]
             pub fn collection_name(mut self, collection_name: impl Into<String>) -> Self {
                 self.collection_name = Some(collection_name.into());
@@ -304,11 +304,11 @@ pub mod metadata_policy {
         use super::models;
         type Response = models::MetadataPolicy;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) policy_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -348,12 +348,12 @@ pub mod metadata_policy {
         use super::models;
         type Response = models::MetadataPolicy;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) policy_id: String,
             pub(crate) body: Option<models::MetadataPolicy>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Policy to be updated."]
             pub fn body(mut self, body: impl Into<models::MetadataPolicy>) -> Self {
                 self.body = Some(body.into());

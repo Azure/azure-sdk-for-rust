@@ -143,8 +143,8 @@ pub mod location {
             location_name: impl Into<String>,
             subscription_id: impl Into<String>,
             parameters: impl Into<models::CheckNameAvailabilityParameters>,
-        ) -> check_name_availability::Builder {
-            check_name_availability::Builder {
+        ) -> check_name_availability::RequestBuilder {
+            check_name_availability::RequestBuilder {
                 client: self.0.clone(),
                 location_name: location_name.into(),
                 subscription_id: subscription_id.into(),
@@ -156,13 +156,13 @@ pub mod location {
         use super::models;
         type Response = models::CheckNameAvailabilityResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) location_name: String,
             pub(crate) subscription_id: String,
             pub(crate) parameters: models::CheckNameAvailabilityParameters,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -215,8 +215,8 @@ pub mod assessment_options {
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: Azure Subscription Id in which project was created."]
         #[doc = "* `location_name`: Azure region in which the project is created."]
-        pub fn get(&self, subscription_id: impl Into<String>, location_name: impl Into<String>) -> get::Builder {
-            get::Builder {
+        pub fn get(&self, subscription_id: impl Into<String>, location_name: impl Into<String>) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 location_name: location_name.into(),
@@ -228,13 +228,13 @@ pub mod assessment_options {
         use super::models;
         type Response = models::AssessmentOptionsResultList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) location_name: String,
             pub(crate) accept_language: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Standard request header. Used by service to respond to client in appropriate language."]
             pub fn accept_language(mut self, accept_language: impl Into<String>) -> Self {
                 self.accept_language = Some(accept_language.into());
@@ -293,8 +293,8 @@ pub mod projects {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: Azure Subscription Id in which project was created."]
-        pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
-            list_by_subscription::Builder {
+        pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::RequestBuilder {
+            list_by_subscription::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 accept_language: None,
@@ -310,8 +310,8 @@ pub mod projects {
             &self,
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
-        ) -> list_by_resource_group::Builder {
-            list_by_resource_group::Builder {
+        ) -> list_by_resource_group::RequestBuilder {
+            list_by_resource_group::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -330,8 +330,8 @@ pub mod projects {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             project_name: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -351,8 +351,8 @@ pub mod projects {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             project_name: impl Into<String>,
-        ) -> create::Builder {
-            create::Builder {
+        ) -> create::RequestBuilder {
+            create::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -373,8 +373,8 @@ pub mod projects {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             project_name: impl Into<String>,
-        ) -> update::Builder {
-            update::Builder {
+        ) -> update::RequestBuilder {
+            update::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -395,8 +395,8 @@ pub mod projects {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             project_name: impl Into<String>,
-        ) -> delete::Builder {
-            delete::Builder {
+        ) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -416,8 +416,8 @@ pub mod projects {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             project_name: impl Into<String>,
-        ) -> get_keys::Builder {
-            get_keys::Builder {
+        ) -> get_keys::RequestBuilder {
+            get_keys::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -430,12 +430,12 @@ pub mod projects {
         use super::models;
         type Response = models::ProjectResultList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) accept_language: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Standard request header. Used by service to respond to client in appropriate language."]
             pub fn accept_language(mut self, accept_language: impl Into<String>) -> Self {
                 self.accept_language = Some(accept_language.into());
@@ -488,13 +488,13 @@ pub mod projects {
         use super::models;
         type Response = models::ProjectResultList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) accept_language: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Standard request header. Used by service to respond to client in appropriate language."]
             pub fn accept_language(mut self, accept_language: impl Into<String>) -> Self {
                 self.accept_language = Some(accept_language.into());
@@ -548,14 +548,14 @@ pub mod projects {
         use super::models;
         type Response = models::Project;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) project_name: String,
             pub(crate) accept_language: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Standard request header. Used by service to respond to client in appropriate language."]
             pub fn accept_language(mut self, accept_language: impl Into<String>) -> Self {
                 self.accept_language = Some(accept_language.into());
@@ -613,7 +613,7 @@ pub mod projects {
             Created201(models::Project),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -621,7 +621,7 @@ pub mod projects {
             pub(crate) accept_language: Option<String>,
             pub(crate) project: Option<models::Project>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Standard request header. Used by service to respond to client in appropriate language."]
             pub fn accept_language(mut self, accept_language: impl Into<String>) -> Self {
                 self.accept_language = Some(accept_language.into());
@@ -690,7 +690,7 @@ pub mod projects {
         use super::models;
         type Response = models::Project;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -698,7 +698,7 @@ pub mod projects {
             pub(crate) accept_language: Option<String>,
             pub(crate) project: Option<models::Project>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Standard request header. Used by service to respond to client in appropriate language."]
             pub fn accept_language(mut self, accept_language: impl Into<String>) -> Self {
                 self.accept_language = Some(accept_language.into());
@@ -762,14 +762,14 @@ pub mod projects {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) project_name: String,
             pub(crate) accept_language: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Standard request header. Used by service to respond to client in appropriate language."]
             pub fn accept_language(mut self, accept_language: impl Into<String>) -> Self {
                 self.accept_language = Some(accept_language.into());
@@ -819,14 +819,14 @@ pub mod projects {
         use super::models;
         type Response = models::ProjectKey;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) project_name: String,
             pub(crate) accept_language: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Standard request header. Used by service to respond to client in appropriate language."]
             pub fn accept_language(mut self, accept_language: impl Into<String>) -> Self {
                 self.accept_language = Some(accept_language.into());
@@ -894,8 +894,8 @@ pub mod machines {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             project_name: impl Into<String>,
-        ) -> list_by_project::Builder {
-            list_by_project::Builder {
+        ) -> list_by_project::RequestBuilder {
+            list_by_project::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -917,8 +917,8 @@ pub mod machines {
             resource_group_name: impl Into<String>,
             project_name: impl Into<String>,
             machine_name: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -932,14 +932,14 @@ pub mod machines {
         use super::models;
         type Response = models::MachineResultList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) project_name: String,
             pub(crate) accept_language: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Standard request header. Used by service to respond to client in appropriate language."]
             pub fn accept_language(mut self, accept_language: impl Into<String>) -> Self {
                 self.accept_language = Some(accept_language.into());
@@ -994,7 +994,7 @@ pub mod machines {
         use super::models;
         type Response = models::Machine;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -1002,7 +1002,7 @@ pub mod machines {
             pub(crate) machine_name: String,
             pub(crate) accept_language: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Standard request header. Used by service to respond to client in appropriate language."]
             pub fn accept_language(mut self, accept_language: impl Into<String>) -> Self {
                 self.accept_language = Some(accept_language.into());
@@ -1070,8 +1070,8 @@ pub mod groups {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             project_name: impl Into<String>,
-        ) -> list_by_project::Builder {
-            list_by_project::Builder {
+        ) -> list_by_project::RequestBuilder {
+            list_by_project::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -1093,8 +1093,8 @@ pub mod groups {
             resource_group_name: impl Into<String>,
             project_name: impl Into<String>,
             group_name: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -1117,8 +1117,8 @@ pub mod groups {
             resource_group_name: impl Into<String>,
             project_name: impl Into<String>,
             group_name: impl Into<String>,
-        ) -> create::Builder {
-            create::Builder {
+        ) -> create::RequestBuilder {
+            create::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -1142,8 +1142,8 @@ pub mod groups {
             resource_group_name: impl Into<String>,
             project_name: impl Into<String>,
             group_name: impl Into<String>,
-        ) -> delete::Builder {
-            delete::Builder {
+        ) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -1157,14 +1157,14 @@ pub mod groups {
         use super::models;
         type Response = models::GroupResultList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) project_name: String,
             pub(crate) accept_language: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Standard request header. Used by service to respond to client in appropriate language."]
             pub fn accept_language(mut self, accept_language: impl Into<String>) -> Self {
                 self.accept_language = Some(accept_language.into());
@@ -1219,7 +1219,7 @@ pub mod groups {
         use super::models;
         type Response = models::Group;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -1227,7 +1227,7 @@ pub mod groups {
             pub(crate) group_name: String,
             pub(crate) accept_language: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Standard request header. Used by service to respond to client in appropriate language."]
             pub fn accept_language(mut self, accept_language: impl Into<String>) -> Self {
                 self.accept_language = Some(accept_language.into());
@@ -1286,7 +1286,7 @@ pub mod groups {
             Created201(models::Group),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -1295,7 +1295,7 @@ pub mod groups {
             pub(crate) accept_language: Option<String>,
             pub(crate) group: Option<models::Group>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Standard request header. Used by service to respond to client in appropriate language."]
             pub fn accept_language(mut self, accept_language: impl Into<String>) -> Self {
                 self.accept_language = Some(accept_language.into());
@@ -1365,7 +1365,7 @@ pub mod groups {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -1373,7 +1373,7 @@ pub mod groups {
             pub(crate) group_name: String,
             pub(crate) accept_language: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Standard request header. Used by service to respond to client in appropriate language."]
             pub fn accept_language(mut self, accept_language: impl Into<String>) -> Self {
                 self.accept_language = Some(accept_language.into());
@@ -1439,8 +1439,8 @@ pub mod assessments {
             resource_group_name: impl Into<String>,
             project_name: impl Into<String>,
             group_name: impl Into<String>,
-        ) -> list_by_group::Builder {
-            list_by_group::Builder {
+        ) -> list_by_group::RequestBuilder {
+            list_by_group::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -1461,8 +1461,8 @@ pub mod assessments {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             project_name: impl Into<String>,
-        ) -> list_by_project::Builder {
-            list_by_project::Builder {
+        ) -> list_by_project::RequestBuilder {
+            list_by_project::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -1486,8 +1486,8 @@ pub mod assessments {
             project_name: impl Into<String>,
             group_name: impl Into<String>,
             assessment_name: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -1513,8 +1513,8 @@ pub mod assessments {
             project_name: impl Into<String>,
             group_name: impl Into<String>,
             assessment_name: impl Into<String>,
-        ) -> create::Builder {
-            create::Builder {
+        ) -> create::RequestBuilder {
+            create::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -1541,8 +1541,8 @@ pub mod assessments {
             project_name: impl Into<String>,
             group_name: impl Into<String>,
             assessment_name: impl Into<String>,
-        ) -> delete::Builder {
-            delete::Builder {
+        ) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -1568,8 +1568,8 @@ pub mod assessments {
             project_name: impl Into<String>,
             group_name: impl Into<String>,
             assessment_name: impl Into<String>,
-        ) -> get_report_download_url::Builder {
-            get_report_download_url::Builder {
+        ) -> get_report_download_url::RequestBuilder {
+            get_report_download_url::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -1584,7 +1584,7 @@ pub mod assessments {
         use super::models;
         type Response = models::AssessmentResultList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -1592,7 +1592,7 @@ pub mod assessments {
             pub(crate) group_name: String,
             pub(crate) accept_language: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Standard request header. Used by service to respond to client in appropriate language."]
             pub fn accept_language(mut self, accept_language: impl Into<String>) -> Self {
                 self.accept_language = Some(accept_language.into());
@@ -1648,14 +1648,14 @@ pub mod assessments {
         use super::models;
         type Response = models::AssessmentResultList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) project_name: String,
             pub(crate) accept_language: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Standard request header. Used by service to respond to client in appropriate language."]
             pub fn accept_language(mut self, accept_language: impl Into<String>) -> Self {
                 self.accept_language = Some(accept_language.into());
@@ -1710,7 +1710,7 @@ pub mod assessments {
         use super::models;
         type Response = models::Assessment;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -1719,7 +1719,7 @@ pub mod assessments {
             pub(crate) assessment_name: String,
             pub(crate) accept_language: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Standard request header. Used by service to respond to client in appropriate language."]
             pub fn accept_language(mut self, accept_language: impl Into<String>) -> Self {
                 self.accept_language = Some(accept_language.into());
@@ -1779,7 +1779,7 @@ pub mod assessments {
             Created201(models::Assessment),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -1789,7 +1789,7 @@ pub mod assessments {
             pub(crate) accept_language: Option<String>,
             pub(crate) assessment: Option<models::Assessment>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Standard request header. Used by service to respond to client in appropriate language."]
             pub fn accept_language(mut self, accept_language: impl Into<String>) -> Self {
                 self.accept_language = Some(accept_language.into());
@@ -1860,7 +1860,7 @@ pub mod assessments {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -1869,7 +1869,7 @@ pub mod assessments {
             pub(crate) assessment_name: String,
             pub(crate) accept_language: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Standard request header. Used by service to respond to client in appropriate language."]
             pub fn accept_language(mut self, accept_language: impl Into<String>) -> Self {
                 self.accept_language = Some(accept_language.into());
@@ -1921,7 +1921,7 @@ pub mod assessments {
         use super::models;
         type Response = models::DownloadUrl;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -1930,7 +1930,7 @@ pub mod assessments {
             pub(crate) assessment_name: String,
             pub(crate) accept_language: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Standard request header. Used by service to respond to client in appropriate language."]
             pub fn accept_language(mut self, accept_language: impl Into<String>) -> Self {
                 self.accept_language = Some(accept_language.into());
@@ -1996,8 +1996,8 @@ pub mod assessed_machines {
             project_name: impl Into<String>,
             group_name: impl Into<String>,
             assessment_name: impl Into<String>,
-        ) -> list_by_assessment::Builder {
-            list_by_assessment::Builder {
+        ) -> list_by_assessment::RequestBuilder {
+            list_by_assessment::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -2025,8 +2025,8 @@ pub mod assessed_machines {
             group_name: impl Into<String>,
             assessment_name: impl Into<String>,
             assessed_machine_name: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -2042,7 +2042,7 @@ pub mod assessed_machines {
         use super::models;
         type Response = models::AssessedMachineResultList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -2051,7 +2051,7 @@ pub mod assessed_machines {
             pub(crate) assessment_name: String,
             pub(crate) accept_language: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Standard request header. Used by service to respond to client in appropriate language."]
             pub fn accept_language(mut self, accept_language: impl Into<String>) -> Self {
                 self.accept_language = Some(accept_language.into());
@@ -2100,7 +2100,7 @@ pub mod assessed_machines {
         use super::models;
         type Response = models::AssessedMachine;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -2110,7 +2110,7 @@ pub mod assessed_machines {
             pub(crate) assessed_machine_name: String,
             pub(crate) accept_language: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Standard request header. Used by service to respond to client in appropriate language."]
             pub fn accept_language(mut self, accept_language: impl Into<String>) -> Self {
                 self.accept_language = Some(accept_language.into());
@@ -2161,18 +2161,18 @@ pub mod operations {
     impl Client {
         #[doc = "Get list of operations supported in the API."]
         #[doc = "Get a list of REST API supported by Microsoft.Migrate provider."]
-        pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.0.clone() }
+        pub fn list(&self) -> list::RequestBuilder {
+            list::RequestBuilder { client: self.0.clone() }
         }
     }
     pub mod list {
         use super::models;
         type Response = models::OperationResultList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as the continuation token is not part of the response schema"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({

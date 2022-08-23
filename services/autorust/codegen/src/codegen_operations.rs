@@ -218,10 +218,10 @@ pub fn create_operations(cg: &CodeGen) -> Result<TokenStream> {
         match operations_code.get_mut(&module_name) {
             Some(operation_code) => {
                 let OperationCode {
-                    mut builder_instances,
+                    mut client_functions,
                     mut module_code,
                 } = code;
-                operation_code.builder_instances.append(&mut builder_instances);
+                operation_code.client_functions.append(&mut client_functions);
                 operation_code.module_code.append(&mut module_code);
             }
             None => {
@@ -232,11 +232,11 @@ pub fn create_operations(cg: &CodeGen) -> Result<TokenStream> {
 
     for (module_name, operation_code) in operations_code {
         let OperationCode {
-            builder_instances,
+            client_functions,
             module_code,
         } = operation_code;
         let mut builders = TokenStream::new();
-        for builder in builder_instances {
+        for builder in client_functions {
             builders.extend(builder.into_token_stream());
         }
         match module_name {
@@ -269,13 +269,13 @@ pub fn create_operations(cg: &CodeGen) -> Result<TokenStream> {
 struct OperationModuleCode {
     module_name: Ident,
     response_code: ResponseCode,
-    builder_struct_code: BuilderStructCode,
-    builder_setters_code: BuilderSettersCode,
-    builder_future_code: BuilderFutureCode,
+    request_builder_struct_code: RequestBuilderStructCode,
+    request_builder_setters_code: RequestBuilderSettersCode,
+    request_builder_future_code: RequestBuilderIntoFutureCode,
 }
 
 struct OperationCode {
-    builder_instances: Vec<BuilderInstanceCode>,
+    client_functions: Vec<ClientFunctionCode>,
     module_code: Vec<OperationModuleCode>,
 }
 
@@ -562,23 +562,24 @@ fn create_operation_code(cg: &CodeGen, operation: &WebOperationGen) -> Result<Op
         is_post,
     };
     let in_operation_group = operation.0.in_group();
-    let builder_instance_code = BuilderInstanceCode::new(operation, &parameters, in_operation_group)?;
-    let builder_struct_code = BuilderStructCode::new(&parameters, in_operation_group);
-    let builder_setters_code = BuilderSettersCode::new(&parameters);
+    let client_function_code = ClientFunctionCode::new(operation, &parameters, in_operation_group)?;
+    let request_builder_struct_code = RequestBuilderStructCode::new(&parameters, in_operation_group);
+    let request_builder_setters_code = RequestBuilderSettersCode::new(&parameters);
     let response_code = ResponseCode::new(operation)?;
     let long_running_operation = operation.0.long_running_operation;
-    let builder_future_code = BuilderFutureCode::new(new_request_code, request_builder, response_code.clone(), long_running_operation)?;
+    let request_builder_future_code =
+        RequestBuilderIntoFutureCode::new(new_request_code, request_builder, response_code.clone(), long_running_operation)?;
 
     let module_code = OperationModuleCode {
         module_name: operation.function_name()?,
         response_code,
-        builder_struct_code,
-        builder_setters_code,
-        builder_future_code,
+        request_builder_struct_code,
+        request_builder_setters_code,
+        request_builder_future_code,
     };
 
     Ok(OperationCode {
-        builder_instances: vec![builder_instance_code],
+        client_functions: vec![client_function_code],
         module_code: vec![module_code],
     })
 }
@@ -724,7 +725,7 @@ impl ToTokens for ResponseCode {
 }
 
 /// The `into_future` function of the request builder.
-struct BuilderFutureCode {
+struct RequestBuilderIntoFutureCode {
     new_request_code: NewRequestCode,
     request_builder: SetRequestCode,
     response_code: ResponseCode,
@@ -732,7 +733,7 @@ struct BuilderFutureCode {
     long_running_operation: bool,
 }
 
-impl BuilderFutureCode {
+impl RequestBuilderIntoFutureCode {
     fn new(
         new_request_code: NewRequestCode,
         request_builder: SetRequestCode,
@@ -756,7 +757,7 @@ impl BuilderFutureCode {
     }
 }
 
-impl ToTokens for BuilderFutureCode {
+impl ToTokens for RequestBuilderIntoFutureCode {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         let new_request_code = &self.new_request_code;
         let request_builder = &self.request_builder;
@@ -917,9 +918,9 @@ impl ToTokens for OperationModuleCode {
         let Self {
             module_name,
             response_code,
-            builder_struct_code,
-            builder_setters_code,
-            builder_future_code,
+            request_builder_struct_code,
+            request_builder_setters_code,
+            request_builder_future_code,
         } = &self;
         tokens.extend(quote! {
             pub mod #module_name {
@@ -927,11 +928,11 @@ impl ToTokens for OperationModuleCode {
 
                 #response_code
 
-                #builder_struct_code
+                #request_builder_struct_code
 
-                impl Builder {
-                    #builder_setters_code
-                    #builder_future_code
+                impl RequestBuilder {
+                    #request_builder_setters_code
+                    #request_builder_future_code
                 }
 
             }
@@ -1074,7 +1075,7 @@ impl ToTokens for FunctionCallParamsCode {
 
 /// Create the client function that produces the request builder instance.
 #[derive(Clone)]
-struct BuilderInstanceCode {
+struct ClientFunctionCode {
     summary: Option<String>,
     description: Option<String>,
     fname: Ident,
@@ -1082,7 +1083,7 @@ struct BuilderInstanceCode {
     in_operation_group: bool,
 }
 
-impl BuilderInstanceCode {
+impl ClientFunctionCode {
     fn new(operation: &WebOperationGen, parameters: &FunctionParams, in_operation_group: bool) -> Result<Self> {
         let fname = operation.function_name()?;
         let summary = operation.0.summary.clone();
@@ -1097,7 +1098,7 @@ impl BuilderInstanceCode {
     }
 }
 
-impl ToTokens for BuilderInstanceCode {
+impl ToTokens for ClientFunctionCode {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         let mut params: Vec<TokenStream> = Vec::new();
         if self.in_operation_group {
@@ -1166,8 +1167,8 @@ impl ToTokens for BuilderInstanceCode {
             #summary
             #description
             #(#param_descriptions)*
-            pub fn #fname(#parameters) -> #fname::Builder {
-                #fname::Builder {
+            pub fn #fname(#parameters) -> #fname::RequestBuilder {
+                #fname::RequestBuilder {
                     #(#params),*
                 }
             }
@@ -1177,12 +1178,12 @@ impl ToTokens for BuilderInstanceCode {
 
 /// The request builder struct type, not the impl.
 #[derive(Clone)]
-struct BuilderStructCode {
+struct RequestBuilderStructCode {
     parameters: FunctionParams,
     in_operation_group: bool,
 }
 
-impl BuilderStructCode {
+impl RequestBuilderStructCode {
     fn new(parameters: &FunctionParams, in_operation_group: bool) -> Self {
         Self {
             parameters: parameters.clone(),
@@ -1191,7 +1192,7 @@ impl BuilderStructCode {
     }
 }
 
-impl ToTokens for BuilderStructCode {
+impl ToTokens for RequestBuilderStructCode {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         let mut params: Vec<TokenStream> = Vec::new();
         if self.in_operation_group {
@@ -1217,7 +1218,7 @@ impl ToTokens for BuilderStructCode {
         }
         tokens.extend(quote! {
             #[derive(Clone)]
-            pub struct Builder {
+            pub struct RequestBuilder {
                 #(#params),*
             }
         });
@@ -1226,11 +1227,11 @@ impl ToTokens for BuilderStructCode {
 
 /// The setter functions for the request builder.
 #[derive(Clone)]
-struct BuilderSettersCode {
+struct RequestBuilderSettersCode {
     parameters: FunctionParams,
 }
 
-impl BuilderSettersCode {
+impl RequestBuilderSettersCode {
     fn new(parameters: &FunctionParams) -> Self {
         Self {
             parameters: parameters.clone(),
@@ -1238,7 +1239,7 @@ impl BuilderSettersCode {
     }
 }
 
-impl ToTokens for BuilderSettersCode {
+impl ToTokens for RequestBuilderSettersCode {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         for param in self.parameters.optional_params() {
             let FunctionParam {

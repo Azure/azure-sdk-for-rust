@@ -130,15 +130,15 @@ pub mod views {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Lists all views by tenant and object."]
-        pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.0.clone() }
+        pub fn list(&self) -> list::RequestBuilder {
+            list::RequestBuilder { client: self.0.clone() }
         }
         #[doc = "Lists all views at the given scope."]
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `scope`: The scope associated with view operations. This includes 'subscriptions/{subscriptionId}' for subscription scope, 'subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}' for resourceGroup scope, 'providers/Microsoft.Billing/billingAccounts/{billingAccountId}' for Billing Account scope, 'providers/Microsoft.Billing/billingAccounts/{billingAccountId}/departments/{departmentId}' for Department scope, 'providers/Microsoft.Billing/billingAccounts/{billingAccountId}/enrollmentAccounts/{enrollmentAccountId}' for EnrollmentAccount scope, 'providers/Microsoft.Billing/billingAccounts/{billingAccountId}/billingProfiles/{billingProfileId}' for BillingProfile scope, 'providers/Microsoft.Billing/billingAccounts/{billingAccountId}/invoiceSections/{invoiceSectionId}' for InvoiceSection scope, 'providers/Microsoft.Management/managementGroups/{managementGroupId}' for Management Group scope, 'providers/Microsoft.CostManagement/externalBillingAccounts/{externalBillingAccountName}' for External Billing Account scope and 'providers/Microsoft.CostManagement/externalSubscriptions/{externalSubscriptionName}' for External Subscription scope."]
-        pub fn list_by_scope(&self, scope: impl Into<String>) -> list_by_scope::Builder {
-            list_by_scope::Builder {
+        pub fn list_by_scope(&self, scope: impl Into<String>) -> list_by_scope::RequestBuilder {
+            list_by_scope::RequestBuilder {
                 client: self.0.clone(),
                 scope: scope.into(),
             }
@@ -147,8 +147,8 @@ pub mod views {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `view_name`: View name"]
-        pub fn get(&self, view_name: impl Into<String>) -> get::Builder {
-            get::Builder {
+        pub fn get(&self, view_name: impl Into<String>) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 view_name: view_name.into(),
             }
@@ -158,8 +158,12 @@ pub mod views {
         #[doc = "Arguments:"]
         #[doc = "* `view_name`: View name"]
         #[doc = "* `parameters`: Parameters supplied to the CreateOrUpdate View operation."]
-        pub fn create_or_update(&self, view_name: impl Into<String>, parameters: impl Into<models::View>) -> create_or_update::Builder {
-            create_or_update::Builder {
+        pub fn create_or_update(
+            &self,
+            view_name: impl Into<String>,
+            parameters: impl Into<models::View>,
+        ) -> create_or_update::RequestBuilder {
+            create_or_update::RequestBuilder {
                 client: self.0.clone(),
                 view_name: view_name.into(),
                 parameters: parameters.into(),
@@ -169,8 +173,8 @@ pub mod views {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `view_name`: View name"]
-        pub fn delete(&self, view_name: impl Into<String>) -> delete::Builder {
-            delete::Builder {
+        pub fn delete(&self, view_name: impl Into<String>) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 view_name: view_name.into(),
             }
@@ -180,8 +184,8 @@ pub mod views {
         #[doc = "Arguments:"]
         #[doc = "* `scope`: The scope associated with view operations. This includes 'subscriptions/{subscriptionId}' for subscription scope, 'subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}' for resourceGroup scope, 'providers/Microsoft.Billing/billingAccounts/{billingAccountId}' for Billing Account scope, 'providers/Microsoft.Billing/billingAccounts/{billingAccountId}/departments/{departmentId}' for Department scope, 'providers/Microsoft.Billing/billingAccounts/{billingAccountId}/enrollmentAccounts/{enrollmentAccountId}' for EnrollmentAccount scope, 'providers/Microsoft.Billing/billingAccounts/{billingAccountId}/billingProfiles/{billingProfileId}' for BillingProfile scope, 'providers/Microsoft.Billing/billingAccounts/{billingAccountId}/invoiceSections/{invoiceSectionId}' for InvoiceSection scope, 'providers/Microsoft.Management/managementGroups/{managementGroupId}' for Management Group scope, 'providers/Microsoft.CostManagement/externalBillingAccounts/{externalBillingAccountName}' for External Billing Account scope and 'providers/Microsoft.CostManagement/externalSubscriptions/{externalSubscriptionName}' for External Subscription scope."]
         #[doc = "* `view_name`: View name"]
-        pub fn get_by_scope(&self, scope: impl Into<String>, view_name: impl Into<String>) -> get_by_scope::Builder {
-            get_by_scope::Builder {
+        pub fn get_by_scope(&self, scope: impl Into<String>, view_name: impl Into<String>) -> get_by_scope::RequestBuilder {
+            get_by_scope::RequestBuilder {
                 client: self.0.clone(),
                 scope: scope.into(),
                 view_name: view_name.into(),
@@ -198,8 +202,8 @@ pub mod views {
             scope: impl Into<String>,
             view_name: impl Into<String>,
             parameters: impl Into<models::View>,
-        ) -> create_or_update_by_scope::Builder {
-            create_or_update_by_scope::Builder {
+        ) -> create_or_update_by_scope::RequestBuilder {
+            create_or_update_by_scope::RequestBuilder {
                 client: self.0.clone(),
                 scope: scope.into(),
                 view_name: view_name.into(),
@@ -211,8 +215,8 @@ pub mod views {
         #[doc = "Arguments:"]
         #[doc = "* `scope`: The scope associated with view operations. This includes 'subscriptions/{subscriptionId}' for subscription scope, 'subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}' for resourceGroup scope, 'providers/Microsoft.Billing/billingAccounts/{billingAccountId}' for Billing Account scope, 'providers/Microsoft.Billing/billingAccounts/{billingAccountId}/departments/{departmentId}' for Department scope, 'providers/Microsoft.Billing/billingAccounts/{billingAccountId}/enrollmentAccounts/{enrollmentAccountId}' for EnrollmentAccount scope, 'providers/Microsoft.Billing/billingAccounts/{billingAccountId}/billingProfiles/{billingProfileId}' for BillingProfile scope, 'providers/Microsoft.Billing/billingAccounts/{billingAccountId}/invoiceSections/{invoiceSectionId}' for InvoiceSection scope, 'providers/Microsoft.Management/managementGroups/{managementGroupId}' for Management Group scope, 'providers/Microsoft.CostManagement/externalBillingAccounts/{externalBillingAccountName}' for External Billing Account scope and 'providers/Microsoft.CostManagement/externalSubscriptions/{externalSubscriptionName}' for External Subscription scope."]
         #[doc = "* `view_name`: View name"]
-        pub fn delete_by_scope(&self, scope: impl Into<String>, view_name: impl Into<String>) -> delete_by_scope::Builder {
-            delete_by_scope::Builder {
+        pub fn delete_by_scope(&self, scope: impl Into<String>, view_name: impl Into<String>) -> delete_by_scope::RequestBuilder {
+            delete_by_scope::RequestBuilder {
                 client: self.0.clone(),
                 scope: scope.into(),
                 view_name: view_name.into(),
@@ -223,10 +227,10 @@ pub mod views {
         use super::models;
         type Response = models::ViewListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -293,11 +297,11 @@ pub mod views {
         use super::models;
         type Response = models::ViewListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) scope: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -367,11 +371,11 @@ pub mod views {
         use super::models;
         type Response = models::View;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) view_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -419,12 +423,12 @@ pub mod views {
             Created201(models::View),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) view_name: String,
             pub(crate) parameters: models::View,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -478,11 +482,11 @@ pub mod views {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) view_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -523,12 +527,12 @@ pub mod views {
         use super::models;
         type Response = models::View;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) scope: String,
             pub(crate) view_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -577,13 +581,13 @@ pub mod views {
             Created201(models::View),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) scope: String,
             pub(crate) view_name: String,
             pub(crate) parameters: models::View,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -638,12 +642,12 @@ pub mod views {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) scope: String,
             pub(crate) view_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -690,8 +694,8 @@ pub mod alerts {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `scope`: The scope associated with alerts operations. This includes '/subscriptions/{subscriptionId}/' for subscription scope, '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}' for resourceGroup scope, '/providers/Microsoft.Billing/billingAccounts/{billingAccountId}' for Billing Account scope and '/providers/Microsoft.Billing/billingAccounts/{billingAccountId}/departments/{departmentId}' for Department scope, '/providers/Microsoft.Billing/billingAccounts/{billingAccountId}/enrollmentAccounts/{enrollmentAccountId}' for EnrollmentAccount scope, '/providers/Microsoft.Management/managementGroups/{managementGroupId} for Management Group scope, '/providers/Microsoft.Billing/billingAccounts/{billingAccountId}/billingProfiles/{billingProfileId}' for billingProfile scope, '/providers/Microsoft.Billing/billingAccounts/{billingAccountId}/billingProfiles/{billingProfileId}/invoiceSections/{invoiceSectionId}' for invoiceSection scope, and '/providers/Microsoft.Billing/billingAccounts/{billingAccountId}/customers/{customerId}' specific for partners."]
-        pub fn list(&self, scope: impl Into<String>) -> list::Builder {
-            list::Builder {
+        pub fn list(&self, scope: impl Into<String>) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 scope: scope.into(),
             }
@@ -701,8 +705,8 @@ pub mod alerts {
         #[doc = "Arguments:"]
         #[doc = "* `scope`: The scope associated with alerts operations. This includes '/subscriptions/{subscriptionId}/' for subscription scope, '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}' for resourceGroup scope, '/providers/Microsoft.Billing/billingAccounts/{billingAccountId}' for Billing Account scope and '/providers/Microsoft.Billing/billingAccounts/{billingAccountId}/departments/{departmentId}' for Department scope, '/providers/Microsoft.Billing/billingAccounts/{billingAccountId}/enrollmentAccounts/{enrollmentAccountId}' for EnrollmentAccount scope, '/providers/Microsoft.Management/managementGroups/{managementGroupId} for Management Group scope, '/providers/Microsoft.Billing/billingAccounts/{billingAccountId}/billingProfiles/{billingProfileId}' for billingProfile scope, '/providers/Microsoft.Billing/billingAccounts/{billingAccountId}/billingProfiles/{billingProfileId}/invoiceSections/{invoiceSectionId}' for invoiceSection scope, and '/providers/Microsoft.Billing/billingAccounts/{billingAccountId}/customers/{customerId}' specific for partners."]
         #[doc = "* `alert_id`: Alert ID"]
-        pub fn get(&self, scope: impl Into<String>, alert_id: impl Into<String>) -> get::Builder {
-            get::Builder {
+        pub fn get(&self, scope: impl Into<String>, alert_id: impl Into<String>) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 scope: scope.into(),
                 alert_id: alert_id.into(),
@@ -719,8 +723,8 @@ pub mod alerts {
             scope: impl Into<String>,
             alert_id: impl Into<String>,
             parameters: impl Into<models::DismissAlertPayload>,
-        ) -> dismiss::Builder {
-            dismiss::Builder {
+        ) -> dismiss::RequestBuilder {
+            dismiss::RequestBuilder {
                 client: self.0.clone(),
                 scope: scope.into(),
                 alert_id: alert_id.into(),
@@ -736,8 +740,8 @@ pub mod alerts {
             &self,
             external_cloud_provider_type: impl Into<String>,
             external_cloud_provider_id: impl Into<String>,
-        ) -> list_external::Builder {
-            list_external::Builder {
+        ) -> list_external::RequestBuilder {
+            list_external::RequestBuilder {
                 client: self.0.clone(),
                 external_cloud_provider_type: external_cloud_provider_type.into(),
                 external_cloud_provider_id: external_cloud_provider_id.into(),
@@ -748,11 +752,11 @@ pub mod alerts {
         use super::models;
         type Response = models::AlertsResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) scope: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -796,12 +800,12 @@ pub mod alerts {
         use super::models;
         type Response = models::Alert;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) scope: String,
             pub(crate) alert_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -846,13 +850,13 @@ pub mod alerts {
         use super::models;
         type Response = models::Alert;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) scope: String,
             pub(crate) alert_id: String,
             pub(crate) parameters: models::DismissAlertPayload,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -898,12 +902,12 @@ pub mod alerts {
         use super::models;
         type Response = models::AlertsResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) external_cloud_provider_type: String,
             pub(crate) external_cloud_provider_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -954,8 +958,8 @@ pub mod forecast {
         #[doc = "Arguments:"]
         #[doc = "* `scope`: The scope associated with forecast operations. This includes '/subscriptions/{subscriptionId}/' for subscription scope, '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}' for resourceGroup scope, '/providers/Microsoft.Billing/billingAccounts/{billingAccountId}' for Billing Account scope and '/providers/Microsoft.Billing/billingAccounts/{billingAccountId}/departments/{departmentId}' for Department scope, '/providers/Microsoft.Billing/billingAccounts/{billingAccountId}/enrollmentAccounts/{enrollmentAccountId}' for EnrollmentAccount scope, '/providers/Microsoft.Management/managementGroups/{managementGroupId} for Management Group scope, '/providers/Microsoft.Billing/billingAccounts/{billingAccountId}/billingProfiles/{billingProfileId}' for billingProfile scope, '/providers/Microsoft.Billing/billingAccounts/{billingAccountId}/billingProfiles/{billingProfileId}/invoiceSections/{invoiceSectionId}' for invoiceSection scope, and '/providers/Microsoft.Billing/billingAccounts/{billingAccountId}/customers/{customerId}' specific for partners."]
         #[doc = "* `parameters`: Parameters supplied to the CreateOrUpdate Forecast Config operation."]
-        pub fn usage(&self, scope: impl Into<String>, parameters: impl Into<models::ForecastDefinition>) -> usage::Builder {
-            usage::Builder {
+        pub fn usage(&self, scope: impl Into<String>, parameters: impl Into<models::ForecastDefinition>) -> usage::RequestBuilder {
+            usage::RequestBuilder {
                 client: self.0.clone(),
                 scope: scope.into(),
                 parameters: parameters.into(),
@@ -973,8 +977,8 @@ pub mod forecast {
             external_cloud_provider_type: impl Into<String>,
             external_cloud_provider_id: impl Into<String>,
             parameters: impl Into<models::ForecastDefinition>,
-        ) -> external_cloud_provider_usage::Builder {
-            external_cloud_provider_usage::Builder {
+        ) -> external_cloud_provider_usage::RequestBuilder {
+            external_cloud_provider_usage::RequestBuilder {
                 client: self.0.clone(),
                 external_cloud_provider_type: external_cloud_provider_type.into(),
                 external_cloud_provider_id: external_cloud_provider_id.into(),
@@ -987,13 +991,13 @@ pub mod forecast {
         use super::models;
         type Response = models::QueryResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) scope: String,
             pub(crate) parameters: models::ForecastDefinition,
             pub(crate) filter: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "May be used to filter forecasts by properties/usageDate (Utc time), properties/chargeType or properties/grain. The filter supports 'eq', 'lt', 'gt', 'le', 'ge', and 'and'. It does not currently support 'ne', 'or', or 'not'."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -1046,14 +1050,14 @@ pub mod forecast {
         use super::models;
         type Response = models::QueryResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) external_cloud_provider_type: String,
             pub(crate) external_cloud_provider_id: String,
             pub(crate) parameters: models::ForecastDefinition,
             pub(crate) filter: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "May be used to filter forecasts by properties/usageDate (Utc time), properties/chargeType or properties/grain. The filter supports 'eq', 'lt', 'gt', 'le', 'ge', and 'and'. It does not currently support 'ne', 'or', or 'not'."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -1112,8 +1116,8 @@ pub mod dimensions {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `scope`: The scope associated with dimension operations. This includes '/subscriptions/{subscriptionId}/' for subscription scope, '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}' for resourceGroup scope, '/providers/Microsoft.Billing/billingAccounts/{billingAccountId}' for Billing Account scope, '/providers/Microsoft.Billing/billingAccounts/{billingAccountId}/departments/{departmentId}' for Department scope, '/providers/Microsoft.Billing/billingAccounts/{billingAccountId}/enrollmentAccounts/{enrollmentAccountId}' for EnrollmentAccount scope, '/providers/Microsoft.Management/managementGroups/{managementGroupId}' for Management Group scope, '/providers/Microsoft.Billing/billingAccounts/{billingAccountId}/billingProfiles/{billingProfileId}' for billingProfile scope, 'providers/Microsoft.Billing/billingAccounts/{billingAccountId}/billingProfiles/{billingProfileId}/invoiceSections/{invoiceSectionId}' for invoiceSection scope, and 'providers/Microsoft.Billing/billingAccounts/{billingAccountId}/customers/{customerId}' specific for partners."]
-        pub fn list(&self, scope: impl Into<String>) -> list::Builder {
-            list::Builder {
+        pub fn list(&self, scope: impl Into<String>) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 scope: scope.into(),
                 filter: None,
@@ -1131,8 +1135,8 @@ pub mod dimensions {
             &self,
             external_cloud_provider_type: impl Into<String>,
             external_cloud_provider_id: impl Into<String>,
-        ) -> by_external_cloud_provider_type::Builder {
-            by_external_cloud_provider_type::Builder {
+        ) -> by_external_cloud_provider_type::RequestBuilder {
+            by_external_cloud_provider_type::RequestBuilder {
                 client: self.0.clone(),
                 external_cloud_provider_type: external_cloud_provider_type.into(),
                 external_cloud_provider_id: external_cloud_provider_id.into(),
@@ -1147,7 +1151,7 @@ pub mod dimensions {
         use super::models;
         type Response = models::DimensionsListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) scope: String,
             pub(crate) filter: Option<String>,
@@ -1155,7 +1159,7 @@ pub mod dimensions {
             pub(crate) skiptoken: Option<String>,
             pub(crate) top: Option<i32>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "May be used to filter dimensions by properties/category, properties/usageStart, properties/usageEnd. Supported operators are 'eq','lt', 'gt', 'le', 'ge'."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -1232,7 +1236,7 @@ pub mod dimensions {
         use super::models;
         type Response = models::DimensionsListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) external_cloud_provider_type: String,
             pub(crate) external_cloud_provider_id: String,
@@ -1241,7 +1245,7 @@ pub mod dimensions {
             pub(crate) skiptoken: Option<String>,
             pub(crate) top: Option<i32>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "May be used to filter dimensions by properties/category, properties/usageStart, properties/usageEnd. Supported operators are 'eq','lt', 'gt', 'le', 'ge'."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -1325,8 +1329,8 @@ pub mod query {
         #[doc = "Arguments:"]
         #[doc = "* `scope`: The scope associated with query and export operations. This includes '/subscriptions/{subscriptionId}/' for subscription scope, '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}' for resourceGroup scope, '/providers/Microsoft.Billing/billingAccounts/{billingAccountId}' for Billing Account scope and '/providers/Microsoft.Billing/billingAccounts/{billingAccountId}/departments/{departmentId}' for Department scope, '/providers/Microsoft.Billing/billingAccounts/{billingAccountId}/enrollmentAccounts/{enrollmentAccountId}' for EnrollmentAccount scope, '/providers/Microsoft.Management/managementGroups/{managementGroupId} for Management Group scope, '/providers/Microsoft.Billing/billingAccounts/{billingAccountId}/billingProfiles/{billingProfileId}' for billingProfile scope, '/providers/Microsoft.Billing/billingAccounts/{billingAccountId}/billingProfiles/{billingProfileId}/invoiceSections/{invoiceSectionId}' for invoiceSection scope, and '/providers/Microsoft.Billing/billingAccounts/{billingAccountId}/customers/{customerId}' specific for partners."]
         #[doc = "* `parameters`: Parameters supplied to the CreateOrUpdate Query Config operation."]
-        pub fn usage(&self, scope: impl Into<String>, parameters: impl Into<models::QueryDefinition>) -> usage::Builder {
-            usage::Builder {
+        pub fn usage(&self, scope: impl Into<String>, parameters: impl Into<models::QueryDefinition>) -> usage::RequestBuilder {
+            usage::RequestBuilder {
                 client: self.0.clone(),
                 scope: scope.into(),
                 parameters: parameters.into(),
@@ -1343,8 +1347,8 @@ pub mod query {
             external_cloud_provider_type: impl Into<String>,
             external_cloud_provider_id: impl Into<String>,
             parameters: impl Into<models::QueryDefinition>,
-        ) -> usage_by_external_cloud_provider_type::Builder {
-            usage_by_external_cloud_provider_type::Builder {
+        ) -> usage_by_external_cloud_provider_type::RequestBuilder {
+            usage_by_external_cloud_provider_type::RequestBuilder {
                 client: self.0.clone(),
                 external_cloud_provider_type: external_cloud_provider_type.into(),
                 external_cloud_provider_id: external_cloud_provider_id.into(),
@@ -1356,12 +1360,12 @@ pub mod query {
         use super::models;
         type Response = models::QueryResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) scope: String,
             pub(crate) parameters: models::QueryDefinition,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1406,13 +1410,13 @@ pub mod query {
         use super::models;
         type Response = models::QueryResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) external_cloud_provider_type: String,
             pub(crate) external_cloud_provider_id: String,
             pub(crate) parameters: models::QueryDefinition,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1460,18 +1464,18 @@ pub mod operations {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Lists all of the available cost management REST API operations."]
-        pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.0.clone() }
+        pub fn list(&self) -> list::RequestBuilder {
+            list::RequestBuilder { client: self.0.clone() }
         }
     }
     pub mod list {
         use super::models;
         type Response = models::OperationListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -1543,8 +1547,8 @@ pub mod cost_allocation_rules {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `billing_account_id`: BillingAccount ID"]
-        pub fn list(&self, billing_account_id: impl Into<String>) -> list::Builder {
-            list::Builder {
+        pub fn list(&self, billing_account_id: impl Into<String>) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 billing_account_id: billing_account_id.into(),
             }
@@ -1558,8 +1562,8 @@ pub mod cost_allocation_rules {
             &self,
             billing_account_id: impl Into<String>,
             cost_allocation_rule_check_name_availability_request: impl Into<models::CostAllocationRuleCheckNameAvailabilityRequest>,
-        ) -> check_name_availability::Builder {
-            check_name_availability::Builder {
+        ) -> check_name_availability::RequestBuilder {
+            check_name_availability::RequestBuilder {
                 client: self.0.clone(),
                 billing_account_id: billing_account_id.into(),
                 cost_allocation_rule_check_name_availability_request: cost_allocation_rule_check_name_availability_request.into(),
@@ -1570,8 +1574,8 @@ pub mod cost_allocation_rules {
         #[doc = "Arguments:"]
         #[doc = "* `billing_account_id`: BillingAccount ID"]
         #[doc = "* `rule_name`: Cost allocation rule name. The name cannot include spaces or any non alphanumeric characters other than '_' and '-'. The max length is 260 characters."]
-        pub fn get(&self, billing_account_id: impl Into<String>, rule_name: impl Into<String>) -> get::Builder {
-            get::Builder {
+        pub fn get(&self, billing_account_id: impl Into<String>, rule_name: impl Into<String>) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 billing_account_id: billing_account_id.into(),
                 rule_name: rule_name.into(),
@@ -1588,8 +1592,8 @@ pub mod cost_allocation_rules {
             billing_account_id: impl Into<String>,
             rule_name: impl Into<String>,
             cost_allocation_rule: impl Into<models::CostAllocationRuleDefinition>,
-        ) -> create_or_update::Builder {
-            create_or_update::Builder {
+        ) -> create_or_update::RequestBuilder {
+            create_or_update::RequestBuilder {
                 client: self.0.clone(),
                 billing_account_id: billing_account_id.into(),
                 rule_name: rule_name.into(),
@@ -1601,8 +1605,8 @@ pub mod cost_allocation_rules {
         #[doc = "Arguments:"]
         #[doc = "* `billing_account_id`: BillingAccount ID"]
         #[doc = "* `rule_name`: Cost allocation rule name. The name cannot include spaces or any non alphanumeric characters other than '_' and '-'. The max length is 260 characters."]
-        pub fn delete(&self, billing_account_id: impl Into<String>, rule_name: impl Into<String>) -> delete::Builder {
-            delete::Builder {
+        pub fn delete(&self, billing_account_id: impl Into<String>, rule_name: impl Into<String>) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 billing_account_id: billing_account_id.into(),
                 rule_name: rule_name.into(),
@@ -1613,11 +1617,11 @@ pub mod cost_allocation_rules {
         use super::models;
         type Response = models::CostAllocationRuleList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) billing_account_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -1687,12 +1691,12 @@ pub mod cost_allocation_rules {
         use super::models;
         type Response = models::CostAllocationRuleCheckNameAvailabilityResponse;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) billing_account_id: String,
             pub(crate) cost_allocation_rule_check_name_availability_request: models::CostAllocationRuleCheckNameAvailabilityRequest,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1733,12 +1737,12 @@ pub mod cost_allocation_rules {
         use super::models;
         type Response = models::CostAllocationRuleDefinition;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) billing_account_id: String,
             pub(crate) rule_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1783,13 +1787,13 @@ pub mod cost_allocation_rules {
         use super::models;
         type Response = models::CostAllocationRuleDefinition;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) billing_account_id: String,
             pub(crate) rule_name: String,
             pub(crate) cost_allocation_rule: models::CostAllocationRuleDefinition,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1839,12 +1843,12 @@ pub mod cost_allocation_rules {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) billing_account_id: String,
             pub(crate) rule_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();

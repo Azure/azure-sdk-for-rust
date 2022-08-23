@@ -118,18 +118,18 @@ pub mod operations {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Lists all of the available NotificationHubs REST API operations."]
-        pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.0.clone() }
+        pub fn list(&self) -> list::RequestBuilder {
+            list::RequestBuilder { client: self.0.clone() }
         }
     }
     pub mod list {
         use super::models;
         type Response = models::OperationListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -208,8 +208,8 @@ pub mod namespaces {
             &self,
             parameters: impl Into<models::CheckAvailabilityParameters>,
             subscription_id: impl Into<String>,
-        ) -> check_availability::Builder {
-            check_availability::Builder {
+        ) -> check_availability::RequestBuilder {
+            check_availability::RequestBuilder {
                 client: self.0.clone(),
                 parameters: parameters.into(),
                 subscription_id: subscription_id.into(),
@@ -226,8 +226,8 @@ pub mod namespaces {
             resource_group_name: impl Into<String>,
             namespace_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 namespace_name: namespace_name.into(),
@@ -247,8 +247,8 @@ pub mod namespaces {
             namespace_name: impl Into<String>,
             parameters: impl Into<models::NamespaceCreateOrUpdateParameters>,
             subscription_id: impl Into<String>,
-        ) -> create_or_update::Builder {
-            create_or_update::Builder {
+        ) -> create_or_update::RequestBuilder {
+            create_or_update::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 namespace_name: namespace_name.into(),
@@ -269,8 +269,8 @@ pub mod namespaces {
             namespace_name: impl Into<String>,
             parameters: impl Into<models::NamespacePatchParameters>,
             subscription_id: impl Into<String>,
-        ) -> patch::Builder {
-            patch::Builder {
+        ) -> patch::RequestBuilder {
+            patch::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 namespace_name: namespace_name.into(),
@@ -289,8 +289,8 @@ pub mod namespaces {
             resource_group_name: impl Into<String>,
             namespace_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> delete::Builder {
-            delete::Builder {
+        ) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 namespace_name: namespace_name.into(),
@@ -310,8 +310,8 @@ pub mod namespaces {
             namespace_name: impl Into<String>,
             authorization_rule_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_authorization_rule::Builder {
-            get_authorization_rule::Builder {
+        ) -> get_authorization_rule::RequestBuilder {
+            get_authorization_rule::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 namespace_name: namespace_name.into(),
@@ -334,8 +334,8 @@ pub mod namespaces {
             authorization_rule_name: impl Into<String>,
             parameters: impl Into<models::SharedAccessAuthorizationRuleCreateOrUpdateParameters>,
             subscription_id: impl Into<String>,
-        ) -> create_or_update_authorization_rule::Builder {
-            create_or_update_authorization_rule::Builder {
+        ) -> create_or_update_authorization_rule::RequestBuilder {
+            create_or_update_authorization_rule::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 namespace_name: namespace_name.into(),
@@ -357,8 +357,8 @@ pub mod namespaces {
             namespace_name: impl Into<String>,
             authorization_rule_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> delete_authorization_rule::Builder {
-            delete_authorization_rule::Builder {
+        ) -> delete_authorization_rule::RequestBuilder {
+            delete_authorization_rule::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 namespace_name: namespace_name.into(),
@@ -371,8 +371,8 @@ pub mod namespaces {
         #[doc = "Arguments:"]
         #[doc = "* `resource_group_name`: The name of the resource group. If resourceGroupName value is null the method lists all the namespaces within subscription"]
         #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
-        pub fn list(&self, resource_group_name: impl Into<String>, subscription_id: impl Into<String>) -> list::Builder {
-            list::Builder {
+        pub fn list(&self, resource_group_name: impl Into<String>, subscription_id: impl Into<String>) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 subscription_id: subscription_id.into(),
@@ -382,8 +382,8 @@ pub mod namespaces {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
-        pub fn list_all(&self, subscription_id: impl Into<String>) -> list_all::Builder {
-            list_all::Builder {
+        pub fn list_all(&self, subscription_id: impl Into<String>) -> list_all::RequestBuilder {
+            list_all::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
@@ -399,8 +399,8 @@ pub mod namespaces {
             resource_group_name: impl Into<String>,
             namespace_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_authorization_rules::Builder {
-            list_authorization_rules::Builder {
+        ) -> list_authorization_rules::RequestBuilder {
+            list_authorization_rules::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 namespace_name: namespace_name.into(),
@@ -420,8 +420,8 @@ pub mod namespaces {
             namespace_name: impl Into<String>,
             authorization_rule_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_keys::Builder {
-            list_keys::Builder {
+        ) -> list_keys::RequestBuilder {
+            list_keys::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 namespace_name: namespace_name.into(),
@@ -444,8 +444,8 @@ pub mod namespaces {
             authorization_rule_name: impl Into<String>,
             parameters: impl Into<models::PolicykeyResource>,
             subscription_id: impl Into<String>,
-        ) -> regenerate_keys::Builder {
-            regenerate_keys::Builder {
+        ) -> regenerate_keys::RequestBuilder {
+            regenerate_keys::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 namespace_name: namespace_name.into(),
@@ -459,12 +459,12 @@ pub mod namespaces {
         use super::models;
         type Response = models::CheckAvailabilityResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) parameters: models::CheckAvailabilityParameters,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -509,13 +509,13 @@ pub mod namespaces {
         use super::models;
         type Response = models::NamespaceResource;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) namespace_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -565,14 +565,14 @@ pub mod namespaces {
             Created201(models::NamespaceResource),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) namespace_name: String,
             pub(crate) parameters: models::NamespaceCreateOrUpdateParameters,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -624,14 +624,14 @@ pub mod namespaces {
         use super::models;
         type Response = models::NamespaceResource;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) namespace_name: String,
             pub(crate) parameters: models::NamespacePatchParameters,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -683,13 +683,13 @@ pub mod namespaces {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) namespace_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -734,14 +734,14 @@ pub mod namespaces {
         use super::models;
         type Response = models::SharedAccessAuthorizationRuleResource;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) namespace_name: String,
             pub(crate) authorization_rule_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -781,7 +781,7 @@ pub mod namespaces {
         use super::models;
         type Response = models::SharedAccessAuthorizationRuleResource;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) namespace_name: String,
@@ -789,7 +789,7 @@ pub mod namespaces {
             pub(crate) parameters: models::SharedAccessAuthorizationRuleCreateOrUpdateParameters,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -834,14 +834,14 @@ pub mod namespaces {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) namespace_name: String,
             pub(crate) authorization_rule_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -878,12 +878,12 @@ pub mod namespaces {
         use super::models;
         type Response = models::NamespaceListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -954,11 +954,11 @@ pub mod namespaces {
         use super::models;
         type Response = models::NamespaceListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -1028,13 +1028,13 @@ pub mod namespaces {
         use super::models;
         type Response = models::SharedAccessAuthorizationRuleListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) namespace_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -1106,14 +1106,14 @@ pub mod namespaces {
         use super::models;
         type Response = models::ResourceListKeys;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) namespace_name: String,
             pub(crate) authorization_rule_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1154,7 +1154,7 @@ pub mod namespaces {
         use super::models;
         type Response = models::ResourceListKeys;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) namespace_name: String,
@@ -1162,7 +1162,7 @@ pub mod namespaces {
             pub(crate) parameters: models::PolicykeyResource,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1217,8 +1217,8 @@ pub mod notification_hubs {
             namespace_name: impl Into<String>,
             parameters: impl Into<models::CheckAvailabilityParameters>,
             subscription_id: impl Into<String>,
-        ) -> check_notification_hub_availability::Builder {
-            check_notification_hub_availability::Builder {
+        ) -> check_notification_hub_availability::RequestBuilder {
+            check_notification_hub_availability::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 namespace_name: namespace_name.into(),
@@ -1239,8 +1239,8 @@ pub mod notification_hubs {
             namespace_name: impl Into<String>,
             notification_hub_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 namespace_name: namespace_name.into(),
@@ -1263,8 +1263,8 @@ pub mod notification_hubs {
             notification_hub_name: impl Into<String>,
             parameters: impl Into<models::NotificationHubCreateOrUpdateParameters>,
             subscription_id: impl Into<String>,
-        ) -> create_or_update::Builder {
-            create_or_update::Builder {
+        ) -> create_or_update::RequestBuilder {
+            create_or_update::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 namespace_name: namespace_name.into(),
@@ -1286,8 +1286,8 @@ pub mod notification_hubs {
             namespace_name: impl Into<String>,
             notification_hub_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> patch::Builder {
-            patch::Builder {
+        ) -> patch::RequestBuilder {
+            patch::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 namespace_name: namespace_name.into(),
@@ -1309,8 +1309,8 @@ pub mod notification_hubs {
             namespace_name: impl Into<String>,
             notification_hub_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> delete::Builder {
-            delete::Builder {
+        ) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 namespace_name: namespace_name.into(),
@@ -1331,8 +1331,8 @@ pub mod notification_hubs {
             namespace_name: impl Into<String>,
             notification_hub_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> debug_send::Builder {
-            debug_send::Builder {
+        ) -> debug_send::RequestBuilder {
+            debug_send::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 namespace_name: namespace_name.into(),
@@ -1356,8 +1356,8 @@ pub mod notification_hubs {
             notification_hub_name: impl Into<String>,
             authorization_rule_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_authorization_rule::Builder {
-            get_authorization_rule::Builder {
+        ) -> get_authorization_rule::RequestBuilder {
+            get_authorization_rule::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 namespace_name: namespace_name.into(),
@@ -1383,8 +1383,8 @@ pub mod notification_hubs {
             authorization_rule_name: impl Into<String>,
             parameters: impl Into<models::SharedAccessAuthorizationRuleCreateOrUpdateParameters>,
             subscription_id: impl Into<String>,
-        ) -> create_or_update_authorization_rule::Builder {
-            create_or_update_authorization_rule::Builder {
+        ) -> create_or_update_authorization_rule::RequestBuilder {
+            create_or_update_authorization_rule::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 namespace_name: namespace_name.into(),
@@ -1409,8 +1409,8 @@ pub mod notification_hubs {
             notification_hub_name: impl Into<String>,
             authorization_rule_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> delete_authorization_rule::Builder {
-            delete_authorization_rule::Builder {
+        ) -> delete_authorization_rule::RequestBuilder {
+            delete_authorization_rule::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 namespace_name: namespace_name.into(),
@@ -1430,8 +1430,8 @@ pub mod notification_hubs {
             resource_group_name: impl Into<String>,
             namespace_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list::Builder {
-            list::Builder {
+        ) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 namespace_name: namespace_name.into(),
@@ -1451,8 +1451,8 @@ pub mod notification_hubs {
             namespace_name: impl Into<String>,
             notification_hub_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_authorization_rules::Builder {
-            list_authorization_rules::Builder {
+        ) -> list_authorization_rules::RequestBuilder {
+            list_authorization_rules::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 namespace_name: namespace_name.into(),
@@ -1475,8 +1475,8 @@ pub mod notification_hubs {
             notification_hub_name: impl Into<String>,
             authorization_rule_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_keys::Builder {
-            list_keys::Builder {
+        ) -> list_keys::RequestBuilder {
+            list_keys::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 namespace_name: namespace_name.into(),
@@ -1502,8 +1502,8 @@ pub mod notification_hubs {
             authorization_rule_name: impl Into<String>,
             parameters: impl Into<models::PolicykeyResource>,
             subscription_id: impl Into<String>,
-        ) -> regenerate_keys::Builder {
-            regenerate_keys::Builder {
+        ) -> regenerate_keys::RequestBuilder {
+            regenerate_keys::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 namespace_name: namespace_name.into(),
@@ -1526,8 +1526,8 @@ pub mod notification_hubs {
             namespace_name: impl Into<String>,
             notification_hub_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_pns_credentials::Builder {
-            get_pns_credentials::Builder {
+        ) -> get_pns_credentials::RequestBuilder {
+            get_pns_credentials::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 namespace_name: namespace_name.into(),
@@ -1540,14 +1540,14 @@ pub mod notification_hubs {
         use super::models;
         type Response = models::CheckAvailabilityResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) namespace_name: String,
             pub(crate) parameters: models::CheckAvailabilityParameters,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1588,14 +1588,14 @@ pub mod notification_hubs {
         use super::models;
         type Response = models::NotificationHubResource;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) namespace_name: String,
             pub(crate) notification_hub_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1646,7 +1646,7 @@ pub mod notification_hubs {
             Created201(models::NotificationHubResource),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) namespace_name: String,
@@ -1654,7 +1654,7 @@ pub mod notification_hubs {
             pub(crate) parameters: models::NotificationHubCreateOrUpdateParameters,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1707,7 +1707,7 @@ pub mod notification_hubs {
         use super::models;
         type Response = models::NotificationHubResource;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) namespace_name: String,
@@ -1715,7 +1715,7 @@ pub mod notification_hubs {
             pub(crate) subscription_id: String,
             pub(crate) parameters: Option<models::NotificationHubPatchParameters>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Parameters supplied to patch a NotificationHub Resource."]
             pub fn parameters(mut self, parameters: impl Into<models::NotificationHubPatchParameters>) -> Self {
                 self.parameters = Some(parameters.into());
@@ -1772,14 +1772,14 @@ pub mod notification_hubs {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) namespace_name: String,
             pub(crate) notification_hub_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1822,7 +1822,7 @@ pub mod notification_hubs {
         use super::models;
         type Response = models::DebugSendResponse;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) namespace_name: String,
@@ -1830,7 +1830,7 @@ pub mod notification_hubs {
             pub(crate) subscription_id: String,
             pub(crate) parameters: Option<models::DebugSendParameters>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Debug send parameters"]
             pub fn parameters(mut self, parameters: impl Into<models::DebugSendParameters>) -> Self {
                 self.parameters = Some(parameters.into());
@@ -1880,7 +1880,7 @@ pub mod notification_hubs {
         use super::models;
         type Response = models::SharedAccessAuthorizationRuleResource;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) namespace_name: String,
@@ -1888,7 +1888,7 @@ pub mod notification_hubs {
             pub(crate) authorization_rule_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1928,7 +1928,7 @@ pub mod notification_hubs {
         use super::models;
         type Response = models::SharedAccessAuthorizationRuleResource;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) namespace_name: String,
@@ -1937,7 +1937,7 @@ pub mod notification_hubs {
             pub(crate) parameters: models::SharedAccessAuthorizationRuleCreateOrUpdateParameters,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1982,7 +1982,7 @@ pub mod notification_hubs {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) namespace_name: String,
@@ -1990,7 +1990,7 @@ pub mod notification_hubs {
             pub(crate) authorization_rule_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2027,13 +2027,13 @@ pub mod notification_hubs {
         use super::models;
         type Response = models::NotificationHubListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) namespace_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -2105,14 +2105,14 @@ pub mod notification_hubs {
         use super::models;
         type Response = models::SharedAccessAuthorizationRuleListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) namespace_name: String,
             pub(crate) notification_hub_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -2178,7 +2178,7 @@ pub mod notification_hubs {
         use super::models;
         type Response = models::ResourceListKeys;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) namespace_name: String,
@@ -2186,7 +2186,7 @@ pub mod notification_hubs {
             pub(crate) authorization_rule_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2227,7 +2227,7 @@ pub mod notification_hubs {
         use super::models;
         type Response = models::ResourceListKeys;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) namespace_name: String,
@@ -2236,7 +2236,7 @@ pub mod notification_hubs {
             pub(crate) parameters: models::PolicykeyResource,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2277,14 +2277,14 @@ pub mod notification_hubs {
         use super::models;
         type Response = models::PnsCredentialsResource;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) namespace_name: String,
             pub(crate) notification_hub_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();

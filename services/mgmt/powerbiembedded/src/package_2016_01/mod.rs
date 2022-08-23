@@ -125,8 +125,8 @@ pub mod workspace_collections {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             workspace_collection_name: impl Into<String>,
-        ) -> get_by_name::Builder {
-            get_by_name::Builder {
+        ) -> get_by_name::RequestBuilder {
+            get_by_name::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -146,8 +146,8 @@ pub mod workspace_collections {
             resource_group_name: impl Into<String>,
             workspace_collection_name: impl Into<String>,
             body: impl Into<models::CreateWorkspaceCollectionRequest>,
-        ) -> create::Builder {
-            create::Builder {
+        ) -> create::RequestBuilder {
+            create::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -168,8 +168,8 @@ pub mod workspace_collections {
             resource_group_name: impl Into<String>,
             workspace_collection_name: impl Into<String>,
             body: impl Into<models::UpdateWorkspaceCollectionRequest>,
-        ) -> update::Builder {
-            update::Builder {
+        ) -> update::RequestBuilder {
+            update::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -188,8 +188,8 @@ pub mod workspace_collections {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             workspace_collection_name: impl Into<String>,
-        ) -> delete::Builder {
-            delete::Builder {
+        ) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -207,8 +207,8 @@ pub mod workspace_collections {
             subscription_id: impl Into<String>,
             location: impl Into<String>,
             body: impl Into<models::CheckNameRequest>,
-        ) -> check_name_availability::Builder {
-            check_name_availability::Builder {
+        ) -> check_name_availability::RequestBuilder {
+            check_name_availability::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 location: location.into(),
@@ -224,8 +224,8 @@ pub mod workspace_collections {
             &self,
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
-        ) -> list_by_resource_group::Builder {
-            list_by_resource_group::Builder {
+        ) -> list_by_resource_group::RequestBuilder {
+            list_by_resource_group::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -235,8 +235,8 @@ pub mod workspace_collections {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: Gets subscription credentials which uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
-        pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
-            list_by_subscription::Builder {
+        pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::RequestBuilder {
+            list_by_subscription::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
@@ -252,8 +252,8 @@ pub mod workspace_collections {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             workspace_collection_name: impl Into<String>,
-        ) -> get_access_keys::Builder {
-            get_access_keys::Builder {
+        ) -> get_access_keys::RequestBuilder {
+            get_access_keys::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -273,8 +273,8 @@ pub mod workspace_collections {
             resource_group_name: impl Into<String>,
             workspace_collection_name: impl Into<String>,
             body: impl Into<models::WorkspaceCollectionAccessKey>,
-        ) -> regenerate_key::Builder {
-            regenerate_key::Builder {
+        ) -> regenerate_key::RequestBuilder {
+            regenerate_key::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -293,8 +293,8 @@ pub mod workspace_collections {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             body: impl Into<models::MigrateWorkspaceCollectionRequest>,
-        ) -> migrate::Builder {
-            migrate::Builder {
+        ) -> migrate::RequestBuilder {
+            migrate::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -306,13 +306,13 @@ pub mod workspace_collections {
         use super::models;
         type Response = models::WorkspaceCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) workspace_collection_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -358,14 +358,14 @@ pub mod workspace_collections {
         use super::models;
         type Response = models::WorkspaceCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) workspace_collection_name: String,
             pub(crate) body: models::CreateWorkspaceCollectionRequest,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -412,14 +412,14 @@ pub mod workspace_collections {
         use super::models;
         type Response = models::WorkspaceCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) workspace_collection_name: String,
             pub(crate) body: models::UpdateWorkspaceCollectionRequest,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -466,13 +466,13 @@ pub mod workspace_collections {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) workspace_collection_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -515,13 +515,13 @@ pub mod workspace_collections {
         use super::models;
         type Response = models::CheckNameResponse;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) location: String,
             pub(crate) body: models::CheckNameRequest,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -567,12 +567,12 @@ pub mod workspace_collections {
         use super::models;
         type Response = models::WorkspaceCollectionList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as the continuation token is not part of the response schema"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -618,11 +618,11 @@ pub mod workspace_collections {
         use super::models;
         type Response = models::WorkspaceCollectionList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as the continuation token is not part of the response schema"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -667,13 +667,13 @@ pub mod workspace_collections {
         use super::models;
         type Response = models::WorkspaceCollectionAccessKeys;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) workspace_collection_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -720,14 +720,14 @@ pub mod workspace_collections {
         use super::models;
         type Response = models::WorkspaceCollectionAccessKeys;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) workspace_collection_name: String,
             pub(crate) body: models::WorkspaceCollectionAccessKey,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -774,13 +774,13 @@ pub mod workspace_collections {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) body: models::MigrateWorkspaceCollectionRequest,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -821,18 +821,18 @@ pub mod workspace_collections {
 }
 impl Client {
     #[doc = "Indicates which operations can be performed by the Power BI Resource Provider."]
-    pub fn get_available_operations(&self) -> get_available_operations::Builder {
-        get_available_operations::Builder { client: self.clone() }
+    pub fn get_available_operations(&self) -> get_available_operations::RequestBuilder {
+        get_available_operations::RequestBuilder { client: self.clone() }
     }
 }
 pub mod get_available_operations {
     use super::models;
     type Response = models::OperationList;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -883,8 +883,8 @@ pub mod workspaces {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             workspace_collection_name: impl Into<String>,
-        ) -> list::Builder {
-            list::Builder {
+        ) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -896,13 +896,13 @@ pub mod workspaces {
         use super::models;
         type Response = models::WorkspaceList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) workspace_collection_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as the continuation token is not part of the response schema"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({

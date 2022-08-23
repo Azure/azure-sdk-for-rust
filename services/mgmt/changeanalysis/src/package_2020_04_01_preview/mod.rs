@@ -119,8 +119,8 @@ pub mod configuration_profile {
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: The ID of the target subscription."]
         #[doc = "* `profile_name`: The name of the configuration profile. The profile name should be set to 'default', all other names will be overwritten."]
-        pub fn get(&self, subscription_id: impl Into<String>, profile_name: impl Into<String>) -> get::Builder {
-            get::Builder {
+        pub fn get(&self, subscription_id: impl Into<String>, profile_name: impl Into<String>) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 profile_name: profile_name.into(),
@@ -131,8 +131,8 @@ pub mod configuration_profile {
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: The ID of the target subscription."]
         #[doc = "* `profile_name`: The name of the configuration profile. The profile name should be set to 'default', all other names will be overwritten."]
-        pub fn create(&self, subscription_id: impl Into<String>, profile_name: impl Into<String>) -> create::Builder {
-            create::Builder {
+        pub fn create(&self, subscription_id: impl Into<String>, profile_name: impl Into<String>) -> create::RequestBuilder {
+            create::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 profile_name: profile_name.into(),
@@ -144,8 +144,8 @@ pub mod configuration_profile {
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: The ID of the target subscription."]
         #[doc = "* `profile_name`: The name of the configuration profile. The profile name should be set to 'default', all other names will be overwritten."]
-        pub fn update(&self, subscription_id: impl Into<String>, profile_name: impl Into<String>) -> update::Builder {
-            update::Builder {
+        pub fn update(&self, subscription_id: impl Into<String>, profile_name: impl Into<String>) -> update::RequestBuilder {
+            update::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 profile_name: profile_name.into(),
@@ -157,8 +157,8 @@ pub mod configuration_profile {
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: The ID of the target subscription."]
         #[doc = "* `profile_name`: The name of the configuration profile. The profile name should be set to 'default', all other names will be overwritten."]
-        pub fn delete(&self, subscription_id: impl Into<String>, profile_name: impl Into<String>) -> delete::Builder {
-            delete::Builder {
+        pub fn delete(&self, subscription_id: impl Into<String>, profile_name: impl Into<String>) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 profile_name: profile_name.into(),
@@ -169,12 +169,12 @@ pub mod configuration_profile {
         use super::models;
         type Response = models::ConfigurationProfileResource;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) profile_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -219,13 +219,13 @@ pub mod configuration_profile {
         use super::models;
         type Response = models::ConfigurationProfileResource;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) profile_name: String,
             pub(crate) body: Option<models::ConfigurationProfileResource>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Request body containing new configuration profile."]
             pub fn body(mut self, body: impl Into<models::ConfigurationProfileResource>) -> Self {
                 self.body = Some(body.into());
@@ -280,13 +280,13 @@ pub mod configuration_profile {
         use super::models;
         type Response = models::ConfigurationProfileResource;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) profile_name: String,
             pub(crate) body: Option<models::ConfigurationProfileResource>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The parameters for updating a configuration store."]
             pub fn body(mut self, body: impl Into<models::ConfigurationProfileResource>) -> Self {
                 self.body = Some(body.into());
@@ -345,12 +345,12 @@ pub mod configuration_profile {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) profile_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -394,8 +394,8 @@ pub mod operations {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Lists all the supported operations by the Microsoft.ChangeAnalysis resource provider along with their descriptions."]
-        pub fn list(&self) -> list::Builder {
-            list::Builder {
+        pub fn list(&self) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 skip_token: None,
             }
@@ -405,11 +405,11 @@ pub mod operations {
         use super::models;
         type Response = models::ResourceProviderOperationList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) skip_token: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "A skip token is used to continue retrieving items after an operation returns a partial result. If a previous response contains a nextLink element, the value of the nextLink element will include a skipToken parameter that specifies a starting point to use for subsequent calls."]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());

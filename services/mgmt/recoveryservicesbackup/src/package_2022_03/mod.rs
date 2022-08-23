@@ -263,8 +263,8 @@ pub mod backup_resource_storage_configs_non_crr {
             vault_name: impl Into<String>,
             resource_group_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 vault_name: vault_name.into(),
                 resource_group_name: resource_group_name.into(),
@@ -284,8 +284,8 @@ pub mod backup_resource_storage_configs_non_crr {
             resource_group_name: impl Into<String>,
             subscription_id: impl Into<String>,
             parameters: impl Into<models::BackupResourceConfigResource>,
-        ) -> update::Builder {
-            update::Builder {
+        ) -> update::RequestBuilder {
+            update::RequestBuilder {
                 client: self.0.clone(),
                 vault_name: vault_name.into(),
                 resource_group_name: resource_group_name.into(),
@@ -306,8 +306,8 @@ pub mod backup_resource_storage_configs_non_crr {
             resource_group_name: impl Into<String>,
             subscription_id: impl Into<String>,
             parameters: impl Into<models::BackupResourceConfigResource>,
-        ) -> patch::Builder {
-            patch::Builder {
+        ) -> patch::RequestBuilder {
+            patch::RequestBuilder {
                 client: self.0.clone(),
                 vault_name: vault_name.into(),
                 resource_group_name: resource_group_name.into(),
@@ -320,13 +320,13 @@ pub mod backup_resource_storage_configs_non_crr {
         use super::models;
         type Response = models::BackupResourceConfigResource;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) vault_name: String,
             pub(crate) resource_group_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -366,14 +366,14 @@ pub mod backup_resource_storage_configs_non_crr {
         use super::models;
         type Response = models::BackupResourceConfigResource;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) vault_name: String,
             pub(crate) resource_group_name: String,
             pub(crate) subscription_id: String,
             pub(crate) parameters: models::BackupResourceConfigResource,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -414,14 +414,14 @@ pub mod backup_resource_storage_configs_non_crr {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) vault_name: String,
             pub(crate) resource_group_name: String,
             pub(crate) subscription_id: String,
             pub(crate) parameters: models::BackupResourceConfigResource,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -470,8 +470,8 @@ pub mod protection_intent {
             azure_region: impl Into<String>,
             subscription_id: impl Into<String>,
             parameters: impl Into<models::PreValidateEnableBackupRequest>,
-        ) -> validate::Builder {
-            validate::Builder {
+        ) -> validate::RequestBuilder {
+            validate::RequestBuilder {
                 client: self.0.clone(),
                 azure_region: azure_region.into(),
                 subscription_id: subscription_id.into(),
@@ -493,8 +493,8 @@ pub mod protection_intent {
             subscription_id: impl Into<String>,
             fabric_name: impl Into<String>,
             intent_object_name: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 vault_name: vault_name.into(),
                 resource_group_name: resource_group_name.into(),
@@ -520,8 +520,8 @@ pub mod protection_intent {
             fabric_name: impl Into<String>,
             intent_object_name: impl Into<String>,
             parameters: impl Into<models::ProtectionIntentResource>,
-        ) -> create_or_update::Builder {
-            create_or_update::Builder {
+        ) -> create_or_update::RequestBuilder {
+            create_or_update::RequestBuilder {
                 client: self.0.clone(),
                 vault_name: vault_name.into(),
                 resource_group_name: resource_group_name.into(),
@@ -546,8 +546,8 @@ pub mod protection_intent {
             subscription_id: impl Into<String>,
             fabric_name: impl Into<String>,
             intent_object_name: impl Into<String>,
-        ) -> delete::Builder {
-            delete::Builder {
+        ) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 vault_name: vault_name.into(),
                 resource_group_name: resource_group_name.into(),
@@ -561,13 +561,13 @@ pub mod protection_intent {
         use super::models;
         type Response = models::PreValidateEnableBackupResponse;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) azure_region: String,
             pub(crate) subscription_id: String,
             pub(crate) parameters: models::PreValidateEnableBackupRequest,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -613,7 +613,7 @@ pub mod protection_intent {
         use super::models;
         type Response = models::ProtectionIntentResource;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) vault_name: String,
             pub(crate) resource_group_name: String,
@@ -621,7 +621,7 @@ pub mod protection_intent {
             pub(crate) fabric_name: String,
             pub(crate) intent_object_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -661,7 +661,7 @@ pub mod protection_intent {
         use super::models;
         type Response = models::ProtectionIntentResource;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) vault_name: String,
             pub(crate) resource_group_name: String,
@@ -670,7 +670,7 @@ pub mod protection_intent {
             pub(crate) intent_object_name: String,
             pub(crate) parameters: models::ProtectionIntentResource,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -711,7 +711,7 @@ pub mod protection_intent {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) vault_name: String,
             pub(crate) resource_group_name: String,
@@ -719,7 +719,7 @@ pub mod protection_intent {
             pub(crate) fabric_name: String,
             pub(crate) intent_object_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -767,8 +767,8 @@ pub mod backup_status {
             azure_region: impl Into<String>,
             subscription_id: impl Into<String>,
             parameters: impl Into<models::BackupStatusRequest>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 azure_region: azure_region.into(),
                 subscription_id: subscription_id.into(),
@@ -780,13 +780,13 @@ pub mod backup_status {
         use super::models;
         type Response = models::BackupStatusResponse;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) azure_region: String,
             pub(crate) subscription_id: String,
             pub(crate) parameters: models::BackupStatusRequest,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -844,8 +844,8 @@ pub mod feature_support {
             azure_region: impl Into<String>,
             subscription_id: impl Into<String>,
             parameters: impl Into<models::FeatureSupportRequest>,
-        ) -> validate::Builder {
-            validate::Builder {
+        ) -> validate::RequestBuilder {
+            validate::RequestBuilder {
                 client: self.0.clone(),
                 azure_region: azure_region.into(),
                 subscription_id: subscription_id.into(),
@@ -857,13 +857,13 @@ pub mod feature_support {
         use super::models;
         type Response = models::AzureVmResourceFeatureSupportResponse;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) azure_region: String,
             pub(crate) subscription_id: String,
             pub(crate) parameters: models::FeatureSupportRequest,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -921,8 +921,8 @@ pub mod backup_protection_intent {
             vault_name: impl Into<String>,
             resource_group_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list::Builder {
-            list::Builder {
+        ) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 vault_name: vault_name.into(),
                 resource_group_name: resource_group_name.into(),
@@ -936,7 +936,7 @@ pub mod backup_protection_intent {
         use super::models;
         type Response = models::ProtectionIntentResourceList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) vault_name: String,
             pub(crate) resource_group_name: String,
@@ -944,7 +944,7 @@ pub mod backup_protection_intent {
             pub(crate) filter: Option<String>,
             pub(crate) skip_token: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "OData filter options."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -1044,8 +1044,8 @@ pub mod backup_usage_summaries {
             vault_name: impl Into<String>,
             resource_group_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list::Builder {
-            list::Builder {
+        ) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 vault_name: vault_name.into(),
                 resource_group_name: resource_group_name.into(),
@@ -1059,7 +1059,7 @@ pub mod backup_usage_summaries {
         use super::models;
         type Response = models::BackupManagementUsageList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) vault_name: String,
             pub(crate) resource_group_name: String,
@@ -1067,7 +1067,7 @@ pub mod backup_usage_summaries {
             pub(crate) filter: Option<String>,
             pub(crate) skip_token: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "OData filter options."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -1132,18 +1132,18 @@ pub mod operations {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Returns the list of available operations."]
-        pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.0.clone() }
+        pub fn list(&self) -> list::RequestBuilder {
+            list::RequestBuilder { client: self.0.clone() }
         }
     }
     pub mod list {
         use super::models;
         type Response = models::ClientDiscoveryResponse;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -1224,8 +1224,8 @@ pub mod backup_resource_vault_configs {
             vault_name: impl Into<String>,
             resource_group_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 vault_name: vault_name.into(),
                 resource_group_name: resource_group_name.into(),
@@ -1245,8 +1245,8 @@ pub mod backup_resource_vault_configs {
             resource_group_name: impl Into<String>,
             subscription_id: impl Into<String>,
             parameters: impl Into<models::BackupResourceVaultConfigResource>,
-        ) -> put::Builder {
-            put::Builder {
+        ) -> put::RequestBuilder {
+            put::RequestBuilder {
                 client: self.0.clone(),
                 vault_name: vault_name.into(),
                 resource_group_name: resource_group_name.into(),
@@ -1267,8 +1267,8 @@ pub mod backup_resource_vault_configs {
             resource_group_name: impl Into<String>,
             subscription_id: impl Into<String>,
             parameters: impl Into<models::BackupResourceVaultConfigResource>,
-        ) -> update::Builder {
-            update::Builder {
+        ) -> update::RequestBuilder {
+            update::RequestBuilder {
                 client: self.0.clone(),
                 vault_name: vault_name.into(),
                 resource_group_name: resource_group_name.into(),
@@ -1281,13 +1281,13 @@ pub mod backup_resource_vault_configs {
         use super::models;
         type Response = models::BackupResourceVaultConfigResource;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) vault_name: String,
             pub(crate) resource_group_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1333,14 +1333,14 @@ pub mod backup_resource_vault_configs {
         use super::models;
         type Response = models::BackupResourceVaultConfigResource;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) vault_name: String,
             pub(crate) resource_group_name: String,
             pub(crate) subscription_id: String,
             pub(crate) parameters: models::BackupResourceVaultConfigResource,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1387,14 +1387,14 @@ pub mod backup_resource_vault_configs {
         use super::models;
         type Response = models::BackupResourceVaultConfigResource;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) vault_name: String,
             pub(crate) resource_group_name: String,
             pub(crate) subscription_id: String,
             pub(crate) parameters: models::BackupResourceVaultConfigResource,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1453,8 +1453,8 @@ pub mod backup_resource_encryption_configs {
             vault_name: impl Into<String>,
             resource_group_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 vault_name: vault_name.into(),
                 resource_group_name: resource_group_name.into(),
@@ -1474,8 +1474,8 @@ pub mod backup_resource_encryption_configs {
             resource_group_name: impl Into<String>,
             subscription_id: impl Into<String>,
             parameters: impl Into<models::BackupResourceEncryptionConfigResource>,
-        ) -> update::Builder {
-            update::Builder {
+        ) -> update::RequestBuilder {
+            update::RequestBuilder {
                 client: self.0.clone(),
                 vault_name: vault_name.into(),
                 resource_group_name: resource_group_name.into(),
@@ -1488,13 +1488,13 @@ pub mod backup_resource_encryption_configs {
         use super::models;
         type Response = models::BackupResourceEncryptionConfigExtendedResource;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) vault_name: String,
             pub(crate) resource_group_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1534,14 +1534,14 @@ pub mod backup_resource_encryption_configs {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) vault_name: String,
             pub(crate) resource_group_name: String,
             pub(crate) subscription_id: String,
             pub(crate) parameters: models::BackupResourceEncryptionConfigResource,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1592,8 +1592,8 @@ pub mod private_endpoint_connection {
             resource_group_name: impl Into<String>,
             subscription_id: impl Into<String>,
             private_endpoint_connection_name: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 vault_name: vault_name.into(),
                 resource_group_name: resource_group_name.into(),
@@ -1616,8 +1616,8 @@ pub mod private_endpoint_connection {
             subscription_id: impl Into<String>,
             private_endpoint_connection_name: impl Into<String>,
             parameters: impl Into<models::PrivateEndpointConnectionResource>,
-        ) -> put::Builder {
-            put::Builder {
+        ) -> put::RequestBuilder {
+            put::RequestBuilder {
                 client: self.0.clone(),
                 vault_name: vault_name.into(),
                 resource_group_name: resource_group_name.into(),
@@ -1639,8 +1639,8 @@ pub mod private_endpoint_connection {
             resource_group_name: impl Into<String>,
             subscription_id: impl Into<String>,
             private_endpoint_connection_name: impl Into<String>,
-        ) -> delete::Builder {
-            delete::Builder {
+        ) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 vault_name: vault_name.into(),
                 resource_group_name: resource_group_name.into(),
@@ -1653,14 +1653,14 @@ pub mod private_endpoint_connection {
         use super::models;
         type Response = models::PrivateEndpointConnectionResource;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) vault_name: String,
             pub(crate) resource_group_name: String,
             pub(crate) subscription_id: String,
             pub(crate) private_endpoint_connection_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1704,7 +1704,7 @@ pub mod private_endpoint_connection {
             Created201(models::PrivateEndpointConnectionResource),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) vault_name: String,
             pub(crate) resource_group_name: String,
@@ -1712,7 +1712,7 @@ pub mod private_endpoint_connection {
             pub(crate) private_endpoint_connection_name: String,
             pub(crate) parameters: models::PrivateEndpointConnectionResource,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -1764,14 +1764,14 @@ pub mod private_endpoint_connection {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) vault_name: String,
             pub(crate) resource_group_name: String,
             pub(crate) subscription_id: String,
             pub(crate) private_endpoint_connection_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -1826,8 +1826,8 @@ pub mod private_endpoint {
             subscription_id: impl Into<String>,
             private_endpoint_connection_name: impl Into<String>,
             operation_id: impl Into<String>,
-        ) -> get_operation_status::Builder {
-            get_operation_status::Builder {
+        ) -> get_operation_status::RequestBuilder {
+            get_operation_status::RequestBuilder {
                 client: self.0.clone(),
                 vault_name: vault_name.into(),
                 resource_group_name: resource_group_name.into(),
@@ -1841,7 +1841,7 @@ pub mod private_endpoint {
         use super::models;
         type Response = models::OperationStatus;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) vault_name: String,
             pub(crate) resource_group_name: String,
@@ -1849,7 +1849,7 @@ pub mod private_endpoint {
             pub(crate) private_endpoint_connection_name: String,
             pub(crate) operation_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1899,8 +1899,8 @@ impl Client {
         resource_group_name: impl Into<String>,
         subscription_id: impl Into<String>,
         operation_id: impl Into<String>,
-    ) -> get_operation_status::Builder {
-        get_operation_status::Builder {
+    ) -> get_operation_status::RequestBuilder {
+        get_operation_status::RequestBuilder {
             client: self.clone(),
             vault_name: vault_name.into(),
             resource_group_name: resource_group_name.into(),
@@ -1921,8 +1921,8 @@ impl Client {
         resource_group_name: impl Into<String>,
         subscription_id: impl Into<String>,
         parameters: impl Into<models::PrepareDataMoveRequest>,
-    ) -> bms_prepare_data_move::Builder {
-        bms_prepare_data_move::Builder {
+    ) -> bms_prepare_data_move::RequestBuilder {
+        bms_prepare_data_move::RequestBuilder {
             client: self.clone(),
             vault_name: vault_name.into(),
             resource_group_name: resource_group_name.into(),
@@ -1943,8 +1943,8 @@ impl Client {
         resource_group_name: impl Into<String>,
         subscription_id: impl Into<String>,
         parameters: impl Into<models::TriggerDataMoveRequest>,
-    ) -> bms_trigger_data_move::Builder {
-        bms_trigger_data_move::Builder {
+    ) -> bms_trigger_data_move::RequestBuilder {
+        bms_trigger_data_move::RequestBuilder {
             client: self.clone(),
             vault_name: vault_name.into(),
             resource_group_name: resource_group_name.into(),
@@ -1969,8 +1969,8 @@ impl Client {
         protected_item_name: impl Into<String>,
         recovery_point_id: impl Into<String>,
         parameters: impl Into<models::MoveRpAcrossTiersRequest>,
-    ) -> move_recovery_point::Builder {
-        move_recovery_point::Builder {
+    ) -> move_recovery_point::RequestBuilder {
+        move_recovery_point::RequestBuilder {
             client: self.clone(),
             vault_name: vault_name.into(),
             resource_group_name: resource_group_name.into(),
@@ -1987,14 +1987,14 @@ pub mod get_operation_status {
     use super::models;
     type Response = models::OperationStatus;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) vault_name: String,
         pub(crate) resource_group_name: String,
         pub(crate) subscription_id: String,
         pub(crate) operation_id: String,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -2038,14 +2038,14 @@ pub mod bms_prepare_data_move {
         Accepted202,
     }
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) vault_name: String,
         pub(crate) resource_group_name: String,
         pub(crate) subscription_id: String,
         pub(crate) parameters: models::PrepareDataMoveRequest,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "only the first response will be fetched as long running operations are not supported yet"]
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
@@ -2088,14 +2088,14 @@ pub mod bms_trigger_data_move {
         Accepted202,
     }
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) vault_name: String,
         pub(crate) resource_group_name: String,
         pub(crate) subscription_id: String,
         pub(crate) parameters: models::TriggerDataMoveRequest,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "only the first response will be fetched as long running operations are not supported yet"]
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
@@ -2134,7 +2134,7 @@ pub mod move_recovery_point {
     use super::models;
     type Response = ();
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) vault_name: String,
         pub(crate) resource_group_name: String,
@@ -2145,7 +2145,7 @@ pub mod move_recovery_point {
         pub(crate) recovery_point_id: String,
         pub(crate) parameters: models::MoveRpAcrossTiersRequest,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "only the first response will be fetched as long running operations are not supported yet"]
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
@@ -2195,8 +2195,8 @@ pub mod bms_prepare_data_move_operation_result {
             resource_group_name: impl Into<String>,
             subscription_id: impl Into<String>,
             operation_id: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 vault_name: vault_name.into(),
                 resource_group_name: resource_group_name.into(),
@@ -2213,14 +2213,14 @@ pub mod bms_prepare_data_move_operation_result {
             Accepted202,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) vault_name: String,
             pub(crate) resource_group_name: String,
             pub(crate) subscription_id: String,
             pub(crate) operation_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2279,8 +2279,8 @@ pub mod protected_items {
             fabric_name: impl Into<String>,
             container_name: impl Into<String>,
             protected_item_name: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 vault_name: vault_name.into(),
                 resource_group_name: resource_group_name.into(),
@@ -2310,8 +2310,8 @@ pub mod protected_items {
             container_name: impl Into<String>,
             protected_item_name: impl Into<String>,
             parameters: impl Into<models::ProtectedItemResource>,
-        ) -> create_or_update::Builder {
-            create_or_update::Builder {
+        ) -> create_or_update::RequestBuilder {
+            create_or_update::RequestBuilder {
                 client: self.0.clone(),
                 vault_name: vault_name.into(),
                 resource_group_name: resource_group_name.into(),
@@ -2339,8 +2339,8 @@ pub mod protected_items {
             fabric_name: impl Into<String>,
             container_name: impl Into<String>,
             protected_item_name: impl Into<String>,
-        ) -> delete::Builder {
-            delete::Builder {
+        ) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 vault_name: vault_name.into(),
                 resource_group_name: resource_group_name.into(),
@@ -2355,7 +2355,7 @@ pub mod protected_items {
         use super::models;
         type Response = models::ProtectedItemResource;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) vault_name: String,
             pub(crate) resource_group_name: String,
@@ -2365,7 +2365,7 @@ pub mod protected_items {
             pub(crate) protected_item_name: String,
             pub(crate) filter: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "OData filter options."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -2417,7 +2417,7 @@ pub mod protected_items {
             Accepted202,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) vault_name: String,
             pub(crate) resource_group_name: String,
@@ -2427,7 +2427,7 @@ pub mod protected_items {
             pub(crate) protected_item_name: String,
             pub(crate) parameters: models::ProtectedItemResource,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2474,7 +2474,7 @@ pub mod protected_items {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) vault_name: String,
             pub(crate) resource_group_name: String,
@@ -2483,7 +2483,7 @@ pub mod protected_items {
             pub(crate) container_name: String,
             pub(crate) protected_item_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2541,8 +2541,8 @@ pub mod protected_item_operation_results {
             container_name: impl Into<String>,
             protected_item_name: impl Into<String>,
             operation_id: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 vault_name: vault_name.into(),
                 resource_group_name: resource_group_name.into(),
@@ -2563,7 +2563,7 @@ pub mod protected_item_operation_results {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) vault_name: String,
             pub(crate) resource_group_name: String,
@@ -2573,7 +2573,7 @@ pub mod protected_item_operation_results {
             pub(crate) protected_item_name: String,
             pub(crate) operation_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2633,8 +2633,8 @@ pub mod recovery_points {
             fabric_name: impl Into<String>,
             container_name: impl Into<String>,
             protected_item_name: impl Into<String>,
-        ) -> list::Builder {
-            list::Builder {
+        ) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 vault_name: vault_name.into(),
                 resource_group_name: resource_group_name.into(),
@@ -2664,8 +2664,8 @@ pub mod recovery_points {
             container_name: impl Into<String>,
             protected_item_name: impl Into<String>,
             recovery_point_id: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 vault_name: vault_name.into(),
                 resource_group_name: resource_group_name.into(),
@@ -2681,7 +2681,7 @@ pub mod recovery_points {
         use super::models;
         type Response = models::RecoveryPointResourceList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) vault_name: String,
             pub(crate) resource_group_name: String,
@@ -2691,7 +2691,7 @@ pub mod recovery_points {
             pub(crate) protected_item_name: String,
             pub(crate) filter: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "OData filter options."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -2765,7 +2765,7 @@ pub mod recovery_points {
         use super::models;
         type Response = models::RecoveryPointResource;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) vault_name: String,
             pub(crate) resource_group_name: String,
@@ -2775,7 +2775,7 @@ pub mod recovery_points {
             pub(crate) protected_item_name: String,
             pub(crate) recovery_point_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2837,8 +2837,8 @@ pub mod restores {
             protected_item_name: impl Into<String>,
             recovery_point_id: impl Into<String>,
             parameters: impl Into<models::RestoreRequestResource>,
-        ) -> trigger::Builder {
-            trigger::Builder {
+        ) -> trigger::RequestBuilder {
+            trigger::RequestBuilder {
                 client: self.0.clone(),
                 vault_name: vault_name.into(),
                 resource_group_name: resource_group_name.into(),
@@ -2855,7 +2855,7 @@ pub mod restores {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) vault_name: String,
             pub(crate) resource_group_name: String,
@@ -2866,7 +2866,7 @@ pub mod restores {
             pub(crate) recovery_point_id: String,
             pub(crate) parameters: models::RestoreRequestResource,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -2916,8 +2916,8 @@ pub mod backup_policies {
             vault_name: impl Into<String>,
             resource_group_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list::Builder {
-            list::Builder {
+        ) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 vault_name: vault_name.into(),
                 resource_group_name: resource_group_name.into(),
@@ -2930,14 +2930,14 @@ pub mod backup_policies {
         use super::models;
         type Response = models::ProtectionPolicyResourceList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) vault_name: String,
             pub(crate) resource_group_name: String,
             pub(crate) subscription_id: String,
             pub(crate) filter: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "OData filter options."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -3031,8 +3031,8 @@ pub mod protection_policies {
             resource_group_name: impl Into<String>,
             subscription_id: impl Into<String>,
             policy_name: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 vault_name: vault_name.into(),
                 resource_group_name: resource_group_name.into(),
@@ -3055,8 +3055,8 @@ pub mod protection_policies {
             subscription_id: impl Into<String>,
             policy_name: impl Into<String>,
             parameters: impl Into<models::ProtectionPolicyResource>,
-        ) -> create_or_update::Builder {
-            create_or_update::Builder {
+        ) -> create_or_update::RequestBuilder {
+            create_or_update::RequestBuilder {
                 client: self.0.clone(),
                 vault_name: vault_name.into(),
                 resource_group_name: resource_group_name.into(),
@@ -3078,8 +3078,8 @@ pub mod protection_policies {
             resource_group_name: impl Into<String>,
             subscription_id: impl Into<String>,
             policy_name: impl Into<String>,
-        ) -> delete::Builder {
-            delete::Builder {
+        ) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 vault_name: vault_name.into(),
                 resource_group_name: resource_group_name.into(),
@@ -3092,14 +3092,14 @@ pub mod protection_policies {
         use super::models;
         type Response = models::ProtectionPolicyResource;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) vault_name: String,
             pub(crate) resource_group_name: String,
             pub(crate) subscription_id: String,
             pub(crate) policy_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -3150,7 +3150,7 @@ pub mod protection_policies {
             Accepted202,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) vault_name: String,
             pub(crate) resource_group_name: String,
@@ -3158,7 +3158,7 @@ pub mod protection_policies {
             pub(crate) policy_name: String,
             pub(crate) parameters: models::ProtectionPolicyResource,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -3211,14 +3211,14 @@ pub mod protection_policies {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) vault_name: String,
             pub(crate) resource_group_name: String,
             pub(crate) subscription_id: String,
             pub(crate) policy_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -3279,8 +3279,8 @@ pub mod protection_policy_operation_results {
             subscription_id: impl Into<String>,
             policy_name: impl Into<String>,
             operation_id: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 vault_name: vault_name.into(),
                 resource_group_name: resource_group_name.into(),
@@ -3294,7 +3294,7 @@ pub mod protection_policy_operation_results {
         use super::models;
         type Response = models::ProtectionPolicyResource;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) vault_name: String,
             pub(crate) resource_group_name: String,
@@ -3302,7 +3302,7 @@ pub mod protection_policy_operation_results {
             pub(crate) policy_name: String,
             pub(crate) operation_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -3354,8 +3354,8 @@ pub mod backup_jobs {
             vault_name: impl Into<String>,
             resource_group_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list::Builder {
-            list::Builder {
+        ) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 vault_name: vault_name.into(),
                 resource_group_name: resource_group_name.into(),
@@ -3369,7 +3369,7 @@ pub mod backup_jobs {
         use super::models;
         type Response = models::JobResourceList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) vault_name: String,
             pub(crate) resource_group_name: String,
@@ -3377,7 +3377,7 @@ pub mod backup_jobs {
             pub(crate) filter: Option<String>,
             pub(crate) skip_token: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "OData filter options."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -3479,8 +3479,8 @@ pub mod job_details {
             resource_group_name: impl Into<String>,
             subscription_id: impl Into<String>,
             job_name: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 vault_name: vault_name.into(),
                 resource_group_name: resource_group_name.into(),
@@ -3493,14 +3493,14 @@ pub mod job_details {
         use super::models;
         type Response = models::JobResource;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) vault_name: String,
             pub(crate) resource_group_name: String,
             pub(crate) subscription_id: String,
             pub(crate) job_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -3561,8 +3561,8 @@ pub mod job_cancellations {
             resource_group_name: impl Into<String>,
             subscription_id: impl Into<String>,
             job_name: impl Into<String>,
-        ) -> trigger::Builder {
-            trigger::Builder {
+        ) -> trigger::RequestBuilder {
+            trigger::RequestBuilder {
                 client: self.0.clone(),
                 vault_name: vault_name.into(),
                 resource_group_name: resource_group_name.into(),
@@ -3575,14 +3575,14 @@ pub mod job_cancellations {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) vault_name: String,
             pub(crate) resource_group_name: String,
             pub(crate) subscription_id: String,
             pub(crate) job_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -3642,8 +3642,8 @@ pub mod job_operation_results {
             subscription_id: impl Into<String>,
             job_name: impl Into<String>,
             operation_id: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 vault_name: vault_name.into(),
                 resource_group_name: resource_group_name.into(),
@@ -3662,7 +3662,7 @@ pub mod job_operation_results {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) vault_name: String,
             pub(crate) resource_group_name: String,
@@ -3670,7 +3670,7 @@ pub mod job_operation_results {
             pub(crate) job_name: String,
             pub(crate) operation_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -3722,8 +3722,8 @@ pub mod export_jobs_operation_results {
             resource_group_name: impl Into<String>,
             subscription_id: impl Into<String>,
             operation_id: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 vault_name: vault_name.into(),
                 resource_group_name: resource_group_name.into(),
@@ -3740,14 +3740,14 @@ pub mod export_jobs_operation_results {
             Accepted202(models::OperationResultInfoBaseResource),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) vault_name: String,
             pub(crate) resource_group_name: String,
             pub(crate) subscription_id: String,
             pub(crate) operation_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -3804,8 +3804,8 @@ pub mod jobs {
             vault_name: impl Into<String>,
             resource_group_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> export::Builder {
-            export::Builder {
+        ) -> export::RequestBuilder {
+            export::RequestBuilder {
                 client: self.0.clone(),
                 vault_name: vault_name.into(),
                 resource_group_name: resource_group_name.into(),
@@ -3818,14 +3818,14 @@ pub mod jobs {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) vault_name: String,
             pub(crate) resource_group_name: String,
             pub(crate) subscription_id: String,
             pub(crate) filter: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "OData filter options."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -3888,8 +3888,8 @@ pub mod backup_protected_items {
             vault_name: impl Into<String>,
             resource_group_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list::Builder {
-            list::Builder {
+        ) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 vault_name: vault_name.into(),
                 resource_group_name: resource_group_name.into(),
@@ -3903,7 +3903,7 @@ pub mod backup_protected_items {
         use super::models;
         type Response = models::ProtectedItemResourceList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) vault_name: String,
             pub(crate) resource_group_name: String,
@@ -3911,7 +3911,7 @@ pub mod backup_protected_items {
             pub(crate) filter: Option<String>,
             pub(crate) skip_token: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "OData filter options."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -4013,8 +4013,8 @@ pub mod operation {
             resource_group_name: impl Into<String>,
             subscription_id: impl Into<String>,
             parameters: impl Into<models::ValidateOperationRequest>,
-        ) -> validate::Builder {
-            validate::Builder {
+        ) -> validate::RequestBuilder {
+            validate::RequestBuilder {
                 client: self.0.clone(),
                 vault_name: vault_name.into(),
                 resource_group_name: resource_group_name.into(),
@@ -4027,14 +4027,14 @@ pub mod operation {
         use super::models;
         type Response = models::ValidateOperationsResponse;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) vault_name: String,
             pub(crate) resource_group_name: String,
             pub(crate) subscription_id: String,
             pub(crate) parameters: models::ValidateOperationRequest,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -4095,8 +4095,8 @@ pub mod validate_operation {
             resource_group_name: impl Into<String>,
             subscription_id: impl Into<String>,
             parameters: impl Into<models::ValidateOperationRequest>,
-        ) -> trigger::Builder {
-            trigger::Builder {
+        ) -> trigger::RequestBuilder {
+            trigger::RequestBuilder {
                 client: self.0.clone(),
                 vault_name: vault_name.into(),
                 resource_group_name: resource_group_name.into(),
@@ -4109,14 +4109,14 @@ pub mod validate_operation {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) vault_name: String,
             pub(crate) resource_group_name: String,
             pub(crate) subscription_id: String,
             pub(crate) parameters: models::ValidateOperationRequest,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -4168,8 +4168,8 @@ pub mod validate_operation_results {
             resource_group_name: impl Into<String>,
             subscription_id: impl Into<String>,
             operation_id: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 vault_name: vault_name.into(),
                 resource_group_name: resource_group_name.into(),
@@ -4186,14 +4186,14 @@ pub mod validate_operation_results {
             Accepted202,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) vault_name: String,
             pub(crate) resource_group_name: String,
             pub(crate) subscription_id: String,
             pub(crate) operation_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -4248,8 +4248,8 @@ pub mod validate_operation_statuses {
             resource_group_name: impl Into<String>,
             subscription_id: impl Into<String>,
             operation_id: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 vault_name: vault_name.into(),
                 resource_group_name: resource_group_name.into(),
@@ -4262,14 +4262,14 @@ pub mod validate_operation_statuses {
         use super::models;
         type Response = models::OperationStatus;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) vault_name: String,
             pub(crate) resource_group_name: String,
             pub(crate) subscription_id: String,
             pub(crate) operation_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -4321,8 +4321,8 @@ pub mod backup_engines {
             vault_name: impl Into<String>,
             resource_group_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list::Builder {
-            list::Builder {
+        ) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 vault_name: vault_name.into(),
                 resource_group_name: resource_group_name.into(),
@@ -4344,8 +4344,8 @@ pub mod backup_engines {
             resource_group_name: impl Into<String>,
             subscription_id: impl Into<String>,
             backup_engine_name: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 vault_name: vault_name.into(),
                 resource_group_name: resource_group_name.into(),
@@ -4360,7 +4360,7 @@ pub mod backup_engines {
         use super::models;
         type Response = models::BackupEngineBaseResourceList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) vault_name: String,
             pub(crate) resource_group_name: String,
@@ -4368,7 +4368,7 @@ pub mod backup_engines {
             pub(crate) filter: Option<String>,
             pub(crate) skip_token: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "OData filter options."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -4456,7 +4456,7 @@ pub mod backup_engines {
         use super::models;
         type Response = models::BackupEngineBaseResource;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) vault_name: String,
             pub(crate) resource_group_name: String,
@@ -4465,7 +4465,7 @@ pub mod backup_engines {
             pub(crate) filter: Option<String>,
             pub(crate) skip_token: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "OData filter options."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -4544,8 +4544,8 @@ pub mod protection_container_refresh_operation_results {
             subscription_id: impl Into<String>,
             fabric_name: impl Into<String>,
             operation_id: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 vault_name: vault_name.into(),
                 resource_group_name: resource_group_name.into(),
@@ -4563,7 +4563,7 @@ pub mod protection_container_refresh_operation_results {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) vault_name: String,
             pub(crate) resource_group_name: String,
@@ -4571,7 +4571,7 @@ pub mod protection_container_refresh_operation_results {
             pub(crate) fabric_name: String,
             pub(crate) operation_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -4621,8 +4621,8 @@ pub mod protectable_containers {
             resource_group_name: impl Into<String>,
             subscription_id: impl Into<String>,
             fabric_name: impl Into<String>,
-        ) -> list::Builder {
-            list::Builder {
+        ) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 vault_name: vault_name.into(),
                 resource_group_name: resource_group_name.into(),
@@ -4636,7 +4636,7 @@ pub mod protectable_containers {
         use super::models;
         type Response = models::ProtectableContainerResourceList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) vault_name: String,
             pub(crate) resource_group_name: String,
@@ -4644,7 +4644,7 @@ pub mod protectable_containers {
             pub(crate) fabric_name: String,
             pub(crate) filter: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "OData filter options."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -4734,8 +4734,8 @@ pub mod protection_containers {
             subscription_id: impl Into<String>,
             fabric_name: impl Into<String>,
             container_name: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 vault_name: vault_name.into(),
                 resource_group_name: resource_group_name.into(),
@@ -4761,8 +4761,8 @@ pub mod protection_containers {
             fabric_name: impl Into<String>,
             container_name: impl Into<String>,
             parameters: impl Into<models::ProtectionContainerResource>,
-        ) -> register::Builder {
-            register::Builder {
+        ) -> register::RequestBuilder {
+            register::RequestBuilder {
                 client: self.0.clone(),
                 vault_name: vault_name.into(),
                 resource_group_name: resource_group_name.into(),
@@ -4787,8 +4787,8 @@ pub mod protection_containers {
             subscription_id: impl Into<String>,
             fabric_name: impl Into<String>,
             container_name: impl Into<String>,
-        ) -> unregister::Builder {
-            unregister::Builder {
+        ) -> unregister::RequestBuilder {
+            unregister::RequestBuilder {
                 client: self.0.clone(),
                 vault_name: vault_name.into(),
                 resource_group_name: resource_group_name.into(),
@@ -4813,8 +4813,8 @@ pub mod protection_containers {
             subscription_id: impl Into<String>,
             fabric_name: impl Into<String>,
             container_name: impl Into<String>,
-        ) -> inquire::Builder {
-            inquire::Builder {
+        ) -> inquire::RequestBuilder {
+            inquire::RequestBuilder {
                 client: self.0.clone(),
                 vault_name: vault_name.into(),
                 resource_group_name: resource_group_name.into(),
@@ -4837,8 +4837,8 @@ pub mod protection_containers {
             resource_group_name: impl Into<String>,
             subscription_id: impl Into<String>,
             fabric_name: impl Into<String>,
-        ) -> refresh::Builder {
-            refresh::Builder {
+        ) -> refresh::RequestBuilder {
+            refresh::RequestBuilder {
                 client: self.0.clone(),
                 vault_name: vault_name.into(),
                 resource_group_name: resource_group_name.into(),
@@ -4852,7 +4852,7 @@ pub mod protection_containers {
         use super::models;
         type Response = models::ProtectionContainerResource;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) vault_name: String,
             pub(crate) resource_group_name: String,
@@ -4860,7 +4860,7 @@ pub mod protection_containers {
             pub(crate) fabric_name: String,
             pub(crate) container_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -4904,7 +4904,7 @@ pub mod protection_containers {
             Accepted202,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) vault_name: String,
             pub(crate) resource_group_name: String,
@@ -4913,7 +4913,7 @@ pub mod protection_containers {
             pub(crate) container_name: String,
             pub(crate) parameters: models::ProtectionContainerResource,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -4960,7 +4960,7 @@ pub mod protection_containers {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) vault_name: String,
             pub(crate) resource_group_name: String,
@@ -4968,7 +4968,7 @@ pub mod protection_containers {
             pub(crate) fabric_name: String,
             pub(crate) container_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -5006,7 +5006,7 @@ pub mod protection_containers {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) vault_name: String,
             pub(crate) resource_group_name: String,
@@ -5015,7 +5015,7 @@ pub mod protection_containers {
             pub(crate) container_name: String,
             pub(crate) filter: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "OData filter options."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -5060,7 +5060,7 @@ pub mod protection_containers {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) vault_name: String,
             pub(crate) resource_group_name: String,
@@ -5068,7 +5068,7 @@ pub mod protection_containers {
             pub(crate) fabric_name: String,
             pub(crate) filter: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "OData filter options."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -5129,8 +5129,8 @@ pub mod backup_workload_items {
             subscription_id: impl Into<String>,
             fabric_name: impl Into<String>,
             container_name: impl Into<String>,
-        ) -> list::Builder {
-            list::Builder {
+        ) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 vault_name: vault_name.into(),
                 resource_group_name: resource_group_name.into(),
@@ -5146,7 +5146,7 @@ pub mod backup_workload_items {
         use super::models;
         type Response = models::WorkloadItemResourceList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) vault_name: String,
             pub(crate) resource_group_name: String,
@@ -5156,7 +5156,7 @@ pub mod backup_workload_items {
             pub(crate) filter: Option<String>,
             pub(crate) skip_token: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "OData filter options."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -5256,8 +5256,8 @@ pub mod protection_container_operation_results {
             fabric_name: impl Into<String>,
             container_name: impl Into<String>,
             operation_id: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 vault_name: vault_name.into(),
                 resource_group_name: resource_group_name.into(),
@@ -5277,7 +5277,7 @@ pub mod protection_container_operation_results {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) vault_name: String,
             pub(crate) resource_group_name: String,
@@ -5286,7 +5286,7 @@ pub mod protection_container_operation_results {
             pub(crate) container_name: String,
             pub(crate) operation_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -5348,8 +5348,8 @@ pub mod backups {
             container_name: impl Into<String>,
             protected_item_name: impl Into<String>,
             parameters: impl Into<models::BackupRequestResource>,
-        ) -> trigger::Builder {
-            trigger::Builder {
+        ) -> trigger::RequestBuilder {
+            trigger::RequestBuilder {
                 client: self.0.clone(),
                 vault_name: vault_name.into(),
                 resource_group_name: resource_group_name.into(),
@@ -5365,7 +5365,7 @@ pub mod backups {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) vault_name: String,
             pub(crate) resource_group_name: String,
@@ -5375,7 +5375,7 @@ pub mod backups {
             pub(crate) protected_item_name: String,
             pub(crate) parameters: models::BackupRequestResource,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -5432,8 +5432,8 @@ pub mod protected_item_operation_statuses {
             container_name: impl Into<String>,
             protected_item_name: impl Into<String>,
             operation_id: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 vault_name: vault_name.into(),
                 resource_group_name: resource_group_name.into(),
@@ -5449,7 +5449,7 @@ pub mod protected_item_operation_statuses {
         use super::models;
         type Response = models::OperationStatus;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) vault_name: String,
             pub(crate) resource_group_name: String,
@@ -5459,7 +5459,7 @@ pub mod protected_item_operation_statuses {
             pub(crate) protected_item_name: String,
             pub(crate) operation_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -5521,8 +5521,8 @@ pub mod item_level_recovery_connections {
             protected_item_name: impl Into<String>,
             recovery_point_id: impl Into<String>,
             parameters: impl Into<models::IlrRequestResource>,
-        ) -> provision::Builder {
-            provision::Builder {
+        ) -> provision::RequestBuilder {
+            provision::RequestBuilder {
                 client: self.0.clone(),
                 vault_name: vault_name.into(),
                 resource_group_name: resource_group_name.into(),
@@ -5553,8 +5553,8 @@ pub mod item_level_recovery_connections {
             container_name: impl Into<String>,
             protected_item_name: impl Into<String>,
             recovery_point_id: impl Into<String>,
-        ) -> revoke::Builder {
-            revoke::Builder {
+        ) -> revoke::RequestBuilder {
+            revoke::RequestBuilder {
                 client: self.0.clone(),
                 vault_name: vault_name.into(),
                 resource_group_name: resource_group_name.into(),
@@ -5570,7 +5570,7 @@ pub mod item_level_recovery_connections {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) vault_name: String,
             pub(crate) resource_group_name: String,
@@ -5581,7 +5581,7 @@ pub mod item_level_recovery_connections {
             pub(crate) recovery_point_id: String,
             pub(crate) parameters: models::IlrRequestResource,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -5618,7 +5618,7 @@ pub mod item_level_recovery_connections {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) vault_name: String,
             pub(crate) resource_group_name: String,
@@ -5628,7 +5628,7 @@ pub mod item_level_recovery_connections {
             pub(crate) protected_item_name: String,
             pub(crate) recovery_point_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -5679,8 +5679,8 @@ pub mod backup_operation_results {
             resource_group_name: impl Into<String>,
             subscription_id: impl Into<String>,
             operation_id: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 vault_name: vault_name.into(),
                 resource_group_name: resource_group_name.into(),
@@ -5698,14 +5698,14 @@ pub mod backup_operation_results {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) vault_name: String,
             pub(crate) resource_group_name: String,
             pub(crate) subscription_id: String,
             pub(crate) operation_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -5757,8 +5757,8 @@ pub mod backup_operation_statuses {
             resource_group_name: impl Into<String>,
             subscription_id: impl Into<String>,
             operation_id: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 vault_name: vault_name.into(),
                 resource_group_name: resource_group_name.into(),
@@ -5771,14 +5771,14 @@ pub mod backup_operation_statuses {
         use super::models;
         type Response = models::OperationStatus;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) vault_name: String,
             pub(crate) resource_group_name: String,
             pub(crate) subscription_id: String,
             pub(crate) operation_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -5841,8 +5841,8 @@ pub mod protection_policy_operation_statuses {
             subscription_id: impl Into<String>,
             policy_name: impl Into<String>,
             operation_id: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 vault_name: vault_name.into(),
                 resource_group_name: resource_group_name.into(),
@@ -5856,7 +5856,7 @@ pub mod protection_policy_operation_statuses {
         use super::models;
         type Response = models::OperationStatus;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) vault_name: String,
             pub(crate) resource_group_name: String,
@@ -5864,7 +5864,7 @@ pub mod protection_policy_operation_statuses {
             pub(crate) policy_name: String,
             pub(crate) operation_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -5916,8 +5916,8 @@ pub mod backup_protectable_items {
             vault_name: impl Into<String>,
             resource_group_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list::Builder {
-            list::Builder {
+        ) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 vault_name: vault_name.into(),
                 resource_group_name: resource_group_name.into(),
@@ -5931,7 +5931,7 @@ pub mod backup_protectable_items {
         use super::models;
         type Response = models::WorkloadProtectableItemResourceList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) vault_name: String,
             pub(crate) resource_group_name: String,
@@ -5939,7 +5939,7 @@ pub mod backup_protectable_items {
             pub(crate) filter: Option<String>,
             pub(crate) skip_token: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "OData filter options."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -6039,8 +6039,8 @@ pub mod backup_protection_containers {
             vault_name: impl Into<String>,
             resource_group_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list::Builder {
-            list::Builder {
+        ) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 vault_name: vault_name.into(),
                 resource_group_name: resource_group_name.into(),
@@ -6053,14 +6053,14 @@ pub mod backup_protection_containers {
         use super::models;
         type Response = models::ProtectionContainerResourceList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) vault_name: String,
             pub(crate) resource_group_name: String,
             pub(crate) subscription_id: String,
             pub(crate) filter: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "OData filter options."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -6146,8 +6146,8 @@ pub mod security_pi_ns {
             vault_name: impl Into<String>,
             resource_group_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 vault_name: vault_name.into(),
                 resource_group_name: resource_group_name.into(),
@@ -6160,14 +6160,14 @@ pub mod security_pi_ns {
         use super::models;
         type Response = models::TokenInformation;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) vault_name: String,
             pub(crate) resource_group_name: String,
             pub(crate) subscription_id: String,
             pub(crate) parameters: Option<models::SecurityPinBase>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "security pin request"]
             pub fn parameters(mut self, parameters: impl Into<models::SecurityPinBase>) -> Self {
                 self.parameters = Some(parameters.into());
@@ -6240,8 +6240,8 @@ pub mod recovery_points_recommended_for_move {
             container_name: impl Into<String>,
             protected_item_name: impl Into<String>,
             parameters: impl Into<models::ListRecoveryPointsRecommendedForMoveRequest>,
-        ) -> list::Builder {
-            list::Builder {
+        ) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 vault_name: vault_name.into(),
                 resource_group_name: resource_group_name.into(),
@@ -6257,7 +6257,7 @@ pub mod recovery_points_recommended_for_move {
         use super::models;
         type Response = models::RecoveryPointResourceList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) vault_name: String,
             pub(crate) resource_group_name: String,
@@ -6267,7 +6267,7 @@ pub mod recovery_points_recommended_for_move {
             pub(crate) protected_item_name: String,
             pub(crate) parameters: models::ListRecoveryPointsRecommendedForMoveRequest,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -6346,8 +6346,8 @@ pub mod resource_guard_proxies {
             vault_name: impl Into<String>,
             resource_group_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 vault_name: vault_name.into(),
                 resource_group_name: resource_group_name.into(),
@@ -6359,13 +6359,13 @@ pub mod resource_guard_proxies {
         use super::models;
         type Response = models::ResourceGuardProxyBaseResourceList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) vault_name: String,
             pub(crate) resource_group_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -6444,8 +6444,8 @@ pub mod resource_guard_proxy {
             resource_group_name: impl Into<String>,
             subscription_id: impl Into<String>,
             resource_guard_proxy_name: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 vault_name: vault_name.into(),
                 resource_group_name: resource_group_name.into(),
@@ -6465,8 +6465,8 @@ pub mod resource_guard_proxy {
             resource_group_name: impl Into<String>,
             subscription_id: impl Into<String>,
             resource_guard_proxy_name: impl Into<String>,
-        ) -> put::Builder {
-            put::Builder {
+        ) -> put::RequestBuilder {
+            put::RequestBuilder {
                 client: self.0.clone(),
                 vault_name: vault_name.into(),
                 resource_group_name: resource_group_name.into(),
@@ -6486,8 +6486,8 @@ pub mod resource_guard_proxy {
             resource_group_name: impl Into<String>,
             subscription_id: impl Into<String>,
             resource_guard_proxy_name: impl Into<String>,
-        ) -> delete::Builder {
-            delete::Builder {
+        ) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 vault_name: vault_name.into(),
                 resource_group_name: resource_group_name.into(),
@@ -6509,8 +6509,8 @@ pub mod resource_guard_proxy {
             subscription_id: impl Into<String>,
             resource_guard_proxy_name: impl Into<String>,
             parameters: impl Into<models::UnlockDeleteRequest>,
-        ) -> unlock_delete::Builder {
-            unlock_delete::Builder {
+        ) -> unlock_delete::RequestBuilder {
+            unlock_delete::RequestBuilder {
                 client: self.0.clone(),
                 vault_name: vault_name.into(),
                 resource_group_name: resource_group_name.into(),
@@ -6524,14 +6524,14 @@ pub mod resource_guard_proxy {
         use super::models;
         type Response = models::ResourceGuardProxyBaseResource;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) vault_name: String,
             pub(crate) resource_group_name: String,
             pub(crate) subscription_id: String,
             pub(crate) resource_guard_proxy_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -6571,14 +6571,14 @@ pub mod resource_guard_proxy {
         use super::models;
         type Response = models::ResourceGuardProxyBaseResource;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) vault_name: String,
             pub(crate) resource_group_name: String,
             pub(crate) subscription_id: String,
             pub(crate) resource_guard_proxy_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -6622,14 +6622,14 @@ pub mod resource_guard_proxy {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) vault_name: String,
             pub(crate) resource_group_name: String,
             pub(crate) subscription_id: String,
             pub(crate) resource_guard_proxy_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -6666,7 +6666,7 @@ pub mod resource_guard_proxy {
         use super::models;
         type Response = models::UnlockDeleteResponse;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) vault_name: String,
             pub(crate) resource_group_name: String,
@@ -6674,7 +6674,7 @@ pub mod resource_guard_proxy {
             pub(crate) resource_guard_proxy_name: String,
             pub(crate) parameters: models::UnlockDeleteRequest,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();

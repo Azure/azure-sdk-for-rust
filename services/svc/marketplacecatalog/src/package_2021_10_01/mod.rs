@@ -115,8 +115,8 @@ pub mod public_offers {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `id`: Offer id"]
-        pub fn get(&self, id: impl Into<String>) -> get::Builder {
-            get::Builder {
+        pub fn get(&self, id: impl Into<String>) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 id: id.into(),
                 language: None,
@@ -126,8 +126,8 @@ pub mod public_offers {
             }
         }
         #[doc = "Get a list of public available offers"]
-        pub fn list(&self) -> list::Builder {
-            list::Builder {
+        pub fn list(&self) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 language: None,
                 hide_keys: Vec::new(),
@@ -138,7 +138,7 @@ pub mod public_offers {
         use super::models;
         type Response = models::CatalogItem;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) id: String,
             pub(crate) language: Option<String>,
@@ -146,7 +146,7 @@ pub mod public_offers {
             pub(crate) include_stop_sold_plans: Option<bool>,
             pub(crate) hide_keys: Vec<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Offer language"]
             pub fn language(mut self, language: impl Into<String>) -> Self {
                 self.language = Some(language.into());
@@ -221,12 +221,12 @@ pub mod public_offers {
         use super::models;
         type Response = models::PageResultOfCatalogItem;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) language: Option<String>,
             pub(crate) hide_keys: Vec<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Offer language"]
             pub fn language(mut self, language: impl Into<String>) -> Self {
                 self.language = Some(language.into());

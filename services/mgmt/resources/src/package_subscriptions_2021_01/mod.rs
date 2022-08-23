@@ -119,8 +119,8 @@ pub mod subscriptions {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: The ID of the target subscription."]
-        pub fn list_locations(&self, subscription_id: impl Into<String>) -> list_locations::Builder {
-            list_locations::Builder {
+        pub fn list_locations(&self, subscription_id: impl Into<String>) -> list_locations::RequestBuilder {
+            list_locations::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 include_extended_locations: None,
@@ -130,15 +130,15 @@ pub mod subscriptions {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: The ID of the target subscription."]
-        pub fn get(&self, subscription_id: impl Into<String>) -> get::Builder {
-            get::Builder {
+        pub fn get(&self, subscription_id: impl Into<String>) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
         }
         #[doc = "Gets all subscriptions for a tenant."]
-        pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.0.clone() }
+        pub fn list(&self) -> list::RequestBuilder {
+            list::RequestBuilder { client: self.0.clone() }
         }
         #[doc = "Compares a subscriptions logical zone mapping"]
         #[doc = ""]
@@ -149,8 +149,8 @@ pub mod subscriptions {
             &self,
             subscription_id: impl Into<String>,
             parameters: impl Into<models::CheckZonePeersRequest>,
-        ) -> check_zone_peers::Builder {
-            check_zone_peers::Builder {
+        ) -> check_zone_peers::RequestBuilder {
+            check_zone_peers::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 parameters: parameters.into(),
@@ -161,12 +161,12 @@ pub mod subscriptions {
         use super::models;
         type Response = models::LocationListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) include_extended_locations: Option<bool>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Whether to include extended locations."]
             pub fn include_extended_locations(mut self, include_extended_locations: bool) -> Self {
                 self.include_extended_locations = Some(include_extended_locations);
@@ -221,11 +221,11 @@ pub mod subscriptions {
         use super::models;
         type Response = models::Subscription;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -265,10 +265,10 @@ pub mod subscriptions {
         use super::models;
         type Response = models::SubscriptionListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -334,12 +334,12 @@ pub mod subscriptions {
         use super::models;
         type Response = models::CheckZonePeersResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) parameters: models::CheckZonePeersRequest,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -386,18 +386,18 @@ pub mod tenants {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets the tenants for your account."]
-        pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.0.clone() }
+        pub fn list(&self) -> list::RequestBuilder {
+            list::RequestBuilder { client: self.0.clone() }
         }
     }
     pub mod list {
         use super::models;
         type Response = models::TenantListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -463,8 +463,8 @@ pub mod tenants {
 impl Client {
     #[doc = "Checks resource name validity"]
     #[doc = "A resource name is valid if it is not a reserved word, does not contains a reserved word and does not start with a reserved word"]
-    pub fn check_resource_name(&self) -> check_resource_name::Builder {
-        check_resource_name::Builder {
+    pub fn check_resource_name(&self) -> check_resource_name::RequestBuilder {
+        check_resource_name::RequestBuilder {
             client: self.clone(),
             resource_name_definition: None,
         }
@@ -474,11 +474,11 @@ pub mod check_resource_name {
     use super::models;
     type Response = models::CheckResourceNameResult;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) resource_name_definition: Option<models::ResourceName>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "Resource object with values for resource name and resource type"]
         pub fn resource_name_definition(mut self, resource_name_definition: impl Into<models::ResourceName>) -> Self {
             self.resource_name_definition = Some(resource_name_definition.into());

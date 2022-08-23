@@ -115,18 +115,18 @@ pub mod authorization_operations {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Lists all of the available Microsoft.Authorization REST API operations."]
-        pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.0.clone() }
+        pub fn list(&self) -> list::RequestBuilder {
+            list::RequestBuilder { client: self.0.clone() }
         }
     }
     pub mod list {
         use super::models;
         type Response = models::OperationListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -205,8 +205,8 @@ pub mod management_locks {
             resource_group_name: impl Into<String>,
             lock_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_at_resource_group_level::Builder {
-            get_at_resource_group_level::Builder {
+        ) -> get_at_resource_group_level::RequestBuilder {
+            get_at_resource_group_level::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 lock_name: lock_name.into(),
@@ -227,8 +227,8 @@ pub mod management_locks {
             lock_name: impl Into<String>,
             parameters: impl Into<models::ManagementLockObject>,
             subscription_id: impl Into<String>,
-        ) -> create_or_update_at_resource_group_level::Builder {
-            create_or_update_at_resource_group_level::Builder {
+        ) -> create_or_update_at_resource_group_level::RequestBuilder {
+            create_or_update_at_resource_group_level::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 lock_name: lock_name.into(),
@@ -248,8 +248,8 @@ pub mod management_locks {
             resource_group_name: impl Into<String>,
             lock_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> delete_at_resource_group_level::Builder {
-            delete_at_resource_group_level::Builder {
+        ) -> delete_at_resource_group_level::RequestBuilder {
+            delete_at_resource_group_level::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 lock_name: lock_name.into(),
@@ -261,8 +261,8 @@ pub mod management_locks {
         #[doc = "Arguments:"]
         #[doc = "* `scope`: The scope for the lock. "]
         #[doc = "* `lock_name`: The name of lock."]
-        pub fn get_by_scope(&self, scope: impl Into<String>, lock_name: impl Into<String>) -> get_by_scope::Builder {
-            get_by_scope::Builder {
+        pub fn get_by_scope(&self, scope: impl Into<String>, lock_name: impl Into<String>) -> get_by_scope::RequestBuilder {
+            get_by_scope::RequestBuilder {
                 client: self.0.clone(),
                 scope: scope.into(),
                 lock_name: lock_name.into(),
@@ -279,8 +279,8 @@ pub mod management_locks {
             scope: impl Into<String>,
             lock_name: impl Into<String>,
             parameters: impl Into<models::ManagementLockObject>,
-        ) -> create_or_update_by_scope::Builder {
-            create_or_update_by_scope::Builder {
+        ) -> create_or_update_by_scope::RequestBuilder {
+            create_or_update_by_scope::RequestBuilder {
                 client: self.0.clone(),
                 scope: scope.into(),
                 lock_name: lock_name.into(),
@@ -292,8 +292,8 @@ pub mod management_locks {
         #[doc = "Arguments:"]
         #[doc = "* `scope`: The scope for the lock. "]
         #[doc = "* `lock_name`: The name of lock."]
-        pub fn delete_by_scope(&self, scope: impl Into<String>, lock_name: impl Into<String>) -> delete_by_scope::Builder {
-            delete_by_scope::Builder {
+        pub fn delete_by_scope(&self, scope: impl Into<String>, lock_name: impl Into<String>) -> delete_by_scope::RequestBuilder {
+            delete_by_scope::RequestBuilder {
                 client: self.0.clone(),
                 scope: scope.into(),
                 lock_name: lock_name.into(),
@@ -318,8 +318,8 @@ pub mod management_locks {
             resource_name: impl Into<String>,
             lock_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_at_resource_level::Builder {
-            get_at_resource_level::Builder {
+        ) -> get_at_resource_level::RequestBuilder {
+            get_at_resource_level::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 resource_provider_namespace: resource_provider_namespace.into(),
@@ -352,8 +352,8 @@ pub mod management_locks {
             lock_name: impl Into<String>,
             parameters: impl Into<models::ManagementLockObject>,
             subscription_id: impl Into<String>,
-        ) -> create_or_update_at_resource_level::Builder {
-            create_or_update_at_resource_level::Builder {
+        ) -> create_or_update_at_resource_level::RequestBuilder {
+            create_or_update_at_resource_level::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 resource_provider_namespace: resource_provider_namespace.into(),
@@ -385,8 +385,8 @@ pub mod management_locks {
             resource_name: impl Into<String>,
             lock_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> delete_at_resource_level::Builder {
-            delete_at_resource_level::Builder {
+        ) -> delete_at_resource_level::RequestBuilder {
+            delete_at_resource_level::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 resource_provider_namespace: resource_provider_namespace.into(),
@@ -406,8 +406,8 @@ pub mod management_locks {
             &self,
             lock_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_at_subscription_level::Builder {
-            get_at_subscription_level::Builder {
+        ) -> get_at_subscription_level::RequestBuilder {
+            get_at_subscription_level::RequestBuilder {
                 client: self.0.clone(),
                 lock_name: lock_name.into(),
                 subscription_id: subscription_id.into(),
@@ -425,8 +425,8 @@ pub mod management_locks {
             lock_name: impl Into<String>,
             parameters: impl Into<models::ManagementLockObject>,
             subscription_id: impl Into<String>,
-        ) -> create_or_update_at_subscription_level::Builder {
-            create_or_update_at_subscription_level::Builder {
+        ) -> create_or_update_at_subscription_level::RequestBuilder {
+            create_or_update_at_subscription_level::RequestBuilder {
                 client: self.0.clone(),
                 lock_name: lock_name.into(),
                 parameters: parameters.into(),
@@ -443,8 +443,8 @@ pub mod management_locks {
             &self,
             lock_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> delete_at_subscription_level::Builder {
-            delete_at_subscription_level::Builder {
+        ) -> delete_at_subscription_level::RequestBuilder {
+            delete_at_subscription_level::RequestBuilder {
                 client: self.0.clone(),
                 lock_name: lock_name.into(),
                 subscription_id: subscription_id.into(),
@@ -459,8 +459,8 @@ pub mod management_locks {
             &self,
             resource_group_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_at_resource_group_level::Builder {
-            list_at_resource_group_level::Builder {
+        ) -> list_at_resource_group_level::RequestBuilder {
+            list_at_resource_group_level::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 subscription_id: subscription_id.into(),
@@ -484,8 +484,8 @@ pub mod management_locks {
             resource_type: impl Into<String>,
             resource_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_at_resource_level::Builder {
-            list_at_resource_level::Builder {
+        ) -> list_at_resource_level::RequestBuilder {
+            list_at_resource_level::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 resource_provider_namespace: resource_provider_namespace.into(),
@@ -500,8 +500,8 @@ pub mod management_locks {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: The ID of the target subscription."]
-        pub fn list_at_subscription_level(&self, subscription_id: impl Into<String>) -> list_at_subscription_level::Builder {
-            list_at_subscription_level::Builder {
+        pub fn list_at_subscription_level(&self, subscription_id: impl Into<String>) -> list_at_subscription_level::RequestBuilder {
+            list_at_subscription_level::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 filter: None,
@@ -511,8 +511,8 @@ pub mod management_locks {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `scope`: The scope for the lock. When providing a scope for the assignment, use '/subscriptions/{subscriptionId}' for subscriptions, '/subscriptions/{subscriptionId}/resourcegroups/{resourceGroupName}' for resource groups, and '/subscriptions/{subscriptionId}/resourcegroups/{resourceGroupName}/providers/{resourceProviderNamespace}/{parentResourcePathIfPresent}/{resourceType}/{resourceName}' for resources."]
-        pub fn list_by_scope(&self, scope: impl Into<String>) -> list_by_scope::Builder {
-            list_by_scope::Builder {
+        pub fn list_by_scope(&self, scope: impl Into<String>) -> list_by_scope::RequestBuilder {
+            list_by_scope::RequestBuilder {
                 client: self.0.clone(),
                 scope: scope.into(),
                 filter: None,
@@ -523,13 +523,13 @@ pub mod management_locks {
         use super::models;
         type Response = models::ManagementLockObject;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) lock_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -579,14 +579,14 @@ pub mod management_locks {
             Created201(models::ManagementLockObject),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) lock_name: String,
             pub(crate) parameters: models::ManagementLockObject,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -642,13 +642,13 @@ pub mod management_locks {
             Ok200,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) lock_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -691,12 +691,12 @@ pub mod management_locks {
         use super::models;
         type Response = models::ManagementLockObject;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) scope: String,
             pub(crate) lock_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -745,13 +745,13 @@ pub mod management_locks {
             Created201(models::ManagementLockObject),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) scope: String,
             pub(crate) lock_name: String,
             pub(crate) parameters: models::ManagementLockObject,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -806,12 +806,12 @@ pub mod management_locks {
             Ok200,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) scope: String,
             pub(crate) lock_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -853,7 +853,7 @@ pub mod management_locks {
         use super::models;
         type Response = models::ManagementLockObject;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) resource_provider_namespace: String,
@@ -863,7 +863,7 @@ pub mod management_locks {
             pub(crate) lock_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -917,7 +917,7 @@ pub mod management_locks {
             Created201(models::ManagementLockObject),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) resource_provider_namespace: String,
@@ -928,7 +928,7 @@ pub mod management_locks {
             pub(crate) parameters: models::ManagementLockObject,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -988,7 +988,7 @@ pub mod management_locks {
             Ok200,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) resource_provider_namespace: String,
@@ -998,7 +998,7 @@ pub mod management_locks {
             pub(crate) lock_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1045,12 +1045,12 @@ pub mod management_locks {
         use super::models;
         type Response = models::ManagementLockObject;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) lock_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1099,13 +1099,13 @@ pub mod management_locks {
             Ok200(models::ManagementLockObject),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) lock_name: String,
             pub(crate) parameters: models::ManagementLockObject,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1160,12 +1160,12 @@ pub mod management_locks {
             Ok200,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) lock_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1207,13 +1207,13 @@ pub mod management_locks {
         use super::models;
         type Response = models::ManagementLockListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) subscription_id: String,
             pub(crate) filter: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The filter to apply on the operation."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -1292,7 +1292,7 @@ pub mod management_locks {
         use super::models;
         type Response = models::ManagementLockListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) resource_provider_namespace: String,
@@ -1302,7 +1302,7 @@ pub mod management_locks {
             pub(crate) subscription_id: String,
             pub(crate) filter: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The filter to apply on the operation."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -1385,12 +1385,12 @@ pub mod management_locks {
         use super::models;
         type Response = models::ManagementLockListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) filter: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The filter to apply on the operation."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -1468,12 +1468,12 @@ pub mod management_locks {
         use super::models;
         type Response = models::ManagementLockListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) scope: String,
             pub(crate) filter: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The filter to apply on the operation."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());

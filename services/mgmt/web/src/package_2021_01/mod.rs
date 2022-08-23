@@ -167,8 +167,8 @@ pub mod app_service_certificate_orders {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
-        pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
-            list::Builder {
+        pub fn list(&self, subscription_id: impl Into<String>) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
@@ -183,8 +183,8 @@ pub mod app_service_certificate_orders {
             &self,
             app_service_certificate_order: impl Into<models::AppServiceCertificateOrder>,
             subscription_id: impl Into<String>,
-        ) -> validate_purchase_information::Builder {
-            validate_purchase_information::Builder {
+        ) -> validate_purchase_information::RequestBuilder {
+            validate_purchase_information::RequestBuilder {
                 client: self.0.clone(),
                 app_service_certificate_order: app_service_certificate_order.into(),
                 subscription_id: subscription_id.into(),
@@ -200,8 +200,8 @@ pub mod app_service_certificate_orders {
             &self,
             resource_group_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_by_resource_group::Builder {
-            list_by_resource_group::Builder {
+        ) -> list_by_resource_group::RequestBuilder {
+            list_by_resource_group::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 subscription_id: subscription_id.into(),
@@ -219,8 +219,8 @@ pub mod app_service_certificate_orders {
             resource_group_name: impl Into<String>,
             certificate_order_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 certificate_order_name: certificate_order_name.into(),
@@ -241,8 +241,8 @@ pub mod app_service_certificate_orders {
             certificate_order_name: impl Into<String>,
             certificate_distinguished_name: impl Into<models::AppServiceCertificateOrder>,
             subscription_id: impl Into<String>,
-        ) -> create_or_update::Builder {
-            create_or_update::Builder {
+        ) -> create_or_update::RequestBuilder {
+            create_or_update::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 certificate_order_name: certificate_order_name.into(),
@@ -264,8 +264,8 @@ pub mod app_service_certificate_orders {
             certificate_order_name: impl Into<String>,
             certificate_distinguished_name: impl Into<models::AppServiceCertificateOrderPatchResource>,
             subscription_id: impl Into<String>,
-        ) -> update::Builder {
-            update::Builder {
+        ) -> update::RequestBuilder {
+            update::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 certificate_order_name: certificate_order_name.into(),
@@ -285,8 +285,8 @@ pub mod app_service_certificate_orders {
             resource_group_name: impl Into<String>,
             certificate_order_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> delete::Builder {
-            delete::Builder {
+        ) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 certificate_order_name: certificate_order_name.into(),
@@ -305,8 +305,8 @@ pub mod app_service_certificate_orders {
             resource_group_name: impl Into<String>,
             certificate_order_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_certificates::Builder {
-            list_certificates::Builder {
+        ) -> list_certificates::RequestBuilder {
+            list_certificates::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 certificate_order_name: certificate_order_name.into(),
@@ -327,8 +327,8 @@ pub mod app_service_certificate_orders {
             certificate_order_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_certificate::Builder {
-            get_certificate::Builder {
+        ) -> get_certificate::RequestBuilder {
+            get_certificate::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 certificate_order_name: certificate_order_name.into(),
@@ -352,8 +352,8 @@ pub mod app_service_certificate_orders {
             name: impl Into<String>,
             key_vault_certificate: impl Into<models::AppServiceCertificateResource>,
             subscription_id: impl Into<String>,
-        ) -> create_or_update_certificate::Builder {
-            create_or_update_certificate::Builder {
+        ) -> create_or_update_certificate::RequestBuilder {
+            create_or_update_certificate::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 certificate_order_name: certificate_order_name.into(),
@@ -378,8 +378,8 @@ pub mod app_service_certificate_orders {
             name: impl Into<String>,
             key_vault_certificate: impl Into<models::AppServiceCertificatePatchResource>,
             subscription_id: impl Into<String>,
-        ) -> update_certificate::Builder {
-            update_certificate::Builder {
+        ) -> update_certificate::RequestBuilder {
+            update_certificate::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 certificate_order_name: certificate_order_name.into(),
@@ -402,8 +402,8 @@ pub mod app_service_certificate_orders {
             certificate_order_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> delete_certificate::Builder {
-            delete_certificate::Builder {
+        ) -> delete_certificate::RequestBuilder {
+            delete_certificate::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 certificate_order_name: certificate_order_name.into(),
@@ -425,8 +425,8 @@ pub mod app_service_certificate_orders {
             certificate_order_name: impl Into<String>,
             reissue_certificate_order_request: impl Into<models::ReissueCertificateOrderRequest>,
             subscription_id: impl Into<String>,
-        ) -> reissue::Builder {
-            reissue::Builder {
+        ) -> reissue::RequestBuilder {
+            reissue::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 certificate_order_name: certificate_order_name.into(),
@@ -448,8 +448,8 @@ pub mod app_service_certificate_orders {
             certificate_order_name: impl Into<String>,
             renew_certificate_order_request: impl Into<models::RenewCertificateOrderRequest>,
             subscription_id: impl Into<String>,
-        ) -> renew::Builder {
-            renew::Builder {
+        ) -> renew::RequestBuilder {
+            renew::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 certificate_order_name: certificate_order_name.into(),
@@ -469,8 +469,8 @@ pub mod app_service_certificate_orders {
             resource_group_name: impl Into<String>,
             certificate_order_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> resend_email::Builder {
-            resend_email::Builder {
+        ) -> resend_email::RequestBuilder {
+            resend_email::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 certificate_order_name: certificate_order_name.into(),
@@ -491,8 +491,8 @@ pub mod app_service_certificate_orders {
             certificate_order_name: impl Into<String>,
             name_identifier: impl Into<models::NameIdentifier>,
             subscription_id: impl Into<String>,
-        ) -> resend_request_emails::Builder {
-            resend_request_emails::Builder {
+        ) -> resend_request_emails::RequestBuilder {
+            resend_request_emails::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 certificate_order_name: certificate_order_name.into(),
@@ -514,8 +514,8 @@ pub mod app_service_certificate_orders {
             certificate_order_name: impl Into<String>,
             site_seal_request: impl Into<models::SiteSealRequest>,
             subscription_id: impl Into<String>,
-        ) -> retrieve_site_seal::Builder {
-            retrieve_site_seal::Builder {
+        ) -> retrieve_site_seal::RequestBuilder {
+            retrieve_site_seal::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 certificate_order_name: certificate_order_name.into(),
@@ -535,8 +535,8 @@ pub mod app_service_certificate_orders {
             resource_group_name: impl Into<String>,
             certificate_order_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> verify_domain_ownership::Builder {
-            verify_domain_ownership::Builder {
+        ) -> verify_domain_ownership::RequestBuilder {
+            verify_domain_ownership::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 certificate_order_name: certificate_order_name.into(),
@@ -555,8 +555,8 @@ pub mod app_service_certificate_orders {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> retrieve_certificate_actions::Builder {
-            retrieve_certificate_actions::Builder {
+        ) -> retrieve_certificate_actions::RequestBuilder {
+            retrieve_certificate_actions::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -575,8 +575,8 @@ pub mod app_service_certificate_orders {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> retrieve_certificate_email_history::Builder {
-            retrieve_certificate_email_history::Builder {
+        ) -> retrieve_certificate_email_history::RequestBuilder {
+            retrieve_certificate_email_history::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -588,11 +588,11 @@ pub mod app_service_certificate_orders {
         use super::models;
         type Response = models::AppServiceCertificateOrderCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -662,12 +662,12 @@ pub mod app_service_certificate_orders {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) app_service_certificate_order: models::AppServiceCertificateOrder,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -708,12 +708,12 @@ pub mod app_service_certificate_orders {
         use super::models;
         type Response = models::AppServiceCertificateOrderCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -784,13 +784,13 @@ pub mod app_service_certificate_orders {
         use super::models;
         type Response = models::AppServiceCertificateOrder;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) certificate_order_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -840,14 +840,14 @@ pub mod app_service_certificate_orders {
             Created201(models::AppServiceCertificateOrder),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) certificate_order_name: String,
             pub(crate) certificate_distinguished_name: models::AppServiceCertificateOrder,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -904,14 +904,14 @@ pub mod app_service_certificate_orders {
             Created201(models::AppServiceCertificateOrder),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) certificate_order_name: String,
             pub(crate) certificate_distinguished_name: models::AppServiceCertificateOrderPatchResource,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -967,13 +967,13 @@ pub mod app_service_certificate_orders {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) certificate_order_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1016,13 +1016,13 @@ pub mod app_service_certificate_orders {
         use super::models;
         type Response = models::AppServiceCertificateCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) certificate_order_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -1088,14 +1088,14 @@ pub mod app_service_certificate_orders {
         use super::models;
         type Response = models::AppServiceCertificateResource;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) certificate_order_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1139,7 +1139,7 @@ pub mod app_service_certificate_orders {
             Created201(models::AppServiceCertificateResource),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) certificate_order_name: String,
@@ -1147,7 +1147,7 @@ pub mod app_service_certificate_orders {
             pub(crate) key_vault_certificate: models::AppServiceCertificateResource,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -1198,7 +1198,7 @@ pub mod app_service_certificate_orders {
             Created201(models::AppServiceCertificateResource),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) certificate_order_name: String,
@@ -1206,7 +1206,7 @@ pub mod app_service_certificate_orders {
             pub(crate) key_vault_certificate: models::AppServiceCertificatePatchResource,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1256,14 +1256,14 @@ pub mod app_service_certificate_orders {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) certificate_order_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1300,14 +1300,14 @@ pub mod app_service_certificate_orders {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) certificate_order_name: String,
             pub(crate) reissue_certificate_order_request: models::ReissueCertificateOrderRequest,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1344,14 +1344,14 @@ pub mod app_service_certificate_orders {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) certificate_order_name: String,
             pub(crate) renew_certificate_order_request: models::RenewCertificateOrderRequest,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1394,13 +1394,13 @@ pub mod app_service_certificate_orders {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) certificate_order_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1437,14 +1437,14 @@ pub mod app_service_certificate_orders {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) certificate_order_name: String,
             pub(crate) name_identifier: models::NameIdentifier,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1481,14 +1481,14 @@ pub mod app_service_certificate_orders {
         use super::models;
         type Response = models::SiteSeal;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) certificate_order_name: String,
             pub(crate) site_seal_request: models::SiteSealRequest,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1529,13 +1529,13 @@ pub mod app_service_certificate_orders {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) certificate_order_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1572,13 +1572,13 @@ pub mod app_service_certificate_orders {
         use super::models;
         type Response = Vec<models::CertificateOrderAction>;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1619,13 +1619,13 @@ pub mod app_service_certificate_orders {
         use super::models;
         type Response = Vec<models::CertificateEmail>;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1679,8 +1679,8 @@ pub mod certificate_orders_diagnostics {
             resource_group_name: impl Into<String>,
             certificate_order_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_app_service_certificate_order_detector_response::Builder {
-            list_app_service_certificate_order_detector_response::Builder {
+        ) -> list_app_service_certificate_order_detector_response::RequestBuilder {
+            list_app_service_certificate_order_detector_response::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 certificate_order_name: certificate_order_name.into(),
@@ -1701,8 +1701,8 @@ pub mod certificate_orders_diagnostics {
             certificate_order_name: impl Into<String>,
             detector_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_app_service_certificate_order_detector_response::Builder {
-            get_app_service_certificate_order_detector_response::Builder {
+        ) -> get_app_service_certificate_order_detector_response::RequestBuilder {
+            get_app_service_certificate_order_detector_response::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 certificate_order_name: certificate_order_name.into(),
@@ -1718,13 +1718,13 @@ pub mod certificate_orders_diagnostics {
         use super::models;
         type Response = models::DetectorResponseCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) certificate_order_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -1790,7 +1790,7 @@ pub mod certificate_orders_diagnostics {
         use super::models;
         type Response = models::DetectorResponse;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) certificate_order_name: String,
@@ -1800,7 +1800,7 @@ pub mod certificate_orders_diagnostics {
             pub(crate) end_time: Option<time::OffsetDateTime>,
             pub(crate) time_grain: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The start time for detector response."]
             pub fn start_time(mut self, start_time: impl Into<time::OffsetDateTime>) -> Self {
                 self.start_time = Some(start_time.into());
@@ -1867,18 +1867,18 @@ pub mod certificate_registration_provider {
     impl Client {
         #[doc = "Implements Csm operations Api to exposes the list of available Csm Apis under the resource provider"]
         #[doc = "Implements Csm operations Api to exposes the list of available Csm Apis under the resource provider"]
-        pub fn list_operations(&self) -> list_operations::Builder {
-            list_operations::Builder { client: self.0.clone() }
+        pub fn list_operations(&self) -> list_operations::RequestBuilder {
+            list_operations::RequestBuilder { client: self.0.clone() }
         }
     }
     pub mod list_operations {
         use super::models;
         type Response = models::CsmOperationCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -1958,8 +1958,8 @@ pub mod domains {
             &self,
             identifier: impl Into<models::NameIdentifier>,
             subscription_id: impl Into<String>,
-        ) -> check_availability::Builder {
-            check_availability::Builder {
+        ) -> check_availability::RequestBuilder {
+            check_availability::RequestBuilder {
                 client: self.0.clone(),
                 identifier: identifier.into(),
                 subscription_id: subscription_id.into(),
@@ -1970,8 +1970,8 @@ pub mod domains {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
-        pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
-            list::Builder {
+        pub fn list(&self, subscription_id: impl Into<String>) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
@@ -1981,8 +1981,8 @@ pub mod domains {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
-        pub fn get_control_center_sso_request(&self, subscription_id: impl Into<String>) -> get_control_center_sso_request::Builder {
-            get_control_center_sso_request::Builder {
+        pub fn get_control_center_sso_request(&self, subscription_id: impl Into<String>) -> get_control_center_sso_request::RequestBuilder {
+            get_control_center_sso_request::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
@@ -1997,8 +1997,8 @@ pub mod domains {
             &self,
             parameters: impl Into<models::DomainRecommendationSearchParameters>,
             subscription_id: impl Into<String>,
-        ) -> list_recommendations::Builder {
-            list_recommendations::Builder {
+        ) -> list_recommendations::RequestBuilder {
+            list_recommendations::RequestBuilder {
                 client: self.0.clone(),
                 parameters: parameters.into(),
                 subscription_id: subscription_id.into(),
@@ -2014,8 +2014,8 @@ pub mod domains {
             &self,
             resource_group_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_by_resource_group::Builder {
-            list_by_resource_group::Builder {
+        ) -> list_by_resource_group::RequestBuilder {
+            list_by_resource_group::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 subscription_id: subscription_id.into(),
@@ -2033,8 +2033,8 @@ pub mod domains {
             resource_group_name: impl Into<String>,
             domain_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 domain_name: domain_name.into(),
@@ -2055,8 +2055,8 @@ pub mod domains {
             domain_name: impl Into<String>,
             domain: impl Into<models::Domain>,
             subscription_id: impl Into<String>,
-        ) -> create_or_update::Builder {
-            create_or_update::Builder {
+        ) -> create_or_update::RequestBuilder {
+            create_or_update::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 domain_name: domain_name.into(),
@@ -2078,8 +2078,8 @@ pub mod domains {
             domain_name: impl Into<String>,
             domain: impl Into<models::DomainPatchResource>,
             subscription_id: impl Into<String>,
-        ) -> update::Builder {
-            update::Builder {
+        ) -> update::RequestBuilder {
+            update::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 domain_name: domain_name.into(),
@@ -2099,8 +2099,8 @@ pub mod domains {
             resource_group_name: impl Into<String>,
             domain_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> delete::Builder {
-            delete::Builder {
+        ) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 domain_name: domain_name.into(),
@@ -2120,8 +2120,8 @@ pub mod domains {
             resource_group_name: impl Into<String>,
             domain_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_ownership_identifiers::Builder {
-            list_ownership_identifiers::Builder {
+        ) -> list_ownership_identifiers::RequestBuilder {
+            list_ownership_identifiers::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 domain_name: domain_name.into(),
@@ -2142,8 +2142,8 @@ pub mod domains {
             domain_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_ownership_identifier::Builder {
-            get_ownership_identifier::Builder {
+        ) -> get_ownership_identifier::RequestBuilder {
+            get_ownership_identifier::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 domain_name: domain_name.into(),
@@ -2167,8 +2167,8 @@ pub mod domains {
             name: impl Into<String>,
             domain_ownership_identifier: impl Into<models::DomainOwnershipIdentifier>,
             subscription_id: impl Into<String>,
-        ) -> create_or_update_ownership_identifier::Builder {
-            create_or_update_ownership_identifier::Builder {
+        ) -> create_or_update_ownership_identifier::RequestBuilder {
+            create_or_update_ownership_identifier::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 domain_name: domain_name.into(),
@@ -2193,8 +2193,8 @@ pub mod domains {
             name: impl Into<String>,
             domain_ownership_identifier: impl Into<models::DomainOwnershipIdentifier>,
             subscription_id: impl Into<String>,
-        ) -> update_ownership_identifier::Builder {
-            update_ownership_identifier::Builder {
+        ) -> update_ownership_identifier::RequestBuilder {
+            update_ownership_identifier::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 domain_name: domain_name.into(),
@@ -2217,8 +2217,8 @@ pub mod domains {
             domain_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> delete_ownership_identifier::Builder {
-            delete_ownership_identifier::Builder {
+        ) -> delete_ownership_identifier::RequestBuilder {
+            delete_ownership_identifier::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 domain_name: domain_name.into(),
@@ -2238,8 +2238,8 @@ pub mod domains {
             resource_group_name: impl Into<String>,
             domain_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> renew::Builder {
-            renew::Builder {
+        ) -> renew::RequestBuilder {
+            renew::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 domain_name: domain_name.into(),
@@ -2251,12 +2251,12 @@ pub mod domains {
         use super::models;
         type Response = models::DomainAvailabilityCheckResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) identifier: models::NameIdentifier,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2301,11 +2301,11 @@ pub mod domains {
         use super::models;
         type Response = models::DomainCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -2375,11 +2375,11 @@ pub mod domains {
         use super::models;
         type Response = models::DomainControlCenterSsoRequest;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2424,12 +2424,12 @@ pub mod domains {
         use super::models;
         type Response = models::NameIdentifierCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) parameters: models::DomainRecommendationSearchParameters,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -2500,12 +2500,12 @@ pub mod domains {
         use super::models;
         type Response = models::DomainCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -2576,13 +2576,13 @@ pub mod domains {
         use super::models;
         type Response = models::Domain;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) domain_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2632,14 +2632,14 @@ pub mod domains {
             Ok200(models::Domain),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) domain_name: String,
             pub(crate) domain: models::Domain,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -2696,14 +2696,14 @@ pub mod domains {
             Ok200(models::Domain),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) domain_name: String,
             pub(crate) domain: models::DomainPatchResource,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2759,14 +2759,14 @@ pub mod domains {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) domain_name: String,
             pub(crate) subscription_id: String,
             pub(crate) force_hard_delete_domain: Option<bool>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Specify <code>true</code> to delete the domain immediately. The default is <code>false</code> which deletes the domain after 24 hours."]
             pub fn force_hard_delete_domain(mut self, force_hard_delete_domain: bool) -> Self {
                 self.force_hard_delete_domain = Some(force_hard_delete_domain);
@@ -2819,13 +2819,13 @@ pub mod domains {
         use super::models;
         type Response = models::DomainOwnershipIdentifierCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) domain_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -2891,14 +2891,14 @@ pub mod domains {
         use super::models;
         type Response = models::DomainOwnershipIdentifier;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) domain_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2938,7 +2938,7 @@ pub mod domains {
         use super::models;
         type Response = models::DomainOwnershipIdentifier;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) domain_name: String,
@@ -2946,7 +2946,7 @@ pub mod domains {
             pub(crate) domain_ownership_identifier: models::DomainOwnershipIdentifier,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2987,7 +2987,7 @@ pub mod domains {
         use super::models;
         type Response = models::DomainOwnershipIdentifier;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) domain_name: String,
@@ -2995,7 +2995,7 @@ pub mod domains {
             pub(crate) domain_ownership_identifier: models::DomainOwnershipIdentifier,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -3040,14 +3040,14 @@ pub mod domains {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) domain_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -3089,13 +3089,13 @@ pub mod domains {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) domain_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -3146,8 +3146,8 @@ pub mod top_level_domains {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
-        pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
-            list::Builder {
+        pub fn list(&self, subscription_id: impl Into<String>) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
@@ -3158,8 +3158,8 @@ pub mod top_level_domains {
         #[doc = "Arguments:"]
         #[doc = "* `name`: Name of the top-level domain."]
         #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
-        pub fn get(&self, name: impl Into<String>, subscription_id: impl Into<String>) -> get::Builder {
-            get::Builder {
+        pub fn get(&self, name: impl Into<String>, subscription_id: impl Into<String>) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 name: name.into(),
                 subscription_id: subscription_id.into(),
@@ -3177,8 +3177,8 @@ pub mod top_level_domains {
             name: impl Into<String>,
             agreement_option: impl Into<models::TopLevelDomainAgreementOption>,
             subscription_id: impl Into<String>,
-        ) -> list_agreements::Builder {
-            list_agreements::Builder {
+        ) -> list_agreements::RequestBuilder {
+            list_agreements::RequestBuilder {
                 client: self.0.clone(),
                 name: name.into(),
                 agreement_option: agreement_option.into(),
@@ -3190,11 +3190,11 @@ pub mod top_level_domains {
         use super::models;
         type Response = models::TopLevelDomainCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -3264,12 +3264,12 @@ pub mod top_level_domains {
         use super::models;
         type Response = models::TopLevelDomain;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -3314,13 +3314,13 @@ pub mod top_level_domains {
         use super::models;
         type Response = models::TldLegalAgreementCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) name: String,
             pub(crate) agreement_option: models::TopLevelDomainAgreementOption,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -3395,18 +3395,18 @@ pub mod domain_registration_provider {
     impl Client {
         #[doc = "Implements Csm operations Api to exposes the list of available Csm Apis under the resource provider"]
         #[doc = "Implements Csm operations Api to exposes the list of available Csm Apis under the resource provider"]
-        pub fn list_operations(&self) -> list_operations::Builder {
-            list_operations::Builder { client: self.0.clone() }
+        pub fn list_operations(&self) -> list_operations::RequestBuilder {
+            list_operations::RequestBuilder { client: self.0.clone() }
         }
     }
     pub mod list_operations {
         use super::models;
         type Response = models::CsmOperationCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -3481,8 +3481,8 @@ pub mod app_service_environments {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
-        pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
-            list::Builder {
+        pub fn list(&self, subscription_id: impl Into<String>) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
@@ -3497,8 +3497,8 @@ pub mod app_service_environments {
             &self,
             resource_group_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_by_resource_group::Builder {
-            list_by_resource_group::Builder {
+        ) -> list_by_resource_group::RequestBuilder {
+            list_by_resource_group::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 subscription_id: subscription_id.into(),
@@ -3516,8 +3516,8 @@ pub mod app_service_environments {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -3538,8 +3538,8 @@ pub mod app_service_environments {
             name: impl Into<String>,
             hosting_environment_envelope: impl Into<models::AppServiceEnvironmentResource>,
             subscription_id: impl Into<String>,
-        ) -> create_or_update::Builder {
-            create_or_update::Builder {
+        ) -> create_or_update::RequestBuilder {
+            create_or_update::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -3561,8 +3561,8 @@ pub mod app_service_environments {
             name: impl Into<String>,
             hosting_environment_envelope: impl Into<models::AppServiceEnvironmentPatchResource>,
             subscription_id: impl Into<String>,
-        ) -> update::Builder {
-            update::Builder {
+        ) -> update::RequestBuilder {
+            update::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -3582,8 +3582,8 @@ pub mod app_service_environments {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> delete::Builder {
-            delete::Builder {
+        ) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -3603,8 +3603,8 @@ pub mod app_service_environments {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_capacities::Builder {
-            list_capacities::Builder {
+        ) -> list_capacities::RequestBuilder {
+            list_capacities::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -3623,8 +3623,8 @@ pub mod app_service_environments {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_vip_info::Builder {
-            get_vip_info::Builder {
+        ) -> get_vip_info::RequestBuilder {
+            get_vip_info::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -3645,8 +3645,8 @@ pub mod app_service_environments {
             name: impl Into<String>,
             vnet_info: impl Into<models::VirtualNetworkProfile>,
             subscription_id: impl Into<String>,
-        ) -> change_vnet::Builder {
-            change_vnet::Builder {
+        ) -> change_vnet::RequestBuilder {
+            change_vnet::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -3666,8 +3666,8 @@ pub mod app_service_environments {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_ase_v3_networking_configuration::Builder {
-            get_ase_v3_networking_configuration::Builder {
+        ) -> get_ase_v3_networking_configuration::RequestBuilder {
+            get_ase_v3_networking_configuration::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -3687,8 +3687,8 @@ pub mod app_service_environments {
             name: impl Into<String>,
             ase_networking_configuration: impl Into<models::AseV3NetworkingConfiguration>,
             subscription_id: impl Into<String>,
-        ) -> update_ase_networking_configuration::Builder {
-            update_ase_networking_configuration::Builder {
+        ) -> update_ase_networking_configuration::RequestBuilder {
+            update_ase_networking_configuration::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -3708,8 +3708,8 @@ pub mod app_service_environments {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_diagnostics::Builder {
-            list_diagnostics::Builder {
+        ) -> list_diagnostics::RequestBuilder {
+            list_diagnostics::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -3730,8 +3730,8 @@ pub mod app_service_environments {
             name: impl Into<String>,
             diagnostics_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_diagnostics_item::Builder {
-            get_diagnostics_item::Builder {
+        ) -> get_diagnostics_item::RequestBuilder {
+            get_diagnostics_item::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -3751,8 +3751,8 @@ pub mod app_service_environments {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_inbound_network_dependencies_endpoints::Builder {
-            get_inbound_network_dependencies_endpoints::Builder {
+        ) -> get_inbound_network_dependencies_endpoints::RequestBuilder {
+            get_inbound_network_dependencies_endpoints::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -3771,8 +3771,8 @@ pub mod app_service_environments {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_multi_role_pools::Builder {
-            list_multi_role_pools::Builder {
+        ) -> list_multi_role_pools::RequestBuilder {
+            list_multi_role_pools::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -3791,8 +3791,8 @@ pub mod app_service_environments {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_multi_role_pool::Builder {
-            get_multi_role_pool::Builder {
+        ) -> get_multi_role_pool::RequestBuilder {
+            get_multi_role_pool::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -3813,8 +3813,8 @@ pub mod app_service_environments {
             name: impl Into<String>,
             multi_role_pool_envelope: impl Into<models::WorkerPoolResource>,
             subscription_id: impl Into<String>,
-        ) -> create_or_update_multi_role_pool::Builder {
-            create_or_update_multi_role_pool::Builder {
+        ) -> create_or_update_multi_role_pool::RequestBuilder {
+            create_or_update_multi_role_pool::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -3836,8 +3836,8 @@ pub mod app_service_environments {
             name: impl Into<String>,
             multi_role_pool_envelope: impl Into<models::WorkerPoolResource>,
             subscription_id: impl Into<String>,
-        ) -> update_multi_role_pool::Builder {
-            update_multi_role_pool::Builder {
+        ) -> update_multi_role_pool::RequestBuilder {
+            update_multi_role_pool::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -3859,8 +3859,8 @@ pub mod app_service_environments {
             name: impl Into<String>,
             instance: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_multi_role_pool_instance_metric_definitions::Builder {
-            list_multi_role_pool_instance_metric_definitions::Builder {
+        ) -> list_multi_role_pool_instance_metric_definitions::RequestBuilder {
+            list_multi_role_pool_instance_metric_definitions::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -3880,8 +3880,8 @@ pub mod app_service_environments {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_multi_role_metric_definitions::Builder {
-            list_multi_role_metric_definitions::Builder {
+        ) -> list_multi_role_metric_definitions::RequestBuilder {
+            list_multi_role_metric_definitions::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -3900,8 +3900,8 @@ pub mod app_service_environments {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_multi_role_pool_skus::Builder {
-            list_multi_role_pool_skus::Builder {
+        ) -> list_multi_role_pool_skus::RequestBuilder {
+            list_multi_role_pool_skus::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -3920,8 +3920,8 @@ pub mod app_service_environments {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_multi_role_usages::Builder {
-            list_multi_role_usages::Builder {
+        ) -> list_multi_role_usages::RequestBuilder {
+            list_multi_role_usages::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -3940,8 +3940,8 @@ pub mod app_service_environments {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_operations::Builder {
-            list_operations::Builder {
+        ) -> list_operations::RequestBuilder {
+            list_operations::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -3960,8 +3960,8 @@ pub mod app_service_environments {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_outbound_network_dependencies_endpoints::Builder {
-            get_outbound_network_dependencies_endpoints::Builder {
+        ) -> get_outbound_network_dependencies_endpoints::RequestBuilder {
+            get_outbound_network_dependencies_endpoints::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -3980,8 +3980,8 @@ pub mod app_service_environments {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_private_endpoint_connection_list::Builder {
-            get_private_endpoint_connection_list::Builder {
+        ) -> get_private_endpoint_connection_list::RequestBuilder {
+            get_private_endpoint_connection_list::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -4002,8 +4002,8 @@ pub mod app_service_environments {
             name: impl Into<String>,
             private_endpoint_connection_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_private_endpoint_connection::Builder {
-            get_private_endpoint_connection::Builder {
+        ) -> get_private_endpoint_connection::RequestBuilder {
+            get_private_endpoint_connection::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -4025,8 +4025,8 @@ pub mod app_service_environments {
             private_endpoint_connection_name: impl Into<String>,
             private_endpoint_wrapper: impl Into<models::PrivateLinkConnectionApprovalRequestResource>,
             subscription_id: impl Into<String>,
-        ) -> approve_or_reject_private_endpoint_connection::Builder {
-            approve_or_reject_private_endpoint_connection::Builder {
+        ) -> approve_or_reject_private_endpoint_connection::RequestBuilder {
+            approve_or_reject_private_endpoint_connection::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -4048,8 +4048,8 @@ pub mod app_service_environments {
             name: impl Into<String>,
             private_endpoint_connection_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> delete_private_endpoint_connection::Builder {
-            delete_private_endpoint_connection::Builder {
+        ) -> delete_private_endpoint_connection::RequestBuilder {
+            delete_private_endpoint_connection::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -4069,8 +4069,8 @@ pub mod app_service_environments {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_private_link_resources::Builder {
-            get_private_link_resources::Builder {
+        ) -> get_private_link_resources::RequestBuilder {
+            get_private_link_resources::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -4089,8 +4089,8 @@ pub mod app_service_environments {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> reboot::Builder {
-            reboot::Builder {
+        ) -> reboot::RequestBuilder {
+            reboot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -4109,8 +4109,8 @@ pub mod app_service_environments {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> resume::Builder {
-            resume::Builder {
+        ) -> resume::RequestBuilder {
+            resume::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -4129,8 +4129,8 @@ pub mod app_service_environments {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_app_service_plans::Builder {
-            list_app_service_plans::Builder {
+        ) -> list_app_service_plans::RequestBuilder {
+            list_app_service_plans::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -4149,8 +4149,8 @@ pub mod app_service_environments {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_web_apps::Builder {
-            list_web_apps::Builder {
+        ) -> list_web_apps::RequestBuilder {
+            list_web_apps::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -4170,8 +4170,8 @@ pub mod app_service_environments {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> suspend::Builder {
-            suspend::Builder {
+        ) -> suspend::RequestBuilder {
+            suspend::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -4190,8 +4190,8 @@ pub mod app_service_environments {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_usages::Builder {
-            list_usages::Builder {
+        ) -> list_usages::RequestBuilder {
+            list_usages::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -4211,8 +4211,8 @@ pub mod app_service_environments {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_worker_pools::Builder {
-            list_worker_pools::Builder {
+        ) -> list_worker_pools::RequestBuilder {
+            list_worker_pools::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -4233,8 +4233,8 @@ pub mod app_service_environments {
             name: impl Into<String>,
             worker_pool_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_worker_pool::Builder {
-            get_worker_pool::Builder {
+        ) -> get_worker_pool::RequestBuilder {
+            get_worker_pool::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -4258,8 +4258,8 @@ pub mod app_service_environments {
             worker_pool_name: impl Into<String>,
             worker_pool_envelope: impl Into<models::WorkerPoolResource>,
             subscription_id: impl Into<String>,
-        ) -> create_or_update_worker_pool::Builder {
-            create_or_update_worker_pool::Builder {
+        ) -> create_or_update_worker_pool::RequestBuilder {
+            create_or_update_worker_pool::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -4284,8 +4284,8 @@ pub mod app_service_environments {
             worker_pool_name: impl Into<String>,
             worker_pool_envelope: impl Into<models::WorkerPoolResource>,
             subscription_id: impl Into<String>,
-        ) -> update_worker_pool::Builder {
-            update_worker_pool::Builder {
+        ) -> update_worker_pool::RequestBuilder {
+            update_worker_pool::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -4310,8 +4310,8 @@ pub mod app_service_environments {
             worker_pool_name: impl Into<String>,
             instance: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_worker_pool_instance_metric_definitions::Builder {
-            list_worker_pool_instance_metric_definitions::Builder {
+        ) -> list_worker_pool_instance_metric_definitions::RequestBuilder {
+            list_worker_pool_instance_metric_definitions::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -4334,8 +4334,8 @@ pub mod app_service_environments {
             name: impl Into<String>,
             worker_pool_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_web_worker_metric_definitions::Builder {
-            list_web_worker_metric_definitions::Builder {
+        ) -> list_web_worker_metric_definitions::RequestBuilder {
+            list_web_worker_metric_definitions::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -4357,8 +4357,8 @@ pub mod app_service_environments {
             name: impl Into<String>,
             worker_pool_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_worker_pool_skus::Builder {
-            list_worker_pool_skus::Builder {
+        ) -> list_worker_pool_skus::RequestBuilder {
+            list_worker_pool_skus::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -4380,8 +4380,8 @@ pub mod app_service_environments {
             name: impl Into<String>,
             worker_pool_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_web_worker_usages::Builder {
-            list_web_worker_usages::Builder {
+        ) -> list_web_worker_usages::RequestBuilder {
+            list_web_worker_usages::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -4394,11 +4394,11 @@ pub mod app_service_environments {
         use super::models;
         type Response = models::AppServiceEnvironmentCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -4468,12 +4468,12 @@ pub mod app_service_environments {
         use super::models;
         type Response = models::AppServiceEnvironmentCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -4544,13 +4544,13 @@ pub mod app_service_environments {
         use super::models;
         type Response = models::AppServiceEnvironmentResource;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -4601,14 +4601,14 @@ pub mod app_service_environments {
             Accepted202(models::AppServiceEnvironmentResource),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) hosting_environment_envelope: models::AppServiceEnvironmentResource,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -4671,14 +4671,14 @@ pub mod app_service_environments {
             Accepted202(models::AppServiceEnvironmentResource),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) hosting_environment_envelope: models::AppServiceEnvironmentPatchResource,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -4739,14 +4739,14 @@ pub mod app_service_environments {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
             pub(crate) force_delete: Option<bool>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Specify <code>true</code> to force the deletion even if the App Service Environment contains resources. The default is <code>false</code>."]
             pub fn force_delete(mut self, force_delete: bool) -> Self {
                 self.force_delete = Some(force_delete);
@@ -4800,13 +4800,13 @@ pub mod app_service_environments {
         use super::models;
         type Response = models::StampCapacityCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -4878,13 +4878,13 @@ pub mod app_service_environments {
         use super::models;
         type Response = models::AddressResponse;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -4943,14 +4943,14 @@ pub mod app_service_environments {
             }
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) vnet_info: models::VirtualNetworkProfile,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -5028,13 +5028,13 @@ pub mod app_service_environments {
         use super::models;
         type Response = models::AseV3NetworkingConfiguration;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -5074,14 +5074,14 @@ pub mod app_service_environments {
         use super::models;
         type Response = models::AseV3NetworkingConfiguration;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) ase_networking_configuration: models::AseV3NetworkingConfiguration,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -5122,13 +5122,13 @@ pub mod app_service_environments {
         use super::models;
         type Response = Vec<models::HostingEnvironmentDiagnostics>;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -5174,14 +5174,14 @@ pub mod app_service_environments {
         use super::models;
         type Response = models::HostingEnvironmentDiagnostics;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) diagnostics_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -5228,13 +5228,13 @@ pub mod app_service_environments {
         use super::models;
         type Response = models::InboundEnvironmentEndpointCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -5300,13 +5300,13 @@ pub mod app_service_environments {
         use super::models;
         type Response = models::WorkerPoolCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -5378,13 +5378,13 @@ pub mod app_service_environments {
         use super::models;
         type Response = models::WorkerPoolResource;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -5434,14 +5434,14 @@ pub mod app_service_environments {
             Accepted202(models::WorkerPoolResource),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) multi_role_pool_envelope: models::WorkerPoolResource,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -5498,14 +5498,14 @@ pub mod app_service_environments {
             Accepted202(models::WorkerPoolResource),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) multi_role_pool_envelope: models::WorkerPoolResource,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -5557,14 +5557,14 @@ pub mod app_service_environments {
         use super::models;
         type Response = models::ResourceMetricDefinitionCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) instance: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -5630,13 +5630,13 @@ pub mod app_service_environments {
         use super::models;
         type Response = models::ResourceMetricDefinitionCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -5702,13 +5702,13 @@ pub mod app_service_environments {
         use super::models;
         type Response = models::SkuInfoCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -5774,13 +5774,13 @@ pub mod app_service_environments {
         use super::models;
         type Response = models::UsageCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -5846,13 +5846,13 @@ pub mod app_service_environments {
         use super::models;
         type Response = Vec<models::Operation>;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -5898,13 +5898,13 @@ pub mod app_service_environments {
         use super::models;
         type Response = models::OutboundEnvironmentEndpointCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -5970,13 +5970,13 @@ pub mod app_service_environments {
         use super::models;
         type Response = models::PrivateEndpointConnectionCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -6042,14 +6042,14 @@ pub mod app_service_environments {
         use super::models;
         type Response = models::RemotePrivateEndpointConnectionArmResource;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) private_endpoint_connection_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -6093,7 +6093,7 @@ pub mod app_service_environments {
             Accepted202(models::RemotePrivateEndpointConnectionArmResource),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -6101,7 +6101,7 @@ pub mod app_service_environments {
             pub(crate) private_endpoint_wrapper: models::PrivateLinkConnectionApprovalRequestResource,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -6153,14 +6153,14 @@ pub mod app_service_environments {
             NoContent204(serde_json::Value),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) private_endpoint_connection_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -6211,13 +6211,13 @@ pub mod app_service_environments {
         use super::models;
         type Response = models::PrivateLinkResourcesWrapper;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -6263,13 +6263,13 @@ pub mod app_service_environments {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -6325,13 +6325,13 @@ pub mod app_service_environments {
             }
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -6409,13 +6409,13 @@ pub mod app_service_environments {
         use super::models;
         type Response = models::AppServicePlanCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -6487,14 +6487,14 @@ pub mod app_service_environments {
         use super::models;
         type Response = models::WebAppCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
             pub(crate) properties_to_include: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Comma separated list of app properties to include."]
             pub fn properties_to_include(mut self, properties_to_include: impl Into<String>) -> Self {
                 self.properties_to_include = Some(properties_to_include.into());
@@ -6589,13 +6589,13 @@ pub mod app_service_environments {
             }
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -6673,14 +6673,14 @@ pub mod app_service_environments {
         use super::models;
         type Response = models::CsmUsageQuotaCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
             pub(crate) filter: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Return only usages/metrics specified in the filter. Filter conforms to odata syntax. Example: $filter=(name.value eq 'Metric1' or name.value eq 'Metric2') and startTime eq 2014-01-01T00:00:00Z and endTime eq 2014-12-31T23:59:59Z and timeGrain eq duration'[Hour|Minute|Day]'."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -6760,13 +6760,13 @@ pub mod app_service_environments {
         use super::models;
         type Response = models::WorkerPoolCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -6838,14 +6838,14 @@ pub mod app_service_environments {
         use super::models;
         type Response = models::WorkerPoolResource;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) worker_pool_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -6896,7 +6896,7 @@ pub mod app_service_environments {
             Accepted202(models::WorkerPoolResource),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -6904,7 +6904,7 @@ pub mod app_service_environments {
             pub(crate) worker_pool_envelope: models::WorkerPoolResource,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -6962,7 +6962,7 @@ pub mod app_service_environments {
             Accepted202(models::WorkerPoolResource),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -6970,7 +6970,7 @@ pub mod app_service_environments {
             pub(crate) worker_pool_envelope: models::WorkerPoolResource,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -7023,7 +7023,7 @@ pub mod app_service_environments {
         use super::models;
         type Response = models::ResourceMetricDefinitionCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -7031,7 +7031,7 @@ pub mod app_service_environments {
             pub(crate) instance: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -7097,14 +7097,14 @@ pub mod app_service_environments {
         use super::models;
         type Response = models::ResourceMetricDefinitionCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) worker_pool_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -7170,14 +7170,14 @@ pub mod app_service_environments {
         use super::models;
         type Response = models::SkuInfoCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) worker_pool_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -7250,14 +7250,14 @@ pub mod app_service_environments {
         use super::models;
         type Response = models::UsageCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) worker_pool_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -7336,8 +7336,8 @@ pub mod app_service_plans {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
-        pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
-            list::Builder {
+        pub fn list(&self, subscription_id: impl Into<String>) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 detailed: None,
@@ -7353,8 +7353,8 @@ pub mod app_service_plans {
             &self,
             resource_group_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_by_resource_group::Builder {
-            list_by_resource_group::Builder {
+        ) -> list_by_resource_group::RequestBuilder {
+            list_by_resource_group::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 subscription_id: subscription_id.into(),
@@ -7372,8 +7372,8 @@ pub mod app_service_plans {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -7394,8 +7394,8 @@ pub mod app_service_plans {
             name: impl Into<String>,
             app_service_plan: impl Into<models::AppServicePlan>,
             subscription_id: impl Into<String>,
-        ) -> create_or_update::Builder {
-            create_or_update::Builder {
+        ) -> create_or_update::RequestBuilder {
+            create_or_update::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -7417,8 +7417,8 @@ pub mod app_service_plans {
             name: impl Into<String>,
             app_service_plan: impl Into<models::AppServicePlanPatchResource>,
             subscription_id: impl Into<String>,
-        ) -> update::Builder {
-            update::Builder {
+        ) -> update::RequestBuilder {
+            update::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -7438,8 +7438,8 @@ pub mod app_service_plans {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> delete::Builder {
-            delete::Builder {
+        ) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -7458,8 +7458,8 @@ pub mod app_service_plans {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_capabilities::Builder {
-            list_capabilities::Builder {
+        ) -> list_capabilities::RequestBuilder {
+            list_capabilities::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -7482,8 +7482,8 @@ pub mod app_service_plans {
             namespace_name: impl Into<String>,
             relay_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_hybrid_connection::Builder {
-            get_hybrid_connection::Builder {
+        ) -> get_hybrid_connection::RequestBuilder {
+            get_hybrid_connection::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -7508,8 +7508,8 @@ pub mod app_service_plans {
             namespace_name: impl Into<String>,
             relay_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> delete_hybrid_connection::Builder {
-            delete_hybrid_connection::Builder {
+        ) -> delete_hybrid_connection::RequestBuilder {
+            delete_hybrid_connection::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -7534,8 +7534,8 @@ pub mod app_service_plans {
             namespace_name: impl Into<String>,
             relay_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_hybrid_connection_keys::Builder {
-            list_hybrid_connection_keys::Builder {
+        ) -> list_hybrid_connection_keys::RequestBuilder {
+            list_hybrid_connection_keys::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -7560,8 +7560,8 @@ pub mod app_service_plans {
             namespace_name: impl Into<String>,
             relay_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_web_apps_by_hybrid_connection::Builder {
-            list_web_apps_by_hybrid_connection::Builder {
+        ) -> list_web_apps_by_hybrid_connection::RequestBuilder {
+            list_web_apps_by_hybrid_connection::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -7582,8 +7582,8 @@ pub mod app_service_plans {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_hybrid_connection_plan_limit::Builder {
-            get_hybrid_connection_plan_limit::Builder {
+        ) -> get_hybrid_connection_plan_limit::RequestBuilder {
+            get_hybrid_connection_plan_limit::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -7602,8 +7602,8 @@ pub mod app_service_plans {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_hybrid_connections::Builder {
-            list_hybrid_connections::Builder {
+        ) -> list_hybrid_connections::RequestBuilder {
+            list_hybrid_connections::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -7622,8 +7622,8 @@ pub mod app_service_plans {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> restart_web_apps::Builder {
-            restart_web_apps::Builder {
+        ) -> restart_web_apps::RequestBuilder {
+            restart_web_apps::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -7643,8 +7643,8 @@ pub mod app_service_plans {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_web_apps::Builder {
-            list_web_apps::Builder {
+        ) -> list_web_apps::RequestBuilder {
+            list_web_apps::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -7666,8 +7666,8 @@ pub mod app_service_plans {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_server_farm_skus::Builder {
-            get_server_farm_skus::Builder {
+        ) -> get_server_farm_skus::RequestBuilder {
+            get_server_farm_skus::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -7686,8 +7686,8 @@ pub mod app_service_plans {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_usages::Builder {
-            list_usages::Builder {
+        ) -> list_usages::RequestBuilder {
+            list_usages::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -7707,8 +7707,8 @@ pub mod app_service_plans {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_vnets::Builder {
-            list_vnets::Builder {
+        ) -> list_vnets::RequestBuilder {
+            list_vnets::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -7729,8 +7729,8 @@ pub mod app_service_plans {
             name: impl Into<String>,
             vnet_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_vnet_from_server_farm::Builder {
-            get_vnet_from_server_farm::Builder {
+        ) -> get_vnet_from_server_farm::RequestBuilder {
+            get_vnet_from_server_farm::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -7754,8 +7754,8 @@ pub mod app_service_plans {
             vnet_name: impl Into<String>,
             gateway_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_vnet_gateway::Builder {
-            get_vnet_gateway::Builder {
+        ) -> get_vnet_gateway::RequestBuilder {
+            get_vnet_gateway::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -7782,8 +7782,8 @@ pub mod app_service_plans {
             gateway_name: impl Into<String>,
             connection_envelope: impl Into<models::VnetGateway>,
             subscription_id: impl Into<String>,
-        ) -> update_vnet_gateway::Builder {
-            update_vnet_gateway::Builder {
+        ) -> update_vnet_gateway::RequestBuilder {
+            update_vnet_gateway::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -7807,8 +7807,8 @@ pub mod app_service_plans {
             name: impl Into<String>,
             vnet_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_routes_for_vnet::Builder {
-            list_routes_for_vnet::Builder {
+        ) -> list_routes_for_vnet::RequestBuilder {
+            list_routes_for_vnet::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -7832,8 +7832,8 @@ pub mod app_service_plans {
             vnet_name: impl Into<String>,
             route_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_route_for_vnet::Builder {
-            get_route_for_vnet::Builder {
+        ) -> get_route_for_vnet::RequestBuilder {
+            get_route_for_vnet::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -7860,8 +7860,8 @@ pub mod app_service_plans {
             route_name: impl Into<String>,
             route: impl Into<models::VnetRoute>,
             subscription_id: impl Into<String>,
-        ) -> create_or_update_vnet_route::Builder {
-            create_or_update_vnet_route::Builder {
+        ) -> create_or_update_vnet_route::RequestBuilder {
+            create_or_update_vnet_route::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -7889,8 +7889,8 @@ pub mod app_service_plans {
             route_name: impl Into<String>,
             route: impl Into<models::VnetRoute>,
             subscription_id: impl Into<String>,
-        ) -> update_vnet_route::Builder {
-            update_vnet_route::Builder {
+        ) -> update_vnet_route::RequestBuilder {
+            update_vnet_route::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -7916,8 +7916,8 @@ pub mod app_service_plans {
             vnet_name: impl Into<String>,
             route_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> delete_vnet_route::Builder {
-            delete_vnet_route::Builder {
+        ) -> delete_vnet_route::RequestBuilder {
+            delete_vnet_route::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -7940,8 +7940,8 @@ pub mod app_service_plans {
             name: impl Into<String>,
             worker_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> reboot_worker::Builder {
-            reboot_worker::Builder {
+        ) -> reboot_worker::RequestBuilder {
+            reboot_worker::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -7954,12 +7954,12 @@ pub mod app_service_plans {
         use super::models;
         type Response = models::AppServicePlanCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) detailed: Option<bool>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Specify <code>true</code> to return all App Service plan properties. The default is <code>false</code>, which returns a subset of the properties.\n Retrieval of all properties may increase the API latency."]
             pub fn detailed(mut self, detailed: bool) -> Self {
                 self.detailed = Some(detailed);
@@ -8037,12 +8037,12 @@ pub mod app_service_plans {
         use super::models;
         type Response = models::AppServicePlanCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -8113,13 +8113,13 @@ pub mod app_service_plans {
         use super::models;
         type Response = models::AppServicePlan;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -8169,14 +8169,14 @@ pub mod app_service_plans {
             Accepted202(models::AppServicePlan),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) app_service_plan: models::AppServicePlan,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -8233,14 +8233,14 @@ pub mod app_service_plans {
             Accepted202(models::AppServicePlan),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) app_service_plan: models::AppServicePlanPatchResource,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -8296,13 +8296,13 @@ pub mod app_service_plans {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -8345,13 +8345,13 @@ pub mod app_service_plans {
         use super::models;
         type Response = Vec<models::Capability>;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -8397,7 +8397,7 @@ pub mod app_service_plans {
         use super::models;
         type Response = models::HybridConnection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -8405,7 +8405,7 @@ pub mod app_service_plans {
             pub(crate) relay_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -8449,7 +8449,7 @@ pub mod app_service_plans {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -8457,7 +8457,7 @@ pub mod app_service_plans {
             pub(crate) relay_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -8494,7 +8494,7 @@ pub mod app_service_plans {
         use super::models;
         type Response = models::HybridConnectionKey;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -8502,7 +8502,7 @@ pub mod app_service_plans {
             pub(crate) relay_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -8543,7 +8543,7 @@ pub mod app_service_plans {
         use super::models;
         type Response = models::ResourceCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -8551,7 +8551,7 @@ pub mod app_service_plans {
             pub(crate) relay_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -8617,13 +8617,13 @@ pub mod app_service_plans {
         use super::models;
         type Response = models::HybridConnectionLimits;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -8669,13 +8669,13 @@ pub mod app_service_plans {
         use super::models;
         type Response = models::HybridConnectionCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -8747,14 +8747,14 @@ pub mod app_service_plans {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
             pub(crate) soft_restart: Option<bool>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Specify <code>true</code> to perform a soft restart, applies the configuration settings and restarts the apps if necessary. The default is <code>false</code>, which always restarts and reprovisions the apps"]
             pub fn soft_restart(mut self, soft_restart: bool) -> Self {
                 self.soft_restart = Some(soft_restart);
@@ -8807,7 +8807,7 @@ pub mod app_service_plans {
         use super::models;
         type Response = models::WebAppCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -8816,7 +8816,7 @@ pub mod app_service_plans {
             pub(crate) filter: Option<String>,
             pub(crate) top: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Skip to a web app in the list of webapps associated with app service plan. If specified, the resulting list will contain web apps starting from (including) the skipToken. Otherwise, the resulting list contains web apps from the start of the list"]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());
@@ -8912,13 +8912,13 @@ pub mod app_service_plans {
         use super::models;
         type Response = serde_json::Value;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -8964,14 +8964,14 @@ pub mod app_service_plans {
         use super::models;
         type Response = models::CsmUsageQuotaCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
             pub(crate) filter: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Return only usages/metrics specified in the filter. Filter conforms to odata syntax. Example: $filter=(name.value eq 'Metric1' or name.value eq 'Metric2')."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -9051,13 +9051,13 @@ pub mod app_service_plans {
         use super::models;
         type Response = Vec<models::VnetInfo>;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -9103,14 +9103,14 @@ pub mod app_service_plans {
         use super::models;
         type Response = models::VnetInfo;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) vnet_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -9157,7 +9157,7 @@ pub mod app_service_plans {
         use super::models;
         type Response = models::VnetGateway;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -9165,7 +9165,7 @@ pub mod app_service_plans {
             pub(crate) gateway_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -9205,7 +9205,7 @@ pub mod app_service_plans {
         use super::models;
         type Response = models::VnetGateway;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -9214,7 +9214,7 @@ pub mod app_service_plans {
             pub(crate) connection_envelope: models::VnetGateway,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -9255,14 +9255,14 @@ pub mod app_service_plans {
         use super::models;
         type Response = Vec<models::VnetRoute>;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) vnet_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -9302,7 +9302,7 @@ pub mod app_service_plans {
         use super::models;
         type Response = Vec<models::VnetRoute>;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -9310,7 +9310,7 @@ pub mod app_service_plans {
             pub(crate) route_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -9350,7 +9350,7 @@ pub mod app_service_plans {
         use super::models;
         type Response = models::VnetRoute;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -9359,7 +9359,7 @@ pub mod app_service_plans {
             pub(crate) route: models::VnetRoute,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -9400,7 +9400,7 @@ pub mod app_service_plans {
         use super::models;
         type Response = models::VnetRoute;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -9409,7 +9409,7 @@ pub mod app_service_plans {
             pub(crate) route: models::VnetRoute,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -9450,7 +9450,7 @@ pub mod app_service_plans {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -9458,7 +9458,7 @@ pub mod app_service_plans {
             pub(crate) route_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -9494,14 +9494,14 @@ pub mod app_service_plans {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) worker_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -9551,8 +9551,8 @@ pub mod certificates {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
-        pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
-            list::Builder {
+        pub fn list(&self, subscription_id: impl Into<String>) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 filter: None,
@@ -9568,8 +9568,8 @@ pub mod certificates {
             &self,
             resource_group_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_by_resource_group::Builder {
-            list_by_resource_group::Builder {
+        ) -> list_by_resource_group::RequestBuilder {
+            list_by_resource_group::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 subscription_id: subscription_id.into(),
@@ -9587,8 +9587,8 @@ pub mod certificates {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -9609,8 +9609,8 @@ pub mod certificates {
             name: impl Into<String>,
             certificate_envelope: impl Into<models::Certificate>,
             subscription_id: impl Into<String>,
-        ) -> create_or_update::Builder {
-            create_or_update::Builder {
+        ) -> create_or_update::RequestBuilder {
+            create_or_update::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -9632,8 +9632,8 @@ pub mod certificates {
             name: impl Into<String>,
             certificate_envelope: impl Into<models::CertificatePatchResource>,
             subscription_id: impl Into<String>,
-        ) -> update::Builder {
-            update::Builder {
+        ) -> update::RequestBuilder {
+            update::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -9653,8 +9653,8 @@ pub mod certificates {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> delete::Builder {
-            delete::Builder {
+        ) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -9666,12 +9666,12 @@ pub mod certificates {
         use super::models;
         type Response = models::CertificateCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) filter: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Return only information specified in the filter (using OData syntax). For example: $filter=KeyVaultId eq 'KeyVaultId'"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -9749,12 +9749,12 @@ pub mod certificates {
         use super::models;
         type Response = models::CertificateCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -9825,13 +9825,13 @@ pub mod certificates {
         use super::models;
         type Response = models::Certificate;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -9877,14 +9877,14 @@ pub mod certificates {
         use super::models;
         type Response = models::Certificate;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) certificate_envelope: models::Certificate,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -9931,14 +9931,14 @@ pub mod certificates {
         use super::models;
         type Response = models::Certificate;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) certificate_envelope: models::CertificatePatchResource,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -9989,13 +9989,13 @@ pub mod certificates {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -10044,8 +10044,8 @@ pub mod deleted_web_apps {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
-        pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
-            list::Builder {
+        pub fn list(&self, subscription_id: impl Into<String>) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
@@ -10055,8 +10055,12 @@ pub mod deleted_web_apps {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
-        pub fn list_by_location(&self, location: impl Into<String>, subscription_id: impl Into<String>) -> list_by_location::Builder {
-            list_by_location::Builder {
+        pub fn list_by_location(
+            &self,
+            location: impl Into<String>,
+            subscription_id: impl Into<String>,
+        ) -> list_by_location::RequestBuilder {
+            list_by_location::RequestBuilder {
                 client: self.0.clone(),
                 location: location.into(),
                 subscription_id: subscription_id.into(),
@@ -10073,8 +10077,8 @@ pub mod deleted_web_apps {
             location: impl Into<String>,
             deleted_site_id: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_deleted_web_app_by_location::Builder {
-            get_deleted_web_app_by_location::Builder {
+        ) -> get_deleted_web_app_by_location::RequestBuilder {
+            get_deleted_web_app_by_location::RequestBuilder {
                 client: self.0.clone(),
                 location: location.into(),
                 deleted_site_id: deleted_site_id.into(),
@@ -10086,11 +10090,11 @@ pub mod deleted_web_apps {
         use super::models;
         type Response = models::DeletedWebAppCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -10160,12 +10164,12 @@ pub mod deleted_web_apps {
         use super::models;
         type Response = models::DeletedWebAppCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) location: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -10236,13 +10240,13 @@ pub mod deleted_web_apps {
         use super::models;
         type Response = models::DeletedSite;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) location: String,
             pub(crate) deleted_site_id: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -10301,8 +10305,8 @@ pub mod diagnostics {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_hosting_environment_detector_responses::Builder {
-            list_hosting_environment_detector_responses::Builder {
+        ) -> list_hosting_environment_detector_responses::RequestBuilder {
+            list_hosting_environment_detector_responses::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -10323,8 +10327,8 @@ pub mod diagnostics {
             name: impl Into<String>,
             detector_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_hosting_environment_detector_response::Builder {
-            get_hosting_environment_detector_response::Builder {
+        ) -> get_hosting_environment_detector_response::RequestBuilder {
+            get_hosting_environment_detector_response::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -10347,8 +10351,8 @@ pub mod diagnostics {
             resource_group_name: impl Into<String>,
             site_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_site_detector_responses::Builder {
-            list_site_detector_responses::Builder {
+        ) -> list_site_detector_responses::RequestBuilder {
+            list_site_detector_responses::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 site_name: site_name.into(),
@@ -10369,8 +10373,8 @@ pub mod diagnostics {
             site_name: impl Into<String>,
             detector_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_site_detector_response::Builder {
-            get_site_detector_response::Builder {
+        ) -> get_site_detector_response::RequestBuilder {
+            get_site_detector_response::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 site_name: site_name.into(),
@@ -10393,8 +10397,8 @@ pub mod diagnostics {
             resource_group_name: impl Into<String>,
             site_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_site_diagnostic_categories::Builder {
-            list_site_diagnostic_categories::Builder {
+        ) -> list_site_diagnostic_categories::RequestBuilder {
+            list_site_diagnostic_categories::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 site_name: site_name.into(),
@@ -10415,8 +10419,8 @@ pub mod diagnostics {
             site_name: impl Into<String>,
             diagnostic_category: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_site_diagnostic_category::Builder {
-            get_site_diagnostic_category::Builder {
+        ) -> get_site_diagnostic_category::RequestBuilder {
+            get_site_diagnostic_category::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 site_name: site_name.into(),
@@ -10438,8 +10442,8 @@ pub mod diagnostics {
             site_name: impl Into<String>,
             diagnostic_category: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_site_analyses::Builder {
-            list_site_analyses::Builder {
+        ) -> list_site_analyses::RequestBuilder {
+            list_site_analyses::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 site_name: site_name.into(),
@@ -10463,8 +10467,8 @@ pub mod diagnostics {
             diagnostic_category: impl Into<String>,
             analysis_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_site_analysis::Builder {
-            get_site_analysis::Builder {
+        ) -> get_site_analysis::RequestBuilder {
+            get_site_analysis::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 site_name: site_name.into(),
@@ -10489,8 +10493,8 @@ pub mod diagnostics {
             diagnostic_category: impl Into<String>,
             analysis_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> execute_site_analysis::Builder {
-            execute_site_analysis::Builder {
+        ) -> execute_site_analysis::RequestBuilder {
+            execute_site_analysis::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 site_name: site_name.into(),
@@ -10516,8 +10520,8 @@ pub mod diagnostics {
             site_name: impl Into<String>,
             diagnostic_category: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_site_detectors::Builder {
-            list_site_detectors::Builder {
+        ) -> list_site_detectors::RequestBuilder {
+            list_site_detectors::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 site_name: site_name.into(),
@@ -10541,8 +10545,8 @@ pub mod diagnostics {
             diagnostic_category: impl Into<String>,
             detector_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_site_detector::Builder {
-            get_site_detector::Builder {
+        ) -> get_site_detector::RequestBuilder {
+            get_site_detector::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 site_name: site_name.into(),
@@ -10567,8 +10571,8 @@ pub mod diagnostics {
             detector_name: impl Into<String>,
             diagnostic_category: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> execute_site_detector::Builder {
-            execute_site_detector::Builder {
+        ) -> execute_site_detector::RequestBuilder {
+            execute_site_detector::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 site_name: site_name.into(),
@@ -10594,8 +10598,8 @@ pub mod diagnostics {
             site_name: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_site_detector_responses_slot::Builder {
-            list_site_detector_responses_slot::Builder {
+        ) -> list_site_detector_responses_slot::RequestBuilder {
+            list_site_detector_responses_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 site_name: site_name.into(),
@@ -10619,8 +10623,8 @@ pub mod diagnostics {
             detector_name: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_site_detector_response_slot::Builder {
-            get_site_detector_response_slot::Builder {
+        ) -> get_site_detector_response_slot::RequestBuilder {
+            get_site_detector_response_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 site_name: site_name.into(),
@@ -10646,8 +10650,8 @@ pub mod diagnostics {
             site_name: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_site_diagnostic_categories_slot::Builder {
-            list_site_diagnostic_categories_slot::Builder {
+        ) -> list_site_diagnostic_categories_slot::RequestBuilder {
+            list_site_diagnostic_categories_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 site_name: site_name.into(),
@@ -10671,8 +10675,8 @@ pub mod diagnostics {
             diagnostic_category: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_site_diagnostic_category_slot::Builder {
-            get_site_diagnostic_category_slot::Builder {
+        ) -> get_site_diagnostic_category_slot::RequestBuilder {
+            get_site_diagnostic_category_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 site_name: site_name.into(),
@@ -10697,8 +10701,8 @@ pub mod diagnostics {
             diagnostic_category: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_site_analyses_slot::Builder {
-            list_site_analyses_slot::Builder {
+        ) -> list_site_analyses_slot::RequestBuilder {
+            list_site_analyses_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 site_name: site_name.into(),
@@ -10725,8 +10729,8 @@ pub mod diagnostics {
             analysis_name: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_site_analysis_slot::Builder {
-            get_site_analysis_slot::Builder {
+        ) -> get_site_analysis_slot::RequestBuilder {
+            get_site_analysis_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 site_name: site_name.into(),
@@ -10754,8 +10758,8 @@ pub mod diagnostics {
             analysis_name: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> execute_site_analysis_slot::Builder {
-            execute_site_analysis_slot::Builder {
+        ) -> execute_site_analysis_slot::RequestBuilder {
+            execute_site_analysis_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 site_name: site_name.into(),
@@ -10784,8 +10788,8 @@ pub mod diagnostics {
             diagnostic_category: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_site_detectors_slot::Builder {
-            list_site_detectors_slot::Builder {
+        ) -> list_site_detectors_slot::RequestBuilder {
+            list_site_detectors_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 site_name: site_name.into(),
@@ -10812,8 +10816,8 @@ pub mod diagnostics {
             detector_name: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_site_detector_slot::Builder {
-            get_site_detector_slot::Builder {
+        ) -> get_site_detector_slot::RequestBuilder {
+            get_site_detector_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 site_name: site_name.into(),
@@ -10841,8 +10845,8 @@ pub mod diagnostics {
             diagnostic_category: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> execute_site_detector_slot::Builder {
-            execute_site_detector_slot::Builder {
+        ) -> execute_site_detector_slot::RequestBuilder {
+            execute_site_detector_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 site_name: site_name.into(),
@@ -10860,13 +10864,13 @@ pub mod diagnostics {
         use super::models;
         type Response = models::DetectorResponseCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -10938,7 +10942,7 @@ pub mod diagnostics {
         use super::models;
         type Response = models::DetectorResponse;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -10948,7 +10952,7 @@ pub mod diagnostics {
             pub(crate) end_time: Option<time::OffsetDateTime>,
             pub(crate) time_grain: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Start Time"]
             pub fn start_time(mut self, start_time: impl Into<time::OffsetDateTime>) -> Self {
                 self.start_time = Some(start_time.into());
@@ -11019,13 +11023,13 @@ pub mod diagnostics {
         use super::models;
         type Response = models::DetectorResponseCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) site_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -11097,7 +11101,7 @@ pub mod diagnostics {
         use super::models;
         type Response = models::DetectorResponse;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) site_name: String,
@@ -11107,7 +11111,7 @@ pub mod diagnostics {
             pub(crate) end_time: Option<time::OffsetDateTime>,
             pub(crate) time_grain: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Start Time"]
             pub fn start_time(mut self, start_time: impl Into<time::OffsetDateTime>) -> Self {
                 self.start_time = Some(start_time.into());
@@ -11178,13 +11182,13 @@ pub mod diagnostics {
         use super::models;
         type Response = models::DiagnosticCategoryCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) site_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -11256,14 +11260,14 @@ pub mod diagnostics {
         use super::models;
         type Response = models::DiagnosticCategory;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) site_name: String,
             pub(crate) diagnostic_category: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -11310,14 +11314,14 @@ pub mod diagnostics {
         use super::models;
         type Response = models::DiagnosticAnalysisCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) site_name: String,
             pub(crate) diagnostic_category: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -11390,7 +11394,7 @@ pub mod diagnostics {
         use super::models;
         type Response = models::AnalysisDefinition;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) site_name: String,
@@ -11398,7 +11402,7 @@ pub mod diagnostics {
             pub(crate) analysis_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -11446,7 +11450,7 @@ pub mod diagnostics {
         use super::models;
         type Response = models::DiagnosticAnalysis;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) site_name: String,
@@ -11457,7 +11461,7 @@ pub mod diagnostics {
             pub(crate) end_time: Option<time::OffsetDateTime>,
             pub(crate) time_grain: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Start Time"]
             pub fn start_time(mut self, start_time: impl Into<time::OffsetDateTime>) -> Self {
                 self.start_time = Some(start_time.into());
@@ -11530,14 +11534,14 @@ pub mod diagnostics {
         use super::models;
         type Response = models::DiagnosticDetectorCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) site_name: String,
             pub(crate) diagnostic_category: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -11610,7 +11614,7 @@ pub mod diagnostics {
         use super::models;
         type Response = models::DetectorDefinition;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) site_name: String,
@@ -11618,7 +11622,7 @@ pub mod diagnostics {
             pub(crate) detector_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -11666,7 +11670,7 @@ pub mod diagnostics {
         use super::models;
         type Response = models::DiagnosticDetectorResponse;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) site_name: String,
@@ -11677,7 +11681,7 @@ pub mod diagnostics {
             pub(crate) end_time: Option<time::OffsetDateTime>,
             pub(crate) time_grain: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Start Time"]
             pub fn start_time(mut self, start_time: impl Into<time::OffsetDateTime>) -> Self {
                 self.start_time = Some(start_time.into());
@@ -11750,14 +11754,14 @@ pub mod diagnostics {
         use super::models;
         type Response = models::DetectorResponseCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) site_name: String,
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -11830,7 +11834,7 @@ pub mod diagnostics {
         use super::models;
         type Response = models::DetectorResponse;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) site_name: String,
@@ -11841,7 +11845,7 @@ pub mod diagnostics {
             pub(crate) end_time: Option<time::OffsetDateTime>,
             pub(crate) time_grain: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Start Time"]
             pub fn start_time(mut self, start_time: impl Into<time::OffsetDateTime>) -> Self {
                 self.start_time = Some(start_time.into());
@@ -11913,14 +11917,14 @@ pub mod diagnostics {
         use super::models;
         type Response = models::DiagnosticCategoryCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) site_name: String,
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -11993,7 +11997,7 @@ pub mod diagnostics {
         use super::models;
         type Response = models::DiagnosticCategory;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) site_name: String,
@@ -12001,7 +12005,7 @@ pub mod diagnostics {
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -12049,7 +12053,7 @@ pub mod diagnostics {
         use super::models;
         type Response = models::DiagnosticAnalysisCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) site_name: String,
@@ -12057,7 +12061,7 @@ pub mod diagnostics {
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -12131,7 +12135,7 @@ pub mod diagnostics {
         use super::models;
         type Response = models::AnalysisDefinition;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) site_name: String,
@@ -12140,7 +12144,7 @@ pub mod diagnostics {
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -12189,7 +12193,7 @@ pub mod diagnostics {
         use super::models;
         type Response = models::DiagnosticAnalysis;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) site_name: String,
@@ -12201,7 +12205,7 @@ pub mod diagnostics {
             pub(crate) end_time: Option<time::OffsetDateTime>,
             pub(crate) time_grain: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Start Time"]
             pub fn start_time(mut self, start_time: impl Into<time::OffsetDateTime>) -> Self {
                 self.start_time = Some(start_time.into());
@@ -12266,7 +12270,7 @@ pub mod diagnostics {
         use super::models;
         type Response = models::DiagnosticDetectorCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) site_name: String,
@@ -12274,7 +12278,7 @@ pub mod diagnostics {
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -12348,7 +12352,7 @@ pub mod diagnostics {
         use super::models;
         type Response = models::DetectorDefinition;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) site_name: String,
@@ -12357,7 +12361,7 @@ pub mod diagnostics {
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -12406,7 +12410,7 @@ pub mod diagnostics {
         use super::models;
         type Response = models::DiagnosticDetectorResponse;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) site_name: String,
@@ -12418,7 +12422,7 @@ pub mod diagnostics {
             pub(crate) end_time: Option<time::OffsetDateTime>,
             pub(crate) time_grain: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Start Time"]
             pub fn start_time(mut self, start_time: impl Into<time::OffsetDateTime>) -> Self {
                 self.start_time = Some(start_time.into());
@@ -12494,8 +12498,8 @@ pub mod global {
             &self,
             deleted_site_id: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_deleted_web_app::Builder {
-            get_deleted_web_app::Builder {
+        ) -> get_deleted_web_app::RequestBuilder {
+            get_deleted_web_app::RequestBuilder {
                 client: self.0.clone(),
                 deleted_site_id: deleted_site_id.into(),
                 subscription_id: subscription_id.into(),
@@ -12511,8 +12515,8 @@ pub mod global {
             &self,
             deleted_site_id: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_deleted_web_app_snapshots::Builder {
-            get_deleted_web_app_snapshots::Builder {
+        ) -> get_deleted_web_app_snapshots::RequestBuilder {
+            get_deleted_web_app_snapshots::RequestBuilder {
                 client: self.0.clone(),
                 deleted_site_id: deleted_site_id.into(),
                 subscription_id: subscription_id.into(),
@@ -12530,8 +12534,8 @@ pub mod global {
             location: impl Into<String>,
             operation_id: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_subscription_operation_with_async_response::Builder {
-            get_subscription_operation_with_async_response::Builder {
+        ) -> get_subscription_operation_with_async_response::RequestBuilder {
+            get_subscription_operation_with_async_response::RequestBuilder {
                 client: self.0.clone(),
                 location: location.into(),
                 operation_id: operation_id.into(),
@@ -12543,12 +12547,12 @@ pub mod global {
         use super::models;
         type Response = models::DeletedSite;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) deleted_site_id: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -12593,12 +12597,12 @@ pub mod global {
         use super::models;
         type Response = Vec<models::Snapshot>;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) deleted_site_id: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -12643,13 +12647,13 @@ pub mod global {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) location: String,
             pub(crate) operation_id: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -12694,16 +12698,16 @@ pub mod provider {
     impl Client {
         #[doc = "Get available application frameworks and their versions"]
         #[doc = "Get available application frameworks and their versions"]
-        pub fn get_available_stacks(&self) -> get_available_stacks::Builder {
-            get_available_stacks::Builder {
+        pub fn get_available_stacks(&self) -> get_available_stacks::RequestBuilder {
+            get_available_stacks::RequestBuilder {
                 client: self.0.clone(),
                 os_type_selected: None,
             }
         }
         #[doc = "Get available Function app frameworks and their versions"]
         #[doc = "Get available Function app frameworks and their versions"]
-        pub fn get_function_app_stacks(&self) -> get_function_app_stacks::Builder {
-            get_function_app_stacks::Builder {
+        pub fn get_function_app_stacks(&self) -> get_function_app_stacks::RequestBuilder {
+            get_function_app_stacks::RequestBuilder {
                 client: self.0.clone(),
                 stack_os_type: None,
             }
@@ -12713,8 +12717,11 @@ pub mod provider {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `location`: Function App stack location."]
-        pub fn get_function_app_stacks_for_location(&self, location: impl Into<String>) -> get_function_app_stacks_for_location::Builder {
-            get_function_app_stacks_for_location::Builder {
+        pub fn get_function_app_stacks_for_location(
+            &self,
+            location: impl Into<String>,
+        ) -> get_function_app_stacks_for_location::RequestBuilder {
+            get_function_app_stacks_for_location::RequestBuilder {
                 client: self.0.clone(),
                 location: location.into(),
                 stack_os_type: None,
@@ -12725,8 +12732,8 @@ pub mod provider {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `location`: Web App stack location."]
-        pub fn get_web_app_stacks_for_location(&self, location: impl Into<String>) -> get_web_app_stacks_for_location::Builder {
-            get_web_app_stacks_for_location::Builder {
+        pub fn get_web_app_stacks_for_location(&self, location: impl Into<String>) -> get_web_app_stacks_for_location::RequestBuilder {
+            get_web_app_stacks_for_location::RequestBuilder {
                 client: self.0.clone(),
                 location: location.into(),
                 stack_os_type: None,
@@ -12734,13 +12741,13 @@ pub mod provider {
         }
         #[doc = "Gets all available operations for the Microsoft.Web resource provider. Also exposes resource metric definitions"]
         #[doc = "Gets all available operations for the Microsoft.Web resource provider. Also exposes resource metric definitions"]
-        pub fn list_operations(&self) -> list_operations::Builder {
-            list_operations::Builder { client: self.0.clone() }
+        pub fn list_operations(&self) -> list_operations::RequestBuilder {
+            list_operations::RequestBuilder { client: self.0.clone() }
         }
         #[doc = "Get available Web app frameworks and their versions"]
         #[doc = "Get available Web app frameworks and their versions"]
-        pub fn get_web_app_stacks(&self) -> get_web_app_stacks::Builder {
-            get_web_app_stacks::Builder {
+        pub fn get_web_app_stacks(&self) -> get_web_app_stacks::RequestBuilder {
+            get_web_app_stacks::RequestBuilder {
                 client: self.0.clone(),
                 stack_os_type: None,
             }
@@ -12750,8 +12757,8 @@ pub mod provider {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
-        pub fn get_available_stacks_on_prem(&self, subscription_id: impl Into<String>) -> get_available_stacks_on_prem::Builder {
-            get_available_stacks_on_prem::Builder {
+        pub fn get_available_stacks_on_prem(&self, subscription_id: impl Into<String>) -> get_available_stacks_on_prem::RequestBuilder {
+            get_available_stacks_on_prem::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 os_type_selected: None,
@@ -12762,11 +12769,11 @@ pub mod provider {
         use super::models;
         type Response = models::ApplicationStackCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) os_type_selected: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn os_type_selected(mut self, os_type_selected: impl Into<String>) -> Self {
                 self.os_type_selected = Some(os_type_selected.into());
                 self
@@ -12840,11 +12847,11 @@ pub mod provider {
         use super::models;
         type Response = models::FunctionAppStackCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) stack_os_type: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Stack OS Type"]
             pub fn stack_os_type(mut self, stack_os_type: impl Into<String>) -> Self {
                 self.stack_os_type = Some(stack_os_type.into());
@@ -12919,12 +12926,12 @@ pub mod provider {
         use super::models;
         type Response = models::FunctionAppStackCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) location: String,
             pub(crate) stack_os_type: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Stack OS Type"]
             pub fn stack_os_type(mut self, stack_os_type: impl Into<String>) -> Self {
                 self.stack_os_type = Some(stack_os_type.into());
@@ -13002,12 +13009,12 @@ pub mod provider {
         use super::models;
         type Response = models::WebAppStackCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) location: String,
             pub(crate) stack_os_type: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Stack OS Type"]
             pub fn stack_os_type(mut self, stack_os_type: impl Into<String>) -> Self {
                 self.stack_os_type = Some(stack_os_type.into());
@@ -13085,10 +13092,10 @@ pub mod provider {
         use super::models;
         type Response = models::CsmOperationCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -13154,11 +13161,11 @@ pub mod provider {
         use super::models;
         type Response = models::WebAppStackCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) stack_os_type: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Stack OS Type"]
             pub fn stack_os_type(mut self, stack_os_type: impl Into<String>) -> Self {
                 self.stack_os_type = Some(stack_os_type.into());
@@ -13232,12 +13239,12 @@ pub mod provider {
         use super::models;
         type Response = models::ApplicationStackCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) os_type_selected: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn os_type_selected(mut self, os_type_selected: impl Into<String>) -> Self {
                 self.os_type_selected = Some(os_type_selected.into());
                 self
@@ -13320,8 +13327,8 @@ pub mod recommendations {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
-        pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
-            list::Builder {
+        pub fn list(&self, subscription_id: impl Into<String>) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 featured: None,
@@ -13333,8 +13340,8 @@ pub mod recommendations {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
-        pub fn reset_all_filters(&self, subscription_id: impl Into<String>) -> reset_all_filters::Builder {
-            reset_all_filters::Builder {
+        pub fn reset_all_filters(&self, subscription_id: impl Into<String>) -> reset_all_filters::RequestBuilder {
+            reset_all_filters::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
@@ -13349,8 +13356,8 @@ pub mod recommendations {
             &self,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> disable_recommendation_for_subscription::Builder {
-            disable_recommendation_for_subscription::Builder {
+        ) -> disable_recommendation_for_subscription::RequestBuilder {
+            disable_recommendation_for_subscription::RequestBuilder {
                 client: self.0.clone(),
                 name: name.into(),
                 subscription_id: subscription_id.into(),
@@ -13368,8 +13375,8 @@ pub mod recommendations {
             resource_group_name: impl Into<String>,
             hosting_environment_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_history_for_hosting_environment::Builder {
-            list_history_for_hosting_environment::Builder {
+        ) -> list_history_for_hosting_environment::RequestBuilder {
+            list_history_for_hosting_environment::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 hosting_environment_name: hosting_environment_name.into(),
@@ -13390,8 +13397,8 @@ pub mod recommendations {
             resource_group_name: impl Into<String>,
             hosting_environment_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_recommended_rules_for_hosting_environment::Builder {
-            list_recommended_rules_for_hosting_environment::Builder {
+        ) -> list_recommended_rules_for_hosting_environment::RequestBuilder {
+            list_recommended_rules_for_hosting_environment::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 hosting_environment_name: hosting_environment_name.into(),
@@ -13413,8 +13420,8 @@ pub mod recommendations {
             environment_name: impl Into<String>,
             hosting_environment_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> disable_all_for_hosting_environment::Builder {
-            disable_all_for_hosting_environment::Builder {
+        ) -> disable_all_for_hosting_environment::RequestBuilder {
+            disable_all_for_hosting_environment::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 environment_name: environment_name.into(),
@@ -13435,8 +13442,8 @@ pub mod recommendations {
             environment_name: impl Into<String>,
             hosting_environment_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> reset_all_filters_for_hosting_environment::Builder {
-            reset_all_filters_for_hosting_environment::Builder {
+        ) -> reset_all_filters_for_hosting_environment::RequestBuilder {
+            reset_all_filters_for_hosting_environment::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 environment_name: environment_name.into(),
@@ -13458,8 +13465,8 @@ pub mod recommendations {
             hosting_environment_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_rule_details_by_hosting_environment::Builder {
-            get_rule_details_by_hosting_environment::Builder {
+        ) -> get_rule_details_by_hosting_environment::RequestBuilder {
+            get_rule_details_by_hosting_environment::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 hosting_environment_name: hosting_environment_name.into(),
@@ -13484,8 +13491,8 @@ pub mod recommendations {
             name: impl Into<String>,
             hosting_environment_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> disable_recommendation_for_hosting_environment::Builder {
-            disable_recommendation_for_hosting_environment::Builder {
+        ) -> disable_recommendation_for_hosting_environment::RequestBuilder {
+            disable_recommendation_for_hosting_environment::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 environment_name: environment_name.into(),
@@ -13506,8 +13513,8 @@ pub mod recommendations {
             resource_group_name: impl Into<String>,
             site_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_history_for_web_app::Builder {
-            list_history_for_web_app::Builder {
+        ) -> list_history_for_web_app::RequestBuilder {
+            list_history_for_web_app::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 site_name: site_name.into(),
@@ -13528,8 +13535,8 @@ pub mod recommendations {
             resource_group_name: impl Into<String>,
             site_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_recommended_rules_for_web_app::Builder {
-            list_recommended_rules_for_web_app::Builder {
+        ) -> list_recommended_rules_for_web_app::RequestBuilder {
+            list_recommended_rules_for_web_app::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 site_name: site_name.into(),
@@ -13550,8 +13557,8 @@ pub mod recommendations {
             resource_group_name: impl Into<String>,
             site_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> disable_all_for_web_app::Builder {
-            disable_all_for_web_app::Builder {
+        ) -> disable_all_for_web_app::RequestBuilder {
+            disable_all_for_web_app::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 site_name: site_name.into(),
@@ -13570,8 +13577,8 @@ pub mod recommendations {
             resource_group_name: impl Into<String>,
             site_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> reset_all_filters_for_web_app::Builder {
-            reset_all_filters_for_web_app::Builder {
+        ) -> reset_all_filters_for_web_app::RequestBuilder {
+            reset_all_filters_for_web_app::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 site_name: site_name.into(),
@@ -13592,8 +13599,8 @@ pub mod recommendations {
             site_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_rule_details_by_web_app::Builder {
-            get_rule_details_by_web_app::Builder {
+        ) -> get_rule_details_by_web_app::RequestBuilder {
+            get_rule_details_by_web_app::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 site_name: site_name.into(),
@@ -13617,8 +13624,8 @@ pub mod recommendations {
             site_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> disable_recommendation_for_site::Builder {
-            disable_recommendation_for_site::Builder {
+        ) -> disable_recommendation_for_site::RequestBuilder {
+            disable_recommendation_for_site::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 site_name: site_name.into(),
@@ -13631,13 +13638,13 @@ pub mod recommendations {
         use super::models;
         type Response = models::RecommendationCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) featured: Option<bool>,
             pub(crate) filter: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Specify <code>true</code> to return only the most critical recommendations. The default is <code>false</code>, which returns all recommendations."]
             pub fn featured(mut self, featured: bool) -> Self {
                 self.featured = Some(featured);
@@ -13723,11 +13730,11 @@ pub mod recommendations {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -13768,12 +13775,12 @@ pub mod recommendations {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -13815,7 +13822,7 @@ pub mod recommendations {
         use super::models;
         type Response = models::RecommendationCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) hosting_environment_name: String,
@@ -13823,7 +13830,7 @@ pub mod recommendations {
             pub(crate) expired_only: Option<bool>,
             pub(crate) filter: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Specify <code>false</code> to return all recommendations. The default is <code>true</code>, which returns only expired recommendations."]
             pub fn expired_only(mut self, expired_only: bool) -> Self {
                 self.expired_only = Some(expired_only);
@@ -13913,7 +13920,7 @@ pub mod recommendations {
         use super::models;
         type Response = models::RecommendationCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) hosting_environment_name: String,
@@ -13921,7 +13928,7 @@ pub mod recommendations {
             pub(crate) featured: Option<bool>,
             pub(crate) filter: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Specify <code>true</code> to return only the most critical recommendations. The default is <code>false</code>, which returns all recommendations."]
             pub fn featured(mut self, featured: bool) -> Self {
                 self.featured = Some(featured);
@@ -14009,14 +14016,14 @@ pub mod recommendations {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) environment_name: String,
             pub(crate) hosting_environment_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -14061,14 +14068,14 @@ pub mod recommendations {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) environment_name: String,
             pub(crate) hosting_environment_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -14113,7 +14120,7 @@ pub mod recommendations {
         use super::models;
         type Response = models::RecommendationRule;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) hosting_environment_name: String,
@@ -14122,7 +14129,7 @@ pub mod recommendations {
             pub(crate) update_seen: Option<bool>,
             pub(crate) recommendation_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Specify <code>true</code> to update the last-seen timestamp of the recommendation object."]
             pub fn update_seen(mut self, update_seen: bool) -> Self {
                 self.update_seen = Some(update_seen);
@@ -14185,7 +14192,7 @@ pub mod recommendations {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) environment_name: String,
@@ -14193,7 +14200,7 @@ pub mod recommendations {
             pub(crate) hosting_environment_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -14232,7 +14239,7 @@ pub mod recommendations {
         use super::models;
         type Response = models::RecommendationCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) site_name: String,
@@ -14240,7 +14247,7 @@ pub mod recommendations {
             pub(crate) expired_only: Option<bool>,
             pub(crate) filter: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Specify <code>false</code> to return all recommendations. The default is <code>true</code>, which returns only expired recommendations."]
             pub fn expired_only(mut self, expired_only: bool) -> Self {
                 self.expired_only = Some(expired_only);
@@ -14330,7 +14337,7 @@ pub mod recommendations {
         use super::models;
         type Response = models::RecommendationCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) site_name: String,
@@ -14338,7 +14345,7 @@ pub mod recommendations {
             pub(crate) featured: Option<bool>,
             pub(crate) filter: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Specify <code>true</code> to return only the most critical recommendations. The default is <code>false</code>, which returns all recommendations."]
             pub fn featured(mut self, featured: bool) -> Self {
                 self.featured = Some(featured);
@@ -14426,13 +14433,13 @@ pub mod recommendations {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) site_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -14475,13 +14482,13 @@ pub mod recommendations {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) site_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -14524,7 +14531,7 @@ pub mod recommendations {
         use super::models;
         type Response = models::RecommendationRule;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) site_name: String,
@@ -14533,7 +14540,7 @@ pub mod recommendations {
             pub(crate) update_seen: Option<bool>,
             pub(crate) recommendation_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Specify <code>true</code> to update the last-seen timestamp of the recommendation object."]
             pub fn update_seen(mut self, update_seen: bool) -> Self {
                 self.update_seen = Some(update_seen);
@@ -14596,14 +14603,14 @@ pub mod recommendations {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) site_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -14653,8 +14660,8 @@ pub mod resource_health_metadata {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
-        pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
-            list::Builder {
+        pub fn list(&self, subscription_id: impl Into<String>) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
@@ -14669,8 +14676,8 @@ pub mod resource_health_metadata {
             &self,
             resource_group_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_by_resource_group::Builder {
-            list_by_resource_group::Builder {
+        ) -> list_by_resource_group::RequestBuilder {
+            list_by_resource_group::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 subscription_id: subscription_id.into(),
@@ -14688,8 +14695,8 @@ pub mod resource_health_metadata {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_by_site::Builder {
-            list_by_site::Builder {
+        ) -> list_by_site::RequestBuilder {
+            list_by_site::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -14708,8 +14715,8 @@ pub mod resource_health_metadata {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_by_site::Builder {
-            get_by_site::Builder {
+        ) -> get_by_site::RequestBuilder {
+            get_by_site::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -14730,8 +14737,8 @@ pub mod resource_health_metadata {
             name: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_by_site_slot::Builder {
-            list_by_site_slot::Builder {
+        ) -> list_by_site_slot::RequestBuilder {
+            list_by_site_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -14753,8 +14760,8 @@ pub mod resource_health_metadata {
             name: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_by_site_slot::Builder {
-            get_by_site_slot::Builder {
+        ) -> get_by_site_slot::RequestBuilder {
+            get_by_site_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -14767,11 +14774,11 @@ pub mod resource_health_metadata {
         use super::models;
         type Response = models::ResourceHealthMetadataCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -14841,12 +14848,12 @@ pub mod resource_health_metadata {
         use super::models;
         type Response = models::ResourceHealthMetadataCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -14917,13 +14924,13 @@ pub mod resource_health_metadata {
         use super::models;
         type Response = models::ResourceHealthMetadataCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -14995,13 +15002,13 @@ pub mod resource_health_metadata {
         use super::models;
         type Response = models::ResourceHealthMetadata;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -15047,14 +15054,14 @@ pub mod resource_health_metadata {
         use super::models;
         type Response = models::ResourceHealthMetadataCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -15127,14 +15134,14 @@ pub mod resource_health_metadata {
         use super::models;
         type Response = models::ResourceHealthMetadata;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -15174,32 +15181,32 @@ pub mod resource_health_metadata {
 impl Client {
     #[doc = "Gets publishing user"]
     #[doc = "Gets publishing user"]
-    pub fn get_publishing_user(&self) -> get_publishing_user::Builder {
-        get_publishing_user::Builder { client: self.clone() }
+    pub fn get_publishing_user(&self) -> get_publishing_user::RequestBuilder {
+        get_publishing_user::RequestBuilder { client: self.clone() }
     }
     #[doc = "Updates publishing user"]
     #[doc = "Updates publishing user"]
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `user_details`: Details of publishing user"]
-    pub fn update_publishing_user(&self, user_details: impl Into<models::User>) -> update_publishing_user::Builder {
-        update_publishing_user::Builder {
+    pub fn update_publishing_user(&self, user_details: impl Into<models::User>) -> update_publishing_user::RequestBuilder {
+        update_publishing_user::RequestBuilder {
             client: self.clone(),
             user_details: user_details.into(),
         }
     }
     #[doc = "Gets the source controls available for Azure websites."]
     #[doc = "Gets the source controls available for Azure websites."]
-    pub fn list_source_controls(&self) -> list_source_controls::Builder {
-        list_source_controls::Builder { client: self.clone() }
+    pub fn list_source_controls(&self) -> list_source_controls::RequestBuilder {
+        list_source_controls::RequestBuilder { client: self.clone() }
     }
     #[doc = "Gets source control token"]
     #[doc = "Gets source control token"]
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `source_control_type`: Type of source control"]
-    pub fn get_source_control(&self, source_control_type: impl Into<String>) -> get_source_control::Builder {
-        get_source_control::Builder {
+    pub fn get_source_control(&self, source_control_type: impl Into<String>) -> get_source_control::RequestBuilder {
+        get_source_control::RequestBuilder {
             client: self.clone(),
             source_control_type: source_control_type.into(),
         }
@@ -15214,8 +15221,8 @@ impl Client {
         &self,
         source_control_type: impl Into<String>,
         request_message: impl Into<models::SourceControl>,
-    ) -> update_source_control::Builder {
-        update_source_control::Builder {
+    ) -> update_source_control::RequestBuilder {
+        update_source_control::RequestBuilder {
             client: self.clone(),
             source_control_type: source_control_type.into(),
             request_message: request_message.into(),
@@ -15226,8 +15233,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
-    pub fn list_billing_meters(&self, subscription_id: impl Into<String>) -> list_billing_meters::Builder {
-        list_billing_meters::Builder {
+    pub fn list_billing_meters(&self, subscription_id: impl Into<String>) -> list_billing_meters::RequestBuilder {
+        list_billing_meters::RequestBuilder {
             client: self.clone(),
             subscription_id: subscription_id.into(),
             billing_location: None,
@@ -15244,8 +15251,8 @@ impl Client {
         &self,
         request: impl Into<models::ResourceNameAvailabilityRequest>,
         subscription_id: impl Into<String>,
-    ) -> check_name_availability::Builder {
-        check_name_availability::Builder {
+    ) -> check_name_availability::RequestBuilder {
+        check_name_availability::RequestBuilder {
             client: self.clone(),
             request: request.into(),
             subscription_id: subscription_id.into(),
@@ -15259,8 +15266,8 @@ impl Client {
     pub fn get_subscription_deployment_locations(
         &self,
         subscription_id: impl Into<String>,
-    ) -> get_subscription_deployment_locations::Builder {
-        get_subscription_deployment_locations::Builder {
+    ) -> get_subscription_deployment_locations::RequestBuilder {
+        get_subscription_deployment_locations::RequestBuilder {
             client: self.clone(),
             subscription_id: subscription_id.into(),
         }
@@ -15270,8 +15277,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
-    pub fn list_geo_regions(&self, subscription_id: impl Into<String>) -> list_geo_regions::Builder {
-        list_geo_regions::Builder {
+    pub fn list_geo_regions(&self, subscription_id: impl Into<String>) -> list_geo_regions::RequestBuilder {
+        list_geo_regions::RequestBuilder {
             client: self.clone(),
             subscription_id: subscription_id.into(),
             sku: None,
@@ -15290,8 +15297,8 @@ impl Client {
         &self,
         name_identifier: impl Into<models::NameIdentifier>,
         subscription_id: impl Into<String>,
-    ) -> list_site_identifiers_assigned_to_host_name::Builder {
-        list_site_identifiers_assigned_to_host_name::Builder {
+    ) -> list_site_identifiers_assigned_to_host_name::RequestBuilder {
+        list_site_identifiers_assigned_to_host_name::RequestBuilder {
             client: self.clone(),
             name_identifier: name_identifier.into(),
             subscription_id: subscription_id.into(),
@@ -15302,8 +15309,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
-    pub fn list_premier_add_on_offers(&self, subscription_id: impl Into<String>) -> list_premier_add_on_offers::Builder {
-        list_premier_add_on_offers::Builder {
+    pub fn list_premier_add_on_offers(&self, subscription_id: impl Into<String>) -> list_premier_add_on_offers::RequestBuilder {
+        list_premier_add_on_offers::RequestBuilder {
             client: self.clone(),
             subscription_id: subscription_id.into(),
         }
@@ -15313,8 +15320,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
-    pub fn list_skus(&self, subscription_id: impl Into<String>) -> list_skus::Builder {
-        list_skus::Builder {
+    pub fn list_skus(&self, subscription_id: impl Into<String>) -> list_skus::RequestBuilder {
+        list_skus::RequestBuilder {
             client: self.clone(),
             subscription_id: subscription_id.into(),
         }
@@ -15329,8 +15336,8 @@ impl Client {
         &self,
         parameters: impl Into<models::VnetParameters>,
         subscription_id: impl Into<String>,
-    ) -> verify_hosting_environment_vnet::Builder {
-        verify_hosting_environment_vnet::Builder {
+    ) -> verify_hosting_environment_vnet::RequestBuilder {
+        verify_hosting_environment_vnet::RequestBuilder {
             client: self.clone(),
             parameters: parameters.into(),
             subscription_id: subscription_id.into(),
@@ -15348,8 +15355,8 @@ impl Client {
         resource_group_name: impl Into<String>,
         move_resource_envelope: impl Into<models::CsmMoveResourceEnvelope>,
         subscription_id: impl Into<String>,
-    ) -> move_::Builder {
-        move_::Builder {
+    ) -> move_::RequestBuilder {
+        move_::RequestBuilder {
             client: self.clone(),
             resource_group_name: resource_group_name.into(),
             move_resource_envelope: move_resource_envelope.into(),
@@ -15368,8 +15375,8 @@ impl Client {
         resource_group_name: impl Into<String>,
         validate_request: impl Into<models::ValidateRequest>,
         subscription_id: impl Into<String>,
-    ) -> validate::Builder {
-        validate::Builder {
+    ) -> validate::RequestBuilder {
+        validate::RequestBuilder {
             client: self.clone(),
             resource_group_name: resource_group_name.into(),
             validate_request: validate_request.into(),
@@ -15388,8 +15395,8 @@ impl Client {
         resource_group_name: impl Into<String>,
         move_resource_envelope: impl Into<models::CsmMoveResourceEnvelope>,
         subscription_id: impl Into<String>,
-    ) -> validate_move::Builder {
-        validate_move::Builder {
+    ) -> validate_move::RequestBuilder {
+        validate_move::RequestBuilder {
             client: self.clone(),
             resource_group_name: resource_group_name.into(),
             move_resource_envelope: move_resource_envelope.into(),
@@ -15401,10 +15408,10 @@ pub mod get_publishing_user {
     use super::models;
     type Response = models::User;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -15444,11 +15451,11 @@ pub mod update_publishing_user {
     use super::models;
     type Response = models::User;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) user_details: models::User,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -15489,10 +15496,10 @@ pub mod list_source_controls {
     use super::models;
     type Response = models::SourceControlCollection;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
             let make_request = move |continuation: Option<String>| {
                 let this = self.clone();
@@ -15558,11 +15565,11 @@ pub mod get_source_control {
     use super::models;
     type Response = models::SourceControl;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) source_control_type: String,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -15606,12 +15613,12 @@ pub mod update_source_control {
     use super::models;
     type Response = models::SourceControl;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) source_control_type: String,
         pub(crate) request_message: models::SourceControl,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -15656,13 +15663,13 @@ pub mod list_billing_meters {
     use super::models;
     type Response = models::BillingMeterCollection;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) subscription_id: String,
         pub(crate) billing_location: Option<String>,
         pub(crate) os_type: Option<String>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "Azure Location of billable resource"]
         pub fn billing_location(mut self, billing_location: impl Into<String>) -> Self {
             self.billing_location = Some(billing_location.into());
@@ -15748,12 +15755,12 @@ pub mod check_name_availability {
     use super::models;
     type Response = models::ResourceNameAvailability;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) request: models::ResourceNameAvailabilityRequest,
         pub(crate) subscription_id: String,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -15798,11 +15805,11 @@ pub mod get_subscription_deployment_locations {
     use super::models;
     type Response = models::DeploymentLocations;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) subscription_id: String,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -15846,7 +15853,7 @@ pub mod list_geo_regions {
     use super::models;
     type Response = models::GeoRegionCollection;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) subscription_id: String,
         pub(crate) sku: Option<String>,
@@ -15854,7 +15861,7 @@ pub mod list_geo_regions {
         pub(crate) xenon_workers_enabled: Option<bool>,
         pub(crate) linux_dynamic_workers_enabled: Option<bool>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "Name of SKU used to filter the regions."]
         pub fn sku(mut self, sku: impl Into<String>) -> Self {
             self.sku = Some(sku.into());
@@ -15962,12 +15969,12 @@ pub mod list_site_identifiers_assigned_to_host_name {
     use super::models;
     type Response = models::IdentifierCollection;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) name_identifier: models::NameIdentifier,
         pub(crate) subscription_id: String,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
             let make_request = move |continuation: Option<String>| {
                 let this = self.clone();
@@ -16038,11 +16045,11 @@ pub mod list_premier_add_on_offers {
     use super::models;
     type Response = models::PremierAddOnOfferCollection;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) subscription_id: String,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
             let make_request = move |continuation: Option<String>| {
                 let this = self.clone();
@@ -16112,11 +16119,11 @@ pub mod list_skus {
     use super::models;
     type Response = models::SkuInfos;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) subscription_id: String,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -16160,12 +16167,12 @@ pub mod verify_hosting_environment_vnet {
     use super::models;
     type Response = models::VnetValidationFailureDetails;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) parameters: models::VnetParameters,
         pub(crate) subscription_id: String,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -16210,13 +16217,13 @@ pub mod move_ {
     use super::models;
     type Response = ();
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) resource_group_name: String,
         pub(crate) move_resource_envelope: models::CsmMoveResourceEnvelope,
         pub(crate) subscription_id: String,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -16258,13 +16265,13 @@ pub mod validate {
     use super::models;
     type Response = models::ValidateResponse;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) resource_group_name: String,
         pub(crate) validate_request: models::ValidateRequest,
         pub(crate) subscription_id: String,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -16310,13 +16317,13 @@ pub mod validate_move {
     use super::models;
     type Response = ();
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) resource_group_name: String,
         pub(crate) move_resource_envelope: models::CsmMoveResourceEnvelope,
         pub(crate) subscription_id: String,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -16370,8 +16377,8 @@ pub mod static_sites {
             location: impl Into<String>,
             static_sites_workflow_preview_request: impl Into<models::StaticSitesWorkflowPreviewRequest>,
             subscription_id: impl Into<String>,
-        ) -> preview_workflow::Builder {
-            preview_workflow::Builder {
+        ) -> preview_workflow::RequestBuilder {
+            preview_workflow::RequestBuilder {
                 client: self.0.clone(),
                 location: location.into(),
                 static_sites_workflow_preview_request: static_sites_workflow_preview_request.into(),
@@ -16383,8 +16390,8 @@ pub mod static_sites {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
-        pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
-            list::Builder {
+        pub fn list(&self, subscription_id: impl Into<String>) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
@@ -16399,8 +16406,8 @@ pub mod static_sites {
             &self,
             resource_group_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_static_sites_by_resource_group::Builder {
-            get_static_sites_by_resource_group::Builder {
+        ) -> get_static_sites_by_resource_group::RequestBuilder {
+            get_static_sites_by_resource_group::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 subscription_id: subscription_id.into(),
@@ -16418,8 +16425,8 @@ pub mod static_sites {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_static_site::Builder {
-            get_static_site::Builder {
+        ) -> get_static_site::RequestBuilder {
+            get_static_site::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -16440,8 +16447,8 @@ pub mod static_sites {
             name: impl Into<String>,
             static_site_envelope: impl Into<models::StaticSiteArmResource>,
             subscription_id: impl Into<String>,
-        ) -> create_or_update_static_site::Builder {
-            create_or_update_static_site::Builder {
+        ) -> create_or_update_static_site::RequestBuilder {
+            create_or_update_static_site::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -16463,8 +16470,8 @@ pub mod static_sites {
             name: impl Into<String>,
             static_site_envelope: impl Into<models::StaticSitePatchResource>,
             subscription_id: impl Into<String>,
-        ) -> update_static_site::Builder {
-            update_static_site::Builder {
+        ) -> update_static_site::RequestBuilder {
+            update_static_site::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -16484,8 +16491,8 @@ pub mod static_sites {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> delete_static_site::Builder {
-            delete_static_site::Builder {
+        ) -> delete_static_site::RequestBuilder {
+            delete_static_site::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -16506,8 +16513,8 @@ pub mod static_sites {
             name: impl Into<String>,
             authprovider: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_static_site_users::Builder {
-            list_static_site_users::Builder {
+        ) -> list_static_site_users::RequestBuilder {
+            list_static_site_users::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -16533,8 +16540,8 @@ pub mod static_sites {
             userid: impl Into<String>,
             static_site_user_envelope: impl Into<models::StaticSiteUserArmResource>,
             subscription_id: impl Into<String>,
-        ) -> update_static_site_user::Builder {
-            update_static_site_user::Builder {
+        ) -> update_static_site_user::RequestBuilder {
+            update_static_site_user::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -16560,8 +16567,8 @@ pub mod static_sites {
             authprovider: impl Into<String>,
             userid: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> delete_static_site_user::Builder {
-            delete_static_site_user::Builder {
+        ) -> delete_static_site_user::RequestBuilder {
+            delete_static_site_user::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -16582,8 +16589,8 @@ pub mod static_sites {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_static_site_builds::Builder {
-            get_static_site_builds::Builder {
+        ) -> get_static_site_builds::RequestBuilder {
+            get_static_site_builds::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -16604,8 +16611,8 @@ pub mod static_sites {
             name: impl Into<String>,
             environment_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_static_site_build::Builder {
-            get_static_site_build::Builder {
+        ) -> get_static_site_build::RequestBuilder {
+            get_static_site_build::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -16627,8 +16634,8 @@ pub mod static_sites {
             name: impl Into<String>,
             environment_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> delete_static_site_build::Builder {
-            delete_static_site_build::Builder {
+        ) -> delete_static_site_build::RequestBuilder {
+            delete_static_site_build::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -16652,8 +16659,8 @@ pub mod static_sites {
             environment_name: impl Into<String>,
             app_settings: impl Into<models::StringDictionary>,
             subscription_id: impl Into<String>,
-        ) -> create_or_update_static_site_build_app_settings::Builder {
-            create_or_update_static_site_build_app_settings::Builder {
+        ) -> create_or_update_static_site_build_app_settings::RequestBuilder {
+            create_or_update_static_site_build_app_settings::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -16678,8 +16685,8 @@ pub mod static_sites {
             environment_name: impl Into<String>,
             app_settings: impl Into<models::StringDictionary>,
             subscription_id: impl Into<String>,
-        ) -> create_or_update_static_site_build_function_app_settings::Builder {
-            create_or_update_static_site_build_function_app_settings::Builder {
+        ) -> create_or_update_static_site_build_function_app_settings::RequestBuilder {
+            create_or_update_static_site_build_function_app_settings::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -16702,8 +16709,8 @@ pub mod static_sites {
             name: impl Into<String>,
             environment_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_static_site_build_functions::Builder {
-            list_static_site_build_functions::Builder {
+        ) -> list_static_site_build_functions::RequestBuilder {
+            list_static_site_build_functions::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -16725,8 +16732,8 @@ pub mod static_sites {
             name: impl Into<String>,
             environment_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_static_site_build_app_settings::Builder {
-            list_static_site_build_app_settings::Builder {
+        ) -> list_static_site_build_app_settings::RequestBuilder {
+            list_static_site_build_app_settings::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -16748,8 +16755,8 @@ pub mod static_sites {
             name: impl Into<String>,
             environment_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_static_site_build_function_app_settings::Builder {
-            list_static_site_build_function_app_settings::Builder {
+        ) -> list_static_site_build_function_app_settings::RequestBuilder {
+            list_static_site_build_function_app_settings::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -16771,8 +16778,8 @@ pub mod static_sites {
             name: impl Into<String>,
             environment_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_user_provided_function_apps_for_static_site_build::Builder {
-            get_user_provided_function_apps_for_static_site_build::Builder {
+        ) -> get_user_provided_function_apps_for_static_site_build::RequestBuilder {
+            get_user_provided_function_apps_for_static_site_build::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -16796,8 +16803,8 @@ pub mod static_sites {
             environment_name: impl Into<String>,
             function_app_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_user_provided_function_app_for_static_site_build::Builder {
-            get_user_provided_function_app_for_static_site_build::Builder {
+        ) -> get_user_provided_function_app_for_static_site_build::RequestBuilder {
+            get_user_provided_function_app_for_static_site_build::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -16824,8 +16831,8 @@ pub mod static_sites {
             function_app_name: impl Into<String>,
             static_site_user_provided_function_envelope: impl Into<models::StaticSiteUserProvidedFunctionAppArmResource>,
             subscription_id: impl Into<String>,
-        ) -> register_user_provided_function_app_with_static_site_build::Builder {
-            register_user_provided_function_app_with_static_site_build::Builder {
+        ) -> register_user_provided_function_app_with_static_site_build::RequestBuilder {
+            register_user_provided_function_app_with_static_site_build::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -16852,8 +16859,8 @@ pub mod static_sites {
             environment_name: impl Into<String>,
             function_app_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> detach_user_provided_function_app_from_static_site_build::Builder {
-            detach_user_provided_function_app_from_static_site_build::Builder {
+        ) -> detach_user_provided_function_app_from_static_site_build::RequestBuilder {
+            detach_user_provided_function_app_from_static_site_build::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -16878,8 +16885,8 @@ pub mod static_sites {
             environment_name: impl Into<String>,
             static_site_zip_deployment_envelope: impl Into<models::StaticSiteZipDeploymentArmResource>,
             subscription_id: impl Into<String>,
-        ) -> create_zip_deployment_for_static_site_build::Builder {
-            create_zip_deployment_for_static_site_build::Builder {
+        ) -> create_zip_deployment_for_static_site_build::RequestBuilder {
+            create_zip_deployment_for_static_site_build::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -16902,8 +16909,8 @@ pub mod static_sites {
             name: impl Into<String>,
             app_settings: impl Into<models::StringDictionary>,
             subscription_id: impl Into<String>,
-        ) -> create_or_update_static_site_app_settings::Builder {
-            create_or_update_static_site_app_settings::Builder {
+        ) -> create_or_update_static_site_app_settings::RequestBuilder {
+            create_or_update_static_site_app_settings::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -16925,8 +16932,8 @@ pub mod static_sites {
             name: impl Into<String>,
             app_settings: impl Into<models::StringDictionary>,
             subscription_id: impl Into<String>,
-        ) -> create_or_update_static_site_function_app_settings::Builder {
-            create_or_update_static_site_function_app_settings::Builder {
+        ) -> create_or_update_static_site_function_app_settings::RequestBuilder {
+            create_or_update_static_site_function_app_settings::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -16947,8 +16954,8 @@ pub mod static_sites {
             name: impl Into<String>,
             static_site_user_roles_invitation_envelope: impl Into<models::StaticSiteUserInvitationRequestResource>,
             subscription_id: impl Into<String>,
-        ) -> create_user_roles_invitation_link::Builder {
-            create_user_roles_invitation_link::Builder {
+        ) -> create_user_roles_invitation_link::RequestBuilder {
+            create_user_roles_invitation_link::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -16968,8 +16975,8 @@ pub mod static_sites {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_static_site_custom_domains::Builder {
-            list_static_site_custom_domains::Builder {
+        ) -> list_static_site_custom_domains::RequestBuilder {
+            list_static_site_custom_domains::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -16990,8 +16997,8 @@ pub mod static_sites {
             name: impl Into<String>,
             domain_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_static_site_custom_domain::Builder {
-            get_static_site_custom_domain::Builder {
+        ) -> get_static_site_custom_domain::RequestBuilder {
+            get_static_site_custom_domain::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -17015,8 +17022,8 @@ pub mod static_sites {
             domain_name: impl Into<String>,
             static_site_custom_domain_request_properties_envelope: impl Into<models::StaticSiteCustomDomainRequestPropertiesArmResource>,
             subscription_id: impl Into<String>,
-        ) -> create_or_update_static_site_custom_domain::Builder {
-            create_or_update_static_site_custom_domain::Builder {
+        ) -> create_or_update_static_site_custom_domain::RequestBuilder {
+            create_or_update_static_site_custom_domain::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -17039,8 +17046,8 @@ pub mod static_sites {
             name: impl Into<String>,
             domain_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> delete_static_site_custom_domain::Builder {
-            delete_static_site_custom_domain::Builder {
+        ) -> delete_static_site_custom_domain::RequestBuilder {
+            delete_static_site_custom_domain::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -17064,8 +17071,8 @@ pub mod static_sites {
             domain_name: impl Into<String>,
             static_site_custom_domain_request_properties_envelope: impl Into<models::StaticSiteCustomDomainRequestPropertiesArmResource>,
             subscription_id: impl Into<String>,
-        ) -> validate_custom_domain_can_be_added_to_static_site::Builder {
-            validate_custom_domain_can_be_added_to_static_site::Builder {
+        ) -> validate_custom_domain_can_be_added_to_static_site::RequestBuilder {
+            validate_custom_domain_can_be_added_to_static_site::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -17086,8 +17093,8 @@ pub mod static_sites {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> detach_static_site::Builder {
-            detach_static_site::Builder {
+        ) -> detach_static_site::RequestBuilder {
+            detach_static_site::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -17106,8 +17113,8 @@ pub mod static_sites {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_static_site_functions::Builder {
-            list_static_site_functions::Builder {
+        ) -> list_static_site_functions::RequestBuilder {
+            list_static_site_functions::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -17126,8 +17133,8 @@ pub mod static_sites {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_static_site_app_settings::Builder {
-            list_static_site_app_settings::Builder {
+        ) -> list_static_site_app_settings::RequestBuilder {
+            list_static_site_app_settings::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -17146,8 +17153,8 @@ pub mod static_sites {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_static_site_configured_roles::Builder {
-            list_static_site_configured_roles::Builder {
+        ) -> list_static_site_configured_roles::RequestBuilder {
+            list_static_site_configured_roles::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -17166,8 +17173,8 @@ pub mod static_sites {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_static_site_function_app_settings::Builder {
-            list_static_site_function_app_settings::Builder {
+        ) -> list_static_site_function_app_settings::RequestBuilder {
+            list_static_site_function_app_settings::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -17186,8 +17193,8 @@ pub mod static_sites {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_static_site_secrets::Builder {
-            list_static_site_secrets::Builder {
+        ) -> list_static_site_secrets::RequestBuilder {
+            list_static_site_secrets::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -17206,8 +17213,8 @@ pub mod static_sites {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_private_endpoint_connection_list::Builder {
-            get_private_endpoint_connection_list::Builder {
+        ) -> get_private_endpoint_connection_list::RequestBuilder {
+            get_private_endpoint_connection_list::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -17228,8 +17235,8 @@ pub mod static_sites {
             name: impl Into<String>,
             private_endpoint_connection_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_private_endpoint_connection::Builder {
-            get_private_endpoint_connection::Builder {
+        ) -> get_private_endpoint_connection::RequestBuilder {
+            get_private_endpoint_connection::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -17253,8 +17260,8 @@ pub mod static_sites {
             private_endpoint_connection_name: impl Into<String>,
             private_endpoint_wrapper: impl Into<models::PrivateLinkConnectionApprovalRequestResource>,
             subscription_id: impl Into<String>,
-        ) -> approve_or_reject_private_endpoint_connection::Builder {
-            approve_or_reject_private_endpoint_connection::Builder {
+        ) -> approve_or_reject_private_endpoint_connection::RequestBuilder {
+            approve_or_reject_private_endpoint_connection::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -17277,8 +17284,8 @@ pub mod static_sites {
             name: impl Into<String>,
             private_endpoint_connection_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> delete_private_endpoint_connection::Builder {
-            delete_private_endpoint_connection::Builder {
+        ) -> delete_private_endpoint_connection::RequestBuilder {
+            delete_private_endpoint_connection::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -17298,8 +17305,8 @@ pub mod static_sites {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_private_link_resources::Builder {
-            get_private_link_resources::Builder {
+        ) -> get_private_link_resources::RequestBuilder {
+            get_private_link_resources::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -17319,8 +17326,8 @@ pub mod static_sites {
             name: impl Into<String>,
             reset_properties_envelope: impl Into<models::StaticSiteResetPropertiesArmResource>,
             subscription_id: impl Into<String>,
-        ) -> reset_static_site_api_key::Builder {
-            reset_static_site_api_key::Builder {
+        ) -> reset_static_site_api_key::RequestBuilder {
+            reset_static_site_api_key::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -17340,8 +17347,8 @@ pub mod static_sites {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_user_provided_function_apps_for_static_site::Builder {
-            get_user_provided_function_apps_for_static_site::Builder {
+        ) -> get_user_provided_function_apps_for_static_site::RequestBuilder {
+            get_user_provided_function_apps_for_static_site::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -17362,8 +17369,8 @@ pub mod static_sites {
             name: impl Into<String>,
             function_app_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_user_provided_function_app_for_static_site::Builder {
-            get_user_provided_function_app_for_static_site::Builder {
+        ) -> get_user_provided_function_app_for_static_site::RequestBuilder {
+            get_user_provided_function_app_for_static_site::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -17387,8 +17394,8 @@ pub mod static_sites {
             function_app_name: impl Into<String>,
             static_site_user_provided_function_envelope: impl Into<models::StaticSiteUserProvidedFunctionAppArmResource>,
             subscription_id: impl Into<String>,
-        ) -> register_user_provided_function_app_with_static_site::Builder {
-            register_user_provided_function_app_with_static_site::Builder {
+        ) -> register_user_provided_function_app_with_static_site::RequestBuilder {
+            register_user_provided_function_app_with_static_site::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -17412,8 +17419,8 @@ pub mod static_sites {
             name: impl Into<String>,
             function_app_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> detach_user_provided_function_app_from_static_site::Builder {
-            detach_user_provided_function_app_from_static_site::Builder {
+        ) -> detach_user_provided_function_app_from_static_site::RequestBuilder {
+            detach_user_provided_function_app_from_static_site::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -17435,8 +17442,8 @@ pub mod static_sites {
             name: impl Into<String>,
             static_site_zip_deployment_envelope: impl Into<models::StaticSiteZipDeploymentArmResource>,
             subscription_id: impl Into<String>,
-        ) -> create_zip_deployment_for_static_site::Builder {
-            create_zip_deployment_for_static_site::Builder {
+        ) -> create_zip_deployment_for_static_site::RequestBuilder {
+            create_zip_deployment_for_static_site::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -17449,13 +17456,13 @@ pub mod static_sites {
         use super::models;
         type Response = models::StaticSitesWorkflowPreview;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) location: String,
             pub(crate) static_sites_workflow_preview_request: models::StaticSitesWorkflowPreviewRequest,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -17501,11 +17508,11 @@ pub mod static_sites {
         use super::models;
         type Response = models::StaticSiteCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -17575,12 +17582,12 @@ pub mod static_sites {
         use super::models;
         type Response = models::StaticSiteCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -17651,13 +17658,13 @@ pub mod static_sites {
         use super::models;
         type Response = models::StaticSiteArmResource;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -17707,14 +17714,14 @@ pub mod static_sites {
             Accepted202(models::StaticSiteArmResource),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) static_site_envelope: models::StaticSiteArmResource,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -17771,14 +17778,14 @@ pub mod static_sites {
             Accepted202(models::StaticSiteArmResource),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) static_site_envelope: models::StaticSitePatchResource,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -17834,13 +17841,13 @@ pub mod static_sites {
             Accepted202,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -17884,14 +17891,14 @@ pub mod static_sites {
         use super::models;
         type Response = models::StaticSiteUserCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) authprovider: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -17965,7 +17972,7 @@ pub mod static_sites {
         use super::models;
         type Response = models::StaticSiteUserArmResource;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -17974,7 +17981,7 @@ pub mod static_sites {
             pub(crate) static_site_user_envelope: models::StaticSiteUserArmResource,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -18023,7 +18030,7 @@ pub mod static_sites {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -18031,7 +18038,7 @@ pub mod static_sites {
             pub(crate) userid: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -18075,13 +18082,13 @@ pub mod static_sites {
         use super::models;
         type Response = models::StaticSiteBuildCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -18153,14 +18160,14 @@ pub mod static_sites {
         use super::models;
         type Response = models::StaticSiteBuildArmResource;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) environment_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -18212,14 +18219,14 @@ pub mod static_sites {
             Accepted202,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) environment_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -18265,7 +18272,7 @@ pub mod static_sites {
         use super::models;
         type Response = models::StringDictionary;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -18273,7 +18280,7 @@ pub mod static_sites {
             pub(crate) app_settings: models::StringDictionary,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -18321,7 +18328,7 @@ pub mod static_sites {
         use super::models;
         type Response = models::StringDictionary;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -18329,7 +18336,7 @@ pub mod static_sites {
             pub(crate) app_settings: models::StringDictionary,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -18370,14 +18377,14 @@ pub mod static_sites {
         use super::models;
         type Response = models::StaticSiteFunctionOverviewCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) environment_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -18450,14 +18457,14 @@ pub mod static_sites {
         use super::models;
         type Response = models::StringDictionary;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) environment_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -18505,14 +18512,14 @@ pub mod static_sites {
         use super::models;
         type Response = models::StringDictionary;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) environment_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -18553,14 +18560,14 @@ pub mod static_sites {
         use super::models;
         type Response = models::StaticSiteUserProvidedFunctionAppsCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) environment_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -18626,7 +18633,7 @@ pub mod static_sites {
         use super::models;
         type Response = models::StaticSiteUserProvidedFunctionAppArmResource;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -18634,7 +18641,7 @@ pub mod static_sites {
             pub(crate) function_app_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -18678,7 +18685,7 @@ pub mod static_sites {
             Accepted202(models::StaticSiteUserProvidedFunctionAppArmResource),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -18688,7 +18695,7 @@ pub mod static_sites {
             pub(crate) subscription_id: String,
             pub(crate) is_forced: Option<bool>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Specify <code>true</code> to force the update of the auth configuration on the function app even if an AzureStaticWebApps provider is already configured on the function app. The default is <code>false</code>."]
             pub fn is_forced(mut self, is_forced: bool) -> Self {
                 self.is_forced = Some(is_forced);
@@ -18747,7 +18754,7 @@ pub mod static_sites {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -18755,7 +18762,7 @@ pub mod static_sites {
             pub(crate) function_app_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -18796,7 +18803,7 @@ pub mod static_sites {
             Accepted202,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -18804,7 +18811,7 @@ pub mod static_sites {
             pub(crate) static_site_zip_deployment_envelope: models::StaticSiteZipDeploymentArmResource,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -18850,14 +18857,14 @@ pub mod static_sites {
         use super::models;
         type Response = models::StringDictionary;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) app_settings: models::StringDictionary,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -18904,14 +18911,14 @@ pub mod static_sites {
         use super::models;
         type Response = models::StringDictionary;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) app_settings: models::StringDictionary,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -18958,14 +18965,14 @@ pub mod static_sites {
         use super::models;
         type Response = models::StaticSiteUserInvitationResponseResource;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) static_site_user_roles_invitation_envelope: models::StaticSiteUserInvitationRequestResource,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -19012,13 +19019,13 @@ pub mod static_sites {
         use super::models;
         type Response = models::StaticSiteCustomDomainOverviewCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -19090,14 +19097,14 @@ pub mod static_sites {
         use super::models;
         type Response = models::StaticSiteCustomDomainOverviewArmResource;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) domain_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -19148,7 +19155,7 @@ pub mod static_sites {
             Accepted202(models::StaticSiteCustomDomainOverviewArmResource),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -19156,7 +19163,7 @@ pub mod static_sites {
             pub(crate) static_site_custom_domain_request_properties_envelope: models::StaticSiteCustomDomainRequestPropertiesArmResource,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -19214,14 +19221,14 @@ pub mod static_sites {
             Accepted202,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) domain_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -19270,7 +19277,7 @@ pub mod static_sites {
             Accepted202,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -19278,7 +19285,7 @@ pub mod static_sites {
             pub(crate) static_site_custom_domain_request_properties_envelope: models::StaticSiteCustomDomainRequestPropertiesArmResource,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -19328,13 +19335,13 @@ pub mod static_sites {
             Accepted202,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -19379,13 +19386,13 @@ pub mod static_sites {
         use super::models;
         type Response = models::StaticSiteFunctionOverviewCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -19457,13 +19464,13 @@ pub mod static_sites {
         use super::models;
         type Response = models::StringDictionary;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -19510,13 +19517,13 @@ pub mod static_sites {
         use super::models;
         type Response = models::StringList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -19563,13 +19570,13 @@ pub mod static_sites {
         use super::models;
         type Response = models::StringDictionary;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -19616,13 +19623,13 @@ pub mod static_sites {
         use super::models;
         type Response = models::StringDictionary;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -19669,13 +19676,13 @@ pub mod static_sites {
         use super::models;
         type Response = models::PrivateEndpointConnectionCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -19747,14 +19754,14 @@ pub mod static_sites {
         use super::models;
         type Response = models::RemotePrivateEndpointConnectionArmResource;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) private_endpoint_connection_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -19805,7 +19812,7 @@ pub mod static_sites {
             Accepted202(models::RemotePrivateEndpointConnectionArmResource),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -19813,7 +19820,7 @@ pub mod static_sites {
             pub(crate) private_endpoint_wrapper: models::PrivateLinkConnectionApprovalRequestResource,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -19872,14 +19879,14 @@ pub mod static_sites {
             NoContent204(serde_json::Value),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) private_endpoint_connection_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -19937,13 +19944,13 @@ pub mod static_sites {
         use super::models;
         type Response = models::PrivateLinkResourcesWrapper;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -19989,14 +19996,14 @@ pub mod static_sites {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) reset_properties_envelope: models::StaticSiteResetPropertiesArmResource,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -20039,13 +20046,13 @@ pub mod static_sites {
         use super::models;
         type Response = models::StaticSiteUserProvidedFunctionAppsCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -20117,14 +20124,14 @@ pub mod static_sites {
         use super::models;
         type Response = models::StaticSiteUserProvidedFunctionAppArmResource;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) function_app_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -20175,7 +20182,7 @@ pub mod static_sites {
             Accepted202(models::StaticSiteUserProvidedFunctionAppArmResource),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -20184,7 +20191,7 @@ pub mod static_sites {
             pub(crate) subscription_id: String,
             pub(crate) is_forced: Option<bool>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Specify <code>true</code> to force the update of the auth configuration on the function app even if an AzureStaticWebApps provider is already configured on the function app. The default is <code>false</code>."]
             pub fn is_forced(mut self, is_forced: bool) -> Self {
                 self.is_forced = Some(is_forced);
@@ -20250,14 +20257,14 @@ pub mod static_sites {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) function_app_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -20305,14 +20312,14 @@ pub mod static_sites {
             Accepted202,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) static_site_zip_deployment_envelope: models::StaticSiteZipDeploymentArmResource,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -20363,8 +20370,8 @@ pub mod web_apps {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
-        pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
-            list::Builder {
+        pub fn list(&self, subscription_id: impl Into<String>) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
@@ -20379,8 +20386,8 @@ pub mod web_apps {
             &self,
             resource_group_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_by_resource_group::Builder {
-            list_by_resource_group::Builder {
+        ) -> list_by_resource_group::RequestBuilder {
+            list_by_resource_group::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 subscription_id: subscription_id.into(),
@@ -20399,8 +20406,8 @@ pub mod web_apps {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -20421,8 +20428,8 @@ pub mod web_apps {
             name: impl Into<String>,
             site_envelope: impl Into<models::Site>,
             subscription_id: impl Into<String>,
-        ) -> create_or_update::Builder {
-            create_or_update::Builder {
+        ) -> create_or_update::RequestBuilder {
+            create_or_update::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -20444,8 +20451,8 @@ pub mod web_apps {
             name: impl Into<String>,
             site_envelope: impl Into<models::SitePatchResource>,
             subscription_id: impl Into<String>,
-        ) -> update::Builder {
-            update::Builder {
+        ) -> update::RequestBuilder {
+            update::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -20465,8 +20472,8 @@ pub mod web_apps {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> delete::Builder {
-            delete::Builder {
+        ) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -20487,8 +20494,8 @@ pub mod web_apps {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> analyze_custom_hostname::Builder {
-            analyze_custom_hostname::Builder {
+        ) -> analyze_custom_hostname::RequestBuilder {
+            analyze_custom_hostname::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -20510,8 +20517,8 @@ pub mod web_apps {
             name: impl Into<String>,
             slot_swap_entity: impl Into<models::CsmSlotEntity>,
             subscription_id: impl Into<String>,
-        ) -> apply_slot_config_to_production::Builder {
-            apply_slot_config_to_production::Builder {
+        ) -> apply_slot_config_to_production::RequestBuilder {
+            apply_slot_config_to_production::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -20533,8 +20540,8 @@ pub mod web_apps {
             name: impl Into<String>,
             request: impl Into<models::BackupRequest>,
             subscription_id: impl Into<String>,
-        ) -> backup::Builder {
-            backup::Builder {
+        ) -> backup::RequestBuilder {
+            backup::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -20554,8 +20561,8 @@ pub mod web_apps {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_backups::Builder {
-            list_backups::Builder {
+        ) -> list_backups::RequestBuilder {
+            list_backups::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -20576,8 +20583,8 @@ pub mod web_apps {
             name: impl Into<String>,
             backup_id: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_backup_status::Builder {
-            get_backup_status::Builder {
+        ) -> get_backup_status::RequestBuilder {
+            get_backup_status::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -20599,8 +20606,8 @@ pub mod web_apps {
             name: impl Into<String>,
             backup_id: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> delete_backup::Builder {
-            delete_backup::Builder {
+        ) -> delete_backup::RequestBuilder {
+            delete_backup::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -20624,8 +20631,8 @@ pub mod web_apps {
             backup_id: impl Into<String>,
             request: impl Into<models::BackupRequest>,
             subscription_id: impl Into<String>,
-        ) -> list_backup_status_secrets::Builder {
-            list_backup_status_secrets::Builder {
+        ) -> list_backup_status_secrets::RequestBuilder {
+            list_backup_status_secrets::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -20650,8 +20657,8 @@ pub mod web_apps {
             backup_id: impl Into<String>,
             request: impl Into<models::RestoreRequest>,
             subscription_id: impl Into<String>,
-        ) -> restore::Builder {
-            restore::Builder {
+        ) -> restore::RequestBuilder {
+            restore::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -20672,8 +20679,8 @@ pub mod web_apps {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_basic_publishing_credentials_policies::Builder {
-            get_basic_publishing_credentials_policies::Builder {
+        ) -> get_basic_publishing_credentials_policies::RequestBuilder {
+            get_basic_publishing_credentials_policies::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -20692,8 +20699,8 @@ pub mod web_apps {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_ftp_allowed::Builder {
-            get_ftp_allowed::Builder {
+        ) -> get_ftp_allowed::RequestBuilder {
+            get_ftp_allowed::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -20713,8 +20720,8 @@ pub mod web_apps {
             name: impl Into<String>,
             csm_publishing_access_policies_entity: impl Into<models::CsmPublishingCredentialsPoliciesEntity>,
             subscription_id: impl Into<String>,
-        ) -> update_ftp_allowed::Builder {
-            update_ftp_allowed::Builder {
+        ) -> update_ftp_allowed::RequestBuilder {
+            update_ftp_allowed::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -20734,8 +20741,8 @@ pub mod web_apps {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_scm_allowed::Builder {
-            get_scm_allowed::Builder {
+        ) -> get_scm_allowed::RequestBuilder {
+            get_scm_allowed::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -20755,8 +20762,8 @@ pub mod web_apps {
             name: impl Into<String>,
             csm_publishing_access_policies_entity: impl Into<models::CsmPublishingCredentialsPoliciesEntity>,
             subscription_id: impl Into<String>,
-        ) -> update_scm_allowed::Builder {
-            update_scm_allowed::Builder {
+        ) -> update_scm_allowed::RequestBuilder {
+            update_scm_allowed::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -20776,8 +20783,8 @@ pub mod web_apps {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_configurations::Builder {
-            list_configurations::Builder {
+        ) -> list_configurations::RequestBuilder {
+            list_configurations::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -20798,8 +20805,8 @@ pub mod web_apps {
             name: impl Into<String>,
             app_settings: impl Into<models::StringDictionary>,
             subscription_id: impl Into<String>,
-        ) -> update_application_settings::Builder {
-            update_application_settings::Builder {
+        ) -> update_application_settings::RequestBuilder {
+            update_application_settings::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -20819,8 +20826,8 @@ pub mod web_apps {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_application_settings::Builder {
-            list_application_settings::Builder {
+        ) -> list_application_settings::RequestBuilder {
+            list_application_settings::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -20841,8 +20848,8 @@ pub mod web_apps {
             name: impl Into<String>,
             site_auth_settings: impl Into<models::SiteAuthSettings>,
             subscription_id: impl Into<String>,
-        ) -> update_auth_settings::Builder {
-            update_auth_settings::Builder {
+        ) -> update_auth_settings::RequestBuilder {
+            update_auth_settings::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -20862,8 +20869,8 @@ pub mod web_apps {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_auth_settings::Builder {
-            get_auth_settings::Builder {
+        ) -> get_auth_settings::RequestBuilder {
+            get_auth_settings::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -20884,8 +20891,8 @@ pub mod web_apps {
             name: impl Into<String>,
             site_auth_settings_v2: impl Into<models::SiteAuthSettingsV2>,
             subscription_id: impl Into<String>,
-        ) -> update_auth_settings_v2::Builder {
-            update_auth_settings_v2::Builder {
+        ) -> update_auth_settings_v2::RequestBuilder {
+            update_auth_settings_v2::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -20905,8 +20912,8 @@ pub mod web_apps {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_auth_settings_v2::Builder {
-            get_auth_settings_v2::Builder {
+        ) -> get_auth_settings_v2::RequestBuilder {
+            get_auth_settings_v2::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -20927,8 +20934,8 @@ pub mod web_apps {
             name: impl Into<String>,
             azure_storage_accounts: impl Into<models::AzureStoragePropertyDictionaryResource>,
             subscription_id: impl Into<String>,
-        ) -> update_azure_storage_accounts::Builder {
-            update_azure_storage_accounts::Builder {
+        ) -> update_azure_storage_accounts::RequestBuilder {
+            update_azure_storage_accounts::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -20948,8 +20955,8 @@ pub mod web_apps {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_azure_storage_accounts::Builder {
-            list_azure_storage_accounts::Builder {
+        ) -> list_azure_storage_accounts::RequestBuilder {
+            list_azure_storage_accounts::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -20970,8 +20977,8 @@ pub mod web_apps {
             name: impl Into<String>,
             request: impl Into<models::BackupRequest>,
             subscription_id: impl Into<String>,
-        ) -> update_backup_configuration::Builder {
-            update_backup_configuration::Builder {
+        ) -> update_backup_configuration::RequestBuilder {
+            update_backup_configuration::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -20991,8 +20998,8 @@ pub mod web_apps {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> delete_backup_configuration::Builder {
-            delete_backup_configuration::Builder {
+        ) -> delete_backup_configuration::RequestBuilder {
+            delete_backup_configuration::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -21011,8 +21018,8 @@ pub mod web_apps {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_backup_configuration::Builder {
-            get_backup_configuration::Builder {
+        ) -> get_backup_configuration::RequestBuilder {
+            get_backup_configuration::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -21031,8 +21038,8 @@ pub mod web_apps {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_app_settings_key_vault_references::Builder {
-            get_app_settings_key_vault_references::Builder {
+        ) -> get_app_settings_key_vault_references::RequestBuilder {
+            get_app_settings_key_vault_references::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -21053,8 +21060,8 @@ pub mod web_apps {
             name: impl Into<String>,
             app_setting_key: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_app_setting_key_vault_reference::Builder {
-            get_app_setting_key_vault_reference::Builder {
+        ) -> get_app_setting_key_vault_reference::RequestBuilder {
+            get_app_setting_key_vault_reference::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -21074,8 +21081,8 @@ pub mod web_apps {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_site_connection_string_key_vault_references::Builder {
-            get_site_connection_string_key_vault_references::Builder {
+        ) -> get_site_connection_string_key_vault_references::RequestBuilder {
+            get_site_connection_string_key_vault_references::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -21095,8 +21102,8 @@ pub mod web_apps {
             name: impl Into<String>,
             connection_string_key: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_site_connection_string_key_vault_reference::Builder {
-            get_site_connection_string_key_vault_reference::Builder {
+        ) -> get_site_connection_string_key_vault_reference::RequestBuilder {
+            get_site_connection_string_key_vault_reference::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -21118,8 +21125,8 @@ pub mod web_apps {
             name: impl Into<String>,
             connection_strings: impl Into<models::ConnectionStringDictionary>,
             subscription_id: impl Into<String>,
-        ) -> update_connection_strings::Builder {
-            update_connection_strings::Builder {
+        ) -> update_connection_strings::RequestBuilder {
+            update_connection_strings::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -21139,8 +21146,8 @@ pub mod web_apps {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_connection_strings::Builder {
-            list_connection_strings::Builder {
+        ) -> list_connection_strings::RequestBuilder {
+            list_connection_strings::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -21159,8 +21166,8 @@ pub mod web_apps {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_diagnostic_logs_configuration::Builder {
-            get_diagnostic_logs_configuration::Builder {
+        ) -> get_diagnostic_logs_configuration::RequestBuilder {
+            get_diagnostic_logs_configuration::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -21181,8 +21188,8 @@ pub mod web_apps {
             name: impl Into<String>,
             site_logs_config: impl Into<models::SiteLogsConfig>,
             subscription_id: impl Into<String>,
-        ) -> update_diagnostic_logs_config::Builder {
-            update_diagnostic_logs_config::Builder {
+        ) -> update_diagnostic_logs_config::RequestBuilder {
+            update_diagnostic_logs_config::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -21204,8 +21211,8 @@ pub mod web_apps {
             name: impl Into<String>,
             metadata: impl Into<models::StringDictionary>,
             subscription_id: impl Into<String>,
-        ) -> update_metadata::Builder {
-            update_metadata::Builder {
+        ) -> update_metadata::RequestBuilder {
+            update_metadata::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -21225,8 +21232,8 @@ pub mod web_apps {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_metadata::Builder {
-            list_metadata::Builder {
+        ) -> list_metadata::RequestBuilder {
+            list_metadata::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -21245,8 +21252,8 @@ pub mod web_apps {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_publishing_credentials::Builder {
-            list_publishing_credentials::Builder {
+        ) -> list_publishing_credentials::RequestBuilder {
+            list_publishing_credentials::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -21267,8 +21274,8 @@ pub mod web_apps {
             name: impl Into<String>,
             push_settings: impl Into<models::PushSettings>,
             subscription_id: impl Into<String>,
-        ) -> update_site_push_settings::Builder {
-            update_site_push_settings::Builder {
+        ) -> update_site_push_settings::RequestBuilder {
+            update_site_push_settings::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -21288,8 +21295,8 @@ pub mod web_apps {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_site_push_settings::Builder {
-            list_site_push_settings::Builder {
+        ) -> list_site_push_settings::RequestBuilder {
+            list_site_push_settings::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -21308,8 +21315,8 @@ pub mod web_apps {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_slot_configuration_names::Builder {
-            list_slot_configuration_names::Builder {
+        ) -> list_slot_configuration_names::RequestBuilder {
+            list_slot_configuration_names::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -21330,8 +21337,8 @@ pub mod web_apps {
             name: impl Into<String>,
             slot_config_names: impl Into<models::SlotConfigNamesResource>,
             subscription_id: impl Into<String>,
-        ) -> update_slot_configuration_names::Builder {
-            update_slot_configuration_names::Builder {
+        ) -> update_slot_configuration_names::RequestBuilder {
+            update_slot_configuration_names::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -21351,8 +21358,8 @@ pub mod web_apps {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_configuration::Builder {
-            get_configuration::Builder {
+        ) -> get_configuration::RequestBuilder {
+            get_configuration::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -21373,8 +21380,8 @@ pub mod web_apps {
             name: impl Into<String>,
             site_config: impl Into<models::SiteConfigResource>,
             subscription_id: impl Into<String>,
-        ) -> create_or_update_configuration::Builder {
-            create_or_update_configuration::Builder {
+        ) -> create_or_update_configuration::RequestBuilder {
+            create_or_update_configuration::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -21396,8 +21403,8 @@ pub mod web_apps {
             name: impl Into<String>,
             site_config: impl Into<models::SiteConfigResource>,
             subscription_id: impl Into<String>,
-        ) -> update_configuration::Builder {
-            update_configuration::Builder {
+        ) -> update_configuration::RequestBuilder {
+            update_configuration::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -21417,8 +21424,8 @@ pub mod web_apps {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_configuration_snapshot_info::Builder {
-            list_configuration_snapshot_info::Builder {
+        ) -> list_configuration_snapshot_info::RequestBuilder {
+            list_configuration_snapshot_info::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -21439,8 +21446,8 @@ pub mod web_apps {
             name: impl Into<String>,
             snapshot_id: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_configuration_snapshot::Builder {
-            get_configuration_snapshot::Builder {
+        ) -> get_configuration_snapshot::RequestBuilder {
+            get_configuration_snapshot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -21462,8 +21469,8 @@ pub mod web_apps {
             name: impl Into<String>,
             snapshot_id: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> recover_site_configuration_snapshot::Builder {
-            recover_site_configuration_snapshot::Builder {
+        ) -> recover_site_configuration_snapshot::RequestBuilder {
+            recover_site_configuration_snapshot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -21483,8 +21490,8 @@ pub mod web_apps {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_web_site_container_logs::Builder {
-            get_web_site_container_logs::Builder {
+        ) -> get_web_site_container_logs::RequestBuilder {
+            get_web_site_container_logs::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -21503,8 +21510,8 @@ pub mod web_apps {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_container_logs_zip::Builder {
-            get_container_logs_zip::Builder {
+        ) -> get_container_logs_zip::RequestBuilder {
+            get_container_logs_zip::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -21523,8 +21530,8 @@ pub mod web_apps {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_continuous_web_jobs::Builder {
-            list_continuous_web_jobs::Builder {
+        ) -> list_continuous_web_jobs::RequestBuilder {
+            list_continuous_web_jobs::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -21545,8 +21552,8 @@ pub mod web_apps {
             name: impl Into<String>,
             web_job_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_continuous_web_job::Builder {
-            get_continuous_web_job::Builder {
+        ) -> get_continuous_web_job::RequestBuilder {
+            get_continuous_web_job::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -21568,8 +21575,8 @@ pub mod web_apps {
             name: impl Into<String>,
             web_job_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> delete_continuous_web_job::Builder {
-            delete_continuous_web_job::Builder {
+        ) -> delete_continuous_web_job::RequestBuilder {
+            delete_continuous_web_job::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -21591,8 +21598,8 @@ pub mod web_apps {
             name: impl Into<String>,
             web_job_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> start_continuous_web_job::Builder {
-            start_continuous_web_job::Builder {
+        ) -> start_continuous_web_job::RequestBuilder {
+            start_continuous_web_job::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -21614,8 +21621,8 @@ pub mod web_apps {
             name: impl Into<String>,
             web_job_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> stop_continuous_web_job::Builder {
-            stop_continuous_web_job::Builder {
+        ) -> stop_continuous_web_job::RequestBuilder {
+            stop_continuous_web_job::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -21635,8 +21642,8 @@ pub mod web_apps {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_deployments::Builder {
-            list_deployments::Builder {
+        ) -> list_deployments::RequestBuilder {
+            list_deployments::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -21657,8 +21664,8 @@ pub mod web_apps {
             name: impl Into<String>,
             id: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_deployment::Builder {
-            get_deployment::Builder {
+        ) -> get_deployment::RequestBuilder {
+            get_deployment::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -21682,8 +21689,8 @@ pub mod web_apps {
             id: impl Into<String>,
             deployment: impl Into<models::Deployment>,
             subscription_id: impl Into<String>,
-        ) -> create_deployment::Builder {
-            create_deployment::Builder {
+        ) -> create_deployment::RequestBuilder {
+            create_deployment::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -21706,8 +21713,8 @@ pub mod web_apps {
             name: impl Into<String>,
             id: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> delete_deployment::Builder {
-            delete_deployment::Builder {
+        ) -> delete_deployment::RequestBuilder {
+            delete_deployment::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -21729,8 +21736,8 @@ pub mod web_apps {
             name: impl Into<String>,
             id: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_deployment_log::Builder {
-            list_deployment_log::Builder {
+        ) -> list_deployment_log::RequestBuilder {
+            list_deployment_log::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -21752,8 +21759,8 @@ pub mod web_apps {
             name: impl Into<String>,
             request: impl Into<models::RestoreRequest>,
             subscription_id: impl Into<String>,
-        ) -> discover_backup::Builder {
-            discover_backup::Builder {
+        ) -> discover_backup::RequestBuilder {
+            discover_backup::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -21773,8 +21780,8 @@ pub mod web_apps {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_domain_ownership_identifiers::Builder {
-            list_domain_ownership_identifiers::Builder {
+        ) -> list_domain_ownership_identifiers::RequestBuilder {
+            list_domain_ownership_identifiers::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -21795,8 +21802,8 @@ pub mod web_apps {
             name: impl Into<String>,
             domain_ownership_identifier_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_domain_ownership_identifier::Builder {
-            get_domain_ownership_identifier::Builder {
+        ) -> get_domain_ownership_identifier::RequestBuilder {
+            get_domain_ownership_identifier::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -21820,8 +21827,8 @@ pub mod web_apps {
             domain_ownership_identifier_name: impl Into<String>,
             domain_ownership_identifier: impl Into<models::Identifier>,
             subscription_id: impl Into<String>,
-        ) -> create_or_update_domain_ownership_identifier::Builder {
-            create_or_update_domain_ownership_identifier::Builder {
+        ) -> create_or_update_domain_ownership_identifier::RequestBuilder {
+            create_or_update_domain_ownership_identifier::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -21846,8 +21853,8 @@ pub mod web_apps {
             domain_ownership_identifier_name: impl Into<String>,
             domain_ownership_identifier: impl Into<models::Identifier>,
             subscription_id: impl Into<String>,
-        ) -> update_domain_ownership_identifier::Builder {
-            update_domain_ownership_identifier::Builder {
+        ) -> update_domain_ownership_identifier::RequestBuilder {
+            update_domain_ownership_identifier::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -21870,8 +21877,8 @@ pub mod web_apps {
             name: impl Into<String>,
             domain_ownership_identifier_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> delete_domain_ownership_identifier::Builder {
-            delete_domain_ownership_identifier::Builder {
+        ) -> delete_domain_ownership_identifier::RequestBuilder {
+            delete_domain_ownership_identifier::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -21891,8 +21898,8 @@ pub mod web_apps {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_ms_deploy_status::Builder {
-            get_ms_deploy_status::Builder {
+        ) -> get_ms_deploy_status::RequestBuilder {
+            get_ms_deploy_status::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -21913,8 +21920,8 @@ pub mod web_apps {
             name: impl Into<String>,
             ms_deploy: impl Into<models::MsDeploy>,
             subscription_id: impl Into<String>,
-        ) -> create_ms_deploy_operation::Builder {
-            create_ms_deploy_operation::Builder {
+        ) -> create_ms_deploy_operation::RequestBuilder {
+            create_ms_deploy_operation::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -21934,8 +21941,8 @@ pub mod web_apps {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_ms_deploy_log::Builder {
-            get_ms_deploy_log::Builder {
+        ) -> get_ms_deploy_log::RequestBuilder {
+            get_ms_deploy_log::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -21954,8 +21961,8 @@ pub mod web_apps {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_functions::Builder {
-            list_functions::Builder {
+        ) -> list_functions::RequestBuilder {
+            list_functions::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -21974,8 +21981,8 @@ pub mod web_apps {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_functions_admin_token::Builder {
-            get_functions_admin_token::Builder {
+        ) -> get_functions_admin_token::RequestBuilder {
+            get_functions_admin_token::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -21996,8 +22003,8 @@ pub mod web_apps {
             name: impl Into<String>,
             function_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_function::Builder {
-            get_function::Builder {
+        ) -> get_function::RequestBuilder {
+            get_function::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -22021,8 +22028,8 @@ pub mod web_apps {
             function_name: impl Into<String>,
             function_envelope: impl Into<models::FunctionEnvelope>,
             subscription_id: impl Into<String>,
-        ) -> create_function::Builder {
-            create_function::Builder {
+        ) -> create_function::RequestBuilder {
+            create_function::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -22045,8 +22052,8 @@ pub mod web_apps {
             name: impl Into<String>,
             function_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> delete_function::Builder {
-            delete_function::Builder {
+        ) -> delete_function::RequestBuilder {
+            delete_function::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -22072,8 +22079,8 @@ pub mod web_apps {
             key_name: impl Into<String>,
             key: impl Into<models::KeyInfo>,
             subscription_id: impl Into<String>,
-        ) -> create_or_update_function_secret::Builder {
-            create_or_update_function_secret::Builder {
+        ) -> create_or_update_function_secret::RequestBuilder {
+            create_or_update_function_secret::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -22099,8 +22106,8 @@ pub mod web_apps {
             function_name: impl Into<String>,
             key_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> delete_function_secret::Builder {
-            delete_function_secret::Builder {
+        ) -> delete_function_secret::RequestBuilder {
+            delete_function_secret::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -22123,8 +22130,8 @@ pub mod web_apps {
             name: impl Into<String>,
             function_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_function_keys::Builder {
-            list_function_keys::Builder {
+        ) -> list_function_keys::RequestBuilder {
+            list_function_keys::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -22146,8 +22153,8 @@ pub mod web_apps {
             name: impl Into<String>,
             function_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_function_secrets::Builder {
-            list_function_secrets::Builder {
+        ) -> list_function_secrets::RequestBuilder {
+            list_function_secrets::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -22167,8 +22174,8 @@ pub mod web_apps {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_host_keys::Builder {
-            list_host_keys::Builder {
+        ) -> list_host_keys::RequestBuilder {
+            list_host_keys::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -22187,8 +22194,8 @@ pub mod web_apps {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_sync_status::Builder {
-            list_sync_status::Builder {
+        ) -> list_sync_status::RequestBuilder {
+            list_sync_status::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -22207,8 +22214,8 @@ pub mod web_apps {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> sync_functions::Builder {
-            sync_functions::Builder {
+        ) -> sync_functions::RequestBuilder {
+            sync_functions::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -22233,8 +22240,8 @@ pub mod web_apps {
             key_name: impl Into<String>,
             key: impl Into<models::KeyInfo>,
             subscription_id: impl Into<String>,
-        ) -> create_or_update_host_secret::Builder {
-            create_or_update_host_secret::Builder {
+        ) -> create_or_update_host_secret::RequestBuilder {
+            create_or_update_host_secret::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -22260,8 +22267,8 @@ pub mod web_apps {
             key_type: impl Into<String>,
             key_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> delete_host_secret::Builder {
-            delete_host_secret::Builder {
+        ) -> delete_host_secret::RequestBuilder {
+            delete_host_secret::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -22282,8 +22289,8 @@ pub mod web_apps {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_host_name_bindings::Builder {
-            list_host_name_bindings::Builder {
+        ) -> list_host_name_bindings::RequestBuilder {
+            list_host_name_bindings::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -22304,8 +22311,8 @@ pub mod web_apps {
             name: impl Into<String>,
             host_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_host_name_binding::Builder {
-            get_host_name_binding::Builder {
+        ) -> get_host_name_binding::RequestBuilder {
+            get_host_name_binding::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -22329,8 +22336,8 @@ pub mod web_apps {
             host_name: impl Into<String>,
             host_name_binding: impl Into<models::HostNameBinding>,
             subscription_id: impl Into<String>,
-        ) -> create_or_update_host_name_binding::Builder {
-            create_or_update_host_name_binding::Builder {
+        ) -> create_or_update_host_name_binding::RequestBuilder {
+            create_or_update_host_name_binding::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -22353,8 +22360,8 @@ pub mod web_apps {
             name: impl Into<String>,
             host_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> delete_host_name_binding::Builder {
-            delete_host_name_binding::Builder {
+        ) -> delete_host_name_binding::RequestBuilder {
+            delete_host_name_binding::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -22378,8 +22385,8 @@ pub mod web_apps {
             namespace_name: impl Into<String>,
             relay_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_hybrid_connection::Builder {
-            get_hybrid_connection::Builder {
+        ) -> get_hybrid_connection::RequestBuilder {
+            get_hybrid_connection::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -22406,8 +22413,8 @@ pub mod web_apps {
             relay_name: impl Into<String>,
             connection_envelope: impl Into<models::HybridConnection>,
             subscription_id: impl Into<String>,
-        ) -> create_or_update_hybrid_connection::Builder {
-            create_or_update_hybrid_connection::Builder {
+        ) -> create_or_update_hybrid_connection::RequestBuilder {
+            create_or_update_hybrid_connection::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -22435,8 +22442,8 @@ pub mod web_apps {
             relay_name: impl Into<String>,
             connection_envelope: impl Into<models::HybridConnection>,
             subscription_id: impl Into<String>,
-        ) -> update_hybrid_connection::Builder {
-            update_hybrid_connection::Builder {
+        ) -> update_hybrid_connection::RequestBuilder {
+            update_hybrid_connection::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -22462,8 +22469,8 @@ pub mod web_apps {
             namespace_name: impl Into<String>,
             relay_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> delete_hybrid_connection::Builder {
-            delete_hybrid_connection::Builder {
+        ) -> delete_hybrid_connection::RequestBuilder {
+            delete_hybrid_connection::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -22484,8 +22491,8 @@ pub mod web_apps {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_hybrid_connections::Builder {
-            list_hybrid_connections::Builder {
+        ) -> list_hybrid_connections::RequestBuilder {
+            list_hybrid_connections::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -22504,8 +22511,8 @@ pub mod web_apps {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_relay_service_connections::Builder {
-            list_relay_service_connections::Builder {
+        ) -> list_relay_service_connections::RequestBuilder {
+            list_relay_service_connections::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -22526,8 +22533,8 @@ pub mod web_apps {
             name: impl Into<String>,
             entity_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_relay_service_connection::Builder {
-            get_relay_service_connection::Builder {
+        ) -> get_relay_service_connection::RequestBuilder {
+            get_relay_service_connection::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -22551,8 +22558,8 @@ pub mod web_apps {
             entity_name: impl Into<String>,
             connection_envelope: impl Into<models::RelayServiceConnectionEntity>,
             subscription_id: impl Into<String>,
-        ) -> create_or_update_relay_service_connection::Builder {
-            create_or_update_relay_service_connection::Builder {
+        ) -> create_or_update_relay_service_connection::RequestBuilder {
+            create_or_update_relay_service_connection::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -22577,8 +22584,8 @@ pub mod web_apps {
             entity_name: impl Into<String>,
             connection_envelope: impl Into<models::RelayServiceConnectionEntity>,
             subscription_id: impl Into<String>,
-        ) -> update_relay_service_connection::Builder {
-            update_relay_service_connection::Builder {
+        ) -> update_relay_service_connection::RequestBuilder {
+            update_relay_service_connection::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -22601,8 +22608,8 @@ pub mod web_apps {
             name: impl Into<String>,
             entity_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> delete_relay_service_connection::Builder {
-            delete_relay_service_connection::Builder {
+        ) -> delete_relay_service_connection::RequestBuilder {
+            delete_relay_service_connection::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -22622,8 +22629,8 @@ pub mod web_apps {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_instance_identifiers::Builder {
-            list_instance_identifiers::Builder {
+        ) -> list_instance_identifiers::RequestBuilder {
+            list_instance_identifiers::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -22643,8 +22650,8 @@ pub mod web_apps {
             name: impl Into<String>,
             instance_id: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_instance_info::Builder {
-            get_instance_info::Builder {
+        ) -> get_instance_info::RequestBuilder {
+            get_instance_info::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -22666,8 +22673,8 @@ pub mod web_apps {
             name: impl Into<String>,
             instance_id: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_instance_ms_deploy_status::Builder {
-            get_instance_ms_deploy_status::Builder {
+        ) -> get_instance_ms_deploy_status::RequestBuilder {
+            get_instance_ms_deploy_status::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -22691,8 +22698,8 @@ pub mod web_apps {
             instance_id: impl Into<String>,
             ms_deploy: impl Into<models::MsDeploy>,
             subscription_id: impl Into<String>,
-        ) -> create_instance_ms_deploy_operation::Builder {
-            create_instance_ms_deploy_operation::Builder {
+        ) -> create_instance_ms_deploy_operation::RequestBuilder {
+            create_instance_ms_deploy_operation::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -22715,8 +22722,8 @@ pub mod web_apps {
             name: impl Into<String>,
             instance_id: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_instance_ms_deploy_log::Builder {
-            get_instance_ms_deploy_log::Builder {
+        ) -> get_instance_ms_deploy_log::RequestBuilder {
+            get_instance_ms_deploy_log::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -22738,8 +22745,8 @@ pub mod web_apps {
             name: impl Into<String>,
             instance_id: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_instance_processes::Builder {
-            list_instance_processes::Builder {
+        ) -> list_instance_processes::RequestBuilder {
+            list_instance_processes::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -22763,8 +22770,8 @@ pub mod web_apps {
             process_id: impl Into<String>,
             instance_id: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_instance_process::Builder {
-            get_instance_process::Builder {
+        ) -> get_instance_process::RequestBuilder {
+            get_instance_process::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -22789,8 +22796,8 @@ pub mod web_apps {
             process_id: impl Into<String>,
             instance_id: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> delete_instance_process::Builder {
-            delete_instance_process::Builder {
+        ) -> delete_instance_process::RequestBuilder {
+            delete_instance_process::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -22815,8 +22822,8 @@ pub mod web_apps {
             process_id: impl Into<String>,
             instance_id: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_instance_process_dump::Builder {
-            get_instance_process_dump::Builder {
+        ) -> get_instance_process_dump::RequestBuilder {
+            get_instance_process_dump::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -22841,8 +22848,8 @@ pub mod web_apps {
             process_id: impl Into<String>,
             instance_id: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_instance_process_modules::Builder {
-            list_instance_process_modules::Builder {
+        ) -> list_instance_process_modules::RequestBuilder {
+            list_instance_process_modules::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -22869,8 +22876,8 @@ pub mod web_apps {
             base_address: impl Into<String>,
             instance_id: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_instance_process_module::Builder {
-            get_instance_process_module::Builder {
+        ) -> get_instance_process_module::RequestBuilder {
+            get_instance_process_module::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -22896,8 +22903,8 @@ pub mod web_apps {
             process_id: impl Into<String>,
             instance_id: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_instance_process_threads::Builder {
-            list_instance_process_threads::Builder {
+        ) -> list_instance_process_threads::RequestBuilder {
+            list_instance_process_threads::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -22918,8 +22925,8 @@ pub mod web_apps {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> is_cloneable::Builder {
-            is_cloneable::Builder {
+        ) -> is_cloneable::RequestBuilder {
+            is_cloneable::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -22938,8 +22945,8 @@ pub mod web_apps {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_site_backups::Builder {
-            list_site_backups::Builder {
+        ) -> list_site_backups::RequestBuilder {
+            list_site_backups::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -22958,8 +22965,8 @@ pub mod web_apps {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_sync_function_triggers::Builder {
-            list_sync_function_triggers::Builder {
+        ) -> list_sync_function_triggers::RequestBuilder {
+            list_sync_function_triggers::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -22982,8 +22989,8 @@ pub mod web_apps {
             name: impl Into<String>,
             migration_options: impl Into<models::StorageMigrationOptions>,
             subscription_id: impl Into<String>,
-        ) -> migrate_storage::Builder {
-            migrate_storage::Builder {
+        ) -> migrate_storage::RequestBuilder {
+            migrate_storage::RequestBuilder {
                 client: self.0.clone(),
                 subscription_name: subscription_name.into(),
                 resource_group_name: resource_group_name.into(),
@@ -23006,8 +23013,8 @@ pub mod web_apps {
             name: impl Into<String>,
             migration_request_envelope: impl Into<models::MigrateMySqlRequest>,
             subscription_id: impl Into<String>,
-        ) -> migrate_my_sql::Builder {
-            migrate_my_sql::Builder {
+        ) -> migrate_my_sql::RequestBuilder {
+            migrate_my_sql::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -23027,8 +23034,8 @@ pub mod web_apps {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_migrate_my_sql_status::Builder {
-            get_migrate_my_sql_status::Builder {
+        ) -> get_migrate_my_sql_status::RequestBuilder {
+            get_migrate_my_sql_status::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -23047,8 +23054,8 @@ pub mod web_apps {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_swift_virtual_network_connection::Builder {
-            get_swift_virtual_network_connection::Builder {
+        ) -> get_swift_virtual_network_connection::RequestBuilder {
+            get_swift_virtual_network_connection::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -23069,8 +23076,8 @@ pub mod web_apps {
             name: impl Into<String>,
             connection_envelope: impl Into<models::SwiftVirtualNetwork>,
             subscription_id: impl Into<String>,
-        ) -> create_or_update_swift_virtual_network_connection_with_check::Builder {
-            create_or_update_swift_virtual_network_connection_with_check::Builder {
+        ) -> create_or_update_swift_virtual_network_connection_with_check::RequestBuilder {
+            create_or_update_swift_virtual_network_connection_with_check::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -23090,8 +23097,8 @@ pub mod web_apps {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> delete_swift_virtual_network::Builder {
-            delete_swift_virtual_network::Builder {
+        ) -> delete_swift_virtual_network::RequestBuilder {
+            delete_swift_virtual_network::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -23112,8 +23119,8 @@ pub mod web_apps {
             name: impl Into<String>,
             view: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_network_features::Builder {
-            list_network_features::Builder {
+        ) -> list_network_features::RequestBuilder {
+            list_network_features::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -23135,8 +23142,8 @@ pub mod web_apps {
             name: impl Into<String>,
             operation_id: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_network_trace_operation::Builder {
-            get_network_trace_operation::Builder {
+        ) -> get_network_trace_operation::RequestBuilder {
+            get_network_trace_operation::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -23156,8 +23163,8 @@ pub mod web_apps {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> start_web_site_network_trace::Builder {
-            start_web_site_network_trace::Builder {
+        ) -> start_web_site_network_trace::RequestBuilder {
+            start_web_site_network_trace::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -23179,8 +23186,8 @@ pub mod web_apps {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> start_web_site_network_trace_operation::Builder {
-            start_web_site_network_trace_operation::Builder {
+        ) -> start_web_site_network_trace_operation::RequestBuilder {
+            start_web_site_network_trace_operation::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -23202,8 +23209,8 @@ pub mod web_apps {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> stop_web_site_network_trace::Builder {
-            stop_web_site_network_trace::Builder {
+        ) -> stop_web_site_network_trace::RequestBuilder {
+            stop_web_site_network_trace::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -23224,8 +23231,8 @@ pub mod web_apps {
             name: impl Into<String>,
             operation_id: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_network_traces::Builder {
-            get_network_traces::Builder {
+        ) -> get_network_traces::RequestBuilder {
+            get_network_traces::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -23247,8 +23254,8 @@ pub mod web_apps {
             name: impl Into<String>,
             operation_id: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_network_trace_operation_v2::Builder {
-            get_network_trace_operation_v2::Builder {
+        ) -> get_network_trace_operation_v2::RequestBuilder {
+            get_network_trace_operation_v2::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -23270,8 +23277,8 @@ pub mod web_apps {
             name: impl Into<String>,
             operation_id: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_network_traces_v2::Builder {
-            get_network_traces_v2::Builder {
+        ) -> get_network_traces_v2::RequestBuilder {
+            get_network_traces_v2::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -23291,8 +23298,8 @@ pub mod web_apps {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> generate_new_site_publishing_password::Builder {
-            generate_new_site_publishing_password::Builder {
+        ) -> generate_new_site_publishing_password::RequestBuilder {
+            generate_new_site_publishing_password::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -23311,8 +23318,8 @@ pub mod web_apps {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_perf_mon_counters::Builder {
-            list_perf_mon_counters::Builder {
+        ) -> list_perf_mon_counters::RequestBuilder {
+            list_perf_mon_counters::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -23332,8 +23339,8 @@ pub mod web_apps {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_site_php_error_log_flag::Builder {
-            get_site_php_error_log_flag::Builder {
+        ) -> get_site_php_error_log_flag::RequestBuilder {
+            get_site_php_error_log_flag::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -23352,8 +23359,8 @@ pub mod web_apps {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_premier_add_ons::Builder {
-            list_premier_add_ons::Builder {
+        ) -> list_premier_add_ons::RequestBuilder {
+            list_premier_add_ons::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -23374,8 +23381,8 @@ pub mod web_apps {
             name: impl Into<String>,
             premier_add_on_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_premier_add_on::Builder {
-            get_premier_add_on::Builder {
+        ) -> get_premier_add_on::RequestBuilder {
+            get_premier_add_on::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -23399,8 +23406,8 @@ pub mod web_apps {
             premier_add_on_name: impl Into<String>,
             premier_add_on: impl Into<models::PremierAddOn>,
             subscription_id: impl Into<String>,
-        ) -> add_premier_add_on::Builder {
-            add_premier_add_on::Builder {
+        ) -> add_premier_add_on::RequestBuilder {
+            add_premier_add_on::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -23425,8 +23432,8 @@ pub mod web_apps {
             premier_add_on_name: impl Into<String>,
             premier_add_on: impl Into<models::PremierAddOnPatchResource>,
             subscription_id: impl Into<String>,
-        ) -> update_premier_add_on::Builder {
-            update_premier_add_on::Builder {
+        ) -> update_premier_add_on::RequestBuilder {
+            update_premier_add_on::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -23449,8 +23456,8 @@ pub mod web_apps {
             name: impl Into<String>,
             premier_add_on_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> delete_premier_add_on::Builder {
-            delete_premier_add_on::Builder {
+        ) -> delete_premier_add_on::RequestBuilder {
+            delete_premier_add_on::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -23470,8 +23477,8 @@ pub mod web_apps {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_private_access::Builder {
-            get_private_access::Builder {
+        ) -> get_private_access::RequestBuilder {
+            get_private_access::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -23492,8 +23499,8 @@ pub mod web_apps {
             name: impl Into<String>,
             access: impl Into<models::PrivateAccess>,
             subscription_id: impl Into<String>,
-        ) -> put_private_access_vnet::Builder {
-            put_private_access_vnet::Builder {
+        ) -> put_private_access_vnet::RequestBuilder {
+            put_private_access_vnet::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -23513,8 +23520,8 @@ pub mod web_apps {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_private_endpoint_connection_list::Builder {
-            get_private_endpoint_connection_list::Builder {
+        ) -> get_private_endpoint_connection_list::RequestBuilder {
+            get_private_endpoint_connection_list::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -23535,8 +23542,8 @@ pub mod web_apps {
             name: impl Into<String>,
             private_endpoint_connection_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_private_endpoint_connection::Builder {
-            get_private_endpoint_connection::Builder {
+        ) -> get_private_endpoint_connection::RequestBuilder {
+            get_private_endpoint_connection::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -23558,8 +23565,8 @@ pub mod web_apps {
             private_endpoint_connection_name: impl Into<String>,
             private_endpoint_wrapper: impl Into<models::PrivateLinkConnectionApprovalRequestResource>,
             subscription_id: impl Into<String>,
-        ) -> approve_or_reject_private_endpoint_connection::Builder {
-            approve_or_reject_private_endpoint_connection::Builder {
+        ) -> approve_or_reject_private_endpoint_connection::RequestBuilder {
+            approve_or_reject_private_endpoint_connection::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -23581,8 +23588,8 @@ pub mod web_apps {
             name: impl Into<String>,
             private_endpoint_connection_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> delete_private_endpoint_connection::Builder {
-            delete_private_endpoint_connection::Builder {
+        ) -> delete_private_endpoint_connection::RequestBuilder {
+            delete_private_endpoint_connection::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -23602,8 +23609,8 @@ pub mod web_apps {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_private_link_resources::Builder {
-            get_private_link_resources::Builder {
+        ) -> get_private_link_resources::RequestBuilder {
+            get_private_link_resources::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -23622,8 +23629,8 @@ pub mod web_apps {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_processes::Builder {
-            list_processes::Builder {
+        ) -> list_processes::RequestBuilder {
+            list_processes::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -23644,8 +23651,8 @@ pub mod web_apps {
             name: impl Into<String>,
             process_id: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_process::Builder {
-            get_process::Builder {
+        ) -> get_process::RequestBuilder {
+            get_process::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -23667,8 +23674,8 @@ pub mod web_apps {
             name: impl Into<String>,
             process_id: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> delete_process::Builder {
-            delete_process::Builder {
+        ) -> delete_process::RequestBuilder {
+            delete_process::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -23690,8 +23697,8 @@ pub mod web_apps {
             name: impl Into<String>,
             process_id: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_process_dump::Builder {
-            get_process_dump::Builder {
+        ) -> get_process_dump::RequestBuilder {
+            get_process_dump::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -23713,8 +23720,8 @@ pub mod web_apps {
             name: impl Into<String>,
             process_id: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_process_modules::Builder {
-            list_process_modules::Builder {
+        ) -> list_process_modules::RequestBuilder {
+            list_process_modules::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -23738,8 +23745,8 @@ pub mod web_apps {
             process_id: impl Into<String>,
             base_address: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_process_module::Builder {
-            get_process_module::Builder {
+        ) -> get_process_module::RequestBuilder {
+            get_process_module::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -23762,8 +23769,8 @@ pub mod web_apps {
             name: impl Into<String>,
             process_id: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_process_threads::Builder {
-            list_process_threads::Builder {
+        ) -> list_process_threads::RequestBuilder {
+            list_process_threads::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -23783,8 +23790,8 @@ pub mod web_apps {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_public_certificates::Builder {
-            list_public_certificates::Builder {
+        ) -> list_public_certificates::RequestBuilder {
+            list_public_certificates::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -23805,8 +23812,8 @@ pub mod web_apps {
             name: impl Into<String>,
             public_certificate_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_public_certificate::Builder {
-            get_public_certificate::Builder {
+        ) -> get_public_certificate::RequestBuilder {
+            get_public_certificate::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -23830,8 +23837,8 @@ pub mod web_apps {
             public_certificate_name: impl Into<String>,
             public_certificate: impl Into<models::PublicCertificate>,
             subscription_id: impl Into<String>,
-        ) -> create_or_update_public_certificate::Builder {
-            create_or_update_public_certificate::Builder {
+        ) -> create_or_update_public_certificate::RequestBuilder {
+            create_or_update_public_certificate::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -23854,8 +23861,8 @@ pub mod web_apps {
             name: impl Into<String>,
             public_certificate_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> delete_public_certificate::Builder {
-            delete_public_certificate::Builder {
+        ) -> delete_public_certificate::RequestBuilder {
+            delete_public_certificate::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -23877,8 +23884,8 @@ pub mod web_apps {
             name: impl Into<String>,
             publishing_profile_options: impl Into<models::CsmPublishingProfileOptions>,
             subscription_id: impl Into<String>,
-        ) -> list_publishing_profile_xml_with_secrets::Builder {
-            list_publishing_profile_xml_with_secrets::Builder {
+        ) -> list_publishing_profile_xml_with_secrets::RequestBuilder {
+            list_publishing_profile_xml_with_secrets::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -23898,8 +23905,8 @@ pub mod web_apps {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> reset_production_slot_config::Builder {
-            reset_production_slot_config::Builder {
+        ) -> reset_production_slot_config::RequestBuilder {
+            reset_production_slot_config::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -23918,8 +23925,8 @@ pub mod web_apps {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> restart::Builder {
-            restart::Builder {
+        ) -> restart::RequestBuilder {
+            restart::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -23942,8 +23949,8 @@ pub mod web_apps {
             name: impl Into<String>,
             request: impl Into<models::RestoreRequest>,
             subscription_id: impl Into<String>,
-        ) -> restore_from_backup_blob::Builder {
-            restore_from_backup_blob::Builder {
+        ) -> restore_from_backup_blob::RequestBuilder {
+            restore_from_backup_blob::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -23965,8 +23972,8 @@ pub mod web_apps {
             name: impl Into<String>,
             restore_request: impl Into<models::DeletedAppRestoreRequest>,
             subscription_id: impl Into<String>,
-        ) -> restore_from_deleted_app::Builder {
-            restore_from_deleted_app::Builder {
+        ) -> restore_from_deleted_app::RequestBuilder {
+            restore_from_deleted_app::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -23988,8 +23995,8 @@ pub mod web_apps {
             name: impl Into<String>,
             restore_request: impl Into<models::SnapshotRestoreRequest>,
             subscription_id: impl Into<String>,
-        ) -> restore_snapshot::Builder {
-            restore_snapshot::Builder {
+        ) -> restore_snapshot::RequestBuilder {
+            restore_snapshot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -24009,8 +24016,8 @@ pub mod web_apps {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_site_extensions::Builder {
-            list_site_extensions::Builder {
+        ) -> list_site_extensions::RequestBuilder {
+            list_site_extensions::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -24031,8 +24038,8 @@ pub mod web_apps {
             name: impl Into<String>,
             site_extension_id: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_site_extension::Builder {
-            get_site_extension::Builder {
+        ) -> get_site_extension::RequestBuilder {
+            get_site_extension::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -24054,8 +24061,8 @@ pub mod web_apps {
             name: impl Into<String>,
             site_extension_id: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> install_site_extension::Builder {
-            install_site_extension::Builder {
+        ) -> install_site_extension::RequestBuilder {
+            install_site_extension::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -24077,8 +24084,8 @@ pub mod web_apps {
             name: impl Into<String>,
             site_extension_id: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> delete_site_extension::Builder {
-            delete_site_extension::Builder {
+        ) -> delete_site_extension::RequestBuilder {
+            delete_site_extension::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -24098,8 +24105,8 @@ pub mod web_apps {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_slots::Builder {
-            list_slots::Builder {
+        ) -> list_slots::RequestBuilder {
+            list_slots::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -24120,8 +24127,8 @@ pub mod web_apps {
             name: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_slot::Builder {
-            get_slot::Builder {
+        ) -> get_slot::RequestBuilder {
+            get_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -24145,8 +24152,8 @@ pub mod web_apps {
             site_envelope: impl Into<models::Site>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> create_or_update_slot::Builder {
-            create_or_update_slot::Builder {
+        ) -> create_or_update_slot::RequestBuilder {
+            create_or_update_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -24171,8 +24178,8 @@ pub mod web_apps {
             site_envelope: impl Into<models::SitePatchResource>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> update_slot::Builder {
-            update_slot::Builder {
+        ) -> update_slot::RequestBuilder {
+            update_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -24195,8 +24202,8 @@ pub mod web_apps {
             name: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> delete_slot::Builder {
-            delete_slot::Builder {
+        ) -> delete_slot::RequestBuilder {
+            delete_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -24220,8 +24227,8 @@ pub mod web_apps {
             name: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> analyze_custom_hostname_slot::Builder {
-            analyze_custom_hostname_slot::Builder {
+        ) -> analyze_custom_hostname_slot::RequestBuilder {
+            analyze_custom_hostname_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -24246,8 +24253,8 @@ pub mod web_apps {
             slot_swap_entity: impl Into<models::CsmSlotEntity>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> apply_slot_configuration_slot::Builder {
-            apply_slot_configuration_slot::Builder {
+        ) -> apply_slot_configuration_slot::RequestBuilder {
+            apply_slot_configuration_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -24272,8 +24279,8 @@ pub mod web_apps {
             request: impl Into<models::BackupRequest>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> backup_slot::Builder {
-            backup_slot::Builder {
+        ) -> backup_slot::RequestBuilder {
+            backup_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -24296,8 +24303,8 @@ pub mod web_apps {
             name: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_backups_slot::Builder {
-            list_backups_slot::Builder {
+        ) -> list_backups_slot::RequestBuilder {
+            list_backups_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -24321,8 +24328,8 @@ pub mod web_apps {
             backup_id: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_backup_status_slot::Builder {
-            get_backup_status_slot::Builder {
+        ) -> get_backup_status_slot::RequestBuilder {
+            get_backup_status_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -24347,8 +24354,8 @@ pub mod web_apps {
             backup_id: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> delete_backup_slot::Builder {
-            delete_backup_slot::Builder {
+        ) -> delete_backup_slot::RequestBuilder {
+            delete_backup_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -24375,8 +24382,8 @@ pub mod web_apps {
             request: impl Into<models::BackupRequest>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_backup_status_secrets_slot::Builder {
-            list_backup_status_secrets_slot::Builder {
+        ) -> list_backup_status_secrets_slot::RequestBuilder {
+            list_backup_status_secrets_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -24404,8 +24411,8 @@ pub mod web_apps {
             request: impl Into<models::RestoreRequest>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> restore_slot::Builder {
-            restore_slot::Builder {
+        ) -> restore_slot::RequestBuilder {
+            restore_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -24428,8 +24435,8 @@ pub mod web_apps {
             name: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_basic_publishing_credentials_policies_slot::Builder {
-            get_basic_publishing_credentials_policies_slot::Builder {
+        ) -> get_basic_publishing_credentials_policies_slot::RequestBuilder {
+            get_basic_publishing_credentials_policies_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -24450,8 +24457,8 @@ pub mod web_apps {
             name: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_ftp_allowed_slot::Builder {
-            get_ftp_allowed_slot::Builder {
+        ) -> get_ftp_allowed_slot::RequestBuilder {
+            get_ftp_allowed_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -24473,8 +24480,8 @@ pub mod web_apps {
             csm_publishing_access_policies_entity: impl Into<models::CsmPublishingCredentialsPoliciesEntity>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> update_ftp_allowed_slot::Builder {
-            update_ftp_allowed_slot::Builder {
+        ) -> update_ftp_allowed_slot::RequestBuilder {
+            update_ftp_allowed_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -24496,8 +24503,8 @@ pub mod web_apps {
             name: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_scm_allowed_slot::Builder {
-            get_scm_allowed_slot::Builder {
+        ) -> get_scm_allowed_slot::RequestBuilder {
+            get_scm_allowed_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -24519,8 +24526,8 @@ pub mod web_apps {
             csm_publishing_access_policies_entity: impl Into<models::CsmPublishingCredentialsPoliciesEntity>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> update_scm_allowed_slot::Builder {
-            update_scm_allowed_slot::Builder {
+        ) -> update_scm_allowed_slot::RequestBuilder {
+            update_scm_allowed_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -24543,8 +24550,8 @@ pub mod web_apps {
             name: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_configurations_slot::Builder {
-            list_configurations_slot::Builder {
+        ) -> list_configurations_slot::RequestBuilder {
+            list_configurations_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -24568,8 +24575,8 @@ pub mod web_apps {
             app_settings: impl Into<models::StringDictionary>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> update_application_settings_slot::Builder {
-            update_application_settings_slot::Builder {
+        ) -> update_application_settings_slot::RequestBuilder {
+            update_application_settings_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -24592,8 +24599,8 @@ pub mod web_apps {
             name: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_application_settings_slot::Builder {
-            list_application_settings_slot::Builder {
+        ) -> list_application_settings_slot::RequestBuilder {
+            list_application_settings_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -24617,8 +24624,8 @@ pub mod web_apps {
             site_auth_settings: impl Into<models::SiteAuthSettings>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> update_auth_settings_slot::Builder {
-            update_auth_settings_slot::Builder {
+        ) -> update_auth_settings_slot::RequestBuilder {
+            update_auth_settings_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -24641,8 +24648,8 @@ pub mod web_apps {
             name: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_auth_settings_slot::Builder {
-            get_auth_settings_slot::Builder {
+        ) -> get_auth_settings_slot::RequestBuilder {
+            get_auth_settings_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -24666,8 +24673,8 @@ pub mod web_apps {
             site_auth_settings_v2: impl Into<models::SiteAuthSettingsV2>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> update_auth_settings_v2_slot::Builder {
-            update_auth_settings_v2_slot::Builder {
+        ) -> update_auth_settings_v2_slot::RequestBuilder {
+            update_auth_settings_v2_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -24690,8 +24697,8 @@ pub mod web_apps {
             name: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_auth_settings_v2_slot::Builder {
-            get_auth_settings_v2_slot::Builder {
+        ) -> get_auth_settings_v2_slot::RequestBuilder {
+            get_auth_settings_v2_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -24715,8 +24722,8 @@ pub mod web_apps {
             azure_storage_accounts: impl Into<models::AzureStoragePropertyDictionaryResource>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> update_azure_storage_accounts_slot::Builder {
-            update_azure_storage_accounts_slot::Builder {
+        ) -> update_azure_storage_accounts_slot::RequestBuilder {
+            update_azure_storage_accounts_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -24739,8 +24746,8 @@ pub mod web_apps {
             name: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_azure_storage_accounts_slot::Builder {
-            list_azure_storage_accounts_slot::Builder {
+        ) -> list_azure_storage_accounts_slot::RequestBuilder {
+            list_azure_storage_accounts_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -24764,8 +24771,8 @@ pub mod web_apps {
             request: impl Into<models::BackupRequest>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> update_backup_configuration_slot::Builder {
-            update_backup_configuration_slot::Builder {
+        ) -> update_backup_configuration_slot::RequestBuilder {
+            update_backup_configuration_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -24788,8 +24795,8 @@ pub mod web_apps {
             name: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> delete_backup_configuration_slot::Builder {
-            delete_backup_configuration_slot::Builder {
+        ) -> delete_backup_configuration_slot::RequestBuilder {
+            delete_backup_configuration_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -24811,8 +24818,8 @@ pub mod web_apps {
             name: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_backup_configuration_slot::Builder {
-            get_backup_configuration_slot::Builder {
+        ) -> get_backup_configuration_slot::RequestBuilder {
+            get_backup_configuration_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -24833,8 +24840,8 @@ pub mod web_apps {
             name: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_app_settings_key_vault_references_slot::Builder {
-            get_app_settings_key_vault_references_slot::Builder {
+        ) -> get_app_settings_key_vault_references_slot::RequestBuilder {
+            get_app_settings_key_vault_references_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -24857,8 +24864,8 @@ pub mod web_apps {
             app_setting_key: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_app_setting_key_vault_reference_slot::Builder {
-            get_app_setting_key_vault_reference_slot::Builder {
+        ) -> get_app_setting_key_vault_reference_slot::RequestBuilder {
+            get_app_setting_key_vault_reference_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -24880,8 +24887,8 @@ pub mod web_apps {
             name: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_site_connection_string_key_vault_references_slot::Builder {
-            get_site_connection_string_key_vault_references_slot::Builder {
+        ) -> get_site_connection_string_key_vault_references_slot::RequestBuilder {
+            get_site_connection_string_key_vault_references_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -24903,8 +24910,8 @@ pub mod web_apps {
             connection_string_key: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_site_connection_string_key_vault_reference_slot::Builder {
-            get_site_connection_string_key_vault_reference_slot::Builder {
+        ) -> get_site_connection_string_key_vault_reference_slot::RequestBuilder {
+            get_site_connection_string_key_vault_reference_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -24929,8 +24936,8 @@ pub mod web_apps {
             connection_strings: impl Into<models::ConnectionStringDictionary>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> update_connection_strings_slot::Builder {
-            update_connection_strings_slot::Builder {
+        ) -> update_connection_strings_slot::RequestBuilder {
+            update_connection_strings_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -24953,8 +24960,8 @@ pub mod web_apps {
             name: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_connection_strings_slot::Builder {
-            list_connection_strings_slot::Builder {
+        ) -> list_connection_strings_slot::RequestBuilder {
+            list_connection_strings_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -24976,8 +24983,8 @@ pub mod web_apps {
             name: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_diagnostic_logs_configuration_slot::Builder {
-            get_diagnostic_logs_configuration_slot::Builder {
+        ) -> get_diagnostic_logs_configuration_slot::RequestBuilder {
+            get_diagnostic_logs_configuration_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -25001,8 +25008,8 @@ pub mod web_apps {
             site_logs_config: impl Into<models::SiteLogsConfig>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> update_diagnostic_logs_config_slot::Builder {
-            update_diagnostic_logs_config_slot::Builder {
+        ) -> update_diagnostic_logs_config_slot::RequestBuilder {
+            update_diagnostic_logs_config_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -25027,8 +25034,8 @@ pub mod web_apps {
             metadata: impl Into<models::StringDictionary>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> update_metadata_slot::Builder {
-            update_metadata_slot::Builder {
+        ) -> update_metadata_slot::RequestBuilder {
+            update_metadata_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -25051,8 +25058,8 @@ pub mod web_apps {
             name: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_metadata_slot::Builder {
-            list_metadata_slot::Builder {
+        ) -> list_metadata_slot::RequestBuilder {
+            list_metadata_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -25074,8 +25081,8 @@ pub mod web_apps {
             name: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_publishing_credentials_slot::Builder {
-            list_publishing_credentials_slot::Builder {
+        ) -> list_publishing_credentials_slot::RequestBuilder {
+            list_publishing_credentials_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -25099,8 +25106,8 @@ pub mod web_apps {
             push_settings: impl Into<models::PushSettings>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> update_site_push_settings_slot::Builder {
-            update_site_push_settings_slot::Builder {
+        ) -> update_site_push_settings_slot::RequestBuilder {
+            update_site_push_settings_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -25123,8 +25130,8 @@ pub mod web_apps {
             name: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_site_push_settings_slot::Builder {
-            list_site_push_settings_slot::Builder {
+        ) -> list_site_push_settings_slot::RequestBuilder {
+            list_site_push_settings_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -25146,8 +25153,8 @@ pub mod web_apps {
             name: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_configuration_slot::Builder {
-            get_configuration_slot::Builder {
+        ) -> get_configuration_slot::RequestBuilder {
+            get_configuration_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -25171,8 +25178,8 @@ pub mod web_apps {
             site_config: impl Into<models::SiteConfigResource>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> create_or_update_configuration_slot::Builder {
-            create_or_update_configuration_slot::Builder {
+        ) -> create_or_update_configuration_slot::RequestBuilder {
+            create_or_update_configuration_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -25197,8 +25204,8 @@ pub mod web_apps {
             site_config: impl Into<models::SiteConfigResource>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> update_configuration_slot::Builder {
-            update_configuration_slot::Builder {
+        ) -> update_configuration_slot::RequestBuilder {
+            update_configuration_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -25221,8 +25228,8 @@ pub mod web_apps {
             name: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_configuration_snapshot_info_slot::Builder {
-            list_configuration_snapshot_info_slot::Builder {
+        ) -> list_configuration_snapshot_info_slot::RequestBuilder {
+            list_configuration_snapshot_info_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -25246,8 +25253,8 @@ pub mod web_apps {
             snapshot_id: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_configuration_snapshot_slot::Builder {
-            get_configuration_snapshot_slot::Builder {
+        ) -> get_configuration_snapshot_slot::RequestBuilder {
+            get_configuration_snapshot_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -25272,8 +25279,8 @@ pub mod web_apps {
             snapshot_id: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> recover_site_configuration_snapshot_slot::Builder {
-            recover_site_configuration_snapshot_slot::Builder {
+        ) -> recover_site_configuration_snapshot_slot::RequestBuilder {
+            recover_site_configuration_snapshot_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -25296,8 +25303,8 @@ pub mod web_apps {
             name: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_web_site_container_logs_slot::Builder {
-            get_web_site_container_logs_slot::Builder {
+        ) -> get_web_site_container_logs_slot::RequestBuilder {
+            get_web_site_container_logs_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -25319,8 +25326,8 @@ pub mod web_apps {
             name: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_container_logs_zip_slot::Builder {
-            get_container_logs_zip_slot::Builder {
+        ) -> get_container_logs_zip_slot::RequestBuilder {
+            get_container_logs_zip_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -25342,8 +25349,8 @@ pub mod web_apps {
             name: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_continuous_web_jobs_slot::Builder {
-            list_continuous_web_jobs_slot::Builder {
+        ) -> list_continuous_web_jobs_slot::RequestBuilder {
+            list_continuous_web_jobs_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -25367,8 +25374,8 @@ pub mod web_apps {
             web_job_name: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_continuous_web_job_slot::Builder {
-            get_continuous_web_job_slot::Builder {
+        ) -> get_continuous_web_job_slot::RequestBuilder {
+            get_continuous_web_job_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -25393,8 +25400,8 @@ pub mod web_apps {
             web_job_name: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> delete_continuous_web_job_slot::Builder {
-            delete_continuous_web_job_slot::Builder {
+        ) -> delete_continuous_web_job_slot::RequestBuilder {
+            delete_continuous_web_job_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -25419,8 +25426,8 @@ pub mod web_apps {
             web_job_name: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> start_continuous_web_job_slot::Builder {
-            start_continuous_web_job_slot::Builder {
+        ) -> start_continuous_web_job_slot::RequestBuilder {
+            start_continuous_web_job_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -25445,8 +25452,8 @@ pub mod web_apps {
             web_job_name: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> stop_continuous_web_job_slot::Builder {
-            stop_continuous_web_job_slot::Builder {
+        ) -> stop_continuous_web_job_slot::RequestBuilder {
+            stop_continuous_web_job_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -25469,8 +25476,8 @@ pub mod web_apps {
             name: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_deployments_slot::Builder {
-            list_deployments_slot::Builder {
+        ) -> list_deployments_slot::RequestBuilder {
+            list_deployments_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -25494,8 +25501,8 @@ pub mod web_apps {
             id: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_deployment_slot::Builder {
-            get_deployment_slot::Builder {
+        ) -> get_deployment_slot::RequestBuilder {
+            get_deployment_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -25522,8 +25529,8 @@ pub mod web_apps {
             slot: impl Into<String>,
             deployment: impl Into<models::Deployment>,
             subscription_id: impl Into<String>,
-        ) -> create_deployment_slot::Builder {
-            create_deployment_slot::Builder {
+        ) -> create_deployment_slot::RequestBuilder {
+            create_deployment_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -25549,8 +25556,8 @@ pub mod web_apps {
             id: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> delete_deployment_slot::Builder {
-            delete_deployment_slot::Builder {
+        ) -> delete_deployment_slot::RequestBuilder {
+            delete_deployment_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -25575,8 +25582,8 @@ pub mod web_apps {
             id: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_deployment_log_slot::Builder {
-            list_deployment_log_slot::Builder {
+        ) -> list_deployment_log_slot::RequestBuilder {
+            list_deployment_log_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -25601,8 +25608,8 @@ pub mod web_apps {
             request: impl Into<models::RestoreRequest>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> discover_backup_slot::Builder {
-            discover_backup_slot::Builder {
+        ) -> discover_backup_slot::RequestBuilder {
+            discover_backup_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -25625,8 +25632,8 @@ pub mod web_apps {
             name: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_domain_ownership_identifiers_slot::Builder {
-            list_domain_ownership_identifiers_slot::Builder {
+        ) -> list_domain_ownership_identifiers_slot::RequestBuilder {
+            list_domain_ownership_identifiers_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -25650,8 +25657,8 @@ pub mod web_apps {
             domain_ownership_identifier_name: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_domain_ownership_identifier_slot::Builder {
-            get_domain_ownership_identifier_slot::Builder {
+        ) -> get_domain_ownership_identifier_slot::RequestBuilder {
+            get_domain_ownership_identifier_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -25678,8 +25685,8 @@ pub mod web_apps {
             domain_ownership_identifier: impl Into<models::Identifier>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> create_or_update_domain_ownership_identifier_slot::Builder {
-            create_or_update_domain_ownership_identifier_slot::Builder {
+        ) -> create_or_update_domain_ownership_identifier_slot::RequestBuilder {
+            create_or_update_domain_ownership_identifier_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -25707,8 +25714,8 @@ pub mod web_apps {
             domain_ownership_identifier: impl Into<models::Identifier>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> update_domain_ownership_identifier_slot::Builder {
-            update_domain_ownership_identifier_slot::Builder {
+        ) -> update_domain_ownership_identifier_slot::RequestBuilder {
+            update_domain_ownership_identifier_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -25734,8 +25741,8 @@ pub mod web_apps {
             domain_ownership_identifier_name: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> delete_domain_ownership_identifier_slot::Builder {
-            delete_domain_ownership_identifier_slot::Builder {
+        ) -> delete_domain_ownership_identifier_slot::RequestBuilder {
+            delete_domain_ownership_identifier_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -25758,8 +25765,8 @@ pub mod web_apps {
             name: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_ms_deploy_status_slot::Builder {
-            get_ms_deploy_status_slot::Builder {
+        ) -> get_ms_deploy_status_slot::RequestBuilder {
+            get_ms_deploy_status_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -25783,8 +25790,8 @@ pub mod web_apps {
             slot: impl Into<String>,
             ms_deploy: impl Into<models::MsDeploy>,
             subscription_id: impl Into<String>,
-        ) -> create_ms_deploy_operation_slot::Builder {
-            create_ms_deploy_operation_slot::Builder {
+        ) -> create_ms_deploy_operation_slot::RequestBuilder {
+            create_ms_deploy_operation_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -25807,8 +25814,8 @@ pub mod web_apps {
             name: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_ms_deploy_log_slot::Builder {
-            get_ms_deploy_log_slot::Builder {
+        ) -> get_ms_deploy_log_slot::RequestBuilder {
+            get_ms_deploy_log_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -25830,8 +25837,8 @@ pub mod web_apps {
             name: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_instance_functions_slot::Builder {
-            list_instance_functions_slot::Builder {
+        ) -> list_instance_functions_slot::RequestBuilder {
+            list_instance_functions_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -25853,8 +25860,8 @@ pub mod web_apps {
             name: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_functions_admin_token_slot::Builder {
-            get_functions_admin_token_slot::Builder {
+        ) -> get_functions_admin_token_slot::RequestBuilder {
+            get_functions_admin_token_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -25878,8 +25885,8 @@ pub mod web_apps {
             function_name: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_instance_function_slot::Builder {
-            get_instance_function_slot::Builder {
+        ) -> get_instance_function_slot::RequestBuilder {
+            get_instance_function_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -25906,8 +25913,8 @@ pub mod web_apps {
             slot: impl Into<String>,
             function_envelope: impl Into<models::FunctionEnvelope>,
             subscription_id: impl Into<String>,
-        ) -> create_instance_function_slot::Builder {
-            create_instance_function_slot::Builder {
+        ) -> create_instance_function_slot::RequestBuilder {
+            create_instance_function_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -25933,8 +25940,8 @@ pub mod web_apps {
             function_name: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> delete_instance_function_slot::Builder {
-            delete_instance_function_slot::Builder {
+        ) -> delete_instance_function_slot::RequestBuilder {
+            delete_instance_function_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -25963,8 +25970,8 @@ pub mod web_apps {
             slot: impl Into<String>,
             key: impl Into<models::KeyInfo>,
             subscription_id: impl Into<String>,
-        ) -> create_or_update_function_secret_slot::Builder {
-            create_or_update_function_secret_slot::Builder {
+        ) -> create_or_update_function_secret_slot::RequestBuilder {
+            create_or_update_function_secret_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -25993,8 +26000,8 @@ pub mod web_apps {
             key_name: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> delete_function_secret_slot::Builder {
-            delete_function_secret_slot::Builder {
+        ) -> delete_function_secret_slot::RequestBuilder {
+            delete_function_secret_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -26020,8 +26027,8 @@ pub mod web_apps {
             function_name: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_function_keys_slot::Builder {
-            list_function_keys_slot::Builder {
+        ) -> list_function_keys_slot::RequestBuilder {
+            list_function_keys_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -26046,8 +26053,8 @@ pub mod web_apps {
             function_name: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_function_secrets_slot::Builder {
-            list_function_secrets_slot::Builder {
+        ) -> list_function_secrets_slot::RequestBuilder {
+            list_function_secrets_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -26070,8 +26077,8 @@ pub mod web_apps {
             name: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_host_keys_slot::Builder {
-            list_host_keys_slot::Builder {
+        ) -> list_host_keys_slot::RequestBuilder {
+            list_host_keys_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -26093,8 +26100,8 @@ pub mod web_apps {
             name: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_sync_status_slot::Builder {
-            list_sync_status_slot::Builder {
+        ) -> list_sync_status_slot::RequestBuilder {
+            list_sync_status_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -26116,8 +26123,8 @@ pub mod web_apps {
             name: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> sync_functions_slot::Builder {
-            sync_functions_slot::Builder {
+        ) -> sync_functions_slot::RequestBuilder {
+            sync_functions_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -26145,8 +26152,8 @@ pub mod web_apps {
             slot: impl Into<String>,
             key: impl Into<models::KeyInfo>,
             subscription_id: impl Into<String>,
-        ) -> create_or_update_host_secret_slot::Builder {
-            create_or_update_host_secret_slot::Builder {
+        ) -> create_or_update_host_secret_slot::RequestBuilder {
+            create_or_update_host_secret_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -26175,8 +26182,8 @@ pub mod web_apps {
             key_name: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> delete_host_secret_slot::Builder {
-            delete_host_secret_slot::Builder {
+        ) -> delete_host_secret_slot::RequestBuilder {
+            delete_host_secret_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -26200,8 +26207,8 @@ pub mod web_apps {
             name: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_host_name_bindings_slot::Builder {
-            list_host_name_bindings_slot::Builder {
+        ) -> list_host_name_bindings_slot::RequestBuilder {
+            list_host_name_bindings_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -26225,8 +26232,8 @@ pub mod web_apps {
             slot: impl Into<String>,
             host_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_host_name_binding_slot::Builder {
-            get_host_name_binding_slot::Builder {
+        ) -> get_host_name_binding_slot::RequestBuilder {
+            get_host_name_binding_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -26253,8 +26260,8 @@ pub mod web_apps {
             host_name_binding: impl Into<models::HostNameBinding>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> create_or_update_host_name_binding_slot::Builder {
-            create_or_update_host_name_binding_slot::Builder {
+        ) -> create_or_update_host_name_binding_slot::RequestBuilder {
+            create_or_update_host_name_binding_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -26280,8 +26287,8 @@ pub mod web_apps {
             slot: impl Into<String>,
             host_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> delete_host_name_binding_slot::Builder {
-            delete_host_name_binding_slot::Builder {
+        ) -> delete_host_name_binding_slot::RequestBuilder {
+            delete_host_name_binding_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -26308,8 +26315,8 @@ pub mod web_apps {
             relay_name: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_hybrid_connection_slot::Builder {
-            get_hybrid_connection_slot::Builder {
+        ) -> get_hybrid_connection_slot::RequestBuilder {
+            get_hybrid_connection_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -26339,8 +26346,8 @@ pub mod web_apps {
             connection_envelope: impl Into<models::HybridConnection>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> create_or_update_hybrid_connection_slot::Builder {
-            create_or_update_hybrid_connection_slot::Builder {
+        ) -> create_or_update_hybrid_connection_slot::RequestBuilder {
+            create_or_update_hybrid_connection_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -26371,8 +26378,8 @@ pub mod web_apps {
             connection_envelope: impl Into<models::HybridConnection>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> update_hybrid_connection_slot::Builder {
-            update_hybrid_connection_slot::Builder {
+        ) -> update_hybrid_connection_slot::RequestBuilder {
+            update_hybrid_connection_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -26401,8 +26408,8 @@ pub mod web_apps {
             relay_name: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> delete_hybrid_connection_slot::Builder {
-            delete_hybrid_connection_slot::Builder {
+        ) -> delete_hybrid_connection_slot::RequestBuilder {
+            delete_hybrid_connection_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -26426,8 +26433,8 @@ pub mod web_apps {
             name: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_hybrid_connections_slot::Builder {
-            list_hybrid_connections_slot::Builder {
+        ) -> list_hybrid_connections_slot::RequestBuilder {
+            list_hybrid_connections_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -26449,8 +26456,8 @@ pub mod web_apps {
             name: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_relay_service_connections_slot::Builder {
-            list_relay_service_connections_slot::Builder {
+        ) -> list_relay_service_connections_slot::RequestBuilder {
+            list_relay_service_connections_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -26474,8 +26481,8 @@ pub mod web_apps {
             entity_name: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_relay_service_connection_slot::Builder {
-            get_relay_service_connection_slot::Builder {
+        ) -> get_relay_service_connection_slot::RequestBuilder {
+            get_relay_service_connection_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -26502,8 +26509,8 @@ pub mod web_apps {
             connection_envelope: impl Into<models::RelayServiceConnectionEntity>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> create_or_update_relay_service_connection_slot::Builder {
-            create_or_update_relay_service_connection_slot::Builder {
+        ) -> create_or_update_relay_service_connection_slot::RequestBuilder {
+            create_or_update_relay_service_connection_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -26531,8 +26538,8 @@ pub mod web_apps {
             connection_envelope: impl Into<models::RelayServiceConnectionEntity>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> update_relay_service_connection_slot::Builder {
-            update_relay_service_connection_slot::Builder {
+        ) -> update_relay_service_connection_slot::RequestBuilder {
+            update_relay_service_connection_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -26558,8 +26565,8 @@ pub mod web_apps {
             entity_name: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> delete_relay_service_connection_slot::Builder {
-            delete_relay_service_connection_slot::Builder {
+        ) -> delete_relay_service_connection_slot::RequestBuilder {
+            delete_relay_service_connection_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -26582,8 +26589,8 @@ pub mod web_apps {
             name: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_instance_identifiers_slot::Builder {
-            list_instance_identifiers_slot::Builder {
+        ) -> list_instance_identifiers_slot::RequestBuilder {
+            list_instance_identifiers_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -26606,8 +26613,8 @@ pub mod web_apps {
             instance_id: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_instance_info_slot::Builder {
-            get_instance_info_slot::Builder {
+        ) -> get_instance_info_slot::RequestBuilder {
+            get_instance_info_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -26632,8 +26639,8 @@ pub mod web_apps {
             slot: impl Into<String>,
             instance_id: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_instance_ms_deploy_status_slot::Builder {
-            get_instance_ms_deploy_status_slot::Builder {
+        ) -> get_instance_ms_deploy_status_slot::RequestBuilder {
+            get_instance_ms_deploy_status_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -26660,8 +26667,8 @@ pub mod web_apps {
             instance_id: impl Into<String>,
             ms_deploy: impl Into<models::MsDeploy>,
             subscription_id: impl Into<String>,
-        ) -> create_instance_ms_deploy_operation_slot::Builder {
-            create_instance_ms_deploy_operation_slot::Builder {
+        ) -> create_instance_ms_deploy_operation_slot::RequestBuilder {
+            create_instance_ms_deploy_operation_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -26687,8 +26694,8 @@ pub mod web_apps {
             slot: impl Into<String>,
             instance_id: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_instance_ms_deploy_log_slot::Builder {
-            get_instance_ms_deploy_log_slot::Builder {
+        ) -> get_instance_ms_deploy_log_slot::RequestBuilder {
+            get_instance_ms_deploy_log_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -26713,8 +26720,8 @@ pub mod web_apps {
             slot: impl Into<String>,
             instance_id: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_instance_processes_slot::Builder {
-            list_instance_processes_slot::Builder {
+        ) -> list_instance_processes_slot::RequestBuilder {
+            list_instance_processes_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -26741,8 +26748,8 @@ pub mod web_apps {
             slot: impl Into<String>,
             instance_id: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_instance_process_slot::Builder {
-            get_instance_process_slot::Builder {
+        ) -> get_instance_process_slot::RequestBuilder {
+            get_instance_process_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -26770,8 +26777,8 @@ pub mod web_apps {
             slot: impl Into<String>,
             instance_id: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> delete_instance_process_slot::Builder {
-            delete_instance_process_slot::Builder {
+        ) -> delete_instance_process_slot::RequestBuilder {
+            delete_instance_process_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -26799,8 +26806,8 @@ pub mod web_apps {
             slot: impl Into<String>,
             instance_id: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_instance_process_dump_slot::Builder {
-            get_instance_process_dump_slot::Builder {
+        ) -> get_instance_process_dump_slot::RequestBuilder {
+            get_instance_process_dump_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -26828,8 +26835,8 @@ pub mod web_apps {
             slot: impl Into<String>,
             instance_id: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_instance_process_modules_slot::Builder {
-            list_instance_process_modules_slot::Builder {
+        ) -> list_instance_process_modules_slot::RequestBuilder {
+            list_instance_process_modules_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -26859,8 +26866,8 @@ pub mod web_apps {
             slot: impl Into<String>,
             instance_id: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_instance_process_module_slot::Builder {
-            get_instance_process_module_slot::Builder {
+        ) -> get_instance_process_module_slot::RequestBuilder {
+            get_instance_process_module_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -26889,8 +26896,8 @@ pub mod web_apps {
             slot: impl Into<String>,
             instance_id: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_instance_process_threads_slot::Builder {
-            list_instance_process_threads_slot::Builder {
+        ) -> list_instance_process_threads_slot::RequestBuilder {
+            list_instance_process_threads_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -26914,8 +26921,8 @@ pub mod web_apps {
             name: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> is_cloneable_slot::Builder {
-            is_cloneable_slot::Builder {
+        ) -> is_cloneable_slot::RequestBuilder {
+            is_cloneable_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -26937,8 +26944,8 @@ pub mod web_apps {
             name: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_site_backups_slot::Builder {
-            list_site_backups_slot::Builder {
+        ) -> list_site_backups_slot::RequestBuilder {
+            list_site_backups_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -26960,8 +26967,8 @@ pub mod web_apps {
             name: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_sync_function_triggers_slot::Builder {
-            list_sync_function_triggers_slot::Builder {
+        ) -> list_sync_function_triggers_slot::RequestBuilder {
+            list_sync_function_triggers_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -26983,8 +26990,8 @@ pub mod web_apps {
             name: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_migrate_my_sql_status_slot::Builder {
-            get_migrate_my_sql_status_slot::Builder {
+        ) -> get_migrate_my_sql_status_slot::RequestBuilder {
+            get_migrate_my_sql_status_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -27006,8 +27013,8 @@ pub mod web_apps {
             name: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_swift_virtual_network_connection_slot::Builder {
-            get_swift_virtual_network_connection_slot::Builder {
+        ) -> get_swift_virtual_network_connection_slot::RequestBuilder {
+            get_swift_virtual_network_connection_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -27029,8 +27036,8 @@ pub mod web_apps {
             name: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> delete_swift_virtual_network_slot::Builder {
-            delete_swift_virtual_network_slot::Builder {
+        ) -> delete_swift_virtual_network_slot::RequestBuilder {
+            delete_swift_virtual_network_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -27054,8 +27061,8 @@ pub mod web_apps {
             view: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_network_features_slot::Builder {
-            list_network_features_slot::Builder {
+        ) -> list_network_features_slot::RequestBuilder {
+            list_network_features_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -27080,8 +27087,8 @@ pub mod web_apps {
             operation_id: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_network_trace_operation_slot::Builder {
-            get_network_trace_operation_slot::Builder {
+        ) -> get_network_trace_operation_slot::RequestBuilder {
+            get_network_trace_operation_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -27104,8 +27111,8 @@ pub mod web_apps {
             name: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> start_web_site_network_trace_slot::Builder {
-            start_web_site_network_trace_slot::Builder {
+        ) -> start_web_site_network_trace_slot::RequestBuilder {
+            start_web_site_network_trace_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -27130,8 +27137,8 @@ pub mod web_apps {
             name: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> start_web_site_network_trace_operation_slot::Builder {
-            start_web_site_network_trace_operation_slot::Builder {
+        ) -> start_web_site_network_trace_operation_slot::RequestBuilder {
+            start_web_site_network_trace_operation_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -27156,8 +27163,8 @@ pub mod web_apps {
             name: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> stop_web_site_network_trace_slot::Builder {
-            stop_web_site_network_trace_slot::Builder {
+        ) -> stop_web_site_network_trace_slot::RequestBuilder {
+            stop_web_site_network_trace_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -27181,8 +27188,8 @@ pub mod web_apps {
             operation_id: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_network_traces_slot::Builder {
-            get_network_traces_slot::Builder {
+        ) -> get_network_traces_slot::RequestBuilder {
+            get_network_traces_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -27207,8 +27214,8 @@ pub mod web_apps {
             operation_id: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_network_trace_operation_slot_v2::Builder {
-            get_network_trace_operation_slot_v2::Builder {
+        ) -> get_network_trace_operation_slot_v2::RequestBuilder {
+            get_network_trace_operation_slot_v2::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -27233,8 +27240,8 @@ pub mod web_apps {
             operation_id: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_network_traces_slot_v2::Builder {
-            get_network_traces_slot_v2::Builder {
+        ) -> get_network_traces_slot_v2::RequestBuilder {
+            get_network_traces_slot_v2::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -27257,8 +27264,8 @@ pub mod web_apps {
             name: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> generate_new_site_publishing_password_slot::Builder {
-            generate_new_site_publishing_password_slot::Builder {
+        ) -> generate_new_site_publishing_password_slot::RequestBuilder {
+            generate_new_site_publishing_password_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -27280,8 +27287,8 @@ pub mod web_apps {
             name: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_perf_mon_counters_slot::Builder {
-            list_perf_mon_counters_slot::Builder {
+        ) -> list_perf_mon_counters_slot::RequestBuilder {
+            list_perf_mon_counters_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -27304,8 +27311,8 @@ pub mod web_apps {
             name: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_site_php_error_log_flag_slot::Builder {
-            get_site_php_error_log_flag_slot::Builder {
+        ) -> get_site_php_error_log_flag_slot::RequestBuilder {
+            get_site_php_error_log_flag_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -27327,8 +27334,8 @@ pub mod web_apps {
             name: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_premier_add_ons_slot::Builder {
-            list_premier_add_ons_slot::Builder {
+        ) -> list_premier_add_ons_slot::RequestBuilder {
+            list_premier_add_ons_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -27352,8 +27359,8 @@ pub mod web_apps {
             premier_add_on_name: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_premier_add_on_slot::Builder {
-            get_premier_add_on_slot::Builder {
+        ) -> get_premier_add_on_slot::RequestBuilder {
+            get_premier_add_on_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -27380,8 +27387,8 @@ pub mod web_apps {
             premier_add_on: impl Into<models::PremierAddOn>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> add_premier_add_on_slot::Builder {
-            add_premier_add_on_slot::Builder {
+        ) -> add_premier_add_on_slot::RequestBuilder {
+            add_premier_add_on_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -27409,8 +27416,8 @@ pub mod web_apps {
             premier_add_on: impl Into<models::PremierAddOnPatchResource>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> update_premier_add_on_slot::Builder {
-            update_premier_add_on_slot::Builder {
+        ) -> update_premier_add_on_slot::RequestBuilder {
+            update_premier_add_on_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -27436,8 +27443,8 @@ pub mod web_apps {
             premier_add_on_name: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> delete_premier_add_on_slot::Builder {
-            delete_premier_add_on_slot::Builder {
+        ) -> delete_premier_add_on_slot::RequestBuilder {
+            delete_premier_add_on_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -27460,8 +27467,8 @@ pub mod web_apps {
             name: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_private_access_slot::Builder {
-            get_private_access_slot::Builder {
+        ) -> get_private_access_slot::RequestBuilder {
+            get_private_access_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -27485,8 +27492,8 @@ pub mod web_apps {
             access: impl Into<models::PrivateAccess>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> put_private_access_vnet_slot::Builder {
-            put_private_access_vnet_slot::Builder {
+        ) -> put_private_access_vnet_slot::RequestBuilder {
+            put_private_access_vnet_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -27509,8 +27516,8 @@ pub mod web_apps {
             name: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_private_endpoint_connection_list_slot::Builder {
-            get_private_endpoint_connection_list_slot::Builder {
+        ) -> get_private_endpoint_connection_list_slot::RequestBuilder {
+            get_private_endpoint_connection_list_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -27534,8 +27541,8 @@ pub mod web_apps {
             private_endpoint_connection_name: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_private_endpoint_connection_slot::Builder {
-            get_private_endpoint_connection_slot::Builder {
+        ) -> get_private_endpoint_connection_slot::RequestBuilder {
+            get_private_endpoint_connection_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -27559,8 +27566,8 @@ pub mod web_apps {
             private_endpoint_wrapper: impl Into<models::PrivateLinkConnectionApprovalRequestResource>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> approve_or_reject_private_endpoint_connection_slot::Builder {
-            approve_or_reject_private_endpoint_connection_slot::Builder {
+        ) -> approve_or_reject_private_endpoint_connection_slot::RequestBuilder {
+            approve_or_reject_private_endpoint_connection_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -27584,8 +27591,8 @@ pub mod web_apps {
             private_endpoint_connection_name: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> delete_private_endpoint_connection_slot::Builder {
-            delete_private_endpoint_connection_slot::Builder {
+        ) -> delete_private_endpoint_connection_slot::RequestBuilder {
+            delete_private_endpoint_connection_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -27607,8 +27614,8 @@ pub mod web_apps {
             name: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_private_link_resources_slot::Builder {
-            get_private_link_resources_slot::Builder {
+        ) -> get_private_link_resources_slot::RequestBuilder {
+            get_private_link_resources_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -27630,8 +27637,8 @@ pub mod web_apps {
             name: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_processes_slot::Builder {
-            list_processes_slot::Builder {
+        ) -> list_processes_slot::RequestBuilder {
+            list_processes_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -27655,8 +27662,8 @@ pub mod web_apps {
             process_id: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_process_slot::Builder {
-            get_process_slot::Builder {
+        ) -> get_process_slot::RequestBuilder {
+            get_process_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -27681,8 +27688,8 @@ pub mod web_apps {
             process_id: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> delete_process_slot::Builder {
-            delete_process_slot::Builder {
+        ) -> delete_process_slot::RequestBuilder {
+            delete_process_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -27707,8 +27714,8 @@ pub mod web_apps {
             process_id: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_process_dump_slot::Builder {
-            get_process_dump_slot::Builder {
+        ) -> get_process_dump_slot::RequestBuilder {
+            get_process_dump_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -27733,8 +27740,8 @@ pub mod web_apps {
             process_id: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_process_modules_slot::Builder {
-            list_process_modules_slot::Builder {
+        ) -> list_process_modules_slot::RequestBuilder {
+            list_process_modules_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -27761,8 +27768,8 @@ pub mod web_apps {
             base_address: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_process_module_slot::Builder {
-            get_process_module_slot::Builder {
+        ) -> get_process_module_slot::RequestBuilder {
+            get_process_module_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -27788,8 +27795,8 @@ pub mod web_apps {
             process_id: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_process_threads_slot::Builder {
-            list_process_threads_slot::Builder {
+        ) -> list_process_threads_slot::RequestBuilder {
+            list_process_threads_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -27812,8 +27819,8 @@ pub mod web_apps {
             name: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_public_certificates_slot::Builder {
-            list_public_certificates_slot::Builder {
+        ) -> list_public_certificates_slot::RequestBuilder {
+            list_public_certificates_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -27837,8 +27844,8 @@ pub mod web_apps {
             slot: impl Into<String>,
             public_certificate_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_public_certificate_slot::Builder {
-            get_public_certificate_slot::Builder {
+        ) -> get_public_certificate_slot::RequestBuilder {
+            get_public_certificate_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -27865,8 +27872,8 @@ pub mod web_apps {
             public_certificate: impl Into<models::PublicCertificate>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> create_or_update_public_certificate_slot::Builder {
-            create_or_update_public_certificate_slot::Builder {
+        ) -> create_or_update_public_certificate_slot::RequestBuilder {
+            create_or_update_public_certificate_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -27892,8 +27899,8 @@ pub mod web_apps {
             slot: impl Into<String>,
             public_certificate_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> delete_public_certificate_slot::Builder {
-            delete_public_certificate_slot::Builder {
+        ) -> delete_public_certificate_slot::RequestBuilder {
+            delete_public_certificate_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -27918,8 +27925,8 @@ pub mod web_apps {
             publishing_profile_options: impl Into<models::CsmPublishingProfileOptions>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_publishing_profile_xml_with_secrets_slot::Builder {
-            list_publishing_profile_xml_with_secrets_slot::Builder {
+        ) -> list_publishing_profile_xml_with_secrets_slot::RequestBuilder {
+            list_publishing_profile_xml_with_secrets_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -27942,8 +27949,8 @@ pub mod web_apps {
             name: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> reset_slot_configuration_slot::Builder {
-            reset_slot_configuration_slot::Builder {
+        ) -> reset_slot_configuration_slot::RequestBuilder {
+            reset_slot_configuration_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -27965,8 +27972,8 @@ pub mod web_apps {
             name: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> restart_slot::Builder {
-            restart_slot::Builder {
+        ) -> restart_slot::RequestBuilder {
+            restart_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -27992,8 +27999,8 @@ pub mod web_apps {
             request: impl Into<models::RestoreRequest>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> restore_from_backup_blob_slot::Builder {
-            restore_from_backup_blob_slot::Builder {
+        ) -> restore_from_backup_blob_slot::RequestBuilder {
+            restore_from_backup_blob_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -28018,8 +28025,8 @@ pub mod web_apps {
             restore_request: impl Into<models::DeletedAppRestoreRequest>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> restore_from_deleted_app_slot::Builder {
-            restore_from_deleted_app_slot::Builder {
+        ) -> restore_from_deleted_app_slot::RequestBuilder {
+            restore_from_deleted_app_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -28044,8 +28051,8 @@ pub mod web_apps {
             restore_request: impl Into<models::SnapshotRestoreRequest>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> restore_snapshot_slot::Builder {
-            restore_snapshot_slot::Builder {
+        ) -> restore_snapshot_slot::RequestBuilder {
+            restore_snapshot_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -28068,8 +28075,8 @@ pub mod web_apps {
             name: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_site_extensions_slot::Builder {
-            list_site_extensions_slot::Builder {
+        ) -> list_site_extensions_slot::RequestBuilder {
+            list_site_extensions_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -28093,8 +28100,8 @@ pub mod web_apps {
             site_extension_id: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_site_extension_slot::Builder {
-            get_site_extension_slot::Builder {
+        ) -> get_site_extension_slot::RequestBuilder {
+            get_site_extension_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -28119,8 +28126,8 @@ pub mod web_apps {
             site_extension_id: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> install_site_extension_slot::Builder {
-            install_site_extension_slot::Builder {
+        ) -> install_site_extension_slot::RequestBuilder {
+            install_site_extension_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -28145,8 +28152,8 @@ pub mod web_apps {
             site_extension_id: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> delete_site_extension_slot::Builder {
-            delete_site_extension_slot::Builder {
+        ) -> delete_site_extension_slot::RequestBuilder {
+            delete_site_extension_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -28171,8 +28178,8 @@ pub mod web_apps {
             slot_swap_entity: impl Into<models::CsmSlotEntity>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_slot_differences_slot::Builder {
-            list_slot_differences_slot::Builder {
+        ) -> list_slot_differences_slot::RequestBuilder {
+            list_slot_differences_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -28197,8 +28204,8 @@ pub mod web_apps {
             slot_swap_entity: impl Into<models::CsmSlotEntity>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> swap_slot_slot::Builder {
-            swap_slot_slot::Builder {
+        ) -> swap_slot_slot::RequestBuilder {
+            swap_slot_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -28221,8 +28228,8 @@ pub mod web_apps {
             name: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_snapshots_slot::Builder {
-            list_snapshots_slot::Builder {
+        ) -> list_snapshots_slot::RequestBuilder {
+            list_snapshots_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -28244,8 +28251,8 @@ pub mod web_apps {
             name: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_snapshots_from_dr_secondary_slot::Builder {
-            list_snapshots_from_dr_secondary_slot::Builder {
+        ) -> list_snapshots_from_dr_secondary_slot::RequestBuilder {
+            list_snapshots_from_dr_secondary_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -28267,8 +28274,8 @@ pub mod web_apps {
             name: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_source_control_slot::Builder {
-            get_source_control_slot::Builder {
+        ) -> get_source_control_slot::RequestBuilder {
+            get_source_control_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -28292,8 +28299,8 @@ pub mod web_apps {
             site_source_control: impl Into<models::SiteSourceControl>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> create_or_update_source_control_slot::Builder {
-            create_or_update_source_control_slot::Builder {
+        ) -> create_or_update_source_control_slot::RequestBuilder {
+            create_or_update_source_control_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -28318,8 +28325,8 @@ pub mod web_apps {
             site_source_control: impl Into<models::SiteSourceControl>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> update_source_control_slot::Builder {
-            update_source_control_slot::Builder {
+        ) -> update_source_control_slot::RequestBuilder {
+            update_source_control_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -28342,8 +28349,8 @@ pub mod web_apps {
             name: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> delete_source_control_slot::Builder {
-            delete_source_control_slot::Builder {
+        ) -> delete_source_control_slot::RequestBuilder {
+            delete_source_control_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -28366,8 +28373,8 @@ pub mod web_apps {
             name: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> start_slot::Builder {
-            start_slot::Builder {
+        ) -> start_slot::RequestBuilder {
+            start_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -28389,8 +28396,8 @@ pub mod web_apps {
             name: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> start_network_trace_slot::Builder {
-            start_network_trace_slot::Builder {
+        ) -> start_network_trace_slot::RequestBuilder {
+            start_network_trace_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -28415,8 +28422,8 @@ pub mod web_apps {
             name: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> stop_slot::Builder {
-            stop_slot::Builder {
+        ) -> stop_slot::RequestBuilder {
+            stop_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -28438,8 +28445,8 @@ pub mod web_apps {
             name: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> stop_network_trace_slot::Builder {
-            stop_network_trace_slot::Builder {
+        ) -> stop_network_trace_slot::RequestBuilder {
+            stop_network_trace_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -28461,8 +28468,8 @@ pub mod web_apps {
             name: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> sync_repository_slot::Builder {
-            sync_repository_slot::Builder {
+        ) -> sync_repository_slot::RequestBuilder {
+            sync_repository_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -28484,8 +28491,8 @@ pub mod web_apps {
             name: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> sync_function_triggers_slot::Builder {
-            sync_function_triggers_slot::Builder {
+        ) -> sync_function_triggers_slot::RequestBuilder {
+            sync_function_triggers_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -28507,8 +28514,8 @@ pub mod web_apps {
             name: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_triggered_web_jobs_slot::Builder {
-            list_triggered_web_jobs_slot::Builder {
+        ) -> list_triggered_web_jobs_slot::RequestBuilder {
+            list_triggered_web_jobs_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -28532,8 +28539,8 @@ pub mod web_apps {
             web_job_name: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_triggered_web_job_slot::Builder {
-            get_triggered_web_job_slot::Builder {
+        ) -> get_triggered_web_job_slot::RequestBuilder {
+            get_triggered_web_job_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -28558,8 +28565,8 @@ pub mod web_apps {
             web_job_name: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> delete_triggered_web_job_slot::Builder {
-            delete_triggered_web_job_slot::Builder {
+        ) -> delete_triggered_web_job_slot::RequestBuilder {
+            delete_triggered_web_job_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -28584,8 +28591,8 @@ pub mod web_apps {
             web_job_name: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_triggered_web_job_history_slot::Builder {
-            list_triggered_web_job_history_slot::Builder {
+        ) -> list_triggered_web_job_history_slot::RequestBuilder {
+            list_triggered_web_job_history_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -28612,8 +28619,8 @@ pub mod web_apps {
             id: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_triggered_web_job_history_slot::Builder {
-            get_triggered_web_job_history_slot::Builder {
+        ) -> get_triggered_web_job_history_slot::RequestBuilder {
+            get_triggered_web_job_history_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -28639,8 +28646,8 @@ pub mod web_apps {
             web_job_name: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> run_triggered_web_job_slot::Builder {
-            run_triggered_web_job_slot::Builder {
+        ) -> run_triggered_web_job_slot::RequestBuilder {
+            run_triggered_web_job_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -28663,8 +28670,8 @@ pub mod web_apps {
             name: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_usages_slot::Builder {
-            list_usages_slot::Builder {
+        ) -> list_usages_slot::RequestBuilder {
+            list_usages_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -28687,8 +28694,8 @@ pub mod web_apps {
             name: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_vnet_connections_slot::Builder {
-            list_vnet_connections_slot::Builder {
+        ) -> list_vnet_connections_slot::RequestBuilder {
+            list_vnet_connections_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -28712,8 +28719,8 @@ pub mod web_apps {
             vnet_name: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_vnet_connection_slot::Builder {
-            get_vnet_connection_slot::Builder {
+        ) -> get_vnet_connection_slot::RequestBuilder {
+            get_vnet_connection_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -28740,8 +28747,8 @@ pub mod web_apps {
             connection_envelope: impl Into<models::VnetInfo>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> create_or_update_vnet_connection_slot::Builder {
-            create_or_update_vnet_connection_slot::Builder {
+        ) -> create_or_update_vnet_connection_slot::RequestBuilder {
+            create_or_update_vnet_connection_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -28769,8 +28776,8 @@ pub mod web_apps {
             connection_envelope: impl Into<models::VnetInfo>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> update_vnet_connection_slot::Builder {
-            update_vnet_connection_slot::Builder {
+        ) -> update_vnet_connection_slot::RequestBuilder {
+            update_vnet_connection_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -28796,8 +28803,8 @@ pub mod web_apps {
             vnet_name: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> delete_vnet_connection_slot::Builder {
-            delete_vnet_connection_slot::Builder {
+        ) -> delete_vnet_connection_slot::RequestBuilder {
+            delete_vnet_connection_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -28824,8 +28831,8 @@ pub mod web_apps {
             gateway_name: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_vnet_connection_gateway_slot::Builder {
-            get_vnet_connection_gateway_slot::Builder {
+        ) -> get_vnet_connection_gateway_slot::RequestBuilder {
+            get_vnet_connection_gateway_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -28855,8 +28862,8 @@ pub mod web_apps {
             connection_envelope: impl Into<models::VnetGateway>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> create_or_update_vnet_connection_gateway_slot::Builder {
-            create_or_update_vnet_connection_gateway_slot::Builder {
+        ) -> create_or_update_vnet_connection_gateway_slot::RequestBuilder {
+            create_or_update_vnet_connection_gateway_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -28887,8 +28894,8 @@ pub mod web_apps {
             connection_envelope: impl Into<models::VnetGateway>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> update_vnet_connection_gateway_slot::Builder {
-            update_vnet_connection_gateway_slot::Builder {
+        ) -> update_vnet_connection_gateway_slot::RequestBuilder {
+            update_vnet_connection_gateway_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -28913,8 +28920,8 @@ pub mod web_apps {
             name: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_web_jobs_slot::Builder {
-            list_web_jobs_slot::Builder {
+        ) -> list_web_jobs_slot::RequestBuilder {
+            list_web_jobs_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -28938,8 +28945,8 @@ pub mod web_apps {
             web_job_name: impl Into<String>,
             slot: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_web_job_slot::Builder {
-            get_web_job_slot::Builder {
+        ) -> get_web_job_slot::RequestBuilder {
+            get_web_job_slot::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -28962,8 +28969,8 @@ pub mod web_apps {
             name: impl Into<String>,
             slot_swap_entity: impl Into<models::CsmSlotEntity>,
             subscription_id: impl Into<String>,
-        ) -> list_slot_differences_from_production::Builder {
-            list_slot_differences_from_production::Builder {
+        ) -> list_slot_differences_from_production::RequestBuilder {
+            list_slot_differences_from_production::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -28985,8 +28992,8 @@ pub mod web_apps {
             name: impl Into<String>,
             slot_swap_entity: impl Into<models::CsmSlotEntity>,
             subscription_id: impl Into<String>,
-        ) -> swap_slot_with_production::Builder {
-            swap_slot_with_production::Builder {
+        ) -> swap_slot_with_production::RequestBuilder {
+            swap_slot_with_production::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -29006,8 +29013,8 @@ pub mod web_apps {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_snapshots::Builder {
-            list_snapshots::Builder {
+        ) -> list_snapshots::RequestBuilder {
+            list_snapshots::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -29026,8 +29033,8 @@ pub mod web_apps {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_snapshots_from_dr_secondary::Builder {
-            list_snapshots_from_dr_secondary::Builder {
+        ) -> list_snapshots_from_dr_secondary::RequestBuilder {
+            list_snapshots_from_dr_secondary::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -29046,8 +29053,8 @@ pub mod web_apps {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_source_control::Builder {
-            get_source_control::Builder {
+        ) -> get_source_control::RequestBuilder {
+            get_source_control::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -29068,8 +29075,8 @@ pub mod web_apps {
             name: impl Into<String>,
             site_source_control: impl Into<models::SiteSourceControl>,
             subscription_id: impl Into<String>,
-        ) -> create_or_update_source_control::Builder {
-            create_or_update_source_control::Builder {
+        ) -> create_or_update_source_control::RequestBuilder {
+            create_or_update_source_control::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -29091,8 +29098,8 @@ pub mod web_apps {
             name: impl Into<String>,
             site_source_control: impl Into<models::SiteSourceControl>,
             subscription_id: impl Into<String>,
-        ) -> update_source_control::Builder {
-            update_source_control::Builder {
+        ) -> update_source_control::RequestBuilder {
+            update_source_control::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -29112,8 +29119,8 @@ pub mod web_apps {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> delete_source_control::Builder {
-            delete_source_control::Builder {
+        ) -> delete_source_control::RequestBuilder {
+            delete_source_control::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -29133,8 +29140,8 @@ pub mod web_apps {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> start::Builder {
-            start::Builder {
+        ) -> start::RequestBuilder {
+            start::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -29153,8 +29160,8 @@ pub mod web_apps {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> start_network_trace::Builder {
-            start_network_trace::Builder {
+        ) -> start_network_trace::RequestBuilder {
+            start_network_trace::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -29176,8 +29183,8 @@ pub mod web_apps {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> stop::Builder {
-            stop::Builder {
+        ) -> stop::RequestBuilder {
+            stop::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -29196,8 +29203,8 @@ pub mod web_apps {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> stop_network_trace::Builder {
-            stop_network_trace::Builder {
+        ) -> stop_network_trace::RequestBuilder {
+            stop_network_trace::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -29216,8 +29223,8 @@ pub mod web_apps {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> sync_repository::Builder {
-            sync_repository::Builder {
+        ) -> sync_repository::RequestBuilder {
+            sync_repository::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -29236,8 +29243,8 @@ pub mod web_apps {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> sync_function_triggers::Builder {
-            sync_function_triggers::Builder {
+        ) -> sync_function_triggers::RequestBuilder {
+            sync_function_triggers::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -29256,8 +29263,8 @@ pub mod web_apps {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_triggered_web_jobs::Builder {
-            list_triggered_web_jobs::Builder {
+        ) -> list_triggered_web_jobs::RequestBuilder {
+            list_triggered_web_jobs::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -29278,8 +29285,8 @@ pub mod web_apps {
             name: impl Into<String>,
             web_job_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_triggered_web_job::Builder {
-            get_triggered_web_job::Builder {
+        ) -> get_triggered_web_job::RequestBuilder {
+            get_triggered_web_job::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -29301,8 +29308,8 @@ pub mod web_apps {
             name: impl Into<String>,
             web_job_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> delete_triggered_web_job::Builder {
-            delete_triggered_web_job::Builder {
+        ) -> delete_triggered_web_job::RequestBuilder {
+            delete_triggered_web_job::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -29324,8 +29331,8 @@ pub mod web_apps {
             name: impl Into<String>,
             web_job_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_triggered_web_job_history::Builder {
-            list_triggered_web_job_history::Builder {
+        ) -> list_triggered_web_job_history::RequestBuilder {
+            list_triggered_web_job_history::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -29349,8 +29356,8 @@ pub mod web_apps {
             web_job_name: impl Into<String>,
             id: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_triggered_web_job_history::Builder {
-            get_triggered_web_job_history::Builder {
+        ) -> get_triggered_web_job_history::RequestBuilder {
+            get_triggered_web_job_history::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -29373,8 +29380,8 @@ pub mod web_apps {
             name: impl Into<String>,
             web_job_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> run_triggered_web_job::Builder {
-            run_triggered_web_job::Builder {
+        ) -> run_triggered_web_job::RequestBuilder {
+            run_triggered_web_job::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -29394,8 +29401,8 @@ pub mod web_apps {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_usages::Builder {
-            list_usages::Builder {
+        ) -> list_usages::RequestBuilder {
+            list_usages::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -29415,8 +29422,8 @@ pub mod web_apps {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_vnet_connections::Builder {
-            list_vnet_connections::Builder {
+        ) -> list_vnet_connections::RequestBuilder {
+            list_vnet_connections::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -29437,8 +29444,8 @@ pub mod web_apps {
             name: impl Into<String>,
             vnet_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_vnet_connection::Builder {
-            get_vnet_connection::Builder {
+        ) -> get_vnet_connection::RequestBuilder {
+            get_vnet_connection::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -29462,8 +29469,8 @@ pub mod web_apps {
             vnet_name: impl Into<String>,
             connection_envelope: impl Into<models::VnetInfo>,
             subscription_id: impl Into<String>,
-        ) -> create_or_update_vnet_connection::Builder {
-            create_or_update_vnet_connection::Builder {
+        ) -> create_or_update_vnet_connection::RequestBuilder {
+            create_or_update_vnet_connection::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -29488,8 +29495,8 @@ pub mod web_apps {
             vnet_name: impl Into<String>,
             connection_envelope: impl Into<models::VnetInfo>,
             subscription_id: impl Into<String>,
-        ) -> update_vnet_connection::Builder {
-            update_vnet_connection::Builder {
+        ) -> update_vnet_connection::RequestBuilder {
+            update_vnet_connection::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -29512,8 +29519,8 @@ pub mod web_apps {
             name: impl Into<String>,
             vnet_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> delete_vnet_connection::Builder {
-            delete_vnet_connection::Builder {
+        ) -> delete_vnet_connection::RequestBuilder {
+            delete_vnet_connection::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -29537,8 +29544,8 @@ pub mod web_apps {
             vnet_name: impl Into<String>,
             gateway_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_vnet_connection_gateway::Builder {
-            get_vnet_connection_gateway::Builder {
+        ) -> get_vnet_connection_gateway::RequestBuilder {
+            get_vnet_connection_gateway::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -29565,8 +29572,8 @@ pub mod web_apps {
             gateway_name: impl Into<String>,
             connection_envelope: impl Into<models::VnetGateway>,
             subscription_id: impl Into<String>,
-        ) -> create_or_update_vnet_connection_gateway::Builder {
-            create_or_update_vnet_connection_gateway::Builder {
+        ) -> create_or_update_vnet_connection_gateway::RequestBuilder {
+            create_or_update_vnet_connection_gateway::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -29594,8 +29601,8 @@ pub mod web_apps {
             gateway_name: impl Into<String>,
             connection_envelope: impl Into<models::VnetGateway>,
             subscription_id: impl Into<String>,
-        ) -> update_vnet_connection_gateway::Builder {
-            update_vnet_connection_gateway::Builder {
+        ) -> update_vnet_connection_gateway::RequestBuilder {
+            update_vnet_connection_gateway::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -29617,8 +29624,8 @@ pub mod web_apps {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_web_jobs::Builder {
-            list_web_jobs::Builder {
+        ) -> list_web_jobs::RequestBuilder {
+            list_web_jobs::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -29639,8 +29646,8 @@ pub mod web_apps {
             name: impl Into<String>,
             web_job_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_web_job::Builder {
-            get_web_job::Builder {
+        ) -> get_web_job::RequestBuilder {
+            get_web_job::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -29653,11 +29660,11 @@ pub mod web_apps {
         use super::models;
         type Response = models::WebAppCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -29727,13 +29734,13 @@ pub mod web_apps {
         use super::models;
         type Response = models::WebAppCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) subscription_id: String,
             pub(crate) include_slots: Option<bool>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Specify <strong>true</strong> to include deployment slots in results. The default is false, which only gives you the production slot of all apps."]
             pub fn include_slots(mut self, include_slots: bool) -> Self {
                 self.include_slots = Some(include_slots);
@@ -29814,13 +29821,13 @@ pub mod web_apps {
         use super::models;
         type Response = models::Site;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -29870,14 +29877,14 @@ pub mod web_apps {
             Accepted202(models::Site),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) site_envelope: models::Site,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -29934,14 +29941,14 @@ pub mod web_apps {
             Accepted202(models::Site),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) site_envelope: models::SitePatchResource,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -29997,7 +30004,7 @@ pub mod web_apps {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -30005,7 +30012,7 @@ pub mod web_apps {
             pub(crate) delete_metrics: Option<bool>,
             pub(crate) delete_empty_server_farm: Option<bool>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "If true, web app metrics are also deleted."]
             pub fn delete_metrics(mut self, delete_metrics: bool) -> Self {
                 self.delete_metrics = Some(delete_metrics);
@@ -30068,14 +30075,14 @@ pub mod web_apps {
         use super::models;
         type Response = models::CustomHostnameAnalysisResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
             pub(crate) host_name: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Custom hostname."]
             pub fn host_name(mut self, host_name: impl Into<String>) -> Self {
                 self.host_name = Some(host_name.into());
@@ -30129,14 +30136,14 @@ pub mod web_apps {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot_swap_entity: models::CsmSlotEntity,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -30179,14 +30186,14 @@ pub mod web_apps {
         use super::models;
         type Response = models::BackupItem;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) request: models::BackupRequest,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -30233,13 +30240,13 @@ pub mod web_apps {
         use super::models;
         type Response = models::BackupItemCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -30311,14 +30318,14 @@ pub mod web_apps {
         use super::models;
         type Response = models::BackupItem;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) backup_id: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -30365,14 +30372,14 @@ pub mod web_apps {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) backup_id: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -30415,7 +30422,7 @@ pub mod web_apps {
         use super::models;
         type Response = models::BackupItem;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -30423,7 +30430,7 @@ pub mod web_apps {
             pub(crate) request: models::BackupRequest,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -30475,7 +30482,7 @@ pub mod web_apps {
             Ok200,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -30483,7 +30490,7 @@ pub mod web_apps {
             pub(crate) request: models::RestoreRequest,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -30529,13 +30536,13 @@ pub mod web_apps {
         use super::models;
         type Response = models::CsmPublishingCredentialsPoliciesCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -30581,13 +30588,13 @@ pub mod web_apps {
         use super::models;
         type Response = models::CsmPublishingCredentialsPoliciesEntity;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -30633,14 +30640,14 @@ pub mod web_apps {
         use super::models;
         type Response = models::CsmPublishingCredentialsPoliciesEntity;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) csm_publishing_access_policies_entity: models::CsmPublishingCredentialsPoliciesEntity,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -30687,13 +30694,13 @@ pub mod web_apps {
         use super::models;
         type Response = models::CsmPublishingCredentialsPoliciesEntity;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -30739,14 +30746,14 @@ pub mod web_apps {
         use super::models;
         type Response = models::CsmPublishingCredentialsPoliciesEntity;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) csm_publishing_access_policies_entity: models::CsmPublishingCredentialsPoliciesEntity,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -30793,13 +30800,13 @@ pub mod web_apps {
         use super::models;
         type Response = models::SiteConfigResourceCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -30871,14 +30878,14 @@ pub mod web_apps {
         use super::models;
         type Response = models::StringDictionary;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) app_settings: models::StringDictionary,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -30925,13 +30932,13 @@ pub mod web_apps {
         use super::models;
         type Response = models::StringDictionary;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -30978,14 +30985,14 @@ pub mod web_apps {
         use super::models;
         type Response = models::SiteAuthSettings;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) site_auth_settings: models::SiteAuthSettings,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -31032,13 +31039,13 @@ pub mod web_apps {
         use super::models;
         type Response = models::SiteAuthSettings;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -31085,14 +31092,14 @@ pub mod web_apps {
         use super::models;
         type Response = models::SiteAuthSettingsV2;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) site_auth_settings_v2: models::SiteAuthSettingsV2,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -31139,13 +31146,13 @@ pub mod web_apps {
         use super::models;
         type Response = models::SiteAuthSettingsV2;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -31191,14 +31198,14 @@ pub mod web_apps {
         use super::models;
         type Response = models::AzureStoragePropertyDictionaryResource;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) azure_storage_accounts: models::AzureStoragePropertyDictionaryResource,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -31245,13 +31252,13 @@ pub mod web_apps {
         use super::models;
         type Response = models::AzureStoragePropertyDictionaryResource;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -31298,14 +31305,14 @@ pub mod web_apps {
         use super::models;
         type Response = models::BackupRequest;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) request: models::BackupRequest,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -31352,13 +31359,13 @@ pub mod web_apps {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -31400,13 +31407,13 @@ pub mod web_apps {
         use super::models;
         type Response = models::BackupRequest;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -31453,13 +31460,13 @@ pub mod web_apps {
         use super::models;
         type Response = models::ApiKvReferenceCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -31531,14 +31538,14 @@ pub mod web_apps {
         use super::models;
         type Response = models::ApiKvReference;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) app_setting_key: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -31585,13 +31592,13 @@ pub mod web_apps {
         use super::models;
         type Response = models::ApiKvReferenceCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -31657,14 +31664,14 @@ pub mod web_apps {
         use super::models;
         type Response = models::ApiKvReference;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) connection_string_key: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -31704,14 +31711,14 @@ pub mod web_apps {
         use super::models;
         type Response = models::ConnectionStringDictionary;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) connection_strings: models::ConnectionStringDictionary,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -31758,13 +31765,13 @@ pub mod web_apps {
         use super::models;
         type Response = models::ConnectionStringDictionary;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -31811,13 +31818,13 @@ pub mod web_apps {
         use super::models;
         type Response = models::SiteLogsConfig;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -31863,14 +31870,14 @@ pub mod web_apps {
         use super::models;
         type Response = models::SiteLogsConfig;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) site_logs_config: models::SiteLogsConfig,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -31917,14 +31924,14 @@ pub mod web_apps {
         use super::models;
         type Response = models::StringDictionary;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) metadata: models::StringDictionary,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -31971,13 +31978,13 @@ pub mod web_apps {
         use super::models;
         type Response = models::StringDictionary;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -32024,13 +32031,13 @@ pub mod web_apps {
         use super::models;
         type Response = models::User;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -32078,14 +32085,14 @@ pub mod web_apps {
         use super::models;
         type Response = models::PushSettings;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) push_settings: models::PushSettings,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -32132,13 +32139,13 @@ pub mod web_apps {
         use super::models;
         type Response = models::PushSettings;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -32185,13 +32192,13 @@ pub mod web_apps {
         use super::models;
         type Response = models::SlotConfigNamesResource;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -32237,14 +32244,14 @@ pub mod web_apps {
         use super::models;
         type Response = models::SlotConfigNamesResource;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot_config_names: models::SlotConfigNamesResource,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -32291,13 +32298,13 @@ pub mod web_apps {
         use super::models;
         type Response = models::SiteConfigResource;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -32343,14 +32350,14 @@ pub mod web_apps {
         use super::models;
         type Response = models::SiteConfigResource;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) site_config: models::SiteConfigResource,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -32397,14 +32404,14 @@ pub mod web_apps {
         use super::models;
         type Response = models::SiteConfigResource;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) site_config: models::SiteConfigResource,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -32451,13 +32458,13 @@ pub mod web_apps {
         use super::models;
         type Response = models::SiteConfigurationSnapshotInfoCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -32529,14 +32536,14 @@ pub mod web_apps {
         use super::models;
         type Response = models::SiteConfigResource;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) snapshot_id: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -32583,14 +32590,14 @@ pub mod web_apps {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) snapshot_id: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -32638,13 +32645,13 @@ pub mod web_apps {
             Ok200(bytes::Bytes),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -32696,13 +32703,13 @@ pub mod web_apps {
             Ok200(bytes::Bytes),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -32750,13 +32757,13 @@ pub mod web_apps {
         use super::models;
         type Response = models::ContinuousWebJobCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -32828,14 +32835,14 @@ pub mod web_apps {
         use super::models;
         type Response = models::ContinuousWebJob;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) web_job_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -32886,14 +32893,14 @@ pub mod web_apps {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) web_job_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -32937,14 +32944,14 @@ pub mod web_apps {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) web_job_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -32988,14 +32995,14 @@ pub mod web_apps {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) web_job_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -33039,13 +33046,13 @@ pub mod web_apps {
         use super::models;
         type Response = models::DeploymentCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -33117,14 +33124,14 @@ pub mod web_apps {
         use super::models;
         type Response = models::Deployment;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) id: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -33171,7 +33178,7 @@ pub mod web_apps {
         use super::models;
         type Response = models::Deployment;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -33179,7 +33186,7 @@ pub mod web_apps {
             pub(crate) deployment: models::Deployment,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -33231,14 +33238,14 @@ pub mod web_apps {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) id: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -33282,14 +33289,14 @@ pub mod web_apps {
         use super::models;
         type Response = models::Deployment;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) id: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -33336,14 +33343,14 @@ pub mod web_apps {
         use super::models;
         type Response = models::RestoreRequest;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) request: models::RestoreRequest,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -33390,13 +33397,13 @@ pub mod web_apps {
         use super::models;
         type Response = models::IdentifierCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -33468,14 +33475,14 @@ pub mod web_apps {
         use super::models;
         type Response = models::Identifier;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) domain_ownership_identifier_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -33522,7 +33529,7 @@ pub mod web_apps {
         use super::models;
         type Response = models::Identifier;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -33530,7 +33537,7 @@ pub mod web_apps {
             pub(crate) domain_ownership_identifier: models::Identifier,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -33578,7 +33585,7 @@ pub mod web_apps {
         use super::models;
         type Response = models::Identifier;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -33586,7 +33593,7 @@ pub mod web_apps {
             pub(crate) domain_ownership_identifier: models::Identifier,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -33638,14 +33645,14 @@ pub mod web_apps {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) domain_ownership_identifier_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -33689,13 +33696,13 @@ pub mod web_apps {
         use super::models;
         type Response = models::MsDeployStatus;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -33741,14 +33748,14 @@ pub mod web_apps {
         use super::models;
         type Response = models::MsDeployStatus;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) ms_deploy: models::MsDeploy,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -33796,13 +33803,13 @@ pub mod web_apps {
         use super::models;
         type Response = models::MsDeployLog;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -33848,13 +33855,13 @@ pub mod web_apps {
         use super::models;
         type Response = models::FunctionEnvelopeCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -33926,13 +33933,13 @@ pub mod web_apps {
         use super::models;
         type Response = String;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -33978,14 +33985,14 @@ pub mod web_apps {
         use super::models;
         type Response = models::FunctionEnvelope;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) function_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -34032,7 +34039,7 @@ pub mod web_apps {
         use super::models;
         type Response = models::FunctionEnvelope;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -34040,7 +34047,7 @@ pub mod web_apps {
             pub(crate) function_envelope: models::FunctionEnvelope,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -34089,14 +34096,14 @@ pub mod web_apps {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) function_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -34143,7 +34150,7 @@ pub mod web_apps {
             Ok200(models::KeyInfo),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -34152,7 +34159,7 @@ pub mod web_apps {
             pub(crate) key: models::KeyInfo,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -34206,7 +34213,7 @@ pub mod web_apps {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -34214,7 +34221,7 @@ pub mod web_apps {
             pub(crate) key_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -34258,14 +34265,14 @@ pub mod web_apps {
         use super::models;
         type Response = models::StringDictionary;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) function_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -34313,14 +34320,14 @@ pub mod web_apps {
         use super::models;
         type Response = models::FunctionSecrets;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) function_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -34368,13 +34375,13 @@ pub mod web_apps {
         use super::models;
         type Response = models::HostKeys;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -34421,13 +34428,13 @@ pub mod web_apps {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -34470,13 +34477,13 @@ pub mod web_apps {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -34523,7 +34530,7 @@ pub mod web_apps {
             Ok200(models::KeyInfo),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -34532,7 +34539,7 @@ pub mod web_apps {
             pub(crate) key: models::KeyInfo,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -34586,7 +34593,7 @@ pub mod web_apps {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -34594,7 +34601,7 @@ pub mod web_apps {
             pub(crate) key_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -34638,13 +34645,13 @@ pub mod web_apps {
         use super::models;
         type Response = models::HostNameBindingCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -34716,14 +34723,14 @@ pub mod web_apps {
         use super::models;
         type Response = models::HostNameBinding;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) host_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -34770,7 +34777,7 @@ pub mod web_apps {
         use super::models;
         type Response = models::HostNameBinding;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -34778,7 +34785,7 @@ pub mod web_apps {
             pub(crate) host_name_binding: models::HostNameBinding,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -34830,14 +34837,14 @@ pub mod web_apps {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) host_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -34881,7 +34888,7 @@ pub mod web_apps {
         use super::models;
         type Response = models::HybridConnection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -34889,7 +34896,7 @@ pub mod web_apps {
             pub(crate) relay_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -34929,7 +34936,7 @@ pub mod web_apps {
         use super::models;
         type Response = models::HybridConnection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -34938,7 +34945,7 @@ pub mod web_apps {
             pub(crate) connection_envelope: models::HybridConnection,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -34979,7 +34986,7 @@ pub mod web_apps {
         use super::models;
         type Response = models::HybridConnection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -34988,7 +34995,7 @@ pub mod web_apps {
             pub(crate) connection_envelope: models::HybridConnection,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -35029,7 +35036,7 @@ pub mod web_apps {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -35037,7 +35044,7 @@ pub mod web_apps {
             pub(crate) relay_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -35073,13 +35080,13 @@ pub mod web_apps {
         use super::models;
         type Response = models::HybridConnection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -35125,13 +35132,13 @@ pub mod web_apps {
         use super::models;
         type Response = models::RelayServiceConnectionEntity;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -35177,14 +35184,14 @@ pub mod web_apps {
         use super::models;
         type Response = models::RelayServiceConnectionEntity;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) entity_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -35231,7 +35238,7 @@ pub mod web_apps {
         use super::models;
         type Response = models::RelayServiceConnectionEntity;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -35239,7 +35246,7 @@ pub mod web_apps {
             pub(crate) connection_envelope: models::RelayServiceConnectionEntity,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -35287,7 +35294,7 @@ pub mod web_apps {
         use super::models;
         type Response = models::RelayServiceConnectionEntity;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -35295,7 +35302,7 @@ pub mod web_apps {
             pub(crate) connection_envelope: models::RelayServiceConnectionEntity,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -35343,14 +35350,14 @@ pub mod web_apps {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) entity_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -35393,13 +35400,13 @@ pub mod web_apps {
         use super::models;
         type Response = models::WebAppInstanceStatusCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -35471,14 +35478,14 @@ pub mod web_apps {
         use super::models;
         type Response = models::WebSiteInstanceStatus;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) instance_id: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -35525,14 +35532,14 @@ pub mod web_apps {
         use super::models;
         type Response = models::MsDeployStatus;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) instance_id: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -35579,7 +35586,7 @@ pub mod web_apps {
         use super::models;
         type Response = models::MsDeployStatus;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -35587,7 +35594,7 @@ pub mod web_apps {
             pub(crate) ms_deploy: models::MsDeploy,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -35636,14 +35643,14 @@ pub mod web_apps {
         use super::models;
         type Response = models::MsDeployLog;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) instance_id: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -35690,14 +35697,14 @@ pub mod web_apps {
         use super::models;
         type Response = models::ProcessInfoCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) instance_id: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -35770,7 +35777,7 @@ pub mod web_apps {
         use super::models;
         type Response = models::ProcessInfo;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -35778,7 +35785,7 @@ pub mod web_apps {
             pub(crate) instance_id: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -35826,7 +35833,7 @@ pub mod web_apps {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -35834,7 +35841,7 @@ pub mod web_apps {
             pub(crate) instance_id: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -35878,7 +35885,7 @@ pub mod web_apps {
         use super::models;
         type Response = bytes::Bytes;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -35886,7 +35893,7 @@ pub mod web_apps {
             pub(crate) instance_id: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -35934,7 +35941,7 @@ pub mod web_apps {
         use super::models;
         type Response = models::ProcessModuleInfoCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -35942,7 +35949,7 @@ pub mod web_apps {
             pub(crate) instance_id: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -36016,7 +36023,7 @@ pub mod web_apps {
         use super::models;
         type Response = models::ProcessModuleInfo;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -36025,7 +36032,7 @@ pub mod web_apps {
             pub(crate) instance_id: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -36074,7 +36081,7 @@ pub mod web_apps {
         use super::models;
         type Response = models::ProcessThreadInfoCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -36082,7 +36089,7 @@ pub mod web_apps {
             pub(crate) instance_id: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -36156,13 +36163,13 @@ pub mod web_apps {
         use super::models;
         type Response = models::SiteCloneability;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -36209,13 +36216,13 @@ pub mod web_apps {
         use super::models;
         type Response = models::BackupItemCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -36288,13 +36295,13 @@ pub mod web_apps {
         use super::models;
         type Response = models::FunctionSecrets;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -36341,7 +36348,7 @@ pub mod web_apps {
         use super::models;
         type Response = models::StorageMigrationResponse;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_name: String,
             pub(crate) resource_group_name: String,
@@ -36349,7 +36356,7 @@ pub mod web_apps {
             pub(crate) migration_options: models::StorageMigrationOptions,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -36399,14 +36406,14 @@ pub mod web_apps {
         use super::models;
         type Response = models::Operation;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) migration_request_envelope: models::MigrateMySqlRequest,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -36454,13 +36461,13 @@ pub mod web_apps {
         use super::models;
         type Response = models::MigrateMySqlStatus;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -36506,13 +36513,13 @@ pub mod web_apps {
         use super::models;
         type Response = models::SwiftVirtualNetwork;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -36558,14 +36565,14 @@ pub mod web_apps {
         use super::models;
         type Response = models::SwiftVirtualNetwork;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) connection_envelope: models::SwiftVirtualNetwork,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -36612,13 +36619,13 @@ pub mod web_apps {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -36660,14 +36667,14 @@ pub mod web_apps {
         use super::models;
         type Response = models::NetworkFeatures;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) view: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -36718,14 +36725,14 @@ pub mod web_apps {
             Accepted202(Vec<models::NetworkTrace>),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) operation_id: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -36777,7 +36784,7 @@ pub mod web_apps {
         use super::models;
         type Response = String;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -36786,7 +36793,7 @@ pub mod web_apps {
             pub(crate) max_frame_length: Option<i32>,
             pub(crate) sas_url: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The duration to keep capturing in seconds."]
             pub fn duration_in_seconds(mut self, duration_in_seconds: i32) -> Self {
                 self.duration_in_seconds = Some(duration_in_seconds);
@@ -36865,7 +36872,7 @@ pub mod web_apps {
             Accepted202(Vec<models::NetworkTrace>),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -36874,7 +36881,7 @@ pub mod web_apps {
             pub(crate) max_frame_length: Option<i32>,
             pub(crate) sas_url: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The duration to keep capturing in seconds."]
             pub fn duration_in_seconds(mut self, duration_in_seconds: i32) -> Self {
                 self.duration_in_seconds = Some(duration_in_seconds);
@@ -36959,13 +36966,13 @@ pub mod web_apps {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -37009,14 +37016,14 @@ pub mod web_apps {
         use super::models;
         type Response = Vec<models::NetworkTrace>;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) operation_id: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -37067,14 +37074,14 @@ pub mod web_apps {
             Accepted202(Vec<models::NetworkTrace>),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) operation_id: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -37119,14 +37126,14 @@ pub mod web_apps {
         use super::models;
         type Response = Vec<models::NetworkTrace>;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) operation_id: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -37177,13 +37184,13 @@ pub mod web_apps {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -37227,14 +37234,14 @@ pub mod web_apps {
         use super::models;
         type Response = models::PerfMonCounterCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
             pub(crate) filter: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Return only usages/metrics specified in the filter. Filter conforms to odata syntax. Example: $filter=(startTime eq 2014-01-01T00:00:00Z and endTime eq 2014-12-31T23:59:59Z and timeGrain eq duration'[Hour|Minute|Day]'."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -37314,13 +37321,13 @@ pub mod web_apps {
         use super::models;
         type Response = models::SitePhpErrorLogFlag;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -37366,13 +37373,13 @@ pub mod web_apps {
         use super::models;
         type Response = models::PremierAddOn;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -37418,14 +37425,14 @@ pub mod web_apps {
         use super::models;
         type Response = models::PremierAddOn;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) premier_add_on_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -37472,7 +37479,7 @@ pub mod web_apps {
         use super::models;
         type Response = models::PremierAddOn;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -37480,7 +37487,7 @@ pub mod web_apps {
             pub(crate) premier_add_on: models::PremierAddOn,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -37528,7 +37535,7 @@ pub mod web_apps {
         use super::models;
         type Response = models::PremierAddOn;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -37536,7 +37543,7 @@ pub mod web_apps {
             pub(crate) premier_add_on: models::PremierAddOnPatchResource,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -37584,14 +37591,14 @@ pub mod web_apps {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) premier_add_on_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -37634,13 +37641,13 @@ pub mod web_apps {
         use super::models;
         type Response = models::PrivateAccess;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -37686,14 +37693,14 @@ pub mod web_apps {
         use super::models;
         type Response = models::PrivateAccess;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) access: models::PrivateAccess,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -37740,13 +37747,13 @@ pub mod web_apps {
         use super::models;
         type Response = models::PrivateEndpointConnectionCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -37818,14 +37825,14 @@ pub mod web_apps {
         use super::models;
         type Response = models::RemotePrivateEndpointConnectionArmResource;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) private_endpoint_connection_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -37876,7 +37883,7 @@ pub mod web_apps {
             Accepted202(models::RemotePrivateEndpointConnectionArmResource),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -37884,7 +37891,7 @@ pub mod web_apps {
             pub(crate) private_endpoint_wrapper: models::PrivateLinkConnectionApprovalRequestResource,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -37943,14 +37950,14 @@ pub mod web_apps {
             NoContent204(serde_json::Value),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) private_endpoint_connection_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -38008,13 +38015,13 @@ pub mod web_apps {
         use super::models;
         type Response = models::PrivateLinkResourcesWrapper;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -38060,13 +38067,13 @@ pub mod web_apps {
         use super::models;
         type Response = models::ProcessInfoCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -38138,14 +38145,14 @@ pub mod web_apps {
         use super::models;
         type Response = models::ProcessInfo;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) process_id: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -38192,14 +38199,14 @@ pub mod web_apps {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) process_id: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -38242,14 +38249,14 @@ pub mod web_apps {
         use super::models;
         type Response = bytes::Bytes;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) process_id: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -38296,14 +38303,14 @@ pub mod web_apps {
         use super::models;
         type Response = models::ProcessModuleInfoCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) process_id: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -38376,7 +38383,7 @@ pub mod web_apps {
         use super::models;
         type Response = models::ProcessModuleInfo;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -38384,7 +38391,7 @@ pub mod web_apps {
             pub(crate) base_address: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -38432,14 +38439,14 @@ pub mod web_apps {
         use super::models;
         type Response = models::ProcessThreadInfoCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) process_id: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -38512,13 +38519,13 @@ pub mod web_apps {
         use super::models;
         type Response = models::PublicCertificateCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -38590,14 +38597,14 @@ pub mod web_apps {
         use super::models;
         type Response = models::PublicCertificate;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) public_certificate_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -38644,7 +38651,7 @@ pub mod web_apps {
         use super::models;
         type Response = models::PublicCertificate;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -38652,7 +38659,7 @@ pub mod web_apps {
             pub(crate) public_certificate: models::PublicCertificate,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -38704,14 +38711,14 @@ pub mod web_apps {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) public_certificate_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -38755,14 +38762,14 @@ pub mod web_apps {
         use super::models;
         type Response = bytes::Bytes;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) publishing_profile_options: models::CsmPublishingProfileOptions,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -38809,13 +38816,13 @@ pub mod web_apps {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -38858,7 +38865,7 @@ pub mod web_apps {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -38866,7 +38873,7 @@ pub mod web_apps {
             pub(crate) soft_restart: Option<bool>,
             pub(crate) synchronous: Option<bool>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Specify true to apply the configuration settings and restarts the app only if necessary. By default, the API always restarts and reprovisions the app."]
             pub fn soft_restart(mut self, soft_restart: bool) -> Self {
                 self.soft_restart = Some(soft_restart);
@@ -38931,14 +38938,14 @@ pub mod web_apps {
             Ok200,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) request: models::RestoreRequest,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -38987,14 +38994,14 @@ pub mod web_apps {
             Ok200,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) restore_request: models::DeletedAppRestoreRequest,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -39043,14 +39050,14 @@ pub mod web_apps {
             Ok200,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) restore_request: models::SnapshotRestoreRequest,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -39095,13 +39102,13 @@ pub mod web_apps {
         use super::models;
         type Response = models::SiteExtensionInfoCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -39173,14 +39180,14 @@ pub mod web_apps {
         use super::models;
         type Response = models::SiteExtensionInfo;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) site_extension_id: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -39231,14 +39238,14 @@ pub mod web_apps {
             Ok200(models::SiteExtensionInfo),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) site_extension_id: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -39291,14 +39298,14 @@ pub mod web_apps {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) site_extension_id: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -39341,13 +39348,13 @@ pub mod web_apps {
         use super::models;
         type Response = models::WebAppCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -39419,14 +39426,14 @@ pub mod web_apps {
         use super::models;
         type Response = models::Site;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -39477,7 +39484,7 @@ pub mod web_apps {
             Accepted202(models::Site),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -39485,7 +39492,7 @@ pub mod web_apps {
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -39543,7 +39550,7 @@ pub mod web_apps {
             Accepted202(models::Site),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -39551,7 +39558,7 @@ pub mod web_apps {
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -39608,7 +39615,7 @@ pub mod web_apps {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -39617,7 +39624,7 @@ pub mod web_apps {
             pub(crate) delete_metrics: Option<bool>,
             pub(crate) delete_empty_server_farm: Option<bool>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "If true, web app metrics are also deleted."]
             pub fn delete_metrics(mut self, delete_metrics: bool) -> Self {
                 self.delete_metrics = Some(delete_metrics);
@@ -39681,7 +39688,7 @@ pub mod web_apps {
         use super::models;
         type Response = models::CustomHostnameAnalysisResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -39689,7 +39696,7 @@ pub mod web_apps {
             pub(crate) subscription_id: String,
             pub(crate) host_name: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Custom hostname."]
             pub fn host_name(mut self, host_name: impl Into<String>) -> Self {
                 self.host_name = Some(host_name.into());
@@ -39744,7 +39751,7 @@ pub mod web_apps {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -39752,7 +39759,7 @@ pub mod web_apps {
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -39796,7 +39803,7 @@ pub mod web_apps {
         use super::models;
         type Response = models::BackupItem;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -39804,7 +39811,7 @@ pub mod web_apps {
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -39852,14 +39859,14 @@ pub mod web_apps {
         use super::models;
         type Response = models::BackupItemCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -39932,7 +39939,7 @@ pub mod web_apps {
         use super::models;
         type Response = models::BackupItem;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -39940,7 +39947,7 @@ pub mod web_apps {
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -39988,7 +39995,7 @@ pub mod web_apps {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -39996,7 +40003,7 @@ pub mod web_apps {
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -40040,7 +40047,7 @@ pub mod web_apps {
         use super::models;
         type Response = models::BackupItem;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -40049,7 +40056,7 @@ pub mod web_apps {
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -40102,7 +40109,7 @@ pub mod web_apps {
             Ok200,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -40111,7 +40118,7 @@ pub mod web_apps {
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -40158,14 +40165,14 @@ pub mod web_apps {
         use super::models;
         type Response = models::CsmPublishingCredentialsPoliciesCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -40205,14 +40212,14 @@ pub mod web_apps {
         use super::models;
         type Response = models::CsmPublishingCredentialsPoliciesEntity;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -40252,7 +40259,7 @@ pub mod web_apps {
         use super::models;
         type Response = models::CsmPublishingCredentialsPoliciesEntity;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -40260,7 +40267,7 @@ pub mod web_apps {
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -40301,14 +40308,14 @@ pub mod web_apps {
         use super::models;
         type Response = models::CsmPublishingCredentialsPoliciesEntity;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -40348,7 +40355,7 @@ pub mod web_apps {
         use super::models;
         type Response = models::CsmPublishingCredentialsPoliciesEntity;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -40356,7 +40363,7 @@ pub mod web_apps {
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -40397,14 +40404,14 @@ pub mod web_apps {
         use super::models;
         type Response = models::SiteConfigResourceCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -40477,7 +40484,7 @@ pub mod web_apps {
         use super::models;
         type Response = models::StringDictionary;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -40485,7 +40492,7 @@ pub mod web_apps {
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -40533,14 +40540,14 @@ pub mod web_apps {
         use super::models;
         type Response = models::StringDictionary;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -40588,7 +40595,7 @@ pub mod web_apps {
         use super::models;
         type Response = models::SiteAuthSettings;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -40596,7 +40603,7 @@ pub mod web_apps {
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -40644,14 +40651,14 @@ pub mod web_apps {
         use super::models;
         type Response = models::SiteAuthSettings;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -40699,7 +40706,7 @@ pub mod web_apps {
         use super::models;
         type Response = models::SiteAuthSettingsV2;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -40707,7 +40714,7 @@ pub mod web_apps {
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -40755,14 +40762,14 @@ pub mod web_apps {
         use super::models;
         type Response = models::SiteAuthSettingsV2;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -40809,7 +40816,7 @@ pub mod web_apps {
         use super::models;
         type Response = models::AzureStoragePropertyDictionaryResource;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -40817,7 +40824,7 @@ pub mod web_apps {
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -40865,14 +40872,14 @@ pub mod web_apps {
         use super::models;
         type Response = models::AzureStoragePropertyDictionaryResource;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -40913,7 +40920,7 @@ pub mod web_apps {
         use super::models;
         type Response = models::BackupRequest;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -40921,7 +40928,7 @@ pub mod web_apps {
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -40969,14 +40976,14 @@ pub mod web_apps {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -41019,14 +41026,14 @@ pub mod web_apps {
         use super::models;
         type Response = models::BackupRequest;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -41074,14 +41081,14 @@ pub mod web_apps {
         use super::models;
         type Response = models::ApiKvReferenceCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -41147,7 +41154,7 @@ pub mod web_apps {
         use super::models;
         type Response = models::ApiKvReference;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -41155,7 +41162,7 @@ pub mod web_apps {
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -41195,14 +41202,14 @@ pub mod web_apps {
         use super::models;
         type Response = models::ApiKvReferenceCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -41268,7 +41275,7 @@ pub mod web_apps {
         use super::models;
         type Response = models::ApiKvReference;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -41276,7 +41283,7 @@ pub mod web_apps {
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -41316,7 +41323,7 @@ pub mod web_apps {
         use super::models;
         type Response = models::ConnectionStringDictionary;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -41324,7 +41331,7 @@ pub mod web_apps {
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -41372,14 +41379,14 @@ pub mod web_apps {
         use super::models;
         type Response = models::ConnectionStringDictionary;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -41427,14 +41434,14 @@ pub mod web_apps {
         use super::models;
         type Response = models::SiteLogsConfig;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -41481,7 +41488,7 @@ pub mod web_apps {
         use super::models;
         type Response = models::SiteLogsConfig;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -41489,7 +41496,7 @@ pub mod web_apps {
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -41537,7 +41544,7 @@ pub mod web_apps {
         use super::models;
         type Response = models::StringDictionary;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -41545,7 +41552,7 @@ pub mod web_apps {
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -41593,14 +41600,14 @@ pub mod web_apps {
         use super::models;
         type Response = models::StringDictionary;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -41648,14 +41655,14 @@ pub mod web_apps {
         use super::models;
         type Response = models::User;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -41697,7 +41704,7 @@ pub mod web_apps {
         use super::models;
         type Response = models::PushSettings;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -41705,7 +41712,7 @@ pub mod web_apps {
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -41753,14 +41760,14 @@ pub mod web_apps {
         use super::models;
         type Response = models::PushSettings;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -41808,14 +41815,14 @@ pub mod web_apps {
         use super::models;
         type Response = models::SiteConfigResource;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -41862,7 +41869,7 @@ pub mod web_apps {
         use super::models;
         type Response = models::SiteConfigResource;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -41870,7 +41877,7 @@ pub mod web_apps {
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -41918,7 +41925,7 @@ pub mod web_apps {
         use super::models;
         type Response = models::SiteConfigResource;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -41926,7 +41933,7 @@ pub mod web_apps {
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -41974,14 +41981,14 @@ pub mod web_apps {
         use super::models;
         type Response = models::SiteConfigurationSnapshotInfoCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -42054,7 +42061,7 @@ pub mod web_apps {
         use super::models;
         type Response = models::SiteConfigResource;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -42062,7 +42069,7 @@ pub mod web_apps {
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -42110,7 +42117,7 @@ pub mod web_apps {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -42118,7 +42125,7 @@ pub mod web_apps {
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -42159,14 +42166,14 @@ pub mod web_apps {
             Ok200(bytes::Bytes),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -42219,14 +42226,14 @@ pub mod web_apps {
             Ok200(bytes::Bytes),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -42275,14 +42282,14 @@ pub mod web_apps {
         use super::models;
         type Response = models::ContinuousWebJobCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -42355,7 +42362,7 @@ pub mod web_apps {
         use super::models;
         type Response = models::ContinuousWebJob;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -42363,7 +42370,7 @@ pub mod web_apps {
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -42415,7 +42422,7 @@ pub mod web_apps {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -42423,7 +42430,7 @@ pub mod web_apps {
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -42468,7 +42475,7 @@ pub mod web_apps {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -42476,7 +42483,7 @@ pub mod web_apps {
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -42521,7 +42528,7 @@ pub mod web_apps {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -42529,7 +42536,7 @@ pub mod web_apps {
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -42574,14 +42581,14 @@ pub mod web_apps {
         use super::models;
         type Response = models::DeploymentCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -42654,7 +42661,7 @@ pub mod web_apps {
         use super::models;
         type Response = models::Deployment;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -42662,7 +42669,7 @@ pub mod web_apps {
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -42710,7 +42717,7 @@ pub mod web_apps {
         use super::models;
         type Response = models::Deployment;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -42719,7 +42726,7 @@ pub mod web_apps {
             pub(crate) deployment: models::Deployment,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -42772,7 +42779,7 @@ pub mod web_apps {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -42780,7 +42787,7 @@ pub mod web_apps {
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -42825,7 +42832,7 @@ pub mod web_apps {
         use super::models;
         type Response = models::Deployment;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -42833,7 +42840,7 @@ pub mod web_apps {
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -42881,7 +42888,7 @@ pub mod web_apps {
         use super::models;
         type Response = models::RestoreRequest;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -42889,7 +42896,7 @@ pub mod web_apps {
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -42937,14 +42944,14 @@ pub mod web_apps {
         use super::models;
         type Response = models::IdentifierCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -43017,7 +43024,7 @@ pub mod web_apps {
         use super::models;
         type Response = models::Identifier;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -43025,7 +43032,7 @@ pub mod web_apps {
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -43073,7 +43080,7 @@ pub mod web_apps {
         use super::models;
         type Response = models::Identifier;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -43082,7 +43089,7 @@ pub mod web_apps {
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -43131,7 +43138,7 @@ pub mod web_apps {
         use super::models;
         type Response = models::Identifier;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -43140,7 +43147,7 @@ pub mod web_apps {
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -43193,7 +43200,7 @@ pub mod web_apps {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -43201,7 +43208,7 @@ pub mod web_apps {
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -43246,14 +43253,14 @@ pub mod web_apps {
         use super::models;
         type Response = models::MsDeployStatus;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -43300,7 +43307,7 @@ pub mod web_apps {
         use super::models;
         type Response = models::MsDeployStatus;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -43308,7 +43315,7 @@ pub mod web_apps {
             pub(crate) ms_deploy: models::MsDeploy,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -43357,14 +43364,14 @@ pub mod web_apps {
         use super::models;
         type Response = models::MsDeployLog;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -43411,14 +43418,14 @@ pub mod web_apps {
         use super::models;
         type Response = models::FunctionEnvelopeCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -43491,14 +43498,14 @@ pub mod web_apps {
         use super::models;
         type Response = String;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -43545,7 +43552,7 @@ pub mod web_apps {
         use super::models;
         type Response = models::FunctionEnvelope;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -43553,7 +43560,7 @@ pub mod web_apps {
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -43601,7 +43608,7 @@ pub mod web_apps {
         use super::models;
         type Response = models::FunctionEnvelope;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -43610,7 +43617,7 @@ pub mod web_apps {
             pub(crate) function_envelope: models::FunctionEnvelope,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -43660,7 +43667,7 @@ pub mod web_apps {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -43668,7 +43675,7 @@ pub mod web_apps {
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -43716,7 +43723,7 @@ pub mod web_apps {
             Ok200(models::KeyInfo),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -43726,7 +43733,7 @@ pub mod web_apps {
             pub(crate) key: models::KeyInfo,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -43781,7 +43788,7 @@ pub mod web_apps {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -43790,7 +43797,7 @@ pub mod web_apps {
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -43835,7 +43842,7 @@ pub mod web_apps {
         use super::models;
         type Response = models::StringDictionary;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -43843,7 +43850,7 @@ pub mod web_apps {
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -43892,7 +43899,7 @@ pub mod web_apps {
         use super::models;
         type Response = models::FunctionSecrets;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -43900,7 +43907,7 @@ pub mod web_apps {
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -43949,14 +43956,14 @@ pub mod web_apps {
         use super::models;
         type Response = models::HostKeys;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -44004,14 +44011,14 @@ pub mod web_apps {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -44055,14 +44062,14 @@ pub mod web_apps {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -44110,7 +44117,7 @@ pub mod web_apps {
             Ok200(models::KeyInfo),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -44120,7 +44127,7 @@ pub mod web_apps {
             pub(crate) key: models::KeyInfo,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -44175,7 +44182,7 @@ pub mod web_apps {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -44184,7 +44191,7 @@ pub mod web_apps {
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -44229,14 +44236,14 @@ pub mod web_apps {
         use super::models;
         type Response = models::HostNameBindingCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -44309,7 +44316,7 @@ pub mod web_apps {
         use super::models;
         type Response = models::HostNameBinding;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -44317,7 +44324,7 @@ pub mod web_apps {
             pub(crate) host_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -44365,7 +44372,7 @@ pub mod web_apps {
         use super::models;
         type Response = models::HostNameBinding;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -44374,7 +44381,7 @@ pub mod web_apps {
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -44427,7 +44434,7 @@ pub mod web_apps {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -44435,7 +44442,7 @@ pub mod web_apps {
             pub(crate) host_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -44480,7 +44487,7 @@ pub mod web_apps {
         use super::models;
         type Response = models::HybridConnection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -44489,7 +44496,7 @@ pub mod web_apps {
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -44529,7 +44536,7 @@ pub mod web_apps {
         use super::models;
         type Response = models::HybridConnection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -44539,7 +44546,7 @@ pub mod web_apps {
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -44580,7 +44587,7 @@ pub mod web_apps {
         use super::models;
         type Response = models::HybridConnection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -44590,7 +44597,7 @@ pub mod web_apps {
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -44631,7 +44638,7 @@ pub mod web_apps {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -44640,7 +44647,7 @@ pub mod web_apps {
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -44676,14 +44683,14 @@ pub mod web_apps {
         use super::models;
         type Response = models::HybridConnection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -44730,14 +44737,14 @@ pub mod web_apps {
         use super::models;
         type Response = models::RelayServiceConnectionEntity;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -44784,7 +44791,7 @@ pub mod web_apps {
         use super::models;
         type Response = models::RelayServiceConnectionEntity;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -44792,7 +44799,7 @@ pub mod web_apps {
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -44840,7 +44847,7 @@ pub mod web_apps {
         use super::models;
         type Response = models::RelayServiceConnectionEntity;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -44849,7 +44856,7 @@ pub mod web_apps {
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -44898,7 +44905,7 @@ pub mod web_apps {
         use super::models;
         type Response = models::RelayServiceConnectionEntity;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -44907,7 +44914,7 @@ pub mod web_apps {
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -44956,7 +44963,7 @@ pub mod web_apps {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -44964,7 +44971,7 @@ pub mod web_apps {
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -45008,14 +45015,14 @@ pub mod web_apps {
         use super::models;
         type Response = models::WebAppInstanceStatusCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -45088,7 +45095,7 @@ pub mod web_apps {
         use super::models;
         type Response = models::WebSiteInstanceStatus;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -45096,7 +45103,7 @@ pub mod web_apps {
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -45144,7 +45151,7 @@ pub mod web_apps {
         use super::models;
         type Response = models::MsDeployStatus;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -45152,7 +45159,7 @@ pub mod web_apps {
             pub(crate) instance_id: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -45192,7 +45199,7 @@ pub mod web_apps {
         use super::models;
         type Response = models::MsDeployStatus;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -45201,7 +45208,7 @@ pub mod web_apps {
             pub(crate) ms_deploy: models::MsDeploy,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -45243,7 +45250,7 @@ pub mod web_apps {
         use super::models;
         type Response = models::MsDeployLog;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -45251,7 +45258,7 @@ pub mod web_apps {
             pub(crate) instance_id: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -45291,7 +45298,7 @@ pub mod web_apps {
         use super::models;
         type Response = models::ProcessInfoCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -45299,7 +45306,7 @@ pub mod web_apps {
             pub(crate) instance_id: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -45373,7 +45380,7 @@ pub mod web_apps {
         use super::models;
         type Response = models::ProcessInfo;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -45382,7 +45389,7 @@ pub mod web_apps {
             pub(crate) instance_id: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -45431,7 +45438,7 @@ pub mod web_apps {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -45440,7 +45447,7 @@ pub mod web_apps {
             pub(crate) instance_id: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -45485,7 +45492,7 @@ pub mod web_apps {
         use super::models;
         type Response = bytes::Bytes;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -45494,7 +45501,7 @@ pub mod web_apps {
             pub(crate) instance_id: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -45534,7 +45541,7 @@ pub mod web_apps {
         use super::models;
         type Response = models::ProcessModuleInfoCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -45543,7 +45550,7 @@ pub mod web_apps {
             pub(crate) instance_id: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -45609,7 +45616,7 @@ pub mod web_apps {
         use super::models;
         type Response = models::ProcessModuleInfo;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -45619,7 +45626,7 @@ pub mod web_apps {
             pub(crate) instance_id: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -45659,7 +45666,7 @@ pub mod web_apps {
         use super::models;
         type Response = models::ProcessThreadInfoCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -45668,7 +45675,7 @@ pub mod web_apps {
             pub(crate) instance_id: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -45734,14 +45741,14 @@ pub mod web_apps {
         use super::models;
         type Response = models::SiteCloneability;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -45789,14 +45796,14 @@ pub mod web_apps {
         use super::models;
         type Response = models::BackupItemCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -45870,14 +45877,14 @@ pub mod web_apps {
         use super::models;
         type Response = models::FunctionSecrets;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -45925,14 +45932,14 @@ pub mod web_apps {
         use super::models;
         type Response = models::MigrateMySqlStatus;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -45979,14 +45986,14 @@ pub mod web_apps {
         use super::models;
         type Response = models::SwiftVirtualNetwork;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -46033,14 +46040,14 @@ pub mod web_apps {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -46083,7 +46090,7 @@ pub mod web_apps {
         use super::models;
         type Response = models::NetworkFeatures;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -46091,7 +46098,7 @@ pub mod web_apps {
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -46143,7 +46150,7 @@ pub mod web_apps {
             Accepted202(Vec<models::NetworkTrace>),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -46151,7 +46158,7 @@ pub mod web_apps {
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -46196,7 +46203,7 @@ pub mod web_apps {
         use super::models;
         type Response = String;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -46206,7 +46213,7 @@ pub mod web_apps {
             pub(crate) max_frame_length: Option<i32>,
             pub(crate) sas_url: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The duration to keep capturing in seconds."]
             pub fn duration_in_seconds(mut self, duration_in_seconds: i32) -> Self {
                 self.duration_in_seconds = Some(duration_in_seconds);
@@ -46286,7 +46293,7 @@ pub mod web_apps {
             Accepted202(Vec<models::NetworkTrace>),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -46296,7 +46303,7 @@ pub mod web_apps {
             pub(crate) max_frame_length: Option<i32>,
             pub(crate) sas_url: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The duration to keep capturing in seconds."]
             pub fn duration_in_seconds(mut self, duration_in_seconds: i32) -> Self {
                 self.duration_in_seconds = Some(duration_in_seconds);
@@ -46382,14 +46389,14 @@ pub mod web_apps {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -46434,7 +46441,7 @@ pub mod web_apps {
         use super::models;
         type Response = Vec<models::NetworkTrace>;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -46442,7 +46449,7 @@ pub mod web_apps {
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -46494,7 +46501,7 @@ pub mod web_apps {
             Accepted202(Vec<models::NetworkTrace>),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -46502,7 +46509,7 @@ pub mod web_apps {
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -46547,7 +46554,7 @@ pub mod web_apps {
         use super::models;
         type Response = Vec<models::NetworkTrace>;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -46555,7 +46562,7 @@ pub mod web_apps {
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -46607,14 +46614,14 @@ pub mod web_apps {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -46659,7 +46666,7 @@ pub mod web_apps {
         use super::models;
         type Response = models::PerfMonCounterCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -46667,7 +46674,7 @@ pub mod web_apps {
             pub(crate) subscription_id: String,
             pub(crate) filter: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Return only usages/metrics specified in the filter. Filter conforms to odata syntax. Example: $filter=(startTime eq 2014-01-01T00:00:00Z and endTime eq 2014-12-31T23:59:59Z and timeGrain eq duration'[Hour|Minute|Day]'."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -46748,14 +46755,14 @@ pub mod web_apps {
         use super::models;
         type Response = models::SitePhpErrorLogFlag;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -46802,14 +46809,14 @@ pub mod web_apps {
         use super::models;
         type Response = models::PremierAddOn;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -46856,7 +46863,7 @@ pub mod web_apps {
         use super::models;
         type Response = models::PremierAddOn;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -46864,7 +46871,7 @@ pub mod web_apps {
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -46912,7 +46919,7 @@ pub mod web_apps {
         use super::models;
         type Response = models::PremierAddOn;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -46921,7 +46928,7 @@ pub mod web_apps {
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -46970,7 +46977,7 @@ pub mod web_apps {
         use super::models;
         type Response = models::PremierAddOn;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -46979,7 +46986,7 @@ pub mod web_apps {
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -47028,7 +47035,7 @@ pub mod web_apps {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -47036,7 +47043,7 @@ pub mod web_apps {
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -47080,14 +47087,14 @@ pub mod web_apps {
         use super::models;
         type Response = models::PrivateAccess;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -47134,7 +47141,7 @@ pub mod web_apps {
         use super::models;
         type Response = models::PrivateAccess;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -47142,7 +47149,7 @@ pub mod web_apps {
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -47190,14 +47197,14 @@ pub mod web_apps {
         use super::models;
         type Response = models::PrivateEndpointConnectionCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -47270,7 +47277,7 @@ pub mod web_apps {
         use super::models;
         type Response = models::RemotePrivateEndpointConnectionArmResource;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -47278,7 +47285,7 @@ pub mod web_apps {
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -47330,7 +47337,7 @@ pub mod web_apps {
             Accepted202(models::RemotePrivateEndpointConnectionArmResource),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -47339,7 +47346,7 @@ pub mod web_apps {
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -47399,7 +47406,7 @@ pub mod web_apps {
             NoContent204(serde_json::Value),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -47407,7 +47414,7 @@ pub mod web_apps {
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -47466,14 +47473,14 @@ pub mod web_apps {
         use super::models;
         type Response = models::PrivateLinkResourcesWrapper;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -47520,14 +47527,14 @@ pub mod web_apps {
         use super::models;
         type Response = models::ProcessInfoCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -47600,7 +47607,7 @@ pub mod web_apps {
         use super::models;
         type Response = models::ProcessInfo;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -47608,7 +47615,7 @@ pub mod web_apps {
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -47656,7 +47663,7 @@ pub mod web_apps {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -47664,7 +47671,7 @@ pub mod web_apps {
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -47708,7 +47715,7 @@ pub mod web_apps {
         use super::models;
         type Response = bytes::Bytes;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -47716,7 +47723,7 @@ pub mod web_apps {
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -47764,7 +47771,7 @@ pub mod web_apps {
         use super::models;
         type Response = models::ProcessModuleInfoCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -47772,7 +47779,7 @@ pub mod web_apps {
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -47846,7 +47853,7 @@ pub mod web_apps {
         use super::models;
         type Response = models::ProcessModuleInfo;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -47855,7 +47862,7 @@ pub mod web_apps {
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -47904,7 +47911,7 @@ pub mod web_apps {
         use super::models;
         type Response = models::ProcessThreadInfoCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -47912,7 +47919,7 @@ pub mod web_apps {
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -47986,14 +47993,14 @@ pub mod web_apps {
         use super::models;
         type Response = models::PublicCertificateCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -48066,7 +48073,7 @@ pub mod web_apps {
         use super::models;
         type Response = models::PublicCertificate;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -48074,7 +48081,7 @@ pub mod web_apps {
             pub(crate) public_certificate_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -48122,7 +48129,7 @@ pub mod web_apps {
         use super::models;
         type Response = models::PublicCertificate;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -48131,7 +48138,7 @@ pub mod web_apps {
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -48184,7 +48191,7 @@ pub mod web_apps {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -48192,7 +48199,7 @@ pub mod web_apps {
             pub(crate) public_certificate_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -48237,7 +48244,7 @@ pub mod web_apps {
         use super::models;
         type Response = bytes::Bytes;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -48245,7 +48252,7 @@ pub mod web_apps {
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -48293,14 +48300,14 @@ pub mod web_apps {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -48344,7 +48351,7 @@ pub mod web_apps {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -48353,7 +48360,7 @@ pub mod web_apps {
             pub(crate) soft_restart: Option<bool>,
             pub(crate) synchronous: Option<bool>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Specify true to apply the configuration settings and restarts the app only if necessary. By default, the API always restarts and reprovisions the app."]
             pub fn soft_restart(mut self, soft_restart: bool) -> Self {
                 self.soft_restart = Some(soft_restart);
@@ -48419,7 +48426,7 @@ pub mod web_apps {
             Ok200,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -48427,7 +48434,7 @@ pub mod web_apps {
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -48477,7 +48484,7 @@ pub mod web_apps {
             Ok200,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -48485,7 +48492,7 @@ pub mod web_apps {
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -48535,7 +48542,7 @@ pub mod web_apps {
             Ok200,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -48543,7 +48550,7 @@ pub mod web_apps {
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -48589,14 +48596,14 @@ pub mod web_apps {
         use super::models;
         type Response = models::SiteExtensionInfoCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -48669,7 +48676,7 @@ pub mod web_apps {
         use super::models;
         type Response = models::SiteExtensionInfo;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -48677,7 +48684,7 @@ pub mod web_apps {
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -48729,7 +48736,7 @@ pub mod web_apps {
             Ok200(models::SiteExtensionInfo),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -48737,7 +48744,7 @@ pub mod web_apps {
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -48791,7 +48798,7 @@ pub mod web_apps {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -48799,7 +48806,7 @@ pub mod web_apps {
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -48843,7 +48850,7 @@ pub mod web_apps {
         use super::models;
         type Response = models::SlotDifferenceCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -48851,7 +48858,7 @@ pub mod web_apps {
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -48929,7 +48936,7 @@ pub mod web_apps {
             Accepted202,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -48937,7 +48944,7 @@ pub mod web_apps {
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -48983,14 +48990,14 @@ pub mod web_apps {
         use super::models;
         type Response = models::SnapshotCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -49063,14 +49070,14 @@ pub mod web_apps {
         use super::models;
         type Response = models::SnapshotCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -49148,14 +49155,14 @@ pub mod web_apps {
             Accepted202(models::SiteSourceControl),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -49217,7 +49224,7 @@ pub mod web_apps {
             Accepted202(models::SiteSourceControl),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -49225,7 +49232,7 @@ pub mod web_apps {
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -49289,7 +49296,7 @@ pub mod web_apps {
             Accepted202(models::SiteSourceControl),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -49297,7 +49304,7 @@ pub mod web_apps {
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -49359,7 +49366,7 @@ pub mod web_apps {
             Accepted202,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -49367,7 +49374,7 @@ pub mod web_apps {
             pub(crate) subscription_id: String,
             pub(crate) additional_flags: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn additional_flags(mut self, additional_flags: impl Into<String>) -> Self {
                 self.additional_flags = Some(additional_flags.into());
                 self
@@ -49418,14 +49425,14 @@ pub mod web_apps {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -49473,7 +49480,7 @@ pub mod web_apps {
             Accepted202(Vec<models::NetworkTrace>),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -49483,7 +49490,7 @@ pub mod web_apps {
             pub(crate) max_frame_length: Option<i32>,
             pub(crate) sas_url: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The duration to keep capturing in seconds."]
             pub fn duration_in_seconds(mut self, duration_in_seconds: i32) -> Self {
                 self.duration_in_seconds = Some(duration_in_seconds);
@@ -49565,14 +49572,14 @@ pub mod web_apps {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -49620,14 +49627,14 @@ pub mod web_apps {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -49672,14 +49679,14 @@ pub mod web_apps {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -49723,14 +49730,14 @@ pub mod web_apps {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -49774,14 +49781,14 @@ pub mod web_apps {
         use super::models;
         type Response = models::TriggeredWebJobCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -49854,7 +49861,7 @@ pub mod web_apps {
         use super::models;
         type Response = models::TriggeredWebJob;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -49862,7 +49869,7 @@ pub mod web_apps {
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -49914,7 +49921,7 @@ pub mod web_apps {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -49922,7 +49929,7 @@ pub mod web_apps {
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -49967,7 +49974,7 @@ pub mod web_apps {
         use super::models;
         type Response = models::TriggeredJobHistoryCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -49975,7 +49982,7 @@ pub mod web_apps {
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -50049,7 +50056,7 @@ pub mod web_apps {
         use super::models;
         type Response = models::TriggeredJobHistory;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -50058,7 +50065,7 @@ pub mod web_apps {
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -50098,7 +50105,7 @@ pub mod web_apps {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -50106,7 +50113,7 @@ pub mod web_apps {
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -50151,7 +50158,7 @@ pub mod web_apps {
         use super::models;
         type Response = models::CsmUsageQuotaCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -50159,7 +50166,7 @@ pub mod web_apps {
             pub(crate) subscription_id: String,
             pub(crate) filter: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Return only information specified in the filter (using OData syntax). For example: $filter=(name.value eq 'Metric1' or name.value eq 'Metric2') and startTime eq 2014-01-01T00:00:00Z and endTime eq 2014-12-31T23:59:59Z and timeGrain eq duration'[Hour|Minute|Day]'."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -50240,14 +50247,14 @@ pub mod web_apps {
         use super::models;
         type Response = Vec<models::VnetInfo>;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -50294,7 +50301,7 @@ pub mod web_apps {
         use super::models;
         type Response = models::VnetInfo;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -50302,7 +50309,7 @@ pub mod web_apps {
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -50350,7 +50357,7 @@ pub mod web_apps {
         use super::models;
         type Response = models::VnetInfo;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -50359,7 +50366,7 @@ pub mod web_apps {
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -50408,7 +50415,7 @@ pub mod web_apps {
         use super::models;
         type Response = models::VnetInfo;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -50417,7 +50424,7 @@ pub mod web_apps {
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -50466,7 +50473,7 @@ pub mod web_apps {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -50474,7 +50481,7 @@ pub mod web_apps {
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -50518,7 +50525,7 @@ pub mod web_apps {
         use super::models;
         type Response = models::VnetGateway;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -50527,7 +50534,7 @@ pub mod web_apps {
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -50567,7 +50574,7 @@ pub mod web_apps {
         use super::models;
         type Response = models::VnetGateway;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -50577,7 +50584,7 @@ pub mod web_apps {
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -50618,7 +50625,7 @@ pub mod web_apps {
         use super::models;
         type Response = models::VnetGateway;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -50628,7 +50635,7 @@ pub mod web_apps {
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -50669,14 +50676,14 @@ pub mod web_apps {
         use super::models;
         type Response = models::WebJobCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -50749,7 +50756,7 @@ pub mod web_apps {
         use super::models;
         type Response = models::WebJob;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -50757,7 +50764,7 @@ pub mod web_apps {
             pub(crate) slot: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -50805,14 +50812,14 @@ pub mod web_apps {
         use super::models;
         type Response = models::SlotDifferenceCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot_swap_entity: models::CsmSlotEntity,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -50889,14 +50896,14 @@ pub mod web_apps {
             Accepted202,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) slot_swap_entity: models::CsmSlotEntity,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -50941,13 +50948,13 @@ pub mod web_apps {
         use super::models;
         type Response = models::SnapshotCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -51019,13 +51026,13 @@ pub mod web_apps {
         use super::models;
         type Response = models::SnapshotCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -51102,13 +51109,13 @@ pub mod web_apps {
             Accepted202(models::SiteSourceControl),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -51169,14 +51176,14 @@ pub mod web_apps {
             Accepted202(models::SiteSourceControl),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) site_source_control: models::SiteSourceControl,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -51239,14 +51246,14 @@ pub mod web_apps {
             Accepted202(models::SiteSourceControl),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) site_source_control: models::SiteSourceControl,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -51307,14 +51314,14 @@ pub mod web_apps {
             Accepted202,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
             pub(crate) additional_flags: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn additional_flags(mut self, additional_flags: impl Into<String>) -> Self {
                 self.additional_flags = Some(additional_flags.into());
                 self
@@ -51364,13 +51371,13 @@ pub mod web_apps {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -51417,7 +51424,7 @@ pub mod web_apps {
             Accepted202(Vec<models::NetworkTrace>),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -51426,7 +51433,7 @@ pub mod web_apps {
             pub(crate) max_frame_length: Option<i32>,
             pub(crate) sas_url: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The duration to keep capturing in seconds."]
             pub fn duration_in_seconds(mut self, duration_in_seconds: i32) -> Self {
                 self.duration_in_seconds = Some(duration_in_seconds);
@@ -51507,13 +51514,13 @@ pub mod web_apps {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -51560,13 +51567,13 @@ pub mod web_apps {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -51610,13 +51617,13 @@ pub mod web_apps {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -51659,13 +51666,13 @@ pub mod web_apps {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -51708,13 +51715,13 @@ pub mod web_apps {
         use super::models;
         type Response = models::TriggeredWebJobCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -51786,14 +51793,14 @@ pub mod web_apps {
         use super::models;
         type Response = models::TriggeredWebJob;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) web_job_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -51844,14 +51851,14 @@ pub mod web_apps {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) web_job_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -51895,14 +51902,14 @@ pub mod web_apps {
         use super::models;
         type Response = models::TriggeredJobHistoryCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) web_job_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -51975,7 +51982,7 @@ pub mod web_apps {
         use super::models;
         type Response = models::TriggeredJobHistory;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -51983,7 +51990,7 @@ pub mod web_apps {
             pub(crate) id: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -52031,14 +52038,14 @@ pub mod web_apps {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) web_job_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -52082,14 +52089,14 @@ pub mod web_apps {
         use super::models;
         type Response = models::CsmUsageQuotaCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
             pub(crate) filter: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Return only information specified in the filter (using OData syntax). For example: $filter=(name.value eq 'Metric1' or name.value eq 'Metric2') and startTime eq 2014-01-01T00:00:00Z and endTime eq 2014-12-31T23:59:59Z and timeGrain eq duration'[Hour|Minute|Day]'."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -52169,13 +52176,13 @@ pub mod web_apps {
         use super::models;
         type Response = Vec<models::VnetInfo>;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -52221,14 +52228,14 @@ pub mod web_apps {
         use super::models;
         type Response = models::VnetInfo;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) vnet_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -52275,7 +52282,7 @@ pub mod web_apps {
         use super::models;
         type Response = models::VnetInfo;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -52283,7 +52290,7 @@ pub mod web_apps {
             pub(crate) connection_envelope: models::VnetInfo,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -52331,7 +52338,7 @@ pub mod web_apps {
         use super::models;
         type Response = models::VnetInfo;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -52339,7 +52346,7 @@ pub mod web_apps {
             pub(crate) connection_envelope: models::VnetInfo,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -52387,14 +52394,14 @@ pub mod web_apps {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) vnet_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -52437,7 +52444,7 @@ pub mod web_apps {
         use super::models;
         type Response = models::VnetGateway;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -52445,7 +52452,7 @@ pub mod web_apps {
             pub(crate) gateway_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -52485,7 +52492,7 @@ pub mod web_apps {
         use super::models;
         type Response = models::VnetGateway;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -52494,7 +52501,7 @@ pub mod web_apps {
             pub(crate) connection_envelope: models::VnetGateway,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -52535,7 +52542,7 @@ pub mod web_apps {
         use super::models;
         type Response = models::VnetGateway;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
@@ -52544,7 +52551,7 @@ pub mod web_apps {
             pub(crate) connection_envelope: models::VnetGateway,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -52585,13 +52592,13 @@ pub mod web_apps {
         use super::models;
         type Response = models::WebJobCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -52663,14 +52670,14 @@ pub mod web_apps {
         use super::models;
         type Response = models::WebJob;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) web_job_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -52723,8 +52730,8 @@ pub mod kube_environments {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: Your Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
-        pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
-            list_by_subscription::Builder {
+        pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::RequestBuilder {
+            list_by_subscription::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
@@ -52739,8 +52746,8 @@ pub mod kube_environments {
             &self,
             resource_group_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_by_resource_group::Builder {
-            list_by_resource_group::Builder {
+        ) -> list_by_resource_group::RequestBuilder {
+            list_by_resource_group::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 subscription_id: subscription_id.into(),
@@ -52758,8 +52765,8 @@ pub mod kube_environments {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -52780,8 +52787,8 @@ pub mod kube_environments {
             name: impl Into<String>,
             kube_environment_envelope: impl Into<models::KubeEnvironment>,
             subscription_id: impl Into<String>,
-        ) -> create_or_update::Builder {
-            create_or_update::Builder {
+        ) -> create_or_update::RequestBuilder {
+            create_or_update::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -52803,8 +52810,8 @@ pub mod kube_environments {
             name: impl Into<String>,
             kube_environment_envelope: impl Into<models::KubeEnvironmentPatchResource>,
             subscription_id: impl Into<String>,
-        ) -> update::Builder {
-            update::Builder {
+        ) -> update::RequestBuilder {
+            update::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -52824,8 +52831,8 @@ pub mod kube_environments {
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> delete::Builder {
-            delete::Builder {
+        ) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
@@ -52837,11 +52844,11 @@ pub mod kube_environments {
         use super::models;
         type Response = models::KubeEnvironmentCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -52911,12 +52918,12 @@ pub mod kube_environments {
         use super::models;
         type Response = models::KubeEnvironmentCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -52987,13 +52994,13 @@ pub mod kube_environments {
         use super::models;
         type Response = models::KubeEnvironment;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -53043,14 +53050,14 @@ pub mod kube_environments {
             Created201(models::KubeEnvironment),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) kube_environment_envelope: models::KubeEnvironment,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -53107,14 +53114,14 @@ pub mod kube_environments {
             Created201(models::KubeEnvironment),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) kube_environment_envelope: models::KubeEnvironmentPatchResource,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -53171,13 +53178,13 @@ pub mod kube_environments {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({

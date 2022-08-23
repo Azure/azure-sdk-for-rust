@@ -125,8 +125,8 @@ pub mod usages {
         #[doc = "Arguments:"]
         #[doc = "* `resource_name`: Resource name for a given resource provider. For example:\r\n- SKU name for Microsoft.Compute\r\n- SKU or TotalLowPriorityCores for Microsoft.MachineLearningServices\r\n For Microsoft.Network PublicIPAddresses."]
         #[doc = "* `scope`: The target Azure resource URI. For example, `/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/qms-test/providers/Microsoft.Batch/batchAccounts/testAccount/`. This is the target Azure resource URI for the List GET operation. If a `{resourceName}` is added after `/quotas`, then it's the target Azure resource URI in the GET operation for the specific resource."]
-        pub fn get(&self, resource_name: impl Into<String>, scope: impl Into<String>) -> get::Builder {
-            get::Builder {
+        pub fn get(&self, resource_name: impl Into<String>, scope: impl Into<String>) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 resource_name: resource_name.into(),
                 scope: scope.into(),
@@ -136,8 +136,8 @@ pub mod usages {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `scope`: The target Azure resource URI. For example, `/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/qms-test/providers/Microsoft.Batch/batchAccounts/testAccount/`. This is the target Azure resource URI for the List GET operation. If a `{resourceName}` is added after `/quotas`, then it's the target Azure resource URI in the GET operation for the specific resource."]
-        pub fn list(&self, scope: impl Into<String>) -> list::Builder {
-            list::Builder {
+        pub fn list(&self, scope: impl Into<String>) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 scope: scope.into(),
             }
@@ -147,12 +147,12 @@ pub mod usages {
         use super::models;
         type Response = models::CurrentUsagesBase;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_name: String,
             pub(crate) scope: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -197,11 +197,11 @@ pub mod usages {
         use super::models;
         type Response = models::UsagesLimits;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) scope: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -277,8 +277,8 @@ pub mod quota {
         #[doc = "Arguments:"]
         #[doc = "* `resource_name`: Resource name for a given resource provider. For example:\r\n- SKU name for Microsoft.Compute\r\n- SKU or TotalLowPriorityCores for Microsoft.MachineLearningServices\r\n For Microsoft.Network PublicIPAddresses."]
         #[doc = "* `scope`: The target Azure resource URI. For example, `/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/qms-test/providers/Microsoft.Batch/batchAccounts/testAccount/`. This is the target Azure resource URI for the List GET operation. If a `{resourceName}` is added after `/quotas`, then it's the target Azure resource URI in the GET operation for the specific resource."]
-        pub fn get(&self, resource_name: impl Into<String>, scope: impl Into<String>) -> get::Builder {
-            get::Builder {
+        pub fn get(&self, resource_name: impl Into<String>, scope: impl Into<String>) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 resource_name: resource_name.into(),
                 scope: scope.into(),
@@ -295,8 +295,8 @@ pub mod quota {
             resource_name: impl Into<String>,
             scope: impl Into<String>,
             create_quota_request: impl Into<models::CurrentQuotaLimitBase>,
-        ) -> create_or_update::Builder {
-            create_or_update::Builder {
+        ) -> create_or_update::RequestBuilder {
+            create_or_update::RequestBuilder {
                 client: self.0.clone(),
                 resource_name: resource_name.into(),
                 scope: scope.into(),
@@ -314,8 +314,8 @@ pub mod quota {
             resource_name: impl Into<String>,
             scope: impl Into<String>,
             create_quota_request: impl Into<models::CurrentQuotaLimitBase>,
-        ) -> update::Builder {
-            update::Builder {
+        ) -> update::RequestBuilder {
+            update::RequestBuilder {
                 client: self.0.clone(),
                 resource_name: resource_name.into(),
                 scope: scope.into(),
@@ -326,8 +326,8 @@ pub mod quota {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `scope`: The target Azure resource URI. For example, `/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/qms-test/providers/Microsoft.Batch/batchAccounts/testAccount/`. This is the target Azure resource URI for the List GET operation. If a `{resourceName}` is added after `/quotas`, then it's the target Azure resource URI in the GET operation for the specific resource."]
-        pub fn list(&self, scope: impl Into<String>) -> list::Builder {
-            list::Builder {
+        pub fn list(&self, scope: impl Into<String>) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 scope: scope.into(),
             }
@@ -337,12 +337,12 @@ pub mod quota {
         use super::models;
         type Response = models::CurrentQuotaLimitBase;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_name: String,
             pub(crate) scope: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -391,13 +391,13 @@ pub mod quota {
             Accepted202,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_name: String,
             pub(crate) scope: String,
             pub(crate) create_quota_request: models::CurrentQuotaLimitBase,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -449,13 +449,13 @@ pub mod quota {
             Accepted202,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_name: String,
             pub(crate) scope: String,
             pub(crate) create_quota_request: models::CurrentQuotaLimitBase,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -503,11 +503,11 @@ pub mod quota {
         use super::models;
         type Response = models::QuotaLimits;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) scope: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -583,8 +583,8 @@ pub mod quota_request_status {
         #[doc = "Arguments:"]
         #[doc = "* `id`: Quota request ID."]
         #[doc = "* `scope`: The target Azure resource URI. For example, `/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/qms-test/providers/Microsoft.Batch/batchAccounts/testAccount/`. This is the target Azure resource URI for the List GET operation. If a `{resourceName}` is added after `/quotas`, then it's the target Azure resource URI in the GET operation for the specific resource."]
-        pub fn get(&self, id: impl Into<String>, scope: impl Into<String>) -> get::Builder {
-            get::Builder {
+        pub fn get(&self, id: impl Into<String>, scope: impl Into<String>) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 id: id.into(),
                 scope: scope.into(),
@@ -594,8 +594,8 @@ pub mod quota_request_status {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `scope`: The target Azure resource URI. For example, `/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/qms-test/providers/Microsoft.Batch/batchAccounts/testAccount/`. This is the target Azure resource URI for the List GET operation. If a `{resourceName}` is added after `/quotas`, then it's the target Azure resource URI in the GET operation for the specific resource."]
-        pub fn list(&self, scope: impl Into<String>) -> list::Builder {
-            list::Builder {
+        pub fn list(&self, scope: impl Into<String>) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 scope: scope.into(),
                 filter: None,
@@ -608,12 +608,12 @@ pub mod quota_request_status {
         use super::models;
         type Response = models::QuotaRequestDetails;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) id: String,
             pub(crate) scope: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -658,14 +658,14 @@ pub mod quota_request_status {
         use super::models;
         type Response = models::QuotaRequestDetailsList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) scope: String,
             pub(crate) filter: Option<String>,
             pub(crate) top: Option<i32>,
             pub(crate) skiptoken: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "| Field                    | Supported operators  \n|---------------------|------------------------\n\r\n|requestSubmitTime | ge, le, eq, gt, lt\n |provisioningState eq {QuotaRequestState}\n |resourceName eq {resourceName}\n"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -762,18 +762,18 @@ pub mod quota_operation {
     impl Client {
         #[doc = "GET quota operations."]
         #[doc = "List all the operations supported by the Microsoft.Quota resource provider."]
-        pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.0.clone() }
+        pub fn list(&self) -> list::RequestBuilder {
+            list::RequestBuilder { client: self.0.clone() }
         }
     }
     pub mod list {
         use super::models;
         type Response = models::OperationList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
