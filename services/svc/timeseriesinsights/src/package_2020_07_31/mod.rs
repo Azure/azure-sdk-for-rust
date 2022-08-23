@@ -124,8 +124,8 @@ pub mod query {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Returns the time range and distribution of event count over the event timestamp ($ts). This API can be used to provide landing experience of navigating to the environment."]
-        pub fn get_availability(&self) -> get_availability::Builder {
-            get_availability::Builder {
+        pub fn get_availability(&self) -> get_availability::RequestBuilder {
+            get_availability::RequestBuilder {
                 client: self.0.clone(),
                 store_type: None,
                 x_ms_client_request_id: None,
@@ -136,8 +136,8 @@ pub mod query {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `parameters`: Parameters to get event schema."]
-        pub fn get_event_schema(&self, parameters: impl Into<models::GetEventSchemaRequest>) -> get_event_schema::Builder {
-            get_event_schema::Builder {
+        pub fn get_event_schema(&self, parameters: impl Into<models::GetEventSchemaRequest>) -> get_event_schema::RequestBuilder {
+            get_event_schema::RequestBuilder {
                 client: self.0.clone(),
                 parameters: parameters.into(),
                 store_type: None,
@@ -149,8 +149,8 @@ pub mod query {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `parameters`: Time series query request body."]
-        pub fn execute(&self, parameters: impl Into<models::QueryRequest>) -> execute::Builder {
-            execute::Builder {
+        pub fn execute(&self, parameters: impl Into<models::QueryRequest>) -> execute::RequestBuilder {
+            execute::RequestBuilder {
                 client: self.0.clone(),
                 parameters: parameters.into(),
                 store_type: None,
@@ -164,13 +164,13 @@ pub mod query {
         use super::models;
         type Response = models::AvailabilityResponse;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) store_type: Option<String>,
             pub(crate) x_ms_client_request_id: Option<String>,
             pub(crate) x_ms_client_session_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "For the environments with warm store enabled, the query can be executed either on the 'WarmStore' or 'ColdStore'. This parameter in the query defines which store the query should be executed on. If not defined, the query will be executed on the cold store."]
             pub fn store_type(mut self, store_type: impl Into<String>) -> Self {
                 self.store_type = Some(store_type.into());
@@ -234,14 +234,14 @@ pub mod query {
         use super::models;
         type Response = models::EventSchema;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) parameters: models::GetEventSchemaRequest,
             pub(crate) store_type: Option<String>,
             pub(crate) x_ms_client_request_id: Option<String>,
             pub(crate) x_ms_client_session_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "For the environments with warm store enabled, the query can be executed either on the 'WarmStore' or 'ColdStore'. This parameter in the query defines which store the query should be executed on. If not defined, the query will be executed on the cold store."]
             pub fn store_type(mut self, store_type: impl Into<String>) -> Self {
                 self.store_type = Some(store_type.into());
@@ -306,7 +306,7 @@ pub mod query {
         use super::models;
         type Response = models::QueryResultPage;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) parameters: models::QueryRequest,
             pub(crate) store_type: Option<String>,
@@ -314,7 +314,7 @@ pub mod query {
             pub(crate) x_ms_client_request_id: Option<String>,
             pub(crate) x_ms_client_session_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "For the environments with warm store enabled, the query can be executed either on the 'WarmStore' or 'ColdStore'. This parameter in the query defines which store the query should be executed on. If not defined, the query will be executed on the cold store."]
             pub fn store_type(mut self, store_type: impl Into<String>) -> Self {
                 self.store_type = Some(store_type.into());
@@ -389,8 +389,8 @@ pub mod model_settings {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Returns the model settings which includes model display name, Time Series ID properties and default type ID. Every Gen2 environment has a model that is automatically created."]
-        pub fn get(&self) -> get::Builder {
-            get::Builder {
+        pub fn get(&self) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 x_ms_client_request_id: None,
                 x_ms_client_session_id: None,
@@ -400,8 +400,8 @@ pub mod model_settings {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `parameters`: Model settings update request body."]
-        pub fn update(&self, parameters: impl Into<models::UpdateModelSettingsRequest>) -> update::Builder {
-            update::Builder {
+        pub fn update(&self, parameters: impl Into<models::UpdateModelSettingsRequest>) -> update::RequestBuilder {
+            update::RequestBuilder {
                 client: self.0.clone(),
                 parameters: parameters.into(),
                 x_ms_client_request_id: None,
@@ -413,12 +413,12 @@ pub mod model_settings {
         use super::models;
         type Response = models::ModelSettingsResponse;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) x_ms_client_request_id: Option<String>,
             pub(crate) x_ms_client_session_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Optional client request ID. Service records this value. Allows the service to trace operation across services, and allows the customer to contact support regarding a particular request."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
@@ -474,13 +474,13 @@ pub mod model_settings {
         use super::models;
         type Response = models::ModelSettingsResponse;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) parameters: models::UpdateModelSettingsRequest,
             pub(crate) x_ms_client_request_id: Option<String>,
             pub(crate) x_ms_client_session_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Optional client request ID. Service records this value. Allows the service to trace operation across services, and allows the customer to contact support regarding a particular request."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
@@ -539,8 +539,8 @@ pub mod time_series_instances {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets time series instances in pages."]
-        pub fn list(&self) -> list::Builder {
-            list::Builder {
+        pub fn list(&self) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 x_ms_continuation: None,
                 x_ms_client_request_id: None,
@@ -551,8 +551,8 @@ pub mod time_series_instances {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `parameters`: Time series instances suggest request body."]
-        pub fn execute_batch(&self, parameters: impl Into<models::InstancesBatchRequest>) -> execute_batch::Builder {
-            execute_batch::Builder {
+        pub fn execute_batch(&self, parameters: impl Into<models::InstancesBatchRequest>) -> execute_batch::RequestBuilder {
+            execute_batch::RequestBuilder {
                 client: self.0.clone(),
                 parameters: parameters.into(),
                 x_ms_client_request_id: None,
@@ -563,8 +563,8 @@ pub mod time_series_instances {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `parameters`: Time series instances suggest request body."]
-        pub fn suggest(&self, parameters: impl Into<models::InstancesSuggestRequest>) -> suggest::Builder {
-            suggest::Builder {
+        pub fn suggest(&self, parameters: impl Into<models::InstancesSuggestRequest>) -> suggest::RequestBuilder {
+            suggest::RequestBuilder {
                 client: self.0.clone(),
                 parameters: parameters.into(),
                 x_ms_client_request_id: None,
@@ -575,8 +575,8 @@ pub mod time_series_instances {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `parameters`: Time series instances search request body."]
-        pub fn search(&self, parameters: impl Into<models::SearchInstancesRequest>) -> search::Builder {
-            search::Builder {
+        pub fn search(&self, parameters: impl Into<models::SearchInstancesRequest>) -> search::RequestBuilder {
+            search::RequestBuilder {
                 client: self.0.clone(),
                 parameters: parameters.into(),
                 x_ms_continuation: None,
@@ -589,13 +589,13 @@ pub mod time_series_instances {
         use super::models;
         type Response = models::GetInstancesPage;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) x_ms_continuation: Option<String>,
             pub(crate) x_ms_client_request_id: Option<String>,
             pub(crate) x_ms_client_session_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Continuation token from previous page of results to retrieve the next page of the results in calls that support pagination. To get the first page results, specify null continuation token as parameter value. Returned continuation token is null if all results have been returned, and there is no next page of results."]
             pub fn x_ms_continuation(mut self, x_ms_continuation: impl Into<String>) -> Self {
                 self.x_ms_continuation = Some(x_ms_continuation.into());
@@ -659,13 +659,13 @@ pub mod time_series_instances {
         use super::models;
         type Response = models::InstancesBatchResponse;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) parameters: models::InstancesBatchRequest,
             pub(crate) x_ms_client_request_id: Option<String>,
             pub(crate) x_ms_client_session_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Optional client request ID. Service records this value. Allows the service to trace operation across services, and allows the customer to contact support regarding a particular request."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
@@ -722,13 +722,13 @@ pub mod time_series_instances {
         use super::models;
         type Response = models::InstancesSuggestResponse;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) parameters: models::InstancesSuggestRequest,
             pub(crate) x_ms_client_request_id: Option<String>,
             pub(crate) x_ms_client_session_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Optional client request ID. Service records this value. Allows the service to trace operation across services, and allows the customer to contact support regarding a particular request."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
@@ -785,14 +785,14 @@ pub mod time_series_instances {
         use super::models;
         type Response = models::SearchInstancesResponsePage;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) parameters: models::SearchInstancesRequest,
             pub(crate) x_ms_continuation: Option<String>,
             pub(crate) x_ms_client_request_id: Option<String>,
             pub(crate) x_ms_client_session_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Continuation token from previous page of results to retrieve the next page of the results in calls that support pagination. To get the first page results, specify null continuation token as parameter value. Returned continuation token is null if all results have been returned, and there is no next page of results."]
             pub fn x_ms_continuation(mut self, x_ms_continuation: impl Into<String>) -> Self {
                 self.x_ms_continuation = Some(x_ms_continuation.into());
@@ -859,8 +859,8 @@ pub mod time_series_types {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets time series types in pages."]
-        pub fn list(&self) -> list::Builder {
-            list::Builder {
+        pub fn list(&self) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 x_ms_continuation: None,
                 x_ms_client_request_id: None,
@@ -871,8 +871,8 @@ pub mod time_series_types {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `parameters`: Time series types batch request body."]
-        pub fn execute_batch(&self, parameters: impl Into<models::TypesBatchRequest>) -> execute_batch::Builder {
-            execute_batch::Builder {
+        pub fn execute_batch(&self, parameters: impl Into<models::TypesBatchRequest>) -> execute_batch::RequestBuilder {
+            execute_batch::RequestBuilder {
                 client: self.0.clone(),
                 parameters: parameters.into(),
                 x_ms_client_request_id: None,
@@ -884,13 +884,13 @@ pub mod time_series_types {
         use super::models;
         type Response = models::GetTypesPage;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) x_ms_continuation: Option<String>,
             pub(crate) x_ms_client_request_id: Option<String>,
             pub(crate) x_ms_client_session_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Continuation token from previous page of results to retrieve the next page of the results in calls that support pagination. To get the first page results, specify null continuation token as parameter value. Returned continuation token is null if all results have been returned, and there is no next page of results."]
             pub fn x_ms_continuation(mut self, x_ms_continuation: impl Into<String>) -> Self {
                 self.x_ms_continuation = Some(x_ms_continuation.into());
@@ -954,13 +954,13 @@ pub mod time_series_types {
         use super::models;
         type Response = models::TypesBatchResponse;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) parameters: models::TypesBatchRequest,
             pub(crate) x_ms_client_request_id: Option<String>,
             pub(crate) x_ms_client_session_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Optional client request ID. Service records this value. Allows the service to trace operation across services, and allows the customer to contact support regarding a particular request."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
@@ -1019,8 +1019,8 @@ pub mod time_series_hierarchies {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Returns time series hierarchies definitions in pages."]
-        pub fn list(&self) -> list::Builder {
-            list::Builder {
+        pub fn list(&self) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 x_ms_continuation: None,
                 x_ms_client_request_id: None,
@@ -1031,8 +1031,8 @@ pub mod time_series_hierarchies {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `parameters`: Time series hierarchies batch request body."]
-        pub fn execute_batch(&self, parameters: impl Into<models::HierarchiesBatchRequest>) -> execute_batch::Builder {
-            execute_batch::Builder {
+        pub fn execute_batch(&self, parameters: impl Into<models::HierarchiesBatchRequest>) -> execute_batch::RequestBuilder {
+            execute_batch::RequestBuilder {
                 client: self.0.clone(),
                 parameters: parameters.into(),
                 x_ms_client_request_id: None,
@@ -1044,13 +1044,13 @@ pub mod time_series_hierarchies {
         use super::models;
         type Response = models::GetHierarchiesPage;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) x_ms_continuation: Option<String>,
             pub(crate) x_ms_client_request_id: Option<String>,
             pub(crate) x_ms_client_session_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Continuation token from previous page of results to retrieve the next page of the results in calls that support pagination. To get the first page results, specify null continuation token as parameter value. Returned continuation token is null if all results have been returned, and there is no next page of results."]
             pub fn x_ms_continuation(mut self, x_ms_continuation: impl Into<String>) -> Self {
                 self.x_ms_continuation = Some(x_ms_continuation.into());
@@ -1114,13 +1114,13 @@ pub mod time_series_hierarchies {
         use super::models;
         type Response = models::HierarchiesBatchResponse;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) parameters: models::HierarchiesBatchRequest,
             pub(crate) x_ms_client_request_id: Option<String>,
             pub(crate) x_ms_client_session_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Optional client request ID. Service records this value. Allows the service to trace operation across services, and allows the customer to contact support regarding a particular request."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());

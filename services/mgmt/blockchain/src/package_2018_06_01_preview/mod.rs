@@ -137,8 +137,8 @@ pub mod blockchain_members {
             blockchain_member_name: impl Into<String>,
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 blockchain_member_name: blockchain_member_name.into(),
                 subscription_id: subscription_id.into(),
@@ -156,8 +156,8 @@ pub mod blockchain_members {
             blockchain_member_name: impl Into<String>,
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
-        ) -> create::Builder {
-            create::Builder {
+        ) -> create::RequestBuilder {
+            create::RequestBuilder {
                 client: self.0.clone(),
                 blockchain_member_name: blockchain_member_name.into(),
                 subscription_id: subscription_id.into(),
@@ -176,8 +176,8 @@ pub mod blockchain_members {
             blockchain_member_name: impl Into<String>,
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
-        ) -> update::Builder {
-            update::Builder {
+        ) -> update::RequestBuilder {
+            update::RequestBuilder {
                 client: self.0.clone(),
                 blockchain_member_name: blockchain_member_name.into(),
                 subscription_id: subscription_id.into(),
@@ -196,8 +196,8 @@ pub mod blockchain_members {
             blockchain_member_name: impl Into<String>,
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
-        ) -> delete::Builder {
-            delete::Builder {
+        ) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 blockchain_member_name: blockchain_member_name.into(),
                 subscription_id: subscription_id.into(),
@@ -209,8 +209,8 @@ pub mod blockchain_members {
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: Gets the subscription Id which uniquely identifies the Microsoft Azure subscription. The subscription ID is part of the URI for every service call."]
         #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
-        pub fn list(&self, subscription_id: impl Into<String>, resource_group_name: impl Into<String>) -> list::Builder {
-            list::Builder {
+        pub fn list(&self, subscription_id: impl Into<String>, resource_group_name: impl Into<String>) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -220,8 +220,8 @@ pub mod blockchain_members {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: Gets the subscription Id which uniquely identifies the Microsoft Azure subscription. The subscription ID is part of the URI for every service call."]
-        pub fn list_all(&self, subscription_id: impl Into<String>) -> list_all::Builder {
-            list_all::Builder {
+        pub fn list_all(&self, subscription_id: impl Into<String>) -> list_all::RequestBuilder {
+            list_all::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
@@ -237,8 +237,8 @@ pub mod blockchain_members {
             blockchain_member_name: impl Into<String>,
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
-        ) -> list_consortium_members::Builder {
-            list_consortium_members::Builder {
+        ) -> list_consortium_members::RequestBuilder {
+            list_consortium_members::RequestBuilder {
                 client: self.0.clone(),
                 blockchain_member_name: blockchain_member_name.into(),
                 subscription_id: subscription_id.into(),
@@ -256,8 +256,8 @@ pub mod blockchain_members {
             blockchain_member_name: impl Into<String>,
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
-        ) -> list_api_keys::Builder {
-            list_api_keys::Builder {
+        ) -> list_api_keys::RequestBuilder {
+            list_api_keys::RequestBuilder {
                 client: self.0.clone(),
                 blockchain_member_name: blockchain_member_name.into(),
                 subscription_id: subscription_id.into(),
@@ -275,8 +275,8 @@ pub mod blockchain_members {
             blockchain_member_name: impl Into<String>,
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
-        ) -> list_regenerate_api_keys::Builder {
-            list_regenerate_api_keys::Builder {
+        ) -> list_regenerate_api_keys::RequestBuilder {
+            list_regenerate_api_keys::RequestBuilder {
                 client: self.0.clone(),
                 blockchain_member_name: blockchain_member_name.into(),
                 subscription_id: subscription_id.into(),
@@ -289,13 +289,13 @@ pub mod blockchain_members {
         use super::models;
         type Response = models::BlockchainMember;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) blockchain_member_name: String,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -345,14 +345,14 @@ pub mod blockchain_members {
             Created201(models::BlockchainMember),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) blockchain_member_name: String,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) blockchain_member: Option<models::BlockchainMember>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Payload to create a blockchain member."]
             pub fn blockchain_member(mut self, blockchain_member: impl Into<models::BlockchainMember>) -> Self {
                 self.blockchain_member = Some(blockchain_member.into());
@@ -414,14 +414,14 @@ pub mod blockchain_members {
         use super::models;
         type Response = models::BlockchainMember;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) blockchain_member_name: String,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) blockchain_member: Option<models::BlockchainMemberUpdate>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Payload to update the blockchain member."]
             pub fn blockchain_member(mut self, blockchain_member: impl Into<models::BlockchainMemberUpdate>) -> Self {
                 self.blockchain_member = Some(blockchain_member.into());
@@ -481,13 +481,13 @@ pub mod blockchain_members {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) blockchain_member_name: String,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -531,12 +531,12 @@ pub mod blockchain_members {
         use super::models;
         type Response = models::BlockchainMemberCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -607,11 +607,11 @@ pub mod blockchain_members {
         use super::models;
         type Response = models::BlockchainMemberCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -681,13 +681,13 @@ pub mod blockchain_members {
         use super::models;
         type Response = models::ConsortiumMemberCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) blockchain_member_name: String,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -759,13 +759,13 @@ pub mod blockchain_members {
         use super::models;
         type Response = models::ApiKeyCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) blockchain_member_name: String,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -812,14 +812,14 @@ pub mod blockchain_members {
         use super::models;
         type Response = models::ApiKeyCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) blockchain_member_name: String,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) api_key: Option<models::ApiKey>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "api key to be regenerate"]
             pub fn api_key(mut self, api_key: impl Into<models::ApiKey>) -> Self {
                 self.api_key = Some(api_key.into());
@@ -887,8 +887,8 @@ pub mod blockchain_member_operation_results {
             location_name: impl Into<String>,
             operation_id: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 location_name: location_name.into(),
                 operation_id: operation_id.into(),
@@ -904,13 +904,13 @@ pub mod blockchain_member_operation_results {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) location_name: String,
             pub(crate) operation_id: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -967,8 +967,8 @@ pub mod locations {
             &self,
             location_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> check_name_availability::Builder {
-            check_name_availability::Builder {
+        ) -> check_name_availability::RequestBuilder {
+            check_name_availability::RequestBuilder {
                 client: self.0.clone(),
                 location_name: location_name.into(),
                 subscription_id: subscription_id.into(),
@@ -980,8 +980,12 @@ pub mod locations {
         #[doc = "Arguments:"]
         #[doc = "* `location_name`: Location Name."]
         #[doc = "* `subscription_id`: Gets the subscription Id which uniquely identifies the Microsoft Azure subscription. The subscription ID is part of the URI for every service call."]
-        pub fn list_consortiums(&self, location_name: impl Into<String>, subscription_id: impl Into<String>) -> list_consortiums::Builder {
-            list_consortiums::Builder {
+        pub fn list_consortiums(
+            &self,
+            location_name: impl Into<String>,
+            subscription_id: impl Into<String>,
+        ) -> list_consortiums::RequestBuilder {
+            list_consortiums::RequestBuilder {
                 client: self.0.clone(),
                 location_name: location_name.into(),
                 subscription_id: subscription_id.into(),
@@ -992,13 +996,13 @@ pub mod locations {
         use super::models;
         type Response = models::NameAvailability;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) location_name: String,
             pub(crate) subscription_id: String,
             pub(crate) name_availability_request: Option<models::NameAvailabilityRequest>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Name availability request payload."]
             pub fn name_availability_request(mut self, name_availability_request: impl Into<models::NameAvailabilityRequest>) -> Self {
                 self.name_availability_request = Some(name_availability_request.into());
@@ -1053,12 +1057,12 @@ pub mod locations {
         use super::models;
         type Response = models::ConsortiumCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) location_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1106,18 +1110,18 @@ pub mod operations {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Lists the available operations of Microsoft.Blockchain resource provider."]
-        pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.0.clone() }
+        pub fn list(&self) -> list::RequestBuilder {
+            list::RequestBuilder { client: self.0.clone() }
         }
     }
     pub mod list {
         use super::models;
         type Response = models::ResourceProviderOperationCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -1189,8 +1193,8 @@ pub mod skus {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: Gets the subscription Id which uniquely identifies the Microsoft Azure subscription. The subscription ID is part of the URI for every service call."]
-        pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
-            list::Builder {
+        pub fn list(&self, subscription_id: impl Into<String>) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
@@ -1200,11 +1204,11 @@ pub mod skus {
         use super::models;
         type Response = models::ResourceTypeSkuCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1262,8 +1266,8 @@ pub mod transaction_nodes {
             transaction_node_name: impl Into<String>,
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 blockchain_member_name: blockchain_member_name.into(),
                 transaction_node_name: transaction_node_name.into(),
@@ -1284,8 +1288,8 @@ pub mod transaction_nodes {
             transaction_node_name: impl Into<String>,
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
-        ) -> create::Builder {
-            create::Builder {
+        ) -> create::RequestBuilder {
+            create::RequestBuilder {
                 client: self.0.clone(),
                 blockchain_member_name: blockchain_member_name.into(),
                 transaction_node_name: transaction_node_name.into(),
@@ -1307,8 +1311,8 @@ pub mod transaction_nodes {
             transaction_node_name: impl Into<String>,
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
-        ) -> update::Builder {
-            update::Builder {
+        ) -> update::RequestBuilder {
+            update::RequestBuilder {
                 client: self.0.clone(),
                 blockchain_member_name: blockchain_member_name.into(),
                 transaction_node_name: transaction_node_name.into(),
@@ -1330,8 +1334,8 @@ pub mod transaction_nodes {
             transaction_node_name: impl Into<String>,
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
-        ) -> delete::Builder {
-            delete::Builder {
+        ) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 blockchain_member_name: blockchain_member_name.into(),
                 transaction_node_name: transaction_node_name.into(),
@@ -1350,8 +1354,8 @@ pub mod transaction_nodes {
             blockchain_member_name: impl Into<String>,
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
-        ) -> list::Builder {
-            list::Builder {
+        ) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 blockchain_member_name: blockchain_member_name.into(),
                 subscription_id: subscription_id.into(),
@@ -1371,8 +1375,8 @@ pub mod transaction_nodes {
             transaction_node_name: impl Into<String>,
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
-        ) -> list_api_keys::Builder {
-            list_api_keys::Builder {
+        ) -> list_api_keys::RequestBuilder {
+            list_api_keys::RequestBuilder {
                 client: self.0.clone(),
                 blockchain_member_name: blockchain_member_name.into(),
                 transaction_node_name: transaction_node_name.into(),
@@ -1393,8 +1397,8 @@ pub mod transaction_nodes {
             transaction_node_name: impl Into<String>,
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
-        ) -> list_regenerate_api_keys::Builder {
-            list_regenerate_api_keys::Builder {
+        ) -> list_regenerate_api_keys::RequestBuilder {
+            list_regenerate_api_keys::RequestBuilder {
                 client: self.0.clone(),
                 blockchain_member_name: blockchain_member_name.into(),
                 transaction_node_name: transaction_node_name.into(),
@@ -1408,14 +1412,14 @@ pub mod transaction_nodes {
         use super::models;
         type Response = models::TransactionNode;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) blockchain_member_name: String,
             pub(crate) transaction_node_name: String,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1466,7 +1470,7 @@ pub mod transaction_nodes {
             Created201(models::TransactionNode),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) blockchain_member_name: String,
             pub(crate) transaction_node_name: String,
@@ -1474,7 +1478,7 @@ pub mod transaction_nodes {
             pub(crate) resource_group_name: String,
             pub(crate) transaction_node: Option<models::TransactionNode>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Payload to create the transaction node."]
             pub fn transaction_node(mut self, transaction_node: impl Into<models::TransactionNode>) -> Self {
                 self.transaction_node = Some(transaction_node.into());
@@ -1537,7 +1541,7 @@ pub mod transaction_nodes {
         use super::models;
         type Response = models::TransactionNode;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) blockchain_member_name: String,
             pub(crate) transaction_node_name: String,
@@ -1545,7 +1549,7 @@ pub mod transaction_nodes {
             pub(crate) resource_group_name: String,
             pub(crate) transaction_node: Option<models::TransactionNodeUpdate>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Payload to create the transaction node."]
             pub fn transaction_node(mut self, transaction_node: impl Into<models::TransactionNodeUpdate>) -> Self {
                 self.transaction_node = Some(transaction_node.into());
@@ -1606,14 +1610,14 @@ pub mod transaction_nodes {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) blockchain_member_name: String,
             pub(crate) transaction_node_name: String,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -1658,13 +1662,13 @@ pub mod transaction_nodes {
         use super::models;
         type Response = models::TransactionNodeCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) blockchain_member_name: String,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -1736,14 +1740,14 @@ pub mod transaction_nodes {
         use super::models;
         type Response = models::ApiKeyCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) blockchain_member_name: String,
             pub(crate) transaction_node_name: String,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1784,7 +1788,7 @@ pub mod transaction_nodes {
         use super::models;
         type Response = models::ApiKeyCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) blockchain_member_name: String,
             pub(crate) transaction_node_name: String,
@@ -1792,7 +1796,7 @@ pub mod transaction_nodes {
             pub(crate) resource_group_name: String,
             pub(crate) api_key: Option<models::ApiKey>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "api key to be regenerated"]
             pub fn api_key(mut self, api_key: impl Into<models::ApiKey>) -> Self {
                 self.api_key = Some(api_key.into());

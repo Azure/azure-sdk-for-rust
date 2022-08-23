@@ -109,8 +109,8 @@ impl Client {
 }
 impl Client {
     #[doc = "Gets a list of Serial Console API operations."]
-    pub fn list_operations(&self) -> list_operations::Builder {
-        list_operations::Builder { client: self.clone() }
+    pub fn list_operations(&self) -> list_operations::RequestBuilder {
+        list_operations::RequestBuilder { client: self.clone() }
     }
     #[doc = "Get the disabled status for a subscription"]
     #[doc = "Gets whether or not Serial Console is disabled for a given subscription"]
@@ -118,8 +118,8 @@ impl Client {
     #[doc = "Arguments:"]
     #[doc = "* `subscription_id`: Subscription ID which uniquely identifies the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call requiring it."]
     #[doc = "* `default`: Default parameter. Leave the value as \"default\"."]
-    pub fn get_console_status(&self, subscription_id: impl Into<String>, default: impl Into<String>) -> get_console_status::Builder {
-        get_console_status::Builder {
+    pub fn get_console_status(&self, subscription_id: impl Into<String>, default: impl Into<String>) -> get_console_status::RequestBuilder {
+        get_console_status::RequestBuilder {
             client: self.clone(),
             subscription_id: subscription_id.into(),
             default: default.into(),
@@ -131,8 +131,8 @@ impl Client {
     #[doc = "Arguments:"]
     #[doc = "* `subscription_id`: Subscription ID which uniquely identifies the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call requiring it."]
     #[doc = "* `default`: Default parameter. Leave the value as \"default\"."]
-    pub fn disable_console(&self, subscription_id: impl Into<String>, default: impl Into<String>) -> disable_console::Builder {
-        disable_console::Builder {
+    pub fn disable_console(&self, subscription_id: impl Into<String>, default: impl Into<String>) -> disable_console::RequestBuilder {
+        disable_console::RequestBuilder {
             client: self.clone(),
             subscription_id: subscription_id.into(),
             default: default.into(),
@@ -144,8 +144,8 @@ impl Client {
     #[doc = "Arguments:"]
     #[doc = "* `subscription_id`: Subscription ID which uniquely identifies the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call requiring it."]
     #[doc = "* `default`: Default parameter. Leave the value as \"default\"."]
-    pub fn enable_console(&self, subscription_id: impl Into<String>, default: impl Into<String>) -> enable_console::Builder {
-        enable_console::Builder {
+    pub fn enable_console(&self, subscription_id: impl Into<String>, default: impl Into<String>) -> enable_console::RequestBuilder {
+        enable_console::RequestBuilder {
             client: self.clone(),
             subscription_id: subscription_id.into(),
             default: default.into(),
@@ -156,10 +156,10 @@ pub mod list_operations {
     use super::models;
     type Response = models::SerialConsoleOperations;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -199,12 +199,12 @@ pub mod get_console_status {
     use super::models;
     type Response = models::SerialConsoleStatus;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) subscription_id: String,
         pub(crate) default: String,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -249,12 +249,12 @@ pub mod disable_console {
     use super::models;
     type Response = models::DisableSerialConsoleResult;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) subscription_id: String,
         pub(crate) default: String,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -300,12 +300,12 @@ pub mod enable_console {
     use super::models;
     type Response = models::EnableSerialConsoleResult;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) subscription_id: String,
         pub(crate) default: String,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -366,8 +366,8 @@ pub mod serial_ports {
             parent_resource_type: impl Into<String>,
             parent_resource: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list::Builder {
-            list::Builder {
+        ) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 resource_provider_namespace: resource_provider_namespace.into(),
@@ -393,8 +393,8 @@ pub mod serial_ports {
             parent_resource: impl Into<String>,
             serial_port: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 resource_provider_namespace: resource_provider_namespace.into(),
@@ -423,8 +423,8 @@ pub mod serial_ports {
             serial_port: impl Into<String>,
             parameters: impl Into<models::SerialPort>,
             subscription_id: impl Into<String>,
-        ) -> create::Builder {
-            create::Builder {
+        ) -> create::RequestBuilder {
+            create::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 resource_provider_namespace: resource_provider_namespace.into(),
@@ -452,8 +452,8 @@ pub mod serial_ports {
             parent_resource: impl Into<String>,
             serial_port: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> delete::Builder {
-            delete::Builder {
+        ) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 resource_provider_namespace: resource_provider_namespace.into(),
@@ -467,8 +467,8 @@ pub mod serial_ports {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: Subscription ID which uniquely identifies the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call requiring it."]
-        pub fn list_by_subscriptions(&self, subscription_id: impl Into<String>) -> list_by_subscriptions::Builder {
-            list_by_subscriptions::Builder {
+        pub fn list_by_subscriptions(&self, subscription_id: impl Into<String>) -> list_by_subscriptions::RequestBuilder {
+            list_by_subscriptions::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
@@ -490,8 +490,8 @@ pub mod serial_ports {
             parent_resource: impl Into<String>,
             serial_port: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> connect::Builder {
-            connect::Builder {
+        ) -> connect::RequestBuilder {
+            connect::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 resource_provider_namespace: resource_provider_namespace.into(),
@@ -506,7 +506,7 @@ pub mod serial_ports {
         use super::models;
         type Response = models::SerialPortListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) resource_provider_namespace: String,
@@ -514,7 +514,7 @@ pub mod serial_ports {
             pub(crate) parent_resource: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -562,7 +562,7 @@ pub mod serial_ports {
         use super::models;
         type Response = models::SerialPort;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) resource_provider_namespace: String,
@@ -571,7 +571,7 @@ pub mod serial_ports {
             pub(crate) serial_port: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -620,7 +620,7 @@ pub mod serial_ports {
         use super::models;
         type Response = models::SerialPort;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) resource_provider_namespace: String,
@@ -630,7 +630,7 @@ pub mod serial_ports {
             pub(crate) parameters: models::SerialPort,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -684,7 +684,7 @@ pub mod serial_ports {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) resource_provider_namespace: String,
@@ -693,7 +693,7 @@ pub mod serial_ports {
             pub(crate) serial_port: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -739,11 +739,11 @@ pub mod serial_ports {
         use super::models;
         type Response = models::SerialPortListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -784,7 +784,7 @@ pub mod serial_ports {
         use super::models;
         type Response = models::SerialPortConnectResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) resource_provider_namespace: String,
@@ -793,7 +793,7 @@ pub mod serial_ports {
             pub(crate) serial_port: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();

@@ -140,8 +140,8 @@ pub mod machines {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             workspace_name: impl Into<String>,
-        ) -> list_by_workspace::Builder {
-            list_by_workspace::Builder {
+        ) -> list_by_workspace::RequestBuilder {
+            list_by_workspace::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -166,8 +166,8 @@ pub mod machines {
             resource_group_name: impl Into<String>,
             workspace_name: impl Into<String>,
             machine_name: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -189,8 +189,8 @@ pub mod machines {
             resource_group_name: impl Into<String>,
             workspace_name: impl Into<String>,
             machine_name: impl Into<String>,
-        ) -> get_liveness::Builder {
-            get_liveness::Builder {
+        ) -> get_liveness::RequestBuilder {
+            get_liveness::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -213,8 +213,8 @@ pub mod machines {
             resource_group_name: impl Into<String>,
             workspace_name: impl Into<String>,
             machine_name: impl Into<String>,
-        ) -> list_connections::Builder {
-            list_connections::Builder {
+        ) -> list_connections::RequestBuilder {
+            list_connections::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -237,8 +237,8 @@ pub mod machines {
             resource_group_name: impl Into<String>,
             workspace_name: impl Into<String>,
             machine_name: impl Into<String>,
-        ) -> list_processes::Builder {
-            list_processes::Builder {
+        ) -> list_processes::RequestBuilder {
+            list_processes::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -263,8 +263,8 @@ pub mod machines {
             resource_group_name: impl Into<String>,
             workspace_name: impl Into<String>,
             machine_name: impl Into<String>,
-        ) -> list_ports::Builder {
-            list_ports::Builder {
+        ) -> list_ports::RequestBuilder {
+            list_ports::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -287,8 +287,8 @@ pub mod machines {
             resource_group_name: impl Into<String>,
             workspace_name: impl Into<String>,
             machine_name: impl Into<String>,
-        ) -> list_machine_group_membership::Builder {
-            list_machine_group_membership::Builder {
+        ) -> list_machine_group_membership::RequestBuilder {
+            list_machine_group_membership::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -303,7 +303,7 @@ pub mod machines {
         use super::models;
         type Response = models::MachineCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -314,7 +314,7 @@ pub mod machines {
             pub(crate) timestamp: Option<time::OffsetDateTime>,
             pub(crate) top: Option<i32>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Specifies whether to return live resources (true) or inventory resources (false). Defaults to **true**. When retrieving live resources, the start time (`startTime`) and end time (`endTime`) of the desired interval should be included. When retrieving inventory resources, an optional timestamp (`timestamp`) parameter can be specified to return the version of each resource closest (not-after) that timestamp."]
             pub fn live(mut self, live: bool) -> Self {
                 self.live = Some(live);
@@ -420,7 +420,7 @@ pub mod machines {
         use super::models;
         type Response = models::Machine;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -428,7 +428,7 @@ pub mod machines {
             pub(crate) machine_name: String,
             pub(crate) timestamp: Option<time::OffsetDateTime>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "UTC date and time specifying a time instance relative to which to evaluate the machine resource. When not specified, the service uses DateTime.UtcNow."]
             pub fn timestamp(mut self, timestamp: impl Into<time::OffsetDateTime>) -> Self {
                 self.timestamp = Some(timestamp.into());
@@ -476,7 +476,7 @@ pub mod machines {
         use super::models;
         type Response = models::Liveness;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -485,7 +485,7 @@ pub mod machines {
             pub(crate) start_time: Option<time::OffsetDateTime>,
             pub(crate) end_time: Option<time::OffsetDateTime>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "UTC date and time specifying the start time of an interval. When not specified the service uses DateTime.UtcNow - 10m"]
             pub fn start_time(mut self, start_time: impl Into<time::OffsetDateTime>) -> Self {
                 self.start_time = Some(start_time.into());
@@ -541,7 +541,7 @@ pub mod machines {
         use super::models;
         type Response = models::ConnectionCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -550,7 +550,7 @@ pub mod machines {
             pub(crate) start_time: Option<time::OffsetDateTime>,
             pub(crate) end_time: Option<time::OffsetDateTime>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "UTC date and time specifying the start time of an interval. When not specified the service uses DateTime.UtcNow - 10m"]
             pub fn start_time(mut self, start_time: impl Into<time::OffsetDateTime>) -> Self {
                 self.start_time = Some(start_time.into());
@@ -632,7 +632,7 @@ pub mod machines {
         use super::models;
         type Response = models::ProcessCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -643,7 +643,7 @@ pub mod machines {
             pub(crate) end_time: Option<time::OffsetDateTime>,
             pub(crate) timestamp: Option<time::OffsetDateTime>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Specifies whether to return live resources (true) or inventory resources (false). Defaults to **true**. When retrieving live resources, the start time (`startTime`) and end time (`endTime`) of the desired interval should be included. When retrieving inventory resources, an optional timestamp (`timestamp`) parameter can be specified to return the version of each resource closest (not-after) that timestamp."]
             pub fn live(mut self, live: bool) -> Self {
                 self.live = Some(live);
@@ -741,7 +741,7 @@ pub mod machines {
         use super::models;
         type Response = models::PortCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -750,7 +750,7 @@ pub mod machines {
             pub(crate) start_time: Option<time::OffsetDateTime>,
             pub(crate) end_time: Option<time::OffsetDateTime>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "UTC date and time specifying the start time of an interval. When not specified the service uses DateTime.UtcNow - 10m"]
             pub fn start_time(mut self, start_time: impl Into<time::OffsetDateTime>) -> Self {
                 self.start_time = Some(start_time.into());
@@ -832,7 +832,7 @@ pub mod machines {
         use super::models;
         type Response = models::MachineGroupCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -841,7 +841,7 @@ pub mod machines {
             pub(crate) start_time: Option<time::OffsetDateTime>,
             pub(crate) end_time: Option<time::OffsetDateTime>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "UTC date and time specifying the start time of an interval. When not specified the service uses DateTime.UtcNow - 10m"]
             pub fn start_time(mut self, start_time: impl Into<time::OffsetDateTime>) -> Self {
                 self.start_time = Some(start_time.into());
@@ -939,8 +939,8 @@ pub mod processes {
             workspace_name: impl Into<String>,
             machine_name: impl Into<String>,
             process_name: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -965,8 +965,8 @@ pub mod processes {
             workspace_name: impl Into<String>,
             machine_name: impl Into<String>,
             process_name: impl Into<String>,
-        ) -> get_liveness::Builder {
-            get_liveness::Builder {
+        ) -> get_liveness::RequestBuilder {
+            get_liveness::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -992,8 +992,8 @@ pub mod processes {
             workspace_name: impl Into<String>,
             machine_name: impl Into<String>,
             process_name: impl Into<String>,
-        ) -> list_accepting_ports::Builder {
-            list_accepting_ports::Builder {
+        ) -> list_accepting_ports::RequestBuilder {
+            list_accepting_ports::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -1019,8 +1019,8 @@ pub mod processes {
             workspace_name: impl Into<String>,
             machine_name: impl Into<String>,
             process_name: impl Into<String>,
-        ) -> list_connections::Builder {
-            list_connections::Builder {
+        ) -> list_connections::RequestBuilder {
+            list_connections::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -1036,7 +1036,7 @@ pub mod processes {
         use super::models;
         type Response = models::Process;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -1045,7 +1045,7 @@ pub mod processes {
             pub(crate) process_name: String,
             pub(crate) timestamp: Option<time::OffsetDateTime>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "UTC date and time specifying a time instance relative to which to evaluate a resource. When not specified, the service uses DateTime.UtcNow."]
             pub fn timestamp(mut self, timestamp: impl Into<time::OffsetDateTime>) -> Self {
                 self.timestamp = Some(timestamp.into());
@@ -1093,7 +1093,7 @@ pub mod processes {
         use super::models;
         type Response = models::Liveness;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -1103,7 +1103,7 @@ pub mod processes {
             pub(crate) start_time: Option<time::OffsetDateTime>,
             pub(crate) end_time: Option<time::OffsetDateTime>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "UTC date and time specifying the start time of an interval. When not specified the service uses DateTime.UtcNow - 10m"]
             pub fn start_time(mut self, start_time: impl Into<time::OffsetDateTime>) -> Self {
                 self.start_time = Some(start_time.into());
@@ -1159,7 +1159,7 @@ pub mod processes {
         use super::models;
         type Response = models::PortCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -1169,7 +1169,7 @@ pub mod processes {
             pub(crate) start_time: Option<time::OffsetDateTime>,
             pub(crate) end_time: Option<time::OffsetDateTime>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "UTC date and time specifying the start time of an interval. When not specified the service uses DateTime.UtcNow - 10m"]
             pub fn start_time(mut self, start_time: impl Into<time::OffsetDateTime>) -> Self {
                 self.start_time = Some(start_time.into());
@@ -1251,7 +1251,7 @@ pub mod processes {
         use super::models;
         type Response = models::ConnectionCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -1261,7 +1261,7 @@ pub mod processes {
             pub(crate) start_time: Option<time::OffsetDateTime>,
             pub(crate) end_time: Option<time::OffsetDateTime>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "UTC date and time specifying the start time of an interval. When not specified the service uses DateTime.UtcNow - 10m"]
             pub fn start_time(mut self, start_time: impl Into<time::OffsetDateTime>) -> Self {
                 self.start_time = Some(start_time.into());
@@ -1359,8 +1359,8 @@ pub mod ports {
             workspace_name: impl Into<String>,
             machine_name: impl Into<String>,
             port_name: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -1386,8 +1386,8 @@ pub mod ports {
             workspace_name: impl Into<String>,
             machine_name: impl Into<String>,
             port_name: impl Into<String>,
-        ) -> get_liveness::Builder {
-            get_liveness::Builder {
+        ) -> get_liveness::RequestBuilder {
+            get_liveness::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -1413,8 +1413,8 @@ pub mod ports {
             workspace_name: impl Into<String>,
             machine_name: impl Into<String>,
             port_name: impl Into<String>,
-        ) -> list_accepting_processes::Builder {
-            list_accepting_processes::Builder {
+        ) -> list_accepting_processes::RequestBuilder {
+            list_accepting_processes::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -1440,8 +1440,8 @@ pub mod ports {
             workspace_name: impl Into<String>,
             machine_name: impl Into<String>,
             port_name: impl Into<String>,
-        ) -> list_connections::Builder {
-            list_connections::Builder {
+        ) -> list_connections::RequestBuilder {
+            list_connections::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -1457,7 +1457,7 @@ pub mod ports {
         use super::models;
         type Response = models::Port;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -1467,7 +1467,7 @@ pub mod ports {
             pub(crate) start_time: Option<time::OffsetDateTime>,
             pub(crate) end_time: Option<time::OffsetDateTime>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "UTC date and time specifying the start time of an interval. When not specified the service uses DateTime.UtcNow - 10m"]
             pub fn start_time(mut self, start_time: impl Into<time::OffsetDateTime>) -> Self {
                 self.start_time = Some(start_time.into());
@@ -1523,7 +1523,7 @@ pub mod ports {
         use super::models;
         type Response = models::Liveness;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -1533,7 +1533,7 @@ pub mod ports {
             pub(crate) start_time: Option<time::OffsetDateTime>,
             pub(crate) end_time: Option<time::OffsetDateTime>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "UTC date and time specifying the start time of an interval. When not specified the service uses DateTime.UtcNow - 10m"]
             pub fn start_time(mut self, start_time: impl Into<time::OffsetDateTime>) -> Self {
                 self.start_time = Some(start_time.into());
@@ -1589,7 +1589,7 @@ pub mod ports {
         use super::models;
         type Response = models::ProcessCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -1599,7 +1599,7 @@ pub mod ports {
             pub(crate) start_time: Option<time::OffsetDateTime>,
             pub(crate) end_time: Option<time::OffsetDateTime>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "UTC date and time specifying the start time of an interval. When not specified the service uses DateTime.UtcNow - 10m"]
             pub fn start_time(mut self, start_time: impl Into<time::OffsetDateTime>) -> Self {
                 self.start_time = Some(start_time.into());
@@ -1681,7 +1681,7 @@ pub mod ports {
         use super::models;
         type Response = models::ConnectionCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -1691,7 +1691,7 @@ pub mod ports {
             pub(crate) start_time: Option<time::OffsetDateTime>,
             pub(crate) end_time: Option<time::OffsetDateTime>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "UTC date and time specifying the start time of an interval. When not specified the service uses DateTime.UtcNow - 10m"]
             pub fn start_time(mut self, start_time: impl Into<time::OffsetDateTime>) -> Self {
                 self.start_time = Some(start_time.into());
@@ -1787,8 +1787,8 @@ pub mod client_groups {
             resource_group_name: impl Into<String>,
             workspace_name: impl Into<String>,
             client_group_name: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -1811,8 +1811,8 @@ pub mod client_groups {
             resource_group_name: impl Into<String>,
             workspace_name: impl Into<String>,
             client_group_name: impl Into<String>,
-        ) -> get_members_count::Builder {
-            get_members_count::Builder {
+        ) -> get_members_count::RequestBuilder {
+            get_members_count::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -1835,8 +1835,8 @@ pub mod client_groups {
             resource_group_name: impl Into<String>,
             workspace_name: impl Into<String>,
             client_group_name: impl Into<String>,
-        ) -> list_members::Builder {
-            list_members::Builder {
+        ) -> list_members::RequestBuilder {
+            list_members::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -1852,7 +1852,7 @@ pub mod client_groups {
         use super::models;
         type Response = models::ClientGroup;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -1861,7 +1861,7 @@ pub mod client_groups {
             pub(crate) start_time: Option<time::OffsetDateTime>,
             pub(crate) end_time: Option<time::OffsetDateTime>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "UTC date and time specifying the start time of an interval. When not specified the service uses DateTime.UtcNow - 10m"]
             pub fn start_time(mut self, start_time: impl Into<time::OffsetDateTime>) -> Self {
                 self.start_time = Some(start_time.into());
@@ -1917,7 +1917,7 @@ pub mod client_groups {
         use super::models;
         type Response = models::ClientGroupMembersCount;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -1926,7 +1926,7 @@ pub mod client_groups {
             pub(crate) start_time: Option<time::OffsetDateTime>,
             pub(crate) end_time: Option<time::OffsetDateTime>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "UTC date and time specifying the start time of an interval. When not specified the service uses DateTime.UtcNow - 10m"]
             pub fn start_time(mut self, start_time: impl Into<time::OffsetDateTime>) -> Self {
                 self.start_time = Some(start_time.into());
@@ -1982,7 +1982,7 @@ pub mod client_groups {
         use super::models;
         type Response = models::ClientGroupMembersCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -1992,7 +1992,7 @@ pub mod client_groups {
             pub(crate) end_time: Option<time::OffsetDateTime>,
             pub(crate) top: Option<i32>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "UTC date and time specifying the start time of an interval. When not specified the service uses DateTime.UtcNow - 10m"]
             pub fn start_time(mut self, start_time: impl Into<time::OffsetDateTime>) -> Self {
                 self.start_time = Some(start_time.into());
@@ -2096,8 +2096,8 @@ pub mod maps {
             resource_group_name: impl Into<String>,
             workspace_name: impl Into<String>,
             request: impl Into<models::MapRequest>,
-        ) -> generate::Builder {
-            generate::Builder {
+        ) -> generate::RequestBuilder {
+            generate::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -2110,14 +2110,14 @@ pub mod maps {
         use super::models;
         type Response = models::MapResponse;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) workspace_name: String,
             pub(crate) request: models::MapRequest,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2170,8 +2170,8 @@ pub mod summaries {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             workspace_name: impl Into<String>,
-        ) -> get_machines::Builder {
-            get_machines::Builder {
+        ) -> get_machines::RequestBuilder {
+            get_machines::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -2185,7 +2185,7 @@ pub mod summaries {
         use super::models;
         type Response = models::MachinesSummary;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -2193,7 +2193,7 @@ pub mod summaries {
             pub(crate) start_time: Option<time::OffsetDateTime>,
             pub(crate) end_time: Option<time::OffsetDateTime>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "UTC date and time specifying the start time of an interval. When not specified the service uses DateTime.UtcNow - 10m"]
             pub fn start_time(mut self, start_time: impl Into<time::OffsetDateTime>) -> Self {
                 self.start_time = Some(start_time.into());
@@ -2261,8 +2261,8 @@ pub mod machine_groups {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             workspace_name: impl Into<String>,
-        ) -> list_by_workspace::Builder {
-            list_by_workspace::Builder {
+        ) -> list_by_workspace::RequestBuilder {
+            list_by_workspace::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -2284,8 +2284,8 @@ pub mod machine_groups {
             resource_group_name: impl Into<String>,
             workspace_name: impl Into<String>,
             machine_group: impl Into<models::MachineGroup>,
-        ) -> create::Builder {
-            create::Builder {
+        ) -> create::RequestBuilder {
+            create::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -2306,8 +2306,8 @@ pub mod machine_groups {
             resource_group_name: impl Into<String>,
             workspace_name: impl Into<String>,
             machine_group_name: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -2332,8 +2332,8 @@ pub mod machine_groups {
             workspace_name: impl Into<String>,
             machine_group_name: impl Into<String>,
             machine_group: impl Into<models::MachineGroup>,
-        ) -> update::Builder {
-            update::Builder {
+        ) -> update::RequestBuilder {
+            update::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -2355,8 +2355,8 @@ pub mod machine_groups {
             resource_group_name: impl Into<String>,
             workspace_name: impl Into<String>,
             machine_group_name: impl Into<String>,
-        ) -> delete::Builder {
-            delete::Builder {
+        ) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -2369,7 +2369,7 @@ pub mod machine_groups {
         use super::models;
         type Response = models::MachineGroupCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -2377,7 +2377,7 @@ pub mod machine_groups {
             pub(crate) start_time: Option<time::OffsetDateTime>,
             pub(crate) end_time: Option<time::OffsetDateTime>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "UTC date and time specifying the start time of an interval. When not specified the service uses DateTime.UtcNow - 10m"]
             pub fn start_time(mut self, start_time: impl Into<time::OffsetDateTime>) -> Self {
                 self.start_time = Some(start_time.into());
@@ -2459,14 +2459,14 @@ pub mod machine_groups {
         use super::models;
         type Response = models::MachineGroup;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) workspace_name: String,
             pub(crate) machine_group: models::MachineGroup,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2507,7 +2507,7 @@ pub mod machine_groups {
         use super::models;
         type Response = models::MachineGroup;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -2516,7 +2516,7 @@ pub mod machine_groups {
             pub(crate) start_time: Option<time::OffsetDateTime>,
             pub(crate) end_time: Option<time::OffsetDateTime>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "UTC date and time specifying the start time of an interval. When not specified the service uses DateTime.UtcNow - 10m"]
             pub fn start_time(mut self, start_time: impl Into<time::OffsetDateTime>) -> Self {
                 self.start_time = Some(start_time.into());
@@ -2572,7 +2572,7 @@ pub mod machine_groups {
         use super::models;
         type Response = models::MachineGroup;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -2580,7 +2580,7 @@ pub mod machine_groups {
             pub(crate) machine_group_name: String,
             pub(crate) machine_group: models::MachineGroup,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2621,14 +2621,14 @@ pub mod machine_groups {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) workspace_name: String,
             pub(crate) machine_group_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();

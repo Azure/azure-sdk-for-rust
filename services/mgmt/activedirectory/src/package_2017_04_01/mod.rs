@@ -118,18 +118,18 @@ pub mod operations {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Operation to return the list of available operations."]
-        pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.0.clone() }
+        pub fn list(&self) -> list::RequestBuilder {
+            list::RequestBuilder { client: self.0.clone() }
         }
     }
     pub mod list {
         use super::models;
         type Response = models::OperationsDiscoveryCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -171,15 +171,15 @@ pub mod diagnostic_settings {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets the active diagnostic settings list for AadIam."]
-        pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.0.clone() }
+        pub fn list(&self) -> list::RequestBuilder {
+            list::RequestBuilder { client: self.0.clone() }
         }
         #[doc = "Gets the active diagnostic setting for AadIam."]
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `name`: The name of the diagnostic setting."]
-        pub fn get(&self, name: impl Into<String>) -> get::Builder {
-            get::Builder {
+        pub fn get(&self, name: impl Into<String>) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 name: name.into(),
             }
@@ -193,8 +193,8 @@ pub mod diagnostic_settings {
             &self,
             parameters: impl Into<models::DiagnosticSettingsResource>,
             name: impl Into<String>,
-        ) -> create_or_update::Builder {
-            create_or_update::Builder {
+        ) -> create_or_update::RequestBuilder {
+            create_or_update::RequestBuilder {
                 client: self.0.clone(),
                 parameters: parameters.into(),
                 name: name.into(),
@@ -204,8 +204,8 @@ pub mod diagnostic_settings {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `name`: The name of the diagnostic setting."]
-        pub fn delete(&self, name: impl Into<String>) -> delete::Builder {
-            delete::Builder {
+        pub fn delete(&self, name: impl Into<String>) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 name: name.into(),
             }
@@ -215,10 +215,10 @@ pub mod diagnostic_settings {
         use super::models;
         type Response = models::DiagnosticSettingsResourceCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -259,11 +259,11 @@ pub mod diagnostic_settings {
         use super::models;
         type Response = models::DiagnosticSettingsResource;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -307,12 +307,12 @@ pub mod diagnostic_settings {
         use super::models;
         type Response = models::DiagnosticSettingsResource;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) parameters: models::DiagnosticSettingsResource,
             pub(crate) name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -361,11 +361,11 @@ pub mod diagnostic_settings {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -408,18 +408,18 @@ pub mod diagnostic_settings_category {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Lists the diagnostic settings categories for AadIam."]
-        pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.0.clone() }
+        pub fn list(&self) -> list::RequestBuilder {
+            list::RequestBuilder { client: self.0.clone() }
         }
     }
     pub mod list {
         use super::models;
         type Response = models::DiagnosticSettingsCategoryResourceCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();

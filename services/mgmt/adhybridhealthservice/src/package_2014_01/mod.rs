@@ -160,8 +160,8 @@ pub mod adds_services {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets the details of Active Directory Domain Service, for a tenant, that are onboarded to Azure Active Directory Connect Health."]
-        pub fn list(&self) -> list::Builder {
-            list::Builder {
+        pub fn list(&self) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 filter: None,
                 service_type: None,
@@ -173,8 +173,8 @@ pub mod adds_services {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `service`: The service object."]
-        pub fn add(&self, service: impl Into<models::ServiceProperties>) -> add::Builder {
-            add::Builder {
+        pub fn add(&self, service: impl Into<models::ServiceProperties>) -> add::RequestBuilder {
+            add::RequestBuilder {
                 client: self.0.clone(),
                 service: service.into(),
             }
@@ -183,8 +183,8 @@ pub mod adds_services {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `service_name`: The name of the service."]
-        pub fn get(&self, service_name: impl Into<String>) -> get::Builder {
-            get::Builder {
+        pub fn get(&self, service_name: impl Into<String>) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 service_name: service_name.into(),
             }
@@ -194,8 +194,8 @@ pub mod adds_services {
         #[doc = "Arguments:"]
         #[doc = "* `service_name`: The name of the service which needs to be deleted."]
         #[doc = "* `service`: The service object."]
-        pub fn update(&self, service_name: impl Into<String>, service: impl Into<models::ServiceProperties>) -> update::Builder {
-            update::Builder {
+        pub fn update(&self, service_name: impl Into<String>, service: impl Into<models::ServiceProperties>) -> update::RequestBuilder {
+            update::RequestBuilder {
                 client: self.0.clone(),
                 service_name: service_name.into(),
                 service: service.into(),
@@ -205,8 +205,8 @@ pub mod adds_services {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `service_name`: The name of the service which needs to be deleted."]
-        pub fn delete(&self, service_name: impl Into<String>) -> delete::Builder {
-            delete::Builder {
+        pub fn delete(&self, service_name: impl Into<String>) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 service_name: service_name.into(),
                 confirm: None,
@@ -216,8 +216,8 @@ pub mod adds_services {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `service_name`: The name of the service."]
-        pub fn get_forest_summary(&self, service_name: impl Into<String>) -> get_forest_summary::Builder {
-            get_forest_summary::Builder {
+        pub fn get_forest_summary(&self, service_name: impl Into<String>) -> get_forest_summary::RequestBuilder {
+            get_forest_summary::RequestBuilder {
                 client: self.0.clone(),
                 service_name: service_name.into(),
             }
@@ -233,8 +233,8 @@ pub mod adds_services {
             service_name: impl Into<String>,
             metric_name: impl Into<String>,
             group_name: impl Into<String>,
-        ) -> list_metrics_average::Builder {
-            list_metrics_average::Builder {
+        ) -> list_metrics_average::RequestBuilder {
+            list_metrics_average::RequestBuilder {
                 client: self.0.clone(),
                 service_name: service_name.into(),
                 metric_name: metric_name.into(),
@@ -252,8 +252,8 @@ pub mod adds_services {
             service_name: impl Into<String>,
             metric_name: impl Into<String>,
             group_name: impl Into<String>,
-        ) -> list_metrics_sum::Builder {
-            list_metrics_sum::Builder {
+        ) -> list_metrics_sum::RequestBuilder {
+            list_metrics_sum::RequestBuilder {
                 client: self.0.clone(),
                 service_name: service_name.into(),
                 metric_name: metric_name.into(),
@@ -264,8 +264,8 @@ pub mod adds_services {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `service_name`: The name of the service."]
-        pub fn list_metric_metadata(&self, service_name: impl Into<String>) -> list_metric_metadata::Builder {
-            list_metric_metadata::Builder {
+        pub fn list_metric_metadata(&self, service_name: impl Into<String>) -> list_metric_metadata::RequestBuilder {
+            list_metric_metadata::RequestBuilder {
                 client: self.0.clone(),
                 service_name: service_name.into(),
                 filter: None,
@@ -277,8 +277,12 @@ pub mod adds_services {
         #[doc = "Arguments:"]
         #[doc = "* `service_name`: The name of the service."]
         #[doc = "* `metric_name`: The metric name"]
-        pub fn get_metric_metadata(&self, service_name: impl Into<String>, metric_name: impl Into<String>) -> get_metric_metadata::Builder {
-            get_metric_metadata::Builder {
+        pub fn get_metric_metadata(
+            &self,
+            service_name: impl Into<String>,
+            metric_name: impl Into<String>,
+        ) -> get_metric_metadata::RequestBuilder {
+            get_metric_metadata::RequestBuilder {
                 client: self.0.clone(),
                 service_name: service_name.into(),
                 metric_name: metric_name.into(),
@@ -295,8 +299,8 @@ pub mod adds_services {
             service_name: impl Into<String>,
             metric_name: impl Into<String>,
             group_name: impl Into<String>,
-        ) -> get_metric_metadata_for_group::Builder {
-            get_metric_metadata_for_group::Builder {
+        ) -> get_metric_metadata_for_group::RequestBuilder {
+            get_metric_metadata_for_group::RequestBuilder {
                 client: self.0.clone(),
                 service_name: service_name.into(),
                 metric_name: metric_name.into(),
@@ -310,8 +314,8 @@ pub mod adds_services {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `service_name`: The name of the service."]
-        pub fn list_replication_details(&self, service_name: impl Into<String>) -> list_replication_details::Builder {
-            list_replication_details::Builder {
+        pub fn list_replication_details(&self, service_name: impl Into<String>) -> list_replication_details::RequestBuilder {
+            list_replication_details::RequestBuilder {
                 client: self.0.clone(),
                 service_name: service_name.into(),
                 filter: None,
@@ -333,8 +337,8 @@ pub mod adds_services {
             query: impl Into<String>,
             next_partition_key: impl Into<String>,
             next_row_key: impl Into<String>,
-        ) -> list_replication_summary::Builder {
-            list_replication_summary::Builder {
+        ) -> list_replication_summary::RequestBuilder {
+            list_replication_summary::RequestBuilder {
                 client: self.0.clone(),
                 service_name: service_name.into(),
                 is_groupby_site,
@@ -354,8 +358,8 @@ pub mod adds_services {
             &self,
             service_member_id: impl Into<String>,
             service_name: impl Into<String>,
-        ) -> list_server_alerts::Builder {
-            list_server_alerts::Builder {
+        ) -> list_server_alerts::RequestBuilder {
+            list_server_alerts::RequestBuilder {
                 client: self.0.clone(),
                 service_member_id: service_member_id.into(),
                 service_name: service_name.into(),
@@ -366,8 +370,8 @@ pub mod adds_services {
             }
         }
         #[doc = "Gets the details of Active Directory Domain Services for a tenant having Azure AD Premium license and is onboarded to Azure Active Directory Connect Health."]
-        pub fn list_premium_services(&self) -> list_premium_services::Builder {
-            list_premium_services::Builder {
+        pub fn list_premium_services(&self) -> list_premium_services::RequestBuilder {
+            list_premium_services::RequestBuilder {
                 client: self.0.clone(),
                 filter: None,
                 service_type: None,
@@ -380,14 +384,14 @@ pub mod adds_services {
         use super::models;
         type Response = models::Services;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) filter: Option<String>,
             pub(crate) service_type: Option<String>,
             pub(crate) skip_count: Option<i64>,
             pub(crate) take_count: Option<i64>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The service property filter to apply."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -488,11 +492,11 @@ pub mod adds_services {
         use super::models;
         type Response = models::ServiceProperties;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) service: models::ServiceProperties,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -536,11 +540,11 @@ pub mod adds_services {
         use super::models;
         type Response = models::ServiceProperties;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -584,12 +588,12 @@ pub mod adds_services {
         use super::models;
         type Response = models::ServiceProperties;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
             pub(crate) service: models::ServiceProperties,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -634,12 +638,12 @@ pub mod adds_services {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
             pub(crate) confirm: Option<bool>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Indicates if the service will be permanently deleted or disabled. True indicates that the service will be permanently deleted and False indicates that the service will be marked disabled and then deleted after 30 days, if it is not re-registered."]
             pub fn confirm(mut self, confirm: bool) -> Self {
                 self.confirm = Some(confirm);
@@ -687,11 +691,11 @@ pub mod adds_services {
         use super::models;
         type Response = models::ForestSummary;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -735,13 +739,13 @@ pub mod adds_services {
         use super::models;
         type Response = models::Metrics;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
             pub(crate) metric_name: String,
             pub(crate) group_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -813,13 +817,13 @@ pub mod adds_services {
         use super::models;
         type Response = models::Metrics;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
             pub(crate) metric_name: String,
             pub(crate) group_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -891,13 +895,13 @@ pub mod adds_services {
         use super::models;
         type Response = models::MetricMetadataList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
             pub(crate) filter: Option<String>,
             pub(crate) perf_counter: Option<bool>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The metric metadata property filter to apply."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -985,12 +989,12 @@ pub mod adds_services {
         use super::models;
         type Response = models::MetricMetadata;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
             pub(crate) metric_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1035,7 +1039,7 @@ pub mod adds_services {
         use super::models;
         type Response = models::MetricSets;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
             pub(crate) metric_name: String,
@@ -1044,7 +1048,7 @@ pub mod adds_services {
             pub(crate) from_date: Option<time::OffsetDateTime>,
             pub(crate) to_date: Option<time::OffsetDateTime>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The group key"]
             pub fn group_key(mut self, group_key: impl Into<String>) -> Self {
                 self.group_key = Some(group_key.into());
@@ -1114,13 +1118,13 @@ pub mod adds_services {
         use super::models;
         type Response = models::ReplicationDetailsList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
             pub(crate) filter: Option<String>,
             pub(crate) with_details: Option<bool>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The server property filter to apply."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -1183,7 +1187,7 @@ pub mod adds_services {
         use super::models;
         type Response = models::ReplicationSummaryList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
             pub(crate) is_groupby_site: bool,
@@ -1193,7 +1197,7 @@ pub mod adds_services {
             pub(crate) filter: Option<String>,
             pub(crate) take_count: Option<i64>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The server property filter to apply."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -1264,7 +1268,7 @@ pub mod adds_services {
         use super::models;
         type Response = models::Alerts;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) service_member_id: String,
             pub(crate) service_name: String,
@@ -1273,7 +1277,7 @@ pub mod adds_services {
             pub(crate) from: Option<time::OffsetDateTime>,
             pub(crate) to: Option<time::OffsetDateTime>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The alert property filter to apply."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -1376,14 +1380,14 @@ pub mod adds_services {
         use super::models;
         type Response = models::Services;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) filter: Option<String>,
             pub(crate) service_type: Option<String>,
             pub(crate) skip_count: Option<i64>,
             pub(crate) take_count: Option<i64>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The service property filter to apply."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -1489,8 +1493,8 @@ pub mod alerts {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `service_name`: The name of the service."]
-        pub fn list_adds_alerts(&self, service_name: impl Into<String>) -> list_adds_alerts::Builder {
-            list_adds_alerts::Builder {
+        pub fn list_adds_alerts(&self, service_name: impl Into<String>) -> list_adds_alerts::RequestBuilder {
+            list_adds_alerts::RequestBuilder {
                 client: self.0.clone(),
                 service_name: service_name.into(),
                 filter: None,
@@ -1504,7 +1508,7 @@ pub mod alerts {
         use super::models;
         type Response = models::Alerts;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
             pub(crate) filter: Option<String>,
@@ -1512,7 +1516,7 @@ pub mod alerts {
             pub(crate) from: Option<time::OffsetDateTime>,
             pub(crate) to: Option<time::OffsetDateTime>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The alert property filter to apply."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -1619,27 +1623,27 @@ pub mod configuration {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `service_name`: The name of the service."]
-        pub fn list_adds_configurations(&self, service_name: impl Into<String>) -> list_adds_configurations::Builder {
-            list_adds_configurations::Builder {
+        pub fn list_adds_configurations(&self, service_name: impl Into<String>) -> list_adds_configurations::RequestBuilder {
+            list_adds_configurations::RequestBuilder {
                 client: self.0.clone(),
                 service_name: service_name.into(),
                 grouping: None,
             }
         }
         #[doc = "Gets the details of a tenant onboarded to Azure Active Directory Connect Health."]
-        pub fn get(&self) -> get::Builder {
-            get::Builder { client: self.0.clone() }
+        pub fn get(&self) -> get::RequestBuilder {
+            get::RequestBuilder { client: self.0.clone() }
         }
         #[doc = "Onboards a tenant in Azure Active Directory Connect Health."]
-        pub fn add(&self) -> add::Builder {
-            add::Builder { client: self.0.clone() }
+        pub fn add(&self) -> add::RequestBuilder {
+            add::RequestBuilder { client: self.0.clone() }
         }
         #[doc = "Updates tenant properties for tenants onboarded to Azure Active Directory Connect Health."]
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `tenant`: The tenant object with the properties set to the updated value."]
-        pub fn update(&self, tenant: impl Into<models::Tenant>) -> update::Builder {
-            update::Builder {
+        pub fn update(&self, tenant: impl Into<models::Tenant>) -> update::RequestBuilder {
+            update::RequestBuilder {
                 client: self.0.clone(),
                 tenant: tenant.into(),
             }
@@ -1649,12 +1653,12 @@ pub mod configuration {
         use super::models;
         type Response = models::AddsConfiguration;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
             pub(crate) grouping: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The grouping for configurations."]
             pub fn grouping(mut self, grouping: impl Into<String>) -> Self {
                 self.grouping = Some(grouping.into());
@@ -1722,10 +1726,10 @@ pub mod configuration {
         use super::models;
         type Response = models::Tenant;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1768,10 +1772,10 @@ pub mod configuration {
         use super::models;
         type Response = models::Tenant;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1815,11 +1819,11 @@ pub mod configuration {
         use super::models;
         type Response = models::Tenant;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) tenant: models::Tenant,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1869,8 +1873,12 @@ pub mod dimensions {
         #[doc = "Arguments:"]
         #[doc = "* `service_name`: The name of the service."]
         #[doc = "* `dimension`: The dimension type."]
-        pub fn list_adds_dimensions(&self, service_name: impl Into<String>, dimension: impl Into<String>) -> list_adds_dimensions::Builder {
-            list_adds_dimensions::Builder {
+        pub fn list_adds_dimensions(
+            &self,
+            service_name: impl Into<String>,
+            dimension: impl Into<String>,
+        ) -> list_adds_dimensions::RequestBuilder {
+            list_adds_dimensions::RequestBuilder {
                 client: self.0.clone(),
                 service_name: service_name.into(),
                 dimension: dimension.into(),
@@ -1881,12 +1889,12 @@ pub mod dimensions {
         use super::models;
         type Response = models::Dimensions;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
             pub(crate) dimension: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -1962,8 +1970,8 @@ pub mod adds_service_members {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `service_name`: The name of the service."]
-        pub fn list(&self, service_name: impl Into<String>) -> list::Builder {
-            list::Builder {
+        pub fn list(&self, service_name: impl Into<String>) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 service_name: service_name.into(),
                 filter: None,
@@ -1974,8 +1982,8 @@ pub mod adds_service_members {
         #[doc = "Arguments:"]
         #[doc = "* `service_name`: The name of the service."]
         #[doc = "* `service_member_id`: The server Id."]
-        pub fn get(&self, service_name: impl Into<String>, service_member_id: impl Into<String>) -> get::Builder {
-            get::Builder {
+        pub fn get(&self, service_name: impl Into<String>, service_member_id: impl Into<String>) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 service_name: service_name.into(),
                 service_member_id: service_member_id.into(),
@@ -1986,8 +1994,8 @@ pub mod adds_service_members {
         #[doc = "Arguments:"]
         #[doc = "* `service_name`: The name of the service."]
         #[doc = "* `service_member_id`: The server Id."]
-        pub fn delete(&self, service_name: impl Into<String>, service_member_id: impl Into<String>) -> delete::Builder {
-            delete::Builder {
+        pub fn delete(&self, service_name: impl Into<String>, service_member_id: impl Into<String>) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 service_name: service_name.into(),
                 service_member_id: service_member_id.into(),
@@ -1999,8 +2007,12 @@ pub mod adds_service_members {
         #[doc = "Arguments:"]
         #[doc = "* `service_name`: The name of the service."]
         #[doc = "* `service_member_id`: The server Id."]
-        pub fn list_credentials(&self, service_name: impl Into<String>, service_member_id: impl Into<String>) -> list_credentials::Builder {
-            list_credentials::Builder {
+        pub fn list_credentials(
+            &self,
+            service_name: impl Into<String>,
+            service_member_id: impl Into<String>,
+        ) -> list_credentials::RequestBuilder {
+            list_credentials::RequestBuilder {
                 client: self.0.clone(),
                 service_name: service_name.into(),
                 service_member_id: service_member_id.into(),
@@ -2012,12 +2024,12 @@ pub mod adds_service_members {
         use super::models;
         type Response = models::AddsServiceMembers;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
             pub(crate) filter: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The server property filter to apply."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -2095,12 +2107,12 @@ pub mod adds_service_members {
         use super::models;
         type Response = models::ServiceMember;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
             pub(crate) service_member_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2145,13 +2157,13 @@ pub mod adds_service_members {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
             pub(crate) service_member_id: String,
             pub(crate) confirm: Option<bool>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Indicates if the server will be permanently deleted or disabled. True indicates that the server will be permanently deleted and False indicates that the server will be marked disabled and then deleted after 30 days, if it is not re-registered."]
             pub fn confirm(mut self, confirm: bool) -> Self {
                 self.confirm = Some(confirm);
@@ -2200,13 +2212,13 @@ pub mod adds_service_members {
         use super::models;
         type Response = models::Credentials;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
             pub(crate) service_member_id: String,
             pub(crate) filter: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The property filter to apply."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -2274,8 +2286,8 @@ pub mod ad_domain_service_members {
             is_groupby_site: bool,
             next_partition_key: impl Into<String>,
             next_row_key: impl Into<String>,
-        ) -> list::Builder {
-            list::Builder {
+        ) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 service_name: service_name.into(),
                 is_groupby_site,
@@ -2291,7 +2303,7 @@ pub mod ad_domain_service_members {
         use super::models;
         type Response = models::AddsServiceMembers;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
             pub(crate) is_groupby_site: bool,
@@ -2301,7 +2313,7 @@ pub mod ad_domain_service_members {
             pub(crate) query: Option<String>,
             pub(crate) take_count: Option<i64>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The server property filter to apply."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -2409,8 +2421,8 @@ pub mod adds_services_user_preference {
         #[doc = "Arguments:"]
         #[doc = "* `service_name`: The name of the service."]
         #[doc = "* `feature_name`: The name of the feature."]
-        pub fn get(&self, service_name: impl Into<String>, feature_name: impl Into<String>) -> get::Builder {
-            get::Builder {
+        pub fn get(&self, service_name: impl Into<String>, feature_name: impl Into<String>) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 service_name: service_name.into(),
                 feature_name: feature_name.into(),
@@ -2427,8 +2439,8 @@ pub mod adds_services_user_preference {
             service_name: impl Into<String>,
             feature_name: impl Into<String>,
             setting: impl Into<models::UserPreference>,
-        ) -> add::Builder {
-            add::Builder {
+        ) -> add::RequestBuilder {
+            add::RequestBuilder {
                 client: self.0.clone(),
                 service_name: service_name.into(),
                 feature_name: feature_name.into(),
@@ -2440,8 +2452,8 @@ pub mod adds_services_user_preference {
         #[doc = "Arguments:"]
         #[doc = "* `service_name`: The name of the service."]
         #[doc = "* `feature_name`: The name of the feature."]
-        pub fn delete(&self, service_name: impl Into<String>, feature_name: impl Into<String>) -> delete::Builder {
-            delete::Builder {
+        pub fn delete(&self, service_name: impl Into<String>, feature_name: impl Into<String>) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 service_name: service_name.into(),
                 feature_name: feature_name.into(),
@@ -2452,12 +2464,12 @@ pub mod adds_services_user_preference {
         use super::models;
         type Response = models::UserPreference;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
             pub(crate) feature_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2502,13 +2514,13 @@ pub mod adds_services_user_preference {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
             pub(crate) feature_name: String,
             pub(crate) setting: models::UserPreference,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2550,12 +2562,12 @@ pub mod adds_services_user_preference {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
             pub(crate) feature_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2608,8 +2620,8 @@ pub mod adds_service {
             service_name: impl Into<String>,
             metric_name: impl Into<String>,
             group_name: impl Into<String>,
-        ) -> get_metrics::Builder {
-            get_metrics::Builder {
+        ) -> get_metrics::RequestBuilder {
+            get_metrics::RequestBuilder {
                 client: self.0.clone(),
                 service_name: service_name.into(),
                 metric_name: metric_name.into(),
@@ -2624,7 +2636,7 @@ pub mod adds_service {
         use super::models;
         type Response = models::MetricSets;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
             pub(crate) metric_name: String,
@@ -2633,7 +2645,7 @@ pub mod adds_service {
             pub(crate) from_date: Option<time::OffsetDateTime>,
             pub(crate) to_date: Option<time::OffsetDateTime>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The group key"]
             pub fn group_key(mut self, group_key: impl Into<String>) -> Self {
                 self.group_key = Some(group_key.into());
@@ -2708,8 +2720,8 @@ pub mod adds_services_replication_status {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `service_name`: The name of the service."]
-        pub fn get(&self, service_name: impl Into<String>) -> get::Builder {
-            get::Builder {
+        pub fn get(&self, service_name: impl Into<String>) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 service_name: service_name.into(),
             }
@@ -2719,11 +2731,11 @@ pub mod adds_services_replication_status {
         use super::models;
         type Response = models::ReplicationStatus;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2772,8 +2784,8 @@ pub mod adds_services_service_members {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `service_name`: The name of the service."]
-        pub fn list(&self, service_name: impl Into<String>) -> list::Builder {
-            list::Builder {
+        pub fn list(&self, service_name: impl Into<String>) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 service_name: service_name.into(),
                 filter: None,
@@ -2786,8 +2798,8 @@ pub mod adds_services_service_members {
         #[doc = "Arguments:"]
         #[doc = "* `service_name`: The name of the service under which the server is to be onboarded."]
         #[doc = "* `service_member`: The server object."]
-        pub fn add(&self, service_name: impl Into<String>, service_member: impl Into<models::ServiceMember>) -> add::Builder {
-            add::Builder {
+        pub fn add(&self, service_name: impl Into<String>, service_member: impl Into<models::ServiceMember>) -> add::RequestBuilder {
+            add::RequestBuilder {
                 client: self.0.clone(),
                 service_name: service_name.into(),
                 service_member: service_member.into(),
@@ -2798,14 +2810,14 @@ pub mod adds_services_service_members {
         use super::models;
         type Response = models::ServiceMembers;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
             pub(crate) filter: Option<String>,
             pub(crate) dimension_type: Option<String>,
             pub(crate) dimension_signature: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The server property filter to apply."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -2901,12 +2913,12 @@ pub mod adds_services_service_members {
         use super::models;
         type Response = models::ServiceMember;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
             pub(crate) service_member: models::ServiceMember,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2953,18 +2965,18 @@ pub mod operations {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Lists the available Azure Data Factory API operations."]
-        pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.0.clone() }
+        pub fn list(&self) -> list::RequestBuilder {
+            list::RequestBuilder { client: self.0.clone() }
         }
     }
     pub mod list {
         use super::models;
         type Response = models::OperationListResponse;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -3035,18 +3047,18 @@ pub mod reports {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Checks if the user is enabled for Dev Ops access."]
-        pub fn get_dev_ops(&self) -> get_dev_ops::Builder {
-            get_dev_ops::Builder { client: self.0.clone() }
+        pub fn get_dev_ops(&self) -> get_dev_ops::RequestBuilder {
+            get_dev_ops::RequestBuilder { client: self.0.clone() }
         }
     }
     pub mod get_dev_ops {
         use super::models;
         type Response = models::Result;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -3091,8 +3103,8 @@ pub mod services {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets the details of services, for a tenant, that are onboarded to Azure Active Directory Connect Health."]
-        pub fn list(&self) -> list::Builder {
-            list::Builder {
+        pub fn list(&self) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 filter: None,
                 service_type: None,
@@ -3104,15 +3116,15 @@ pub mod services {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `service`: The service object."]
-        pub fn add(&self, service: impl Into<models::ServiceProperties>) -> add::Builder {
-            add::Builder {
+        pub fn add(&self, service: impl Into<models::ServiceProperties>) -> add::RequestBuilder {
+            add::RequestBuilder {
                 client: self.0.clone(),
                 service: service.into(),
             }
         }
         #[doc = "Gets the details of services for a tenant having Azure AD Premium license and is onboarded to Azure Active Directory Connect Health."]
-        pub fn list_premium(&self) -> list_premium::Builder {
-            list_premium::Builder {
+        pub fn list_premium(&self) -> list_premium::RequestBuilder {
+            list_premium::RequestBuilder {
                 client: self.0.clone(),
                 filter: None,
                 service_type: None,
@@ -3124,8 +3136,8 @@ pub mod services {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `service_name`: The name of the service."]
-        pub fn get(&self, service_name: impl Into<String>) -> get::Builder {
-            get::Builder {
+        pub fn get(&self, service_name: impl Into<String>) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 service_name: service_name.into(),
             }
@@ -3135,8 +3147,8 @@ pub mod services {
         #[doc = "Arguments:"]
         #[doc = "* `service_name`: The name of the service which needs to be deleted."]
         #[doc = "* `service`: The service object."]
-        pub fn update(&self, service_name: impl Into<String>, service: impl Into<models::ServiceProperties>) -> update::Builder {
-            update::Builder {
+        pub fn update(&self, service_name: impl Into<String>, service: impl Into<models::ServiceProperties>) -> update::RequestBuilder {
+            update::RequestBuilder {
                 client: self.0.clone(),
                 service_name: service_name.into(),
                 service: service.into(),
@@ -3146,8 +3158,8 @@ pub mod services {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `service_name`: The name of the service which needs to be deleted."]
-        pub fn delete(&self, service_name: impl Into<String>) -> delete::Builder {
-            delete::Builder {
+        pub fn delete(&self, service_name: impl Into<String>) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 service_name: service_name.into(),
                 confirm: None,
@@ -3157,8 +3169,8 @@ pub mod services {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `service_name`: The name of the service."]
-        pub fn list_alerts(&self, service_name: impl Into<String>) -> list_alerts::Builder {
-            list_alerts::Builder {
+        pub fn list_alerts(&self, service_name: impl Into<String>) -> list_alerts::RequestBuilder {
+            list_alerts::RequestBuilder {
                 client: self.0.clone(),
                 service_name: service_name.into(),
                 filter: None,
@@ -3176,8 +3188,8 @@ pub mod services {
             &self,
             service_name: impl Into<String>,
             feature_name: impl Into<String>,
-        ) -> get_feature_availibility::Builder {
-            get_feature_availibility::Builder {
+        ) -> get_feature_availibility::RequestBuilder {
+            get_feature_availibility::RequestBuilder {
                 client: self.0.clone(),
                 service_name: service_name.into(),
                 feature_name: feature_name.into(),
@@ -3187,8 +3199,8 @@ pub mod services {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `service_name`: The name of the service."]
-        pub fn list_export_errors(&self, service_name: impl Into<String>) -> list_export_errors::Builder {
-            list_export_errors::Builder {
+        pub fn list_export_errors(&self, service_name: impl Into<String>) -> list_export_errors::RequestBuilder {
+            list_export_errors::RequestBuilder {
                 client: self.0.clone(),
                 service_name: service_name.into(),
             }
@@ -3202,8 +3214,8 @@ pub mod services {
             &self,
             service_name: impl Into<String>,
             error_bucket: impl Into<String>,
-        ) -> list_export_errors_v2::Builder {
-            list_export_errors_v2::Builder {
+        ) -> list_export_errors_v2::RequestBuilder {
+            list_export_errors_v2::RequestBuilder {
                 client: self.0.clone(),
                 service_name: service_name.into(),
                 error_bucket: error_bucket.into(),
@@ -3213,8 +3225,8 @@ pub mod services {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `service_name`: The name of the service."]
-        pub fn list_export_status(&self, service_name: impl Into<String>) -> list_export_status::Builder {
-            list_export_status::Builder {
+        pub fn list_export_status(&self, service_name: impl Into<String>) -> list_export_status::RequestBuilder {
+            list_export_status::RequestBuilder {
                 client: self.0.clone(),
                 service_name: service_name.into(),
             }
@@ -3228,8 +3240,8 @@ pub mod services {
             &self,
             service_name: impl Into<String>,
             alert_feedback: impl Into<models::AlertFeedback>,
-        ) -> add_alert_feedback::Builder {
-            add_alert_feedback::Builder {
+        ) -> add_alert_feedback::RequestBuilder {
+            add_alert_feedback::RequestBuilder {
                 client: self.0.clone(),
                 service_name: service_name.into(),
                 alert_feedback: alert_feedback.into(),
@@ -3240,8 +3252,12 @@ pub mod services {
         #[doc = "Arguments:"]
         #[doc = "* `service_name`: The name of the service."]
         #[doc = "* `short_name`: The name of the alert."]
-        pub fn list_alert_feedback(&self, service_name: impl Into<String>, short_name: impl Into<String>) -> list_alert_feedback::Builder {
-            list_alert_feedback::Builder {
+        pub fn list_alert_feedback(
+            &self,
+            service_name: impl Into<String>,
+            short_name: impl Into<String>,
+        ) -> list_alert_feedback::RequestBuilder {
+            list_alert_feedback::RequestBuilder {
                 client: self.0.clone(),
                 service_name: service_name.into(),
                 short_name: short_name.into(),
@@ -3258,8 +3274,8 @@ pub mod services {
             service_name: impl Into<String>,
             metric_name: impl Into<String>,
             group_name: impl Into<String>,
-        ) -> list_metrics_average::Builder {
-            list_metrics_average::Builder {
+        ) -> list_metrics_average::RequestBuilder {
+            list_metrics_average::RequestBuilder {
                 client: self.0.clone(),
                 service_name: service_name.into(),
                 metric_name: metric_name.into(),
@@ -3277,8 +3293,8 @@ pub mod services {
             service_name: impl Into<String>,
             metric_name: impl Into<String>,
             group_name: impl Into<String>,
-        ) -> list_metrics_sum::Builder {
-            list_metrics_sum::Builder {
+        ) -> list_metrics_sum::RequestBuilder {
+            list_metrics_sum::RequestBuilder {
                 client: self.0.clone(),
                 service_name: service_name.into(),
                 metric_name: metric_name.into(),
@@ -3289,8 +3305,8 @@ pub mod services {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `service_name`: The name of the service."]
-        pub fn list_metric_metadata(&self, service_name: impl Into<String>) -> list_metric_metadata::Builder {
-            list_metric_metadata::Builder {
+        pub fn list_metric_metadata(&self, service_name: impl Into<String>) -> list_metric_metadata::RequestBuilder {
+            list_metric_metadata::RequestBuilder {
                 client: self.0.clone(),
                 service_name: service_name.into(),
                 filter: None,
@@ -3302,8 +3318,12 @@ pub mod services {
         #[doc = "Arguments:"]
         #[doc = "* `service_name`: The name of the service."]
         #[doc = "* `metric_name`: The metric name"]
-        pub fn get_metric_metadata(&self, service_name: impl Into<String>, metric_name: impl Into<String>) -> get_metric_metadata::Builder {
-            get_metric_metadata::Builder {
+        pub fn get_metric_metadata(
+            &self,
+            service_name: impl Into<String>,
+            metric_name: impl Into<String>,
+        ) -> get_metric_metadata::RequestBuilder {
+            get_metric_metadata::RequestBuilder {
                 client: self.0.clone(),
                 service_name: service_name.into(),
                 metric_name: metric_name.into(),
@@ -3320,8 +3340,8 @@ pub mod services {
             service_name: impl Into<String>,
             metric_name: impl Into<String>,
             group_name: impl Into<String>,
-        ) -> get_metric_metadata_for_group::Builder {
-            get_metric_metadata_for_group::Builder {
+        ) -> get_metric_metadata_for_group::RequestBuilder {
+            get_metric_metadata_for_group::RequestBuilder {
                 client: self.0.clone(),
                 service_name: service_name.into(),
                 metric_name: metric_name.into(),
@@ -3340,8 +3360,8 @@ pub mod services {
             &self,
             service_name: impl Into<String>,
             configuration_setting: impl Into<models::Item>,
-        ) -> update_monitoring_configuration::Builder {
-            update_monitoring_configuration::Builder {
+        ) -> update_monitoring_configuration::RequestBuilder {
+            update_monitoring_configuration::RequestBuilder {
                 client: self.0.clone(),
                 service_name: service_name.into(),
                 configuration_setting: configuration_setting.into(),
@@ -3351,8 +3371,8 @@ pub mod services {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `service_name`: The name of the service."]
-        pub fn list_monitoring_configurations(&self, service_name: impl Into<String>) -> list_monitoring_configurations::Builder {
-            list_monitoring_configurations::Builder {
+        pub fn list_monitoring_configurations(&self, service_name: impl Into<String>) -> list_monitoring_configurations::RequestBuilder {
+            list_monitoring_configurations::RequestBuilder {
                 client: self.0.clone(),
                 service_name: service_name.into(),
             }
@@ -3361,8 +3381,8 @@ pub mod services {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `service_name`: The name of the service."]
-        pub fn list_user_bad_password_report(&self, service_name: impl Into<String>) -> list_user_bad_password_report::Builder {
-            list_user_bad_password_report::Builder {
+        pub fn list_user_bad_password_report(&self, service_name: impl Into<String>) -> list_user_bad_password_report::RequestBuilder {
+            list_user_bad_password_report::RequestBuilder {
                 client: self.0.clone(),
                 service_name: service_name.into(),
                 data_source: None,
@@ -3377,8 +3397,8 @@ pub mod services {
             &self,
             service_name: impl Into<String>,
             feature_name: impl Into<String>,
-        ) -> get_tenant_whitelisting::Builder {
-            get_tenant_whitelisting::Builder {
+        ) -> get_tenant_whitelisting::RequestBuilder {
+            get_tenant_whitelisting::RequestBuilder {
                 client: self.0.clone(),
                 service_name: service_name.into(),
                 feature_name: feature_name.into(),
@@ -3388,8 +3408,11 @@ pub mod services {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `service_name`: The name of the service."]
-        pub fn list_all_risky_ip_download_report(&self, service_name: impl Into<String>) -> list_all_risky_ip_download_report::Builder {
-            list_all_risky_ip_download_report::Builder {
+        pub fn list_all_risky_ip_download_report(
+            &self,
+            service_name: impl Into<String>,
+        ) -> list_all_risky_ip_download_report::RequestBuilder {
+            list_all_risky_ip_download_report::RequestBuilder {
                 client: self.0.clone(),
                 service_name: service_name.into(),
             }
@@ -3401,8 +3424,8 @@ pub mod services {
         pub fn list_current_risky_ip_download_report(
             &self,
             service_name: impl Into<String>,
-        ) -> list_current_risky_ip_download_report::Builder {
-            list_current_risky_ip_download_report::Builder {
+        ) -> list_current_risky_ip_download_report::RequestBuilder {
+            list_current_risky_ip_download_report::RequestBuilder {
                 client: self.0.clone(),
                 service_name: service_name.into(),
             }
@@ -3412,14 +3435,14 @@ pub mod services {
         use super::models;
         type Response = models::Services;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) filter: Option<String>,
             pub(crate) service_type: Option<String>,
             pub(crate) skip_count: Option<i64>,
             pub(crate) take_count: Option<i64>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The service property filter to apply."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -3520,11 +3543,11 @@ pub mod services {
         use super::models;
         type Response = models::ServiceProperties;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) service: models::ServiceProperties,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -3568,14 +3591,14 @@ pub mod services {
         use super::models;
         type Response = models::Services;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) filter: Option<String>,
             pub(crate) service_type: Option<String>,
             pub(crate) skip_count: Option<i64>,
             pub(crate) take_count: Option<i64>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The service property filter to apply."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -3676,11 +3699,11 @@ pub mod services {
         use super::models;
         type Response = models::ServiceProperties;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -3724,12 +3747,12 @@ pub mod services {
         use super::models;
         type Response = models::ServiceProperties;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
             pub(crate) service: models::ServiceProperties,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -3774,12 +3797,12 @@ pub mod services {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
             pub(crate) confirm: Option<bool>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Indicates if the service will be permanently deleted or disabled. True indicates that the service will be permanently deleted and False indicates that the service will be marked disabled and then deleted after 30 days, if it is not re-registered."]
             pub fn confirm(mut self, confirm: bool) -> Self {
                 self.confirm = Some(confirm);
@@ -3827,7 +3850,7 @@ pub mod services {
         use super::models;
         type Response = models::Alerts;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
             pub(crate) filter: Option<String>,
@@ -3835,7 +3858,7 @@ pub mod services {
             pub(crate) from: Option<time::OffsetDateTime>,
             pub(crate) to: Option<time::OffsetDateTime>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The alert property filter to apply."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -3937,12 +3960,12 @@ pub mod services {
         use super::models;
         type Response = models::Result;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
             pub(crate) feature_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -3987,11 +4010,11 @@ pub mod services {
         use super::models;
         type Response = models::ErrorCounts;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as the continuation token is not part of the response schema"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -4036,12 +4059,12 @@ pub mod services {
         use super::models;
         type Response = models::MergedExportErrors;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
             pub(crate) error_bucket: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as the continuation token is not part of the response schema"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -4088,11 +4111,11 @@ pub mod services {
         use super::models;
         type Response = models::ExportStatuses;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -4162,12 +4185,12 @@ pub mod services {
         use super::models;
         type Response = models::AlertFeedback;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
             pub(crate) alert_feedback: models::AlertFeedback,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -4212,12 +4235,12 @@ pub mod services {
         use super::models;
         type Response = models::AlertFeedbacks;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
             pub(crate) short_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as the continuation token is not part of the response schema"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -4263,13 +4286,13 @@ pub mod services {
         use super::models;
         type Response = models::Metrics;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
             pub(crate) metric_name: String,
             pub(crate) group_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -4341,13 +4364,13 @@ pub mod services {
         use super::models;
         type Response = models::Metrics;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
             pub(crate) metric_name: String,
             pub(crate) group_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -4419,13 +4442,13 @@ pub mod services {
         use super::models;
         type Response = models::MetricMetadataList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
             pub(crate) filter: Option<String>,
             pub(crate) perf_counter: Option<bool>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The metric metadata property filter to apply."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -4513,12 +4536,12 @@ pub mod services {
         use super::models;
         type Response = models::MetricMetadata;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
             pub(crate) metric_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -4563,7 +4586,7 @@ pub mod services {
         use super::models;
         type Response = models::MetricSets;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
             pub(crate) metric_name: String,
@@ -4572,7 +4595,7 @@ pub mod services {
             pub(crate) from_date: Option<time::OffsetDateTime>,
             pub(crate) to_date: Option<time::OffsetDateTime>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The group key"]
             pub fn group_key(mut self, group_key: impl Into<String>) -> Self {
                 self.group_key = Some(group_key.into());
@@ -4642,12 +4665,12 @@ pub mod services {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
             pub(crate) configuration_setting: models::Item,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -4688,11 +4711,11 @@ pub mod services {
         use super::models;
         type Response = models::Items;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as the continuation token is not part of the response schema"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -4737,12 +4760,12 @@ pub mod services {
         use super::models;
         type Response = models::ErrorReportUsersEntries;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
             pub(crate) data_source: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The source of data, if its test data or customer data."]
             pub fn data_source(mut self, data_source: impl Into<String>) -> Self {
                 self.data_source = Some(data_source.into());
@@ -4795,12 +4818,12 @@ pub mod services {
         use super::models;
         type Response = models::Result;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
             pub(crate) feature_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -4845,11 +4868,11 @@ pub mod services {
         use super::models;
         type Response = models::RiskyIpBlobUris;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as the continuation token is not part of the response schema"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -4894,11 +4917,11 @@ pub mod services {
         use super::models;
         type Response = models::RiskyIpBlobUris;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as the continuation token is not part of the response schema"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -4956,8 +4979,8 @@ pub mod service {
             service_name: impl Into<String>,
             metric_name: impl Into<String>,
             group_name: impl Into<String>,
-        ) -> get_metrics::Builder {
-            get_metrics::Builder {
+        ) -> get_metrics::RequestBuilder {
+            get_metrics::RequestBuilder {
                 client: self.0.clone(),
                 service_name: service_name.into(),
                 metric_name: metric_name.into(),
@@ -4972,7 +4995,7 @@ pub mod service {
         use super::models;
         type Response = models::MetricSets;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
             pub(crate) metric_name: String,
@@ -4981,7 +5004,7 @@ pub mod service {
             pub(crate) from_date: Option<time::OffsetDateTime>,
             pub(crate) to_date: Option<time::OffsetDateTime>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The group key"]
             pub fn group_key(mut self, group_key: impl Into<String>) -> Self {
                 self.group_key = Some(group_key.into());
@@ -5056,8 +5079,8 @@ pub mod service_members {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `service_name`: The name of the service."]
-        pub fn list(&self, service_name: impl Into<String>) -> list::Builder {
-            list::Builder {
+        pub fn list(&self, service_name: impl Into<String>) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 service_name: service_name.into(),
                 filter: None,
@@ -5070,8 +5093,8 @@ pub mod service_members {
         #[doc = "Arguments:"]
         #[doc = "* `service_name`: The name of the service under which the server is to be onboarded."]
         #[doc = "* `service_member`: The server object."]
-        pub fn add(&self, service_name: impl Into<String>, service_member: impl Into<models::ServiceMember>) -> add::Builder {
-            add::Builder {
+        pub fn add(&self, service_name: impl Into<String>, service_member: impl Into<models::ServiceMember>) -> add::RequestBuilder {
+            add::RequestBuilder {
                 client: self.0.clone(),
                 service_name: service_name.into(),
                 service_member: service_member.into(),
@@ -5082,8 +5105,8 @@ pub mod service_members {
         #[doc = "Arguments:"]
         #[doc = "* `service_name`: The name of the service."]
         #[doc = "* `service_member_id`: The server Id."]
-        pub fn get(&self, service_name: impl Into<String>, service_member_id: impl Into<String>) -> get::Builder {
-            get::Builder {
+        pub fn get(&self, service_name: impl Into<String>, service_member_id: impl Into<String>) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 service_name: service_name.into(),
                 service_member_id: service_member_id.into(),
@@ -5094,8 +5117,8 @@ pub mod service_members {
         #[doc = "Arguments:"]
         #[doc = "* `service_name`: The name of the service."]
         #[doc = "* `service_member_id`: The server Id."]
-        pub fn delete(&self, service_name: impl Into<String>, service_member_id: impl Into<String>) -> delete::Builder {
-            delete::Builder {
+        pub fn delete(&self, service_name: impl Into<String>, service_member_id: impl Into<String>) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 service_name: service_name.into(),
                 service_member_id: service_member_id.into(),
@@ -5107,8 +5130,8 @@ pub mod service_members {
         #[doc = "Arguments:"]
         #[doc = "* `service_member_id`: The server Id for which the alert details needs to be queried."]
         #[doc = "* `service_name`: The name of the service."]
-        pub fn list_alerts(&self, service_member_id: impl Into<String>, service_name: impl Into<String>) -> list_alerts::Builder {
-            list_alerts::Builder {
+        pub fn list_alerts(&self, service_member_id: impl Into<String>, service_name: impl Into<String>) -> list_alerts::RequestBuilder {
+            list_alerts::RequestBuilder {
                 client: self.0.clone(),
                 service_member_id: service_member_id.into(),
                 service_name: service_name.into(),
@@ -5123,8 +5146,12 @@ pub mod service_members {
         #[doc = "Arguments:"]
         #[doc = "* `service_name`: The name of the service."]
         #[doc = "* `service_member_id`: The server Id."]
-        pub fn list_connectors(&self, service_name: impl Into<String>, service_member_id: impl Into<String>) -> list_connectors::Builder {
-            list_connectors::Builder {
+        pub fn list_connectors(
+            &self,
+            service_name: impl Into<String>,
+            service_member_id: impl Into<String>,
+        ) -> list_connectors::RequestBuilder {
+            list_connectors::RequestBuilder {
                 client: self.0.clone(),
                 service_name: service_name.into(),
                 service_member_id: service_member_id.into(),
@@ -5135,8 +5162,12 @@ pub mod service_members {
         #[doc = "Arguments:"]
         #[doc = "* `service_name`: The name of the service."]
         #[doc = "* `service_member_id`: The server Id."]
-        pub fn list_credentials(&self, service_name: impl Into<String>, service_member_id: impl Into<String>) -> list_credentials::Builder {
-            list_credentials::Builder {
+        pub fn list_credentials(
+            &self,
+            service_name: impl Into<String>,
+            service_member_id: impl Into<String>,
+        ) -> list_credentials::RequestBuilder {
+            list_credentials::RequestBuilder {
                 client: self.0.clone(),
                 service_name: service_name.into(),
                 service_member_id: service_member_id.into(),
@@ -5148,8 +5179,8 @@ pub mod service_members {
         #[doc = "Arguments:"]
         #[doc = "* `service_name`: The name of the service."]
         #[doc = "* `service_member_id`: The server Id."]
-        pub fn delete_data(&self, service_name: impl Into<String>, service_member_id: impl Into<String>) -> delete_data::Builder {
-            delete_data::Builder {
+        pub fn delete_data(&self, service_name: impl Into<String>, service_member_id: impl Into<String>) -> delete_data::RequestBuilder {
+            delete_data::RequestBuilder {
                 client: self.0.clone(),
                 service_name: service_name.into(),
                 service_member_id: service_member_id.into(),
@@ -5164,8 +5195,8 @@ pub mod service_members {
             &self,
             service_name: impl Into<String>,
             service_member_id: impl Into<String>,
-        ) -> list_data_freshness::Builder {
-            list_data_freshness::Builder {
+        ) -> list_data_freshness::RequestBuilder {
+            list_data_freshness::RequestBuilder {
                 client: self.0.clone(),
                 service_name: service_name.into(),
                 service_member_id: service_member_id.into(),
@@ -5180,8 +5211,8 @@ pub mod service_members {
             &self,
             service_name: impl Into<String>,
             service_member_id: impl Into<String>,
-        ) -> list_export_status::Builder {
-            list_export_status::Builder {
+        ) -> list_export_status::RequestBuilder {
+            list_export_status::RequestBuilder {
                 client: self.0.clone(),
                 service_name: service_name.into(),
                 service_member_id: service_member_id.into(),
@@ -5196,8 +5227,8 @@ pub mod service_members {
             &self,
             service_name: impl Into<String>,
             service_member_id: impl Into<String>,
-        ) -> list_global_configuration::Builder {
-            list_global_configuration::Builder {
+        ) -> list_global_configuration::RequestBuilder {
+            list_global_configuration::RequestBuilder {
                 client: self.0.clone(),
                 service_name: service_name.into(),
                 service_member_id: service_member_id.into(),
@@ -5216,8 +5247,8 @@ pub mod service_members {
             metric_name: impl Into<String>,
             group_name: impl Into<String>,
             service_member_id: impl Into<String>,
-        ) -> get_metrics::Builder {
-            get_metrics::Builder {
+        ) -> get_metrics::RequestBuilder {
+            get_metrics::RequestBuilder {
                 client: self.0.clone(),
                 service_name: service_name.into(),
                 metric_name: metric_name.into(),
@@ -5237,8 +5268,8 @@ pub mod service_members {
             &self,
             service_name: impl Into<String>,
             service_member_id: impl Into<String>,
-        ) -> get_service_configuration::Builder {
-            get_service_configuration::Builder {
+        ) -> get_service_configuration::RequestBuilder {
+            get_service_configuration::RequestBuilder {
                 client: self.0.clone(),
                 service_name: service_name.into(),
                 service_member_id: service_member_id.into(),
@@ -5255,8 +5286,8 @@ pub mod service_members {
             service_name: impl Into<String>,
             service_member_id: impl Into<String>,
             metric_name: impl Into<String>,
-        ) -> get_connector_metadata::Builder {
-            get_connector_metadata::Builder {
+        ) -> get_connector_metadata::RequestBuilder {
+            get_connector_metadata::RequestBuilder {
                 client: self.0.clone(),
                 service_name: service_name.into(),
                 service_member_id: service_member_id.into(),
@@ -5268,14 +5299,14 @@ pub mod service_members {
         use super::models;
         type Response = models::ServiceMembers;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
             pub(crate) filter: Option<String>,
             pub(crate) dimension_type: Option<String>,
             pub(crate) dimension_signature: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The server property filter to apply."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -5371,12 +5402,12 @@ pub mod service_members {
         use super::models;
         type Response = models::ServiceMember;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
             pub(crate) service_member: models::ServiceMember,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -5421,12 +5452,12 @@ pub mod service_members {
         use super::models;
         type Response = models::ServiceMember;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
             pub(crate) service_member_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -5471,13 +5502,13 @@ pub mod service_members {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
             pub(crate) service_member_id: String,
             pub(crate) confirm: Option<bool>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Indicates if the server will be permanently deleted or disabled. True indicates that the server will be permanently deleted and False indicates that the server will be marked disabled and then deleted after 30 days, if it is not re-registered."]
             pub fn confirm(mut self, confirm: bool) -> Self {
                 self.confirm = Some(confirm);
@@ -5526,7 +5557,7 @@ pub mod service_members {
         use super::models;
         type Response = models::Alerts;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) service_member_id: String,
             pub(crate) service_name: String,
@@ -5535,7 +5566,7 @@ pub mod service_members {
             pub(crate) from: Option<time::OffsetDateTime>,
             pub(crate) to: Option<time::OffsetDateTime>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The alert property filter to apply."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -5638,12 +5669,12 @@ pub mod service_members {
         use super::models;
         type Response = models::Connectors;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
             pub(crate) service_member_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as the continuation token is not part of the response schema"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -5689,13 +5720,13 @@ pub mod service_members {
         use super::models;
         type Response = models::Credentials;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
             pub(crate) service_member_id: String,
             pub(crate) filter: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The property filter to apply."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -5749,12 +5780,12 @@ pub mod service_members {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
             pub(crate) service_member_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -5795,12 +5826,12 @@ pub mod service_members {
         use super::models;
         type Response = models::DataFreshnessDetails;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
             pub(crate) service_member_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as the continuation token is not part of the response schema"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -5846,12 +5877,12 @@ pub mod service_members {
         use super::models;
         type Response = models::ExportStatuses;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
             pub(crate) service_member_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -5922,12 +5953,12 @@ pub mod service_members {
         use super::models;
         type Response = models::GlobalConfigurations;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
             pub(crate) service_member_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as the continuation token is not part of the response schema"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -5973,7 +6004,7 @@ pub mod service_members {
         use super::models;
         type Response = models::MetricSets;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
             pub(crate) metric_name: String,
@@ -5983,7 +6014,7 @@ pub mod service_members {
             pub(crate) from_date: Option<time::OffsetDateTime>,
             pub(crate) to_date: Option<time::OffsetDateTime>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The group key"]
             pub fn group_key(mut self, group_key: impl Into<String>) -> Self {
                 self.group_key = Some(group_key.into());
@@ -6054,12 +6085,12 @@ pub mod service_members {
         use super::models;
         type Response = models::ServiceConfiguration;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
             pub(crate) service_member_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -6104,13 +6135,13 @@ pub mod service_members {
         use super::models;
         type Response = models::ConnectorMetadata;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
             pub(crate) service_member_id: String,
             pub(crate) metric_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -6161,8 +6192,11 @@ pub mod list {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `service_name`: The name of the service."]
-        pub fn ip_address_aggregates_by_service(&self, service_name: impl Into<String>) -> ip_address_aggregates_by_service::Builder {
-            ip_address_aggregates_by_service::Builder {
+        pub fn ip_address_aggregates_by_service(
+            &self,
+            service_name: impl Into<String>,
+        ) -> ip_address_aggregates_by_service::RequestBuilder {
+            ip_address_aggregates_by_service::RequestBuilder {
                 client: self.0.clone(),
                 service_name: service_name.into(),
                 skiptoken: None,
@@ -6172,8 +6206,8 @@ pub mod list {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `service_name`: The name of the service."]
-        pub fn ip_address_aggregate_settings(&self, service_name: impl Into<String>) -> ip_address_aggregate_settings::Builder {
-            ip_address_aggregate_settings::Builder {
+        pub fn ip_address_aggregate_settings(&self, service_name: impl Into<String>) -> ip_address_aggregate_settings::RequestBuilder {
+            ip_address_aggregate_settings::RequestBuilder {
                 client: self.0.clone(),
                 service_name: service_name.into(),
             }
@@ -6183,12 +6217,12 @@ pub mod list {
         use super::models;
         type Response = models::IpAddressAggregates;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
             pub(crate) skiptoken: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "A continuationtoken value returned in paginated result to load different pages."]
             pub fn skiptoken(mut self, skiptoken: impl Into<String>) -> Self {
                 self.skiptoken = Some(skiptoken.into());
@@ -6266,11 +6300,11 @@ pub mod list {
         use super::models;
         type Response = models::IpAddressAggregateSetting;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -6324,8 +6358,8 @@ pub mod update {
             &self,
             service_name: impl Into<String>,
             ip_address_aggregate_setting: impl Into<models::IpAddressAggregateSetting>,
-        ) -> ip_address_aggregate_settings::Builder {
-            ip_address_aggregate_settings::Builder {
+        ) -> ip_address_aggregate_settings::RequestBuilder {
+            ip_address_aggregate_settings::RequestBuilder {
                 client: self.0.clone(),
                 service_name: service_name.into(),
                 ip_address_aggregate_setting: ip_address_aggregate_setting.into(),
@@ -6336,12 +6370,12 @@ pub mod update {
         use super::models;
         type Response = models::IpAddressAggregateSetting;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) service_name: String,
             pub(crate) ip_address_aggregate_setting: models::IpAddressAggregateSetting,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();

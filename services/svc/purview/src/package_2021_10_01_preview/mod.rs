@@ -136,41 +136,41 @@ pub mod key_vault_connections {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets key vault information"]
-        pub fn get(&self, key_vault_name: impl Into<String>) -> get::Builder {
-            get::Builder {
+        pub fn get(&self, key_vault_name: impl Into<String>) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 key_vault_name: key_vault_name.into(),
             }
         }
         #[doc = "Creates an instance of a key vault connection"]
-        pub fn create(&self, key_vault_name: impl Into<String>, body: impl Into<models::AzureKeyVault>) -> create::Builder {
-            create::Builder {
+        pub fn create(&self, key_vault_name: impl Into<String>, body: impl Into<models::AzureKeyVault>) -> create::RequestBuilder {
+            create::RequestBuilder {
                 client: self.0.clone(),
                 key_vault_name: key_vault_name.into(),
                 body: body.into(),
             }
         }
         #[doc = "Deletes the key vault connection associated with the account"]
-        pub fn delete(&self, key_vault_name: impl Into<String>) -> delete::Builder {
-            delete::Builder {
+        pub fn delete(&self, key_vault_name: impl Into<String>) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 key_vault_name: key_vault_name.into(),
             }
         }
         #[doc = "List key vault connections in account"]
-        pub fn list_all(&self) -> list_all::Builder {
-            list_all::Builder { client: self.0.clone() }
+        pub fn list_all(&self) -> list_all::RequestBuilder {
+            list_all::RequestBuilder { client: self.0.clone() }
         }
     }
     pub mod get {
         use super::models;
         type Response = models::AzureKeyVault;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) key_vault_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -210,12 +210,12 @@ pub mod key_vault_connections {
         use super::models;
         type Response = models::AzureKeyVault;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) key_vault_name: String,
             pub(crate) body: models::AzureKeyVault,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -260,11 +260,11 @@ pub mod key_vault_connections {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) key_vault_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -305,10 +305,10 @@ pub mod key_vault_connections {
         use super::models;
         type Response = models::AzureKeyVaultList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -376,37 +376,37 @@ pub mod classification_rules {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get a classification rule"]
-        pub fn get(&self, classification_rule_name: impl Into<String>) -> get::Builder {
-            get::Builder {
+        pub fn get(&self, classification_rule_name: impl Into<String>) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 classification_rule_name: classification_rule_name.into(),
             }
         }
         #[doc = "Creates or Updates a classification rule"]
-        pub fn create_or_update(&self, classification_rule_name: impl Into<String>) -> create_or_update::Builder {
-            create_or_update::Builder {
+        pub fn create_or_update(&self, classification_rule_name: impl Into<String>) -> create_or_update::RequestBuilder {
+            create_or_update::RequestBuilder {
                 client: self.0.clone(),
                 classification_rule_name: classification_rule_name.into(),
                 body: None,
             }
         }
         #[doc = "Deletes a classification rule"]
-        pub fn delete(&self, classification_rule_name: impl Into<String>) -> delete::Builder {
-            delete::Builder {
+        pub fn delete(&self, classification_rule_name: impl Into<String>) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 classification_rule_name: classification_rule_name.into(),
             }
         }
         #[doc = "List classification rules in Account"]
-        pub fn list_all(&self) -> list_all::Builder {
-            list_all::Builder { client: self.0.clone() }
+        pub fn list_all(&self) -> list_all::RequestBuilder {
+            list_all::RequestBuilder { client: self.0.clone() }
         }
         #[doc = "Lists the rule versions of a classification rule"]
         pub fn list_versions_by_classification_rule_name(
             &self,
             classification_rule_name: impl Into<String>,
-        ) -> list_versions_by_classification_rule_name::Builder {
-            list_versions_by_classification_rule_name::Builder {
+        ) -> list_versions_by_classification_rule_name::RequestBuilder {
+            list_versions_by_classification_rule_name::RequestBuilder {
                 client: self.0.clone(),
                 classification_rule_name: classification_rule_name.into(),
             }
@@ -417,8 +417,8 @@ pub mod classification_rules {
             classification_rule_name: impl Into<String>,
             classification_rule_version: i32,
             action: impl Into<String>,
-        ) -> tag_classification_version::Builder {
-            tag_classification_version::Builder {
+        ) -> tag_classification_version::RequestBuilder {
+            tag_classification_version::RequestBuilder {
                 client: self.0.clone(),
                 classification_rule_name: classification_rule_name.into(),
                 classification_rule_version,
@@ -430,11 +430,11 @@ pub mod classification_rules {
         use super::models;
         type Response = models::ClassificationRule;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) classification_rule_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -482,12 +482,12 @@ pub mod classification_rules {
             Created201(models::ClassificationRule),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) classification_rule_name: String,
             pub(crate) body: Option<models::ClassificationRule>,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn body(mut self, body: impl Into<models::ClassificationRule>) -> Self {
                 self.body = Some(body.into());
                 self
@@ -549,11 +549,11 @@ pub mod classification_rules {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) classification_rule_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -598,10 +598,10 @@ pub mod classification_rules {
         use super::models;
         type Response = models::ClassificationRuleList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -667,11 +667,11 @@ pub mod classification_rules {
         use super::models;
         type Response = models::ClassificationRuleList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) classification_rule_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -741,13 +741,13 @@ pub mod classification_rules {
         use super::models;
         type Response = models::OperationResponse;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) classification_rule_name: String,
             pub(crate) classification_rule_version: i32,
             pub(crate) action: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -797,41 +797,41 @@ pub mod data_sources {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get a data source"]
-        pub fn get(&self, data_source_name: impl Into<String>) -> get::Builder {
-            get::Builder {
+        pub fn get(&self, data_source_name: impl Into<String>) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 data_source_name: data_source_name.into(),
             }
         }
         #[doc = "Creates or Updates a data source"]
-        pub fn create_or_update(&self, data_source_name: impl Into<String>) -> create_or_update::Builder {
-            create_or_update::Builder {
+        pub fn create_or_update(&self, data_source_name: impl Into<String>) -> create_or_update::RequestBuilder {
+            create_or_update::RequestBuilder {
                 client: self.0.clone(),
                 data_source_name: data_source_name.into(),
                 body: None,
             }
         }
         #[doc = "Deletes a data source"]
-        pub fn delete(&self, data_source_name: impl Into<String>) -> delete::Builder {
-            delete::Builder {
+        pub fn delete(&self, data_source_name: impl Into<String>) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 data_source_name: data_source_name.into(),
             }
         }
         #[doc = "List data sources in Data catalog"]
-        pub fn list_all(&self) -> list_all::Builder {
-            list_all::Builder { client: self.0.clone() }
+        pub fn list_all(&self) -> list_all::RequestBuilder {
+            list_all::RequestBuilder { client: self.0.clone() }
         }
     }
     pub mod get {
         use super::models;
         type Response = models::DataSource;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) data_source_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -875,12 +875,12 @@ pub mod data_sources {
             Created201(models::DataSource),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) data_source_name: String,
             pub(crate) body: Option<models::DataSource>,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn body(mut self, body: impl Into<models::DataSource>) -> Self {
                 self.body = Some(body.into());
                 self
@@ -938,11 +938,11 @@ pub mod data_sources {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) data_source_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -983,10 +983,10 @@ pub mod data_sources {
         use super::models;
         type Response = models::DataSourceList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -1054,16 +1054,20 @@ pub mod filters {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get a filter"]
-        pub fn get(&self, data_source_name: impl Into<String>, scan_name: impl Into<String>) -> get::Builder {
-            get::Builder {
+        pub fn get(&self, data_source_name: impl Into<String>, scan_name: impl Into<String>) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 data_source_name: data_source_name.into(),
                 scan_name: scan_name.into(),
             }
         }
         #[doc = "Creates or updates a filter"]
-        pub fn create_or_update(&self, data_source_name: impl Into<String>, scan_name: impl Into<String>) -> create_or_update::Builder {
-            create_or_update::Builder {
+        pub fn create_or_update(
+            &self,
+            data_source_name: impl Into<String>,
+            scan_name: impl Into<String>,
+        ) -> create_or_update::RequestBuilder {
+            create_or_update::RequestBuilder {
                 client: self.0.clone(),
                 data_source_name: data_source_name.into(),
                 scan_name: scan_name.into(),
@@ -1075,12 +1079,12 @@ pub mod filters {
         use super::models;
         type Response = models::Filter;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) data_source_name: String,
             pub(crate) scan_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1129,13 +1133,13 @@ pub mod filters {
             Created201(models::Filter),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) data_source_name: String,
             pub(crate) scan_name: String,
             pub(crate) body: Option<models::Filter>,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn body(mut self, body: impl Into<models::Filter>) -> Self {
                 self.body = Some(body.into());
                 self
@@ -1196,8 +1200,8 @@ pub mod scans {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets a scan information"]
-        pub fn get(&self, data_source_name: impl Into<String>, scan_name: impl Into<String>) -> get::Builder {
-            get::Builder {
+        pub fn get(&self, data_source_name: impl Into<String>, scan_name: impl Into<String>) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 data_source_name: data_source_name.into(),
                 scan_name: scan_name.into(),
@@ -1209,8 +1213,8 @@ pub mod scans {
             data_source_name: impl Into<String>,
             scan_name: impl Into<String>,
             body: impl Into<models::Scan>,
-        ) -> create_or_update::Builder {
-            create_or_update::Builder {
+        ) -> create_or_update::RequestBuilder {
+            create_or_update::RequestBuilder {
                 client: self.0.clone(),
                 data_source_name: data_source_name.into(),
                 scan_name: scan_name.into(),
@@ -1218,16 +1222,16 @@ pub mod scans {
             }
         }
         #[doc = "Deletes the scan associated with the data source"]
-        pub fn delete(&self, data_source_name: impl Into<String>, scan_name: impl Into<String>) -> delete::Builder {
-            delete::Builder {
+        pub fn delete(&self, data_source_name: impl Into<String>, scan_name: impl Into<String>) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 data_source_name: data_source_name.into(),
                 scan_name: scan_name.into(),
             }
         }
         #[doc = "List scans in data source"]
-        pub fn list_by_data_source(&self, data_source_name: impl Into<String>) -> list_by_data_source::Builder {
-            list_by_data_source::Builder {
+        pub fn list_by_data_source(&self, data_source_name: impl Into<String>) -> list_by_data_source::RequestBuilder {
+            list_by_data_source::RequestBuilder {
                 client: self.0.clone(),
                 data_source_name: data_source_name.into(),
             }
@@ -1237,12 +1241,12 @@ pub mod scans {
         use super::models;
         type Response = models::Scan;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) data_source_name: String,
             pub(crate) scan_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1291,13 +1295,13 @@ pub mod scans {
             Created201(models::Scan),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) data_source_name: String,
             pub(crate) scan_name: String,
             pub(crate) body: models::Scan,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1352,12 +1356,12 @@ pub mod scans {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) data_source_name: String,
             pub(crate) scan_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1403,11 +1407,11 @@ pub mod scans {
         use super::models;
         type Response = models::ScanList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) data_source_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -1481,8 +1485,8 @@ pub mod scan_result {
             data_source_name: impl Into<String>,
             scan_name: impl Into<String>,
             run_id: impl Into<String>,
-        ) -> run_scan::Builder {
-            run_scan::Builder {
+        ) -> run_scan::RequestBuilder {
+            run_scan::RequestBuilder {
                 client: self.0.clone(),
                 data_source_name: data_source_name.into(),
                 scan_name: scan_name.into(),
@@ -1496,8 +1500,8 @@ pub mod scan_result {
             data_source_name: impl Into<String>,
             scan_name: impl Into<String>,
             run_id: impl Into<String>,
-        ) -> cancel_scan::Builder {
-            cancel_scan::Builder {
+        ) -> cancel_scan::RequestBuilder {
+            cancel_scan::RequestBuilder {
                 client: self.0.clone(),
                 data_source_name: data_source_name.into(),
                 scan_name: scan_name.into(),
@@ -1505,8 +1509,12 @@ pub mod scan_result {
             }
         }
         #[doc = "Lists the scan history of a scan"]
-        pub fn list_scan_history(&self, data_source_name: impl Into<String>, scan_name: impl Into<String>) -> list_scan_history::Builder {
-            list_scan_history::Builder {
+        pub fn list_scan_history(
+            &self,
+            data_source_name: impl Into<String>,
+            scan_name: impl Into<String>,
+        ) -> list_scan_history::RequestBuilder {
+            list_scan_history::RequestBuilder {
                 client: self.0.clone(),
                 data_source_name: data_source_name.into(),
                 scan_name: scan_name.into(),
@@ -1517,14 +1525,14 @@ pub mod scan_result {
         use super::models;
         type Response = models::OperationResponse;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) data_source_name: String,
             pub(crate) scan_name: String,
             pub(crate) run_id: String,
             pub(crate) scan_level: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn scan_level(mut self, scan_level: impl Into<String>) -> Self {
                 self.scan_level = Some(scan_level.into());
                 self
@@ -1577,13 +1585,13 @@ pub mod scan_result {
         use super::models;
         type Response = models::OperationResponse;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) data_source_name: String,
             pub(crate) scan_name: String,
             pub(crate) run_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1630,12 +1638,12 @@ pub mod scan_result {
         use super::models;
         type Response = models::ScanHistoryList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) data_source_name: String,
             pub(crate) scan_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -1708,41 +1716,41 @@ pub mod scan_rulesets {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get a scan ruleset"]
-        pub fn get(&self, scan_ruleset_name: impl Into<String>) -> get::Builder {
-            get::Builder {
+        pub fn get(&self, scan_ruleset_name: impl Into<String>) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 scan_ruleset_name: scan_ruleset_name.into(),
             }
         }
         #[doc = "Creates or Updates a scan ruleset"]
-        pub fn create_or_update(&self, scan_ruleset_name: impl Into<String>) -> create_or_update::Builder {
-            create_or_update::Builder {
+        pub fn create_or_update(&self, scan_ruleset_name: impl Into<String>) -> create_or_update::RequestBuilder {
+            create_or_update::RequestBuilder {
                 client: self.0.clone(),
                 scan_ruleset_name: scan_ruleset_name.into(),
                 body: None,
             }
         }
         #[doc = "Deletes a scan ruleset"]
-        pub fn delete(&self, scan_ruleset_name: impl Into<String>) -> delete::Builder {
-            delete::Builder {
+        pub fn delete(&self, scan_ruleset_name: impl Into<String>) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 scan_ruleset_name: scan_ruleset_name.into(),
             }
         }
         #[doc = "List scan rulesets in Data catalog"]
-        pub fn list_all(&self) -> list_all::Builder {
-            list_all::Builder { client: self.0.clone() }
+        pub fn list_all(&self) -> list_all::RequestBuilder {
+            list_all::RequestBuilder { client: self.0.clone() }
         }
     }
     pub mod get {
         use super::models;
         type Response = models::ScanRuleset;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) scan_ruleset_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1786,12 +1794,12 @@ pub mod scan_rulesets {
             Created201(models::ScanRuleset),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) scan_ruleset_name: String,
             pub(crate) body: Option<models::ScanRuleset>,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn body(mut self, body: impl Into<models::ScanRuleset>) -> Self {
                 self.body = Some(body.into());
                 self
@@ -1849,11 +1857,11 @@ pub mod scan_rulesets {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) scan_ruleset_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1894,10 +1902,10 @@ pub mod scan_rulesets {
         use super::models;
         type Response = models::ScanRulesetList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -1965,34 +1973,34 @@ pub mod system_scan_rulesets {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "List all system scan rulesets for an account"]
-        pub fn list_all(&self) -> list_all::Builder {
-            list_all::Builder { client: self.0.clone() }
+        pub fn list_all(&self) -> list_all::RequestBuilder {
+            list_all::RequestBuilder { client: self.0.clone() }
         }
         #[doc = "Get a system scan ruleset for a data source"]
-        pub fn get(&self, data_source_type: impl Into<String>) -> get::Builder {
-            get::Builder {
+        pub fn get(&self, data_source_type: impl Into<String>) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 data_source_type: data_source_type.into(),
             }
         }
         #[doc = "Get a scan ruleset by version"]
-        pub fn get_by_version(&self, version: i32) -> get_by_version::Builder {
-            get_by_version::Builder {
+        pub fn get_by_version(&self, version: i32) -> get_by_version::RequestBuilder {
+            get_by_version::RequestBuilder {
                 client: self.0.clone(),
                 version,
                 data_source_type: None,
             }
         }
         #[doc = "Get the latest version of a system scan ruleset"]
-        pub fn get_latest(&self) -> get_latest::Builder {
-            get_latest::Builder {
+        pub fn get_latest(&self) -> get_latest::RequestBuilder {
+            get_latest::RequestBuilder {
                 client: self.0.clone(),
                 data_source_type: None,
             }
         }
         #[doc = "List system scan ruleset versions in Data catalog"]
-        pub fn list_versions_by_data_source(&self) -> list_versions_by_data_source::Builder {
-            list_versions_by_data_source::Builder {
+        pub fn list_versions_by_data_source(&self) -> list_versions_by_data_source::RequestBuilder {
+            list_versions_by_data_source::RequestBuilder {
                 client: self.0.clone(),
                 data_source_type: None,
             }
@@ -2002,10 +2010,10 @@ pub mod system_scan_rulesets {
         use super::models;
         type Response = models::SystemScanRulesetList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -2071,11 +2079,11 @@ pub mod system_scan_rulesets {
         use super::models;
         type Response = models::SystemScanRuleset;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) data_source_type: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2119,12 +2127,12 @@ pub mod system_scan_rulesets {
         use super::models;
         type Response = models::SystemScanRuleset;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) version: i32,
             pub(crate) data_source_type: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn data_source_type(mut self, data_source_type: impl Into<String>) -> Self {
                 self.data_source_type = Some(data_source_type.into());
                 self
@@ -2172,11 +2180,11 @@ pub mod system_scan_rulesets {
         use super::models;
         type Response = models::SystemScanRuleset;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) data_source_type: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn data_source_type(mut self, data_source_type: impl Into<String>) -> Self {
                 self.data_source_type = Some(data_source_type.into());
                 self
@@ -2223,11 +2231,11 @@ pub mod system_scan_rulesets {
         use super::models;
         type Response = models::SystemScanRulesetList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) data_source_type: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn data_source_type(mut self, data_source_type: impl Into<String>) -> Self {
                 self.data_source_type = Some(data_source_type.into());
                 self
@@ -2302,8 +2310,8 @@ pub mod triggers {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets trigger information"]
-        pub fn get_trigger(&self, data_source_name: impl Into<String>, scan_name: impl Into<String>) -> get_trigger::Builder {
-            get_trigger::Builder {
+        pub fn get_trigger(&self, data_source_name: impl Into<String>, scan_name: impl Into<String>) -> get_trigger::RequestBuilder {
+            get_trigger::RequestBuilder {
                 client: self.0.clone(),
                 data_source_name: data_source_name.into(),
                 scan_name: scan_name.into(),
@@ -2315,8 +2323,8 @@ pub mod triggers {
             data_source_name: impl Into<String>,
             scan_name: impl Into<String>,
             body: impl Into<models::Trigger>,
-        ) -> create_trigger::Builder {
-            create_trigger::Builder {
+        ) -> create_trigger::RequestBuilder {
+            create_trigger::RequestBuilder {
                 client: self.0.clone(),
                 data_source_name: data_source_name.into(),
                 scan_name: scan_name.into(),
@@ -2324,8 +2332,8 @@ pub mod triggers {
             }
         }
         #[doc = "Deletes the trigger associated with the scan"]
-        pub fn delete_trigger(&self, data_source_name: impl Into<String>, scan_name: impl Into<String>) -> delete_trigger::Builder {
-            delete_trigger::Builder {
+        pub fn delete_trigger(&self, data_source_name: impl Into<String>, scan_name: impl Into<String>) -> delete_trigger::RequestBuilder {
+            delete_trigger::RequestBuilder {
                 client: self.0.clone(),
                 data_source_name: data_source_name.into(),
                 scan_name: scan_name.into(),
@@ -2336,12 +2344,12 @@ pub mod triggers {
         use super::models;
         type Response = models::Trigger;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) data_source_name: String,
             pub(crate) scan_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2390,13 +2398,13 @@ pub mod triggers {
             Created201(models::Trigger),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) data_source_name: String,
             pub(crate) scan_name: String,
             pub(crate) body: models::Trigger,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2451,12 +2459,12 @@ pub mod triggers {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) data_source_name: String,
             pub(crate) scan_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();

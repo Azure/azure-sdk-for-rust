@@ -130,26 +130,26 @@ pub mod metadata {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `name`: Name of metadata entity."]
-        pub fn get(&self, name: impl Into<String>) -> get::Builder {
-            get::Builder {
+        pub fn get(&self, name: impl Into<String>) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 name: name.into(),
             }
         }
         #[doc = "Gets the list of metadata entities."]
-        pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.0.clone() }
+        pub fn list(&self) -> list::RequestBuilder {
+            list::RequestBuilder { client: self.0.clone() }
         }
     }
     pub mod get {
         use super::models;
         type Response = models::MetadataEntity;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -193,10 +193,10 @@ pub mod metadata {
         use super::models;
         type Response = models::MetadataEntityListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -268,26 +268,26 @@ pub mod emerging_issues {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `issue_name`: The name of the emerging issue."]
-        pub fn get(&self, issue_name: impl Into<String>) -> get::Builder {
-            get::Builder {
+        pub fn get(&self, issue_name: impl Into<String>) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 issue_name: issue_name.into(),
             }
         }
         #[doc = "Lists Azure services' emerging issues."]
-        pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.0.clone() }
+        pub fn list(&self) -> list::RequestBuilder {
+            list::RequestBuilder { client: self.0.clone() }
         }
     }
     pub mod get {
         use super::models;
         type Response = models::EmergingIssuesGetResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) issue_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -331,10 +331,10 @@ pub mod emerging_issues {
         use super::models;
         type Response = models::EmergingIssueListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -408,8 +408,8 @@ pub mod events {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
-        pub fn list_by_subscription_id(&self, subscription_id: impl Into<String>) -> list_by_subscription_id::Builder {
-            list_by_subscription_id::Builder {
+        pub fn list_by_subscription_id(&self, subscription_id: impl Into<String>) -> list_by_subscription_id::RequestBuilder {
+            list_by_subscription_id::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 filter: None,
@@ -419,8 +419,8 @@ pub mod events {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `resource_uri`: The fully qualified ID of the resource, including the resource name and resource type. Currently the API support not nested and one nesting level resource types : /subscriptions/{subscriptionId}/resourceGroups/{resource-group-name}/providers/{resource-provider-name}/{resource-type}/{resource-name} and /subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{resource-provider-name}/{parentResourceType}/{parentResourceName}/{resourceType}/{resourceName}"]
-        pub fn list_by_single_resource(&self, resource_uri: impl Into<String>) -> list_by_single_resource::Builder {
-            list_by_single_resource::Builder {
+        pub fn list_by_single_resource(&self, resource_uri: impl Into<String>) -> list_by_single_resource::RequestBuilder {
+            list_by_single_resource::RequestBuilder {
                 client: self.0.clone(),
                 resource_uri: resource_uri.into(),
                 filter: None,
@@ -431,12 +431,12 @@ pub mod events {
         use super::models;
         type Response = models::Events;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) filter: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The filter to apply on the operation. For more information please see https://docs.microsoft.com/en-us/rest/api/apimanagement/apis?redirectedfrom=MSDN"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -514,12 +514,12 @@ pub mod events {
         use super::models;
         type Response = models::Events;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_uri: String,
             pub(crate) filter: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The filter to apply on the operation. For more information please see https://docs.microsoft.com/en-us/rest/api/apimanagement/apis?redirectedfrom=MSDN"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -602,8 +602,8 @@ pub mod impacted_resources {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
-        pub fn list_by_subscription_id(&self, subscription_id: impl Into<String>) -> list_by_subscription_id::Builder {
-            list_by_subscription_id::Builder {
+        pub fn list_by_subscription_id(&self, subscription_id: impl Into<String>) -> list_by_subscription_id::RequestBuilder {
+            list_by_subscription_id::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 filter: None,
@@ -614,12 +614,12 @@ pub mod impacted_resources {
         use super::models;
         type Response = models::ImpactedResourceListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) filter: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The filter to apply on the operation. For more information please see https://docs.microsoft.com/en-us/rest/api/apimanagement/apis?redirectedfrom=MSDN"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -702,8 +702,8 @@ pub mod availability_statuses {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
-        pub fn list_by_subscription_id(&self, subscription_id: impl Into<String>) -> list_by_subscription_id::Builder {
-            list_by_subscription_id::Builder {
+        pub fn list_by_subscription_id(&self, subscription_id: impl Into<String>) -> list_by_subscription_id::RequestBuilder {
+            list_by_subscription_id::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 filter: None,
@@ -719,8 +719,8 @@ pub mod availability_statuses {
             &self,
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
-        ) -> list_by_resource_group::Builder {
-            list_by_resource_group::Builder {
+        ) -> list_by_resource_group::RequestBuilder {
+            list_by_resource_group::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -732,8 +732,8 @@ pub mod availability_statuses {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `resource_uri`: The fully qualified ID of the resource, including the resource name and resource type. Currently the API support not nested and one nesting level resource types : /subscriptions/{subscriptionId}/resourceGroups/{resource-group-name}/providers/{resource-provider-name}/{resource-type}/{resource-name} and /subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{resource-provider-name}/{parentResourceType}/{parentResourceName}/{resourceType}/{resourceName}"]
-        pub fn get_by_resource(&self, resource_uri: impl Into<String>) -> get_by_resource::Builder {
-            get_by_resource::Builder {
+        pub fn get_by_resource(&self, resource_uri: impl Into<String>) -> get_by_resource::RequestBuilder {
+            get_by_resource::RequestBuilder {
                 client: self.0.clone(),
                 resource_uri: resource_uri.into(),
                 filter: None,
@@ -744,8 +744,8 @@ pub mod availability_statuses {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `resource_uri`: The fully qualified ID of the resource, including the resource name and resource type. Currently the API support not nested and one nesting level resource types : /subscriptions/{subscriptionId}/resourceGroups/{resource-group-name}/providers/{resource-provider-name}/{resource-type}/{resource-name} and /subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{resource-provider-name}/{parentResourceType}/{parentResourceName}/{resourceType}/{resourceName}"]
-        pub fn list(&self, resource_uri: impl Into<String>) -> list::Builder {
-            list::Builder {
+        pub fn list(&self, resource_uri: impl Into<String>) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 resource_uri: resource_uri.into(),
                 filter: None,
@@ -757,13 +757,13 @@ pub mod availability_statuses {
         use super::models;
         type Response = models::AvailabilityStatusListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) filter: Option<String>,
             pub(crate) expand: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The filter to apply on the operation. For more information please see https://docs.microsoft.com/en-us/rest/api/apimanagement/apis?redirectedfrom=MSDN"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -849,14 +849,14 @@ pub mod availability_statuses {
         use super::models;
         type Response = models::AvailabilityStatusListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) filter: Option<String>,
             pub(crate) expand: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The filter to apply on the operation. For more information please see https://docs.microsoft.com/en-us/rest/api/apimanagement/apis?redirectedfrom=MSDN"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -943,13 +943,13 @@ pub mod availability_statuses {
         use super::models;
         type Response = models::AvailabilityStatus;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_uri: String,
             pub(crate) filter: Option<String>,
             pub(crate) expand: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The filter to apply on the operation. For more information please see https://docs.microsoft.com/en-us/rest/api/apimanagement/apis?redirectedfrom=MSDN"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -1009,13 +1009,13 @@ pub mod availability_statuses {
         use super::models;
         type Response = models::AvailabilityStatusListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_uri: String,
             pub(crate) filter: Option<String>,
             pub(crate) expand: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The filter to apply on the operation. For more information please see https://docs.microsoft.com/en-us/rest/api/apimanagement/apis?redirectedfrom=MSDN"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -1103,18 +1103,18 @@ pub mod operations {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Lists available operations for the resourcehealth resource provider"]
-        pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.0.clone() }
+        pub fn list(&self) -> list::RequestBuilder {
+            list::RequestBuilder { client: self.0.clone() }
         }
     }
     pub mod list {
         use super::models;
         type Response = models::OperationListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();

@@ -127,18 +127,18 @@ pub mod operations {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Lists all of the available Microsoft.Education API operations."]
-        pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.0.clone() }
+        pub fn list(&self) -> list::RequestBuilder {
+            list::RequestBuilder { client: self.0.clone() }
         }
     }
     pub mod list {
         use super::models;
         type Response = models::OperationListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -180,8 +180,8 @@ pub mod grants {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get a list of grants that Microsoft has provided."]
-        pub fn list_all(&self) -> list_all::Builder {
-            list_all::Builder {
+        pub fn list_all(&self) -> list_all::RequestBuilder {
+            list_all::RequestBuilder {
                 client: self.0.clone(),
                 include_allocated_budget: None,
             }
@@ -191,8 +191,8 @@ pub mod grants {
         #[doc = "Arguments:"]
         #[doc = "* `billing_account_name`: Billing account name."]
         #[doc = "* `billing_profile_name`: Billing profile name."]
-        pub fn list(&self, billing_account_name: impl Into<String>, billing_profile_name: impl Into<String>) -> list::Builder {
-            list::Builder {
+        pub fn list(&self, billing_account_name: impl Into<String>, billing_profile_name: impl Into<String>) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 billing_account_name: billing_account_name.into(),
                 billing_profile_name: billing_profile_name.into(),
@@ -204,8 +204,8 @@ pub mod grants {
         #[doc = "Arguments:"]
         #[doc = "* `billing_account_name`: Billing account name."]
         #[doc = "* `billing_profile_name`: Billing profile name."]
-        pub fn get(&self, billing_account_name: impl Into<String>, billing_profile_name: impl Into<String>) -> get::Builder {
-            get::Builder {
+        pub fn get(&self, billing_account_name: impl Into<String>, billing_profile_name: impl Into<String>) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 billing_account_name: billing_account_name.into(),
                 billing_profile_name: billing_profile_name.into(),
@@ -217,11 +217,11 @@ pub mod grants {
         use super::models;
         type Response = models::GrantListResponse;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) include_allocated_budget: Option<bool>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "May be used to include information about budget that has been allocated."]
             pub fn include_allocated_budget(mut self, include_allocated_budget: bool) -> Self {
                 self.include_allocated_budget = Some(include_allocated_budget);
@@ -297,13 +297,13 @@ pub mod grants {
         use super::models;
         type Response = models::GrantListResponse;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) billing_account_name: String,
             pub(crate) billing_profile_name: String,
             pub(crate) include_allocated_budget: Option<bool>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "May be used to include information about budget that has been allocated."]
             pub fn include_allocated_budget(mut self, include_allocated_budget: bool) -> Self {
                 self.include_allocated_budget = Some(include_allocated_budget);
@@ -384,13 +384,13 @@ pub mod grants {
         use super::models;
         type Response = models::GrantDetails;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) billing_account_name: String,
             pub(crate) billing_profile_name: String,
             pub(crate) include_allocated_budget: Option<bool>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "May be used to include information about budget that has been allocated."]
             pub fn include_allocated_budget(mut self, include_allocated_budget: bool) -> Self {
                 self.include_allocated_budget = Some(include_allocated_budget);
@@ -446,8 +446,12 @@ pub mod labs {
         #[doc = "Arguments:"]
         #[doc = "* `billing_account_name`: Billing account name."]
         #[doc = "* `billing_profile_name`: Billing profile name."]
-        pub fn list_all(&self, billing_account_name: impl Into<String>, billing_profile_name: impl Into<String>) -> list_all::Builder {
-            list_all::Builder {
+        pub fn list_all(
+            &self,
+            billing_account_name: impl Into<String>,
+            billing_profile_name: impl Into<String>,
+        ) -> list_all::RequestBuilder {
+            list_all::RequestBuilder {
                 client: self.0.clone(),
                 billing_account_name: billing_account_name.into(),
                 billing_profile_name: billing_profile_name.into(),
@@ -466,8 +470,8 @@ pub mod labs {
             billing_account_name: impl Into<String>,
             billing_profile_name: impl Into<String>,
             invoice_section_name: impl Into<String>,
-        ) -> list::Builder {
-            list::Builder {
+        ) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 billing_account_name: billing_account_name.into(),
                 billing_profile_name: billing_profile_name.into(),
@@ -486,8 +490,8 @@ pub mod labs {
             billing_account_name: impl Into<String>,
             billing_profile_name: impl Into<String>,
             invoice_section_name: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 billing_account_name: billing_account_name.into(),
                 billing_profile_name: billing_profile_name.into(),
@@ -508,8 +512,8 @@ pub mod labs {
             billing_profile_name: impl Into<String>,
             invoice_section_name: impl Into<String>,
             parameters: impl Into<models::LabDetails>,
-        ) -> create_or_update::Builder {
-            create_or_update::Builder {
+        ) -> create_or_update::RequestBuilder {
+            create_or_update::RequestBuilder {
                 client: self.0.clone(),
                 billing_account_name: billing_account_name.into(),
                 billing_profile_name: billing_profile_name.into(),
@@ -528,8 +532,8 @@ pub mod labs {
             billing_account_name: impl Into<String>,
             billing_profile_name: impl Into<String>,
             invoice_section_name: impl Into<String>,
-        ) -> delete::Builder {
-            delete::Builder {
+        ) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 billing_account_name: billing_account_name.into(),
                 billing_profile_name: billing_profile_name.into(),
@@ -549,8 +553,8 @@ pub mod labs {
             billing_profile_name: impl Into<String>,
             invoice_section_name: impl Into<String>,
             parameters: impl Into<models::InviteCodeGenerateRequest>,
-        ) -> generate_invite_code::Builder {
-            generate_invite_code::Builder {
+        ) -> generate_invite_code::RequestBuilder {
+            generate_invite_code::RequestBuilder {
                 client: self.0.clone(),
                 billing_account_name: billing_account_name.into(),
                 billing_profile_name: billing_profile_name.into(),
@@ -564,14 +568,14 @@ pub mod labs {
         use super::models;
         type Response = models::LabListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) billing_account_name: String,
             pub(crate) billing_profile_name: String,
             pub(crate) include_budget: Option<bool>,
             pub(crate) include_deleted: Option<bool>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "May be used to include budget information."]
             pub fn include_budget(mut self, include_budget: bool) -> Self {
                 self.include_budget = Some(include_budget);
@@ -662,14 +666,14 @@ pub mod labs {
         use super::models;
         type Response = models::LabListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) billing_account_name: String,
             pub(crate) billing_profile_name: String,
             pub(crate) invoice_section_name: String,
             pub(crate) include_budget: Option<bool>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "May be used to include budget information."]
             pub fn include_budget(mut self, include_budget: bool) -> Self {
                 self.include_budget = Some(include_budget);
@@ -745,14 +749,14 @@ pub mod labs {
         use super::models;
         type Response = models::LabDetails;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) billing_account_name: String,
             pub(crate) billing_profile_name: String,
             pub(crate) invoice_section_name: String,
             pub(crate) include_budget: Option<bool>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "May be used to include budget information."]
             pub fn include_budget(mut self, include_budget: bool) -> Self {
                 self.include_budget = Some(include_budget);
@@ -806,14 +810,14 @@ pub mod labs {
             Ok200(models::LabDetails),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) billing_account_name: String,
             pub(crate) billing_profile_name: String,
             pub(crate) invoice_section_name: String,
             pub(crate) parameters: models::LabDetails,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -863,13 +867,13 @@ pub mod labs {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) billing_account_name: String,
             pub(crate) billing_profile_name: String,
             pub(crate) invoice_section_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -906,7 +910,7 @@ pub mod labs {
         use super::models;
         type Response = models::LabDetails;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) billing_account_name: String,
             pub(crate) billing_profile_name: String,
@@ -914,7 +918,7 @@ pub mod labs {
             pub(crate) parameters: models::InviteCodeGenerateRequest,
             pub(crate) only_update_student_count_parameter: Option<bool>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "set this flag to true if you want to update student count without generating a new invite code"]
             pub fn only_update_student_count_parameter(mut self, only_update_student_count_parameter: bool) -> Self {
                 self.only_update_student_count_parameter = Some(only_update_student_count_parameter);
@@ -977,8 +981,8 @@ pub mod join_requests {
             billing_account_name: impl Into<String>,
             billing_profile_name: impl Into<String>,
             invoice_section_name: impl Into<String>,
-        ) -> list::Builder {
-            list::Builder {
+        ) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 billing_account_name: billing_account_name.into(),
                 billing_profile_name: billing_profile_name.into(),
@@ -999,8 +1003,8 @@ pub mod join_requests {
             billing_profile_name: impl Into<String>,
             invoice_section_name: impl Into<String>,
             join_request_name: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 billing_account_name: billing_account_name.into(),
                 billing_profile_name: billing_profile_name.into(),
@@ -1021,8 +1025,8 @@ pub mod join_requests {
             billing_profile_name: impl Into<String>,
             invoice_section_name: impl Into<String>,
             join_request_name: impl Into<String>,
-        ) -> approve::Builder {
-            approve::Builder {
+        ) -> approve::RequestBuilder {
+            approve::RequestBuilder {
                 client: self.0.clone(),
                 billing_account_name: billing_account_name.into(),
                 billing_profile_name: billing_profile_name.into(),
@@ -1043,8 +1047,8 @@ pub mod join_requests {
             billing_profile_name: impl Into<String>,
             invoice_section_name: impl Into<String>,
             join_request_name: impl Into<String>,
-        ) -> deny::Builder {
-            deny::Builder {
+        ) -> deny::RequestBuilder {
+            deny::RequestBuilder {
                 client: self.0.clone(),
                 billing_account_name: billing_account_name.into(),
                 billing_profile_name: billing_profile_name.into(),
@@ -1057,14 +1061,14 @@ pub mod join_requests {
         use super::models;
         type Response = models::JoinRequestList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) billing_account_name: String,
             pub(crate) billing_profile_name: String,
             pub(crate) invoice_section_name: String,
             pub(crate) include_denied: Option<bool>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Include denied"]
             pub fn include_denied(mut self, include_denied: bool) -> Self {
                 self.include_denied = Some(include_denied);
@@ -1140,14 +1144,14 @@ pub mod join_requests {
         use super::models;
         type Response = models::JoinRequestDetails;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) billing_account_name: String,
             pub(crate) billing_profile_name: String,
             pub(crate) invoice_section_name: String,
             pub(crate) join_request_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1187,14 +1191,14 @@ pub mod join_requests {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) billing_account_name: String,
             pub(crate) billing_profile_name: String,
             pub(crate) invoice_section_name: String,
             pub(crate) join_request_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1231,14 +1235,14 @@ pub mod join_requests {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) billing_account_name: String,
             pub(crate) billing_profile_name: String,
             pub(crate) invoice_section_name: String,
             pub(crate) join_request_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1277,8 +1281,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `parameters`: Request parameters to provide redeem code."]
-    pub fn redeem_invitation_code(&self, parameters: impl Into<models::RedeemRequest>) -> redeem_invitation_code::Builder {
-        redeem_invitation_code::Builder {
+    pub fn redeem_invitation_code(&self, parameters: impl Into<models::RedeemRequest>) -> redeem_invitation_code::RequestBuilder {
+        redeem_invitation_code::RequestBuilder {
             client: self.clone(),
             parameters: parameters.into(),
         }
@@ -1288,11 +1292,11 @@ pub mod redeem_invitation_code {
     use super::models;
     type Response = ();
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) parameters: models::RedeemRequest,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -1343,8 +1347,8 @@ pub mod students {
             billing_account_name: impl Into<String>,
             billing_profile_name: impl Into<String>,
             invoice_section_name: impl Into<String>,
-        ) -> list::Builder {
-            list::Builder {
+        ) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 billing_account_name: billing_account_name.into(),
                 billing_profile_name: billing_profile_name.into(),
@@ -1365,8 +1369,8 @@ pub mod students {
             billing_profile_name: impl Into<String>,
             invoice_section_name: impl Into<String>,
             student_alias: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 billing_account_name: billing_account_name.into(),
                 billing_profile_name: billing_profile_name.into(),
@@ -1389,8 +1393,8 @@ pub mod students {
             invoice_section_name: impl Into<String>,
             student_alias: impl Into<String>,
             parameters: impl Into<models::StudentDetails>,
-        ) -> create_or_update::Builder {
-            create_or_update::Builder {
+        ) -> create_or_update::RequestBuilder {
+            create_or_update::RequestBuilder {
                 client: self.0.clone(),
                 billing_account_name: billing_account_name.into(),
                 billing_profile_name: billing_profile_name.into(),
@@ -1412,8 +1416,8 @@ pub mod students {
             billing_profile_name: impl Into<String>,
             invoice_section_name: impl Into<String>,
             student_alias: impl Into<String>,
-        ) -> delete::Builder {
-            delete::Builder {
+        ) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 billing_account_name: billing_account_name.into(),
                 billing_profile_name: billing_profile_name.into(),
@@ -1426,14 +1430,14 @@ pub mod students {
         use super::models;
         type Response = models::StudentListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) billing_account_name: String,
             pub(crate) billing_profile_name: String,
             pub(crate) invoice_section_name: String,
             pub(crate) include_deleted: Option<bool>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "May be used to show deleted items."]
             pub fn include_deleted(mut self, include_deleted: bool) -> Self {
                 self.include_deleted = Some(include_deleted);
@@ -1509,14 +1513,14 @@ pub mod students {
         use super::models;
         type Response = models::StudentDetails;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) billing_account_name: String,
             pub(crate) billing_profile_name: String,
             pub(crate) invoice_section_name: String,
             pub(crate) student_alias: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1560,7 +1564,7 @@ pub mod students {
             Ok200(models::StudentDetails),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) billing_account_name: String,
             pub(crate) billing_profile_name: String,
@@ -1568,7 +1572,7 @@ pub mod students {
             pub(crate) student_alias: String,
             pub(crate) parameters: models::StudentDetails,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1618,14 +1622,14 @@ pub mod students {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) billing_account_name: String,
             pub(crate) billing_profile_name: String,
             pub(crate) invoice_section_name: String,
             pub(crate) student_alias: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1664,15 +1668,15 @@ pub mod student_labs {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get a list of all labs associated with the caller of the API."]
-        pub fn list_all(&self) -> list_all::Builder {
-            list_all::Builder { client: self.0.clone() }
+        pub fn list_all(&self) -> list_all::RequestBuilder {
+            list_all::RequestBuilder { client: self.0.clone() }
         }
         #[doc = "Get the details for a specified lab associated with the student lab."]
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `student_lab_name`: Student lab name."]
-        pub fn get(&self, student_lab_name: impl Into<String>) -> get::Builder {
-            get::Builder {
+        pub fn get(&self, student_lab_name: impl Into<String>) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 student_lab_name: student_lab_name.into(),
             }
@@ -1682,10 +1686,10 @@ pub mod student_labs {
         use super::models;
         type Response = models::StudentLabListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -1752,11 +1756,11 @@ pub mod student_labs {
         use super::models;
         type Response = models::StudentLabDetails;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) student_lab_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();

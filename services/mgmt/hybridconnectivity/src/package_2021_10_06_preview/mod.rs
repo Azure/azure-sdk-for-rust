@@ -115,18 +115,18 @@ pub mod operations {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Lists the available Hybrid Connectivity REST API operations."]
-        pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.0.clone() }
+        pub fn list(&self) -> list::RequestBuilder {
+            list::RequestBuilder { client: self.0.clone() }
         }
     }
     pub mod list {
         use super::models;
         type Response = models::OperationListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -200,8 +200,8 @@ pub mod endpoints {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `resource_uri`: The fully qualified Azure Resource manager identifier of the resource to be connected."]
-        pub fn list(&self, resource_uri: impl Into<String>) -> list::Builder {
-            list::Builder {
+        pub fn list(&self, resource_uri: impl Into<String>) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 resource_uri: resource_uri.into(),
             }
@@ -211,8 +211,8 @@ pub mod endpoints {
         #[doc = "Arguments:"]
         #[doc = "* `resource_uri`: The fully qualified Azure Resource manager identifier of the resource to be connected."]
         #[doc = "* `endpoint_name`: The endpoint name."]
-        pub fn get(&self, resource_uri: impl Into<String>, endpoint_name: impl Into<String>) -> get::Builder {
-            get::Builder {
+        pub fn get(&self, resource_uri: impl Into<String>, endpoint_name: impl Into<String>) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 resource_uri: resource_uri.into(),
                 endpoint_name: endpoint_name.into(),
@@ -229,8 +229,8 @@ pub mod endpoints {
             resource_uri: impl Into<String>,
             endpoint_name: impl Into<String>,
             endpoint_resource: impl Into<models::EndpointResource>,
-        ) -> create_or_update::Builder {
-            create_or_update::Builder {
+        ) -> create_or_update::RequestBuilder {
+            create_or_update::RequestBuilder {
                 client: self.0.clone(),
                 resource_uri: resource_uri.into(),
                 endpoint_name: endpoint_name.into(),
@@ -248,8 +248,8 @@ pub mod endpoints {
             resource_uri: impl Into<String>,
             endpoint_name: impl Into<String>,
             endpoint_resource: impl Into<models::EndpointResource>,
-        ) -> update::Builder {
-            update::Builder {
+        ) -> update::RequestBuilder {
+            update::RequestBuilder {
                 client: self.0.clone(),
                 resource_uri: resource_uri.into(),
                 endpoint_name: endpoint_name.into(),
@@ -261,8 +261,8 @@ pub mod endpoints {
         #[doc = "Arguments:"]
         #[doc = "* `resource_uri`: The fully qualified Azure Resource manager identifier of the resource to be connected."]
         #[doc = "* `endpoint_name`: The endpoint name."]
-        pub fn delete(&self, resource_uri: impl Into<String>, endpoint_name: impl Into<String>) -> delete::Builder {
-            delete::Builder {
+        pub fn delete(&self, resource_uri: impl Into<String>, endpoint_name: impl Into<String>) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 resource_uri: resource_uri.into(),
                 endpoint_name: endpoint_name.into(),
@@ -273,8 +273,12 @@ pub mod endpoints {
         #[doc = "Arguments:"]
         #[doc = "* `resource_uri`: The fully qualified Azure Resource manager identifier of the resource to be connected."]
         #[doc = "* `endpoint_name`: The endpoint name."]
-        pub fn list_credentials(&self, resource_uri: impl Into<String>, endpoint_name: impl Into<String>) -> list_credentials::Builder {
-            list_credentials::Builder {
+        pub fn list_credentials(
+            &self,
+            resource_uri: impl Into<String>,
+            endpoint_name: impl Into<String>,
+        ) -> list_credentials::RequestBuilder {
+            list_credentials::RequestBuilder {
                 client: self.0.clone(),
                 resource_uri: resource_uri.into(),
                 endpoint_name: endpoint_name.into(),
@@ -286,11 +290,11 @@ pub mod endpoints {
         use super::models;
         type Response = models::EndpointsList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_uri: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -360,12 +364,12 @@ pub mod endpoints {
         use super::models;
         type Response = models::EndpointResource;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_uri: String,
             pub(crate) endpoint_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -410,13 +414,13 @@ pub mod endpoints {
         use super::models;
         type Response = models::EndpointResource;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_uri: String,
             pub(crate) endpoint_name: String,
             pub(crate) endpoint_resource: models::EndpointResource,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -462,13 +466,13 @@ pub mod endpoints {
         use super::models;
         type Response = models::EndpointResource;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_uri: String,
             pub(crate) endpoint_name: String,
             pub(crate) endpoint_resource: models::EndpointResource,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -518,12 +522,12 @@ pub mod endpoints {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_uri: String,
             pub(crate) endpoint_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -565,13 +569,13 @@ pub mod endpoints {
         use super::models;
         type Response = models::EndpointAccessResource;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_uri: String,
             pub(crate) endpoint_name: String,
             pub(crate) expiresin: Option<i64>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The is how long the endpoint access token is valid (in seconds)."]
             pub fn expiresin(mut self, expiresin: i64) -> Self {
                 self.expiresin = Some(expiresin);

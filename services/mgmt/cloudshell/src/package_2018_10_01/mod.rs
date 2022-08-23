@@ -115,8 +115,8 @@ impl Client {
         &self,
         user_settings_name: impl Into<String>,
         location: impl Into<String>,
-    ) -> get_user_settings_with_location::Builder {
-        get_user_settings_with_location::Builder {
+    ) -> get_user_settings_with_location::RequestBuilder {
+        get_user_settings_with_location::RequestBuilder {
             client: self.clone(),
             user_settings_name: user_settings_name.into(),
             location: location.into(),
@@ -134,8 +134,8 @@ impl Client {
         user_settings_name: impl Into<String>,
         location: impl Into<String>,
         parameters: impl Into<models::CloudShellUserSettings>,
-    ) -> put_user_settings_with_location::Builder {
-        put_user_settings_with_location::Builder {
+    ) -> put_user_settings_with_location::RequestBuilder {
+        put_user_settings_with_location::RequestBuilder {
             client: self.clone(),
             user_settings_name: user_settings_name.into(),
             location: location.into(),
@@ -154,8 +154,8 @@ impl Client {
         user_settings_name: impl Into<String>,
         location: impl Into<String>,
         parameters: impl Into<models::CloudShellPatchUserSettings>,
-    ) -> patch_user_settings_with_location::Builder {
-        patch_user_settings_with_location::Builder {
+    ) -> patch_user_settings_with_location::RequestBuilder {
+        patch_user_settings_with_location::RequestBuilder {
             client: self.clone(),
             user_settings_name: user_settings_name.into(),
             location: location.into(),
@@ -172,8 +172,8 @@ impl Client {
         &self,
         user_settings_name: impl Into<String>,
         location: impl Into<String>,
-    ) -> delete_user_settings_with_location::Builder {
-        delete_user_settings_with_location::Builder {
+    ) -> delete_user_settings_with_location::RequestBuilder {
+        delete_user_settings_with_location::RequestBuilder {
             client: self.clone(),
             user_settings_name: user_settings_name.into(),
             location: location.into(),
@@ -189,8 +189,8 @@ impl Client {
         &self,
         console_name: impl Into<String>,
         location: impl Into<String>,
-    ) -> get_console_with_location::Builder {
-        get_console_with_location::Builder {
+    ) -> get_console_with_location::RequestBuilder {
+        get_console_with_location::RequestBuilder {
             client: self.clone(),
             console_name: console_name.into(),
             location: location.into(),
@@ -206,8 +206,8 @@ impl Client {
         &self,
         console_name: impl Into<String>,
         location: impl Into<String>,
-    ) -> put_console_with_location::Builder {
-        put_console_with_location::Builder {
+    ) -> put_console_with_location::RequestBuilder {
+        put_console_with_location::RequestBuilder {
             client: self.clone(),
             console_name: console_name.into(),
             location: location.into(),
@@ -223,8 +223,8 @@ impl Client {
         &self,
         console_name: impl Into<String>,
         location: impl Into<String>,
-    ) -> delete_console_with_location::Builder {
-        delete_console_with_location::Builder {
+    ) -> delete_console_with_location::RequestBuilder {
+        delete_console_with_location::RequestBuilder {
             client: self.clone(),
             console_name: console_name.into(),
             location: location.into(),
@@ -240,8 +240,8 @@ impl Client {
         &self,
         console_name: impl Into<String>,
         location: impl Into<String>,
-    ) -> keep_alive_with_location::Builder {
-        keep_alive_with_location::Builder {
+    ) -> keep_alive_with_location::RequestBuilder {
+        keep_alive_with_location::RequestBuilder {
             client: self.clone(),
             console_name: console_name.into(),
             location: location.into(),
@@ -252,8 +252,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `user_settings_name`: The name of the user settings"]
-    pub fn get_user_settings(&self, user_settings_name: impl Into<String>) -> get_user_settings::Builder {
-        get_user_settings::Builder {
+    pub fn get_user_settings(&self, user_settings_name: impl Into<String>) -> get_user_settings::RequestBuilder {
+        get_user_settings::RequestBuilder {
             client: self.clone(),
             user_settings_name: user_settings_name.into(),
         }
@@ -268,8 +268,8 @@ impl Client {
         &self,
         user_settings_name: impl Into<String>,
         parameters: impl Into<models::CloudShellUserSettings>,
-    ) -> put_user_settings::Builder {
-        put_user_settings::Builder {
+    ) -> put_user_settings::RequestBuilder {
+        put_user_settings::RequestBuilder {
             client: self.clone(),
             user_settings_name: user_settings_name.into(),
             parameters: parameters.into(),
@@ -285,8 +285,8 @@ impl Client {
         &self,
         user_settings_name: impl Into<String>,
         parameters: impl Into<models::CloudShellPatchUserSettings>,
-    ) -> patch_user_settings::Builder {
-        patch_user_settings::Builder {
+    ) -> patch_user_settings::RequestBuilder {
+        patch_user_settings::RequestBuilder {
             client: self.clone(),
             user_settings_name: user_settings_name.into(),
             parameters: parameters.into(),
@@ -297,8 +297,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `user_settings_name`: The name of the user settings"]
-    pub fn delete_user_settings(&self, user_settings_name: impl Into<String>) -> delete_user_settings::Builder {
-        delete_user_settings::Builder {
+    pub fn delete_user_settings(&self, user_settings_name: impl Into<String>) -> delete_user_settings::RequestBuilder {
+        delete_user_settings::RequestBuilder {
             client: self.clone(),
             user_settings_name: user_settings_name.into(),
         }
@@ -308,8 +308,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `console_name`: The name of the console"]
-    pub fn get_console(&self, console_name: impl Into<String>) -> get_console::Builder {
-        get_console::Builder {
+    pub fn get_console(&self, console_name: impl Into<String>) -> get_console::RequestBuilder {
+        get_console::RequestBuilder {
             client: self.clone(),
             console_name: console_name.into(),
         }
@@ -320,8 +320,12 @@ impl Client {
     #[doc = "Arguments:"]
     #[doc = "* `console_name`: The name of the console"]
     #[doc = "* `parameters`: The console definition."]
-    pub fn put_console(&self, console_name: impl Into<String>, parameters: impl Into<models::ConsoleDefinition>) -> put_console::Builder {
-        put_console::Builder {
+    pub fn put_console(
+        &self,
+        console_name: impl Into<String>,
+        parameters: impl Into<models::ConsoleDefinition>,
+    ) -> put_console::RequestBuilder {
+        put_console::RequestBuilder {
             client: self.clone(),
             console_name: console_name.into(),
             parameters: parameters.into(),
@@ -332,8 +336,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `console_name`: The name of the console"]
-    pub fn delete_console(&self, console_name: impl Into<String>) -> delete_console::Builder {
-        delete_console::Builder {
+    pub fn delete_console(&self, console_name: impl Into<String>) -> delete_console::RequestBuilder {
+        delete_console::RequestBuilder {
             client: self.clone(),
             console_name: console_name.into(),
         }
@@ -343,8 +347,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `console_name`: The name of the console"]
-    pub fn keep_alive(&self, console_name: impl Into<String>) -> keep_alive::Builder {
-        keep_alive::Builder {
+    pub fn keep_alive(&self, console_name: impl Into<String>) -> keep_alive::RequestBuilder {
+        keep_alive::RequestBuilder {
             client: self.clone(),
             console_name: console_name.into(),
         }
@@ -354,12 +358,12 @@ pub mod get_user_settings_with_location {
     use super::models;
     type Response = models::UserSettingsResponse;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) user_settings_name: String,
         pub(crate) location: String,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -404,13 +408,13 @@ pub mod put_user_settings_with_location {
     use super::models;
     type Response = models::UserSettingsResponse;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) user_settings_name: String,
         pub(crate) location: String,
         pub(crate) parameters: models::CloudShellUserSettings,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -456,13 +460,13 @@ pub mod patch_user_settings_with_location {
     use super::models;
     type Response = models::UserSettingsResponse;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) user_settings_name: String,
         pub(crate) location: String,
         pub(crate) parameters: models::CloudShellPatchUserSettings,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -512,12 +516,12 @@ pub mod delete_user_settings_with_location {
         NoContent204,
     }
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) user_settings_name: String,
         pub(crate) location: String,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -559,12 +563,12 @@ pub mod get_console_with_location {
     use super::models;
     type Response = models::CloudShellConsole;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) console_name: String,
         pub(crate) location: String,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -613,12 +617,12 @@ pub mod put_console_with_location {
         Created201(models::CloudShellConsole),
     }
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) console_name: String,
         pub(crate) location: String,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -672,12 +676,12 @@ pub mod delete_console_with_location {
         NoContent204,
     }
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) console_name: String,
         pub(crate) location: String,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -719,12 +723,12 @@ pub mod keep_alive_with_location {
     use super::models;
     type Response = ();
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) console_name: String,
         pub(crate) location: String,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -763,11 +767,11 @@ pub mod get_user_settings {
     use super::models;
     type Response = models::UserSettingsResponse;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) user_settings_name: String,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -811,12 +815,12 @@ pub mod put_user_settings {
     use super::models;
     type Response = models::UserSettingsResponse;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) user_settings_name: String,
         pub(crate) parameters: models::CloudShellUserSettings,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -861,12 +865,12 @@ pub mod patch_user_settings {
     use super::models;
     type Response = models::UserSettingsResponse;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) user_settings_name: String,
         pub(crate) parameters: models::CloudShellPatchUserSettings,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -915,11 +919,11 @@ pub mod delete_user_settings {
         NoContent204,
     }
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) user_settings_name: String,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -960,11 +964,11 @@ pub mod get_console {
     use super::models;
     type Response = models::CloudShellConsole;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) console_name: String,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -1012,12 +1016,12 @@ pub mod put_console {
         Created201(models::CloudShellConsole),
     }
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) console_name: String,
         pub(crate) parameters: models::ConsoleDefinition,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -1071,11 +1075,11 @@ pub mod delete_console {
         NoContent204,
     }
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) console_name: String,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -1116,11 +1120,11 @@ pub mod keep_alive {
     use super::models;
     type Response = ();
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) console_name: String,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();

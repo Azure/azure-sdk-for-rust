@@ -144,8 +144,8 @@ pub mod monitors {
             resource_namespace: impl Into<String>,
             resource_type: impl Into<String>,
             resource_name: impl Into<String>,
-        ) -> list_by_resource::Builder {
-            list_by_resource::Builder {
+        ) -> list_by_resource::RequestBuilder {
+            list_by_resource::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -173,8 +173,8 @@ pub mod monitors {
             resource_type: impl Into<String>,
             resource_name: impl Into<String>,
             monitor_id: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -203,8 +203,8 @@ pub mod monitors {
             resource_name: impl Into<String>,
             monitor_id: impl Into<String>,
             body: impl Into<models::Monitor>,
-        ) -> update::Builder {
-            update::Builder {
+        ) -> update::RequestBuilder {
+            update::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -220,7 +220,7 @@ pub mod monitors {
         use super::models;
         type Response = models::MonitorsCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -230,7 +230,7 @@ pub mod monitors {
             pub(crate) filter: Option<String>,
             pub(crate) skiptoken: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Filter to be applied on the operation."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -320,7 +320,7 @@ pub mod monitors {
         use super::models;
         type Response = models::Monitor;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -329,7 +329,7 @@ pub mod monitors {
             pub(crate) resource_name: String,
             pub(crate) monitor_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -378,7 +378,7 @@ pub mod monitors {
         use super::models;
         type Response = models::Monitor;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -388,7 +388,7 @@ pub mod monitors {
             pub(crate) monitor_id: String,
             pub(crate) body: models::Monitor,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -454,8 +454,8 @@ pub mod components {
             resource_namespace: impl Into<String>,
             resource_type: impl Into<String>,
             resource_name: impl Into<String>,
-        ) -> list_by_resource::Builder {
-            list_by_resource::Builder {
+        ) -> list_by_resource::RequestBuilder {
+            list_by_resource::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -488,8 +488,8 @@ pub mod components {
             resource_type: impl Into<String>,
             resource_name: impl Into<String>,
             component_id: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -506,7 +506,7 @@ pub mod components {
         use super::models;
         type Response = models::ComponentsCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -521,7 +521,7 @@ pub mod components {
             pub(crate) top: Option<String>,
             pub(crate) skiptoken: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Properties to be returned in the response."]
             pub fn select(mut self, select: impl Into<String>) -> Self {
                 self.select = Some(select.into());
@@ -651,7 +651,7 @@ pub mod components {
         use super::models;
         type Response = models::Component;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -662,7 +662,7 @@ pub mod components {
             pub(crate) select: Option<String>,
             pub(crate) expand: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Properties to be returned in the response."]
             pub fn select(mut self, select: impl Into<String>) -> Self {
                 self.select = Some(select.into());
@@ -743,8 +743,8 @@ pub mod monitor_instances {
             resource_namespace: impl Into<String>,
             resource_type: impl Into<String>,
             resource_name: impl Into<String>,
-        ) -> list_by_resource::Builder {
-            list_by_resource::Builder {
+        ) -> list_by_resource::RequestBuilder {
+            list_by_resource::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -777,8 +777,8 @@ pub mod monitor_instances {
             resource_type: impl Into<String>,
             resource_name: impl Into<String>,
             monitor_instance_id: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -795,7 +795,7 @@ pub mod monitor_instances {
         use super::models;
         type Response = models::MonitorInstancesCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -810,7 +810,7 @@ pub mod monitor_instances {
             pub(crate) top: Option<String>,
             pub(crate) skiptoken: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Properties to be returned in the response."]
             pub fn select(mut self, select: impl Into<String>) -> Self {
                 self.select = Some(select.into());
@@ -940,7 +940,7 @@ pub mod monitor_instances {
         use super::models;
         type Response = models::MonitorInstance;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -951,7 +951,7 @@ pub mod monitor_instances {
             pub(crate) select: Option<String>,
             pub(crate) expand: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Properties to be returned in the response."]
             pub fn select(mut self, select: impl Into<String>) -> Self {
                 self.select = Some(select.into());
@@ -1023,8 +1023,8 @@ pub mod notification_settings {
             resource_namespace: impl Into<String>,
             resource_type: impl Into<String>,
             resource_name: impl Into<String>,
-        ) -> list_by_resource::Builder {
-            list_by_resource::Builder {
+        ) -> list_by_resource::RequestBuilder {
+            list_by_resource::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -1051,8 +1051,8 @@ pub mod notification_settings {
             resource_type: impl Into<String>,
             resource_name: impl Into<String>,
             notification_setting_name: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -1081,8 +1081,8 @@ pub mod notification_settings {
             resource_name: impl Into<String>,
             notification_setting_name: impl Into<String>,
             body: impl Into<models::NotificationSetting>,
-        ) -> update::Builder {
-            update::Builder {
+        ) -> update::RequestBuilder {
+            update::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -1098,7 +1098,7 @@ pub mod notification_settings {
         use super::models;
         type Response = models::NotificationSettingsCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -1107,7 +1107,7 @@ pub mod notification_settings {
             pub(crate) resource_name: String,
             pub(crate) skiptoken: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The page-continuation token to use with a paged version of this API."]
             pub fn skiptoken(mut self, skiptoken: impl Into<String>) -> Self {
                 self.skiptoken = Some(skiptoken.into());
@@ -1181,7 +1181,7 @@ pub mod notification_settings {
         use super::models;
         type Response = models::NotificationSetting;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -1190,7 +1190,7 @@ pub mod notification_settings {
             pub(crate) resource_name: String,
             pub(crate) notification_setting_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1230,7 +1230,7 @@ pub mod notification_settings {
         use super::models;
         type Response = models::NotificationSetting;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -1240,7 +1240,7 @@ pub mod notification_settings {
             pub(crate) notification_setting_name: String,
             pub(crate) body: models::NotificationSetting,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1286,8 +1286,8 @@ pub mod components_summary {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: The ID of the target subscription."]
-        pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
-            list::Builder {
+        pub fn list(&self, subscription_id: impl Into<String>) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 select: None,
@@ -1304,7 +1304,7 @@ pub mod components_summary {
         use super::models;
         type Response = models::ComponentsCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) select: Option<String>,
@@ -1315,7 +1315,7 @@ pub mod components_summary {
             pub(crate) top: Option<String>,
             pub(crate) skiptoken: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Properties to be returned in the response."]
             pub fn select(mut self, select: impl Into<String>) -> Self {
                 self.select = Some(select.into());
@@ -1446,8 +1446,8 @@ pub mod monitor_instances_summary {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: The ID of the target subscription."]
-        pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
-            list::Builder {
+        pub fn list(&self, subscription_id: impl Into<String>) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 select: None,
@@ -1464,7 +1464,7 @@ pub mod monitor_instances_summary {
         use super::models;
         type Response = models::MonitorInstancesCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) select: Option<String>,
@@ -1475,7 +1475,7 @@ pub mod monitor_instances_summary {
             pub(crate) top: Option<String>,
             pub(crate) skiptoken: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Properties to be returned in the response."]
             pub fn select(mut self, select: impl Into<String>) -> Self {
                 self.select = Some(select.into());
@@ -1603,8 +1603,8 @@ pub mod operations {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets the details of all operations possible on the resource provider."]
-        pub fn list(&self) -> list::Builder {
-            list::Builder {
+        pub fn list(&self) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 skiptoken: None,
             }
@@ -1614,11 +1614,11 @@ pub mod operations {
         use super::models;
         type Response = models::OperationListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) skiptoken: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The page-continuation token to use with a paged version of this API."]
             pub fn skiptoken(mut self, skiptoken: impl Into<String>) -> Self {
                 self.skiptoken = Some(skiptoken.into());

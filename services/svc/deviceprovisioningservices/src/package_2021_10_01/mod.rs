@@ -121,8 +121,8 @@ pub mod individual_enrollment {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `id`: This id is used to uniquely identify a device registration of an enrollment. A case-insensitive string (up to 128 characters long) of alphanumeric characters plus certain special characters : . _ -. No special characters allowed at start or end."]
-        pub fn get(&self, id: impl Into<String>) -> get::Builder {
-            get::Builder {
+        pub fn get(&self, id: impl Into<String>) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 id: id.into(),
             }
@@ -136,8 +136,8 @@ pub mod individual_enrollment {
             &self,
             id: impl Into<String>,
             enrollment: impl Into<models::IndividualEnrollment>,
-        ) -> create_or_update::Builder {
-            create_or_update::Builder {
+        ) -> create_or_update::RequestBuilder {
+            create_or_update::RequestBuilder {
                 client: self.0.clone(),
                 id: id.into(),
                 enrollment: enrollment.into(),
@@ -148,8 +148,8 @@ pub mod individual_enrollment {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `id`: This id is used to uniquely identify a device registration of an enrollment. A case-insensitive string (up to 128 characters long) of alphanumeric characters plus certain special characters : . _ -. No special characters allowed at start or end."]
-        pub fn delete(&self, id: impl Into<String>) -> delete::Builder {
-            delete::Builder {
+        pub fn delete(&self, id: impl Into<String>) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 id: id.into(),
                 if_match: None,
@@ -159,8 +159,8 @@ pub mod individual_enrollment {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `query_specification`: The query specification."]
-        pub fn query(&self, query_specification: impl Into<models::QuerySpecification>) -> query::Builder {
-            query::Builder {
+        pub fn query(&self, query_specification: impl Into<models::QuerySpecification>) -> query::RequestBuilder {
+            query::RequestBuilder {
                 client: self.0.clone(),
                 query_specification: query_specification.into(),
                 x_ms_max_item_count: None,
@@ -171,8 +171,8 @@ pub mod individual_enrollment {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `id`: This id is used to uniquely identify a device registration of an enrollment. A case-insensitive string (up to 128 characters long) of alphanumeric characters plus certain special characters : . _ -. No special characters allowed at start or end."]
-        pub fn get_attestation_mechanism(&self, id: impl Into<String>) -> get_attestation_mechanism::Builder {
-            get_attestation_mechanism::Builder {
+        pub fn get_attestation_mechanism(&self, id: impl Into<String>) -> get_attestation_mechanism::RequestBuilder {
+            get_attestation_mechanism::RequestBuilder {
                 client: self.0.clone(),
                 id: id.into(),
             }
@@ -181,8 +181,8 @@ pub mod individual_enrollment {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `bulk_operation`: Bulk operation."]
-        pub fn run_bulk_operation(&self, bulk_operation: impl Into<models::BulkEnrollmentOperation>) -> run_bulk_operation::Builder {
-            run_bulk_operation::Builder {
+        pub fn run_bulk_operation(&self, bulk_operation: impl Into<models::BulkEnrollmentOperation>) -> run_bulk_operation::RequestBuilder {
+            run_bulk_operation::RequestBuilder {
                 client: self.0.clone(),
                 bulk_operation: bulk_operation.into(),
             }
@@ -192,11 +192,11 @@ pub mod individual_enrollment {
         use super::models;
         type Response = models::IndividualEnrollment;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -236,13 +236,13 @@ pub mod individual_enrollment {
         use super::models;
         type Response = models::IndividualEnrollment;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) id: String,
             pub(crate) enrollment: models::IndividualEnrollment,
             pub(crate) if_match: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The ETag of the enrollment record."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
@@ -291,12 +291,12 @@ pub mod individual_enrollment {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) id: String,
             pub(crate) if_match: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The ETag of the enrollment record."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
@@ -340,13 +340,13 @@ pub mod individual_enrollment {
         use super::models;
         type Response = Vec<models::IndividualEnrollment>;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) query_specification: models::QuerySpecification,
             pub(crate) x_ms_max_item_count: Option<i32>,
             pub(crate) x_ms_continuation: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Page size"]
             pub fn x_ms_max_item_count(mut self, x_ms_max_item_count: i32) -> Self {
                 self.x_ms_max_item_count = Some(x_ms_max_item_count);
@@ -403,11 +403,11 @@ pub mod individual_enrollment {
         use super::models;
         type Response = models::AttestationMechanism;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -449,11 +449,11 @@ pub mod individual_enrollment {
         use super::models;
         type Response = models::BulkEnrollmentOperationResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) bulk_operation: models::BulkEnrollmentOperation,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -499,8 +499,8 @@ pub mod enrollment_group {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `id`: Enrollment group ID."]
-        pub fn get(&self, id: impl Into<String>) -> get::Builder {
-            get::Builder {
+        pub fn get(&self, id: impl Into<String>) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 id: id.into(),
             }
@@ -514,8 +514,8 @@ pub mod enrollment_group {
             &self,
             id: impl Into<String>,
             enrollment_group: impl Into<models::EnrollmentGroup>,
-        ) -> create_or_update::Builder {
-            create_or_update::Builder {
+        ) -> create_or_update::RequestBuilder {
+            create_or_update::RequestBuilder {
                 client: self.0.clone(),
                 id: id.into(),
                 enrollment_group: enrollment_group.into(),
@@ -526,8 +526,8 @@ pub mod enrollment_group {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `id`: Enrollment group ID."]
-        pub fn delete(&self, id: impl Into<String>) -> delete::Builder {
-            delete::Builder {
+        pub fn delete(&self, id: impl Into<String>) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 id: id.into(),
                 if_match: None,
@@ -537,8 +537,8 @@ pub mod enrollment_group {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `query_specification`: The query specification."]
-        pub fn query(&self, query_specification: impl Into<models::QuerySpecification>) -> query::Builder {
-            query::Builder {
+        pub fn query(&self, query_specification: impl Into<models::QuerySpecification>) -> query::RequestBuilder {
+            query::RequestBuilder {
                 client: self.0.clone(),
                 query_specification: query_specification.into(),
                 x_ms_max_item_count: None,
@@ -549,8 +549,8 @@ pub mod enrollment_group {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `id`: Enrollment group ID"]
-        pub fn get_attestation_mechanism(&self, id: impl Into<String>) -> get_attestation_mechanism::Builder {
-            get_attestation_mechanism::Builder {
+        pub fn get_attestation_mechanism(&self, id: impl Into<String>) -> get_attestation_mechanism::RequestBuilder {
+            get_attestation_mechanism::RequestBuilder {
                 client: self.0.clone(),
                 id: id.into(),
             }
@@ -559,8 +559,11 @@ pub mod enrollment_group {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `bulk_operation`: Bulk operation."]
-        pub fn run_bulk_operation(&self, bulk_operation: impl Into<models::BulkEnrollmentGroupOperation>) -> run_bulk_operation::Builder {
-            run_bulk_operation::Builder {
+        pub fn run_bulk_operation(
+            &self,
+            bulk_operation: impl Into<models::BulkEnrollmentGroupOperation>,
+        ) -> run_bulk_operation::RequestBuilder {
+            run_bulk_operation::RequestBuilder {
                 client: self.0.clone(),
                 bulk_operation: bulk_operation.into(),
             }
@@ -570,11 +573,11 @@ pub mod enrollment_group {
         use super::models;
         type Response = models::EnrollmentGroup;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -614,13 +617,13 @@ pub mod enrollment_group {
         use super::models;
         type Response = models::EnrollmentGroup;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) id: String,
             pub(crate) enrollment_group: models::EnrollmentGroup,
             pub(crate) if_match: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The ETag of the enrollment record."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
@@ -669,12 +672,12 @@ pub mod enrollment_group {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) id: String,
             pub(crate) if_match: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The ETag of the enrollment group record."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
@@ -718,13 +721,13 @@ pub mod enrollment_group {
         use super::models;
         type Response = Vec<models::EnrollmentGroup>;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) query_specification: models::QuerySpecification,
             pub(crate) x_ms_max_item_count: Option<i32>,
             pub(crate) x_ms_continuation: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Page size"]
             pub fn x_ms_max_item_count(mut self, x_ms_max_item_count: i32) -> Self {
                 self.x_ms_max_item_count = Some(x_ms_max_item_count);
@@ -781,11 +784,11 @@ pub mod enrollment_group {
         use super::models;
         type Response = models::AttestationMechanism;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -830,11 +833,11 @@ pub mod enrollment_group {
         use super::models;
         type Response = models::BulkEnrollmentGroupOperationResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) bulk_operation: models::BulkEnrollmentGroupOperation,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -880,8 +883,8 @@ pub mod device_registration_state {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `id`: Registration ID."]
-        pub fn get(&self, id: impl Into<String>) -> get::Builder {
-            get::Builder {
+        pub fn get(&self, id: impl Into<String>) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 id: id.into(),
             }
@@ -890,8 +893,8 @@ pub mod device_registration_state {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `id`: Registration ID."]
-        pub fn delete(&self, id: impl Into<String>) -> delete::Builder {
-            delete::Builder {
+        pub fn delete(&self, id: impl Into<String>) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 id: id.into(),
                 if_match: None,
@@ -901,8 +904,8 @@ pub mod device_registration_state {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `id`: Enrollment group ID."]
-        pub fn query(&self, id: impl Into<String>) -> query::Builder {
-            query::Builder {
+        pub fn query(&self, id: impl Into<String>) -> query::RequestBuilder {
+            query::RequestBuilder {
                 client: self.0.clone(),
                 id: id.into(),
                 x_ms_max_item_count: None,
@@ -914,11 +917,11 @@ pub mod device_registration_state {
         use super::models;
         type Response = models::DeviceRegistrationState;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -958,12 +961,12 @@ pub mod device_registration_state {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) id: String,
             pub(crate) if_match: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The ETag of the registration status record."]
             pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
                 self.if_match = Some(if_match.into());
@@ -1007,13 +1010,13 @@ pub mod device_registration_state {
         use super::models;
         type Response = Vec<models::DeviceRegistrationState>;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) id: String,
             pub(crate) x_ms_max_item_count: Option<i32>,
             pub(crate) x_ms_continuation: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "pageSize"]
             pub fn x_ms_max_item_count(mut self, x_ms_max_item_count: i32) -> Self {
                 self.x_ms_max_item_count = Some(x_ms_max_item_count);

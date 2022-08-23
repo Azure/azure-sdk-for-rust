@@ -125,8 +125,8 @@ pub mod service {
             restype: impl Into<String>,
             comp: impl Into<String>,
             x_ms_version: impl Into<String>,
-        ) -> get_properties::Builder {
-            get_properties::Builder {
+        ) -> get_properties::RequestBuilder {
+            get_properties::RequestBuilder {
                 client: self.0.clone(),
                 restype: restype.into(),
                 comp: comp.into(),
@@ -148,8 +148,8 @@ pub mod service {
             comp: impl Into<String>,
             table_service_properties: impl Into<models::TableServiceProperties>,
             x_ms_version: impl Into<String>,
-        ) -> set_properties::Builder {
-            set_properties::Builder {
+        ) -> set_properties::RequestBuilder {
+            set_properties::RequestBuilder {
                 client: self.0.clone(),
                 restype: restype.into(),
                 comp: comp.into(),
@@ -170,8 +170,8 @@ pub mod service {
             restype: impl Into<String>,
             comp: impl Into<String>,
             x_ms_version: impl Into<String>,
-        ) -> get_statistics::Builder {
-            get_statistics::Builder {
+        ) -> get_statistics::RequestBuilder {
+            get_statistics::RequestBuilder {
                 client: self.0.clone(),
                 restype: restype.into(),
                 comp: comp.into(),
@@ -185,7 +185,7 @@ pub mod service {
         use super::models;
         type Response = models::TableServiceProperties;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) restype: String,
             pub(crate) comp: String,
@@ -193,7 +193,7 @@ pub mod service {
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The timeout parameter is expressed in seconds."]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
@@ -251,7 +251,7 @@ pub mod service {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) restype: String,
             pub(crate) comp: String,
@@ -260,7 +260,7 @@ pub mod service {
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The timeout parameter is expressed in seconds."]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
@@ -315,7 +315,7 @@ pub mod service {
         use super::models;
         type Response = models::TableServiceStats;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) restype: String,
             pub(crate) comp: String,
@@ -323,7 +323,7 @@ pub mod service {
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The timeout parameter is expressed in seconds."]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
@@ -387,8 +387,8 @@ pub mod table {
         #[doc = "Arguments:"]
         #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         #[doc = "* `data_service_version`: Specifies the data service version."]
-        pub fn query(&self, x_ms_version: impl Into<String>, data_service_version: impl Into<String>) -> query::Builder {
-            query::Builder {
+        pub fn query(&self, x_ms_version: impl Into<String>, data_service_version: impl Into<String>) -> query::RequestBuilder {
+            query::RequestBuilder {
                 client: self.0.clone(),
                 x_ms_version: x_ms_version.into(),
                 data_service_version: data_service_version.into(),
@@ -411,8 +411,8 @@ pub mod table {
             x_ms_version: impl Into<String>,
             data_service_version: impl Into<String>,
             table_properties: impl Into<models::TableProperties>,
-        ) -> create::Builder {
-            create::Builder {
+        ) -> create::RequestBuilder {
+            create::RequestBuilder {
                 client: self.0.clone(),
                 x_ms_version: x_ms_version.into(),
                 data_service_version: data_service_version.into(),
@@ -427,8 +427,8 @@ pub mod table {
         #[doc = "Arguments:"]
         #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         #[doc = "* `table`: The name of the table."]
-        pub fn delete(&self, x_ms_version: impl Into<String>, table: impl Into<String>) -> delete::Builder {
-            delete::Builder {
+        pub fn delete(&self, x_ms_version: impl Into<String>, table: impl Into<String>) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 x_ms_version: x_ms_version.into(),
                 table: table.into(),
@@ -446,8 +446,8 @@ pub mod table {
             x_ms_version: impl Into<String>,
             data_service_version: impl Into<String>,
             table: impl Into<String>,
-        ) -> query_entities::Builder {
-            query_entities::Builder {
+        ) -> query_entities::RequestBuilder {
+            query_entities::RequestBuilder {
                 client: self.0.clone(),
                 x_ms_version: x_ms_version.into(),
                 data_service_version: data_service_version.into(),
@@ -477,8 +477,8 @@ pub mod table {
             table: impl Into<String>,
             partition_key: impl Into<String>,
             row_key: impl Into<String>,
-        ) -> query_entity_with_partition_and_row_key::Builder {
-            query_entity_with_partition_and_row_key::Builder {
+        ) -> query_entity_with_partition_and_row_key::RequestBuilder {
+            query_entity_with_partition_and_row_key::RequestBuilder {
                 client: self.0.clone(),
                 x_ms_version: x_ms_version.into(),
                 data_service_version: data_service_version.into(),
@@ -507,8 +507,8 @@ pub mod table {
             table: impl Into<String>,
             partition_key: impl Into<String>,
             row_key: impl Into<String>,
-        ) -> update_entity::Builder {
-            update_entity::Builder {
+        ) -> update_entity::RequestBuilder {
+            update_entity::RequestBuilder {
                 client: self.0.clone(),
                 x_ms_version: x_ms_version.into(),
                 data_service_version: data_service_version.into(),
@@ -537,8 +537,8 @@ pub mod table {
             table: impl Into<String>,
             partition_key: impl Into<String>,
             row_key: impl Into<String>,
-        ) -> merge_entity::Builder {
-            merge_entity::Builder {
+        ) -> merge_entity::RequestBuilder {
+            merge_entity::RequestBuilder {
                 client: self.0.clone(),
                 x_ms_version: x_ms_version.into(),
                 data_service_version: data_service_version.into(),
@@ -569,8 +569,8 @@ pub mod table {
             partition_key: impl Into<String>,
             row_key: impl Into<String>,
             if_match: impl Into<String>,
-        ) -> delete_entity::Builder {
-            delete_entity::Builder {
+        ) -> delete_entity::RequestBuilder {
+            delete_entity::RequestBuilder {
                 client: self.0.clone(),
                 x_ms_version: x_ms_version.into(),
                 data_service_version: data_service_version.into(),
@@ -594,8 +594,8 @@ pub mod table {
             x_ms_version: impl Into<String>,
             table: impl Into<String>,
             comp: impl Into<String>,
-        ) -> get_access_policy::Builder {
-            get_access_policy::Builder {
+        ) -> get_access_policy::RequestBuilder {
+            get_access_policy::RequestBuilder {
                 client: self.0.clone(),
                 x_ms_version: x_ms_version.into(),
                 table: table.into(),
@@ -615,8 +615,8 @@ pub mod table {
             x_ms_version: impl Into<String>,
             data_service_version: impl Into<String>,
             table: impl Into<String>,
-        ) -> insert_entity::Builder {
-            insert_entity::Builder {
+        ) -> insert_entity::RequestBuilder {
+            insert_entity::RequestBuilder {
                 client: self.0.clone(),
                 x_ms_version: x_ms_version.into(),
                 data_service_version: data_service_version.into(),
@@ -639,8 +639,8 @@ pub mod table {
             x_ms_version: impl Into<String>,
             table: impl Into<String>,
             comp: impl Into<String>,
-        ) -> set_access_policy::Builder {
-            set_access_policy::Builder {
+        ) -> set_access_policy::RequestBuilder {
+            set_access_policy::RequestBuilder {
                 client: self.0.clone(),
                 x_ms_version: x_ms_version.into(),
                 table: table.into(),
@@ -655,7 +655,7 @@ pub mod table {
         use super::models;
         type Response = models::TableQueryResponse;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) x_ms_version: String,
             pub(crate) data_service_version: String,
@@ -666,7 +666,7 @@ pub mod table {
             pub(crate) filter: Option<String>,
             pub(crate) next_table_name: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Provides a client-generated, opaque value with a 1 KB character limit that is recorded in the analytics logs when analytics logging is enabled."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
@@ -757,7 +757,7 @@ pub mod table {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) x_ms_version: String,
             pub(crate) data_service_version: String,
@@ -766,7 +766,7 @@ pub mod table {
             pub(crate) format: Option<String>,
             pub(crate) prefer: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Provides a client-generated, opaque value with a 1 KB character limit that is recorded in the analytics logs when analytics logging is enabled."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
@@ -831,13 +831,13 @@ pub mod table {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) x_ms_version: String,
             pub(crate) table: String,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Provides a client-generated, opaque value with a 1 KB character limit that is recorded in the analytics logs when analytics logging is enabled."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
@@ -879,7 +879,7 @@ pub mod table {
         use super::models;
         type Response = models::TableEntityQueryResponse;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) x_ms_version: String,
             pub(crate) data_service_version: String,
@@ -893,7 +893,7 @@ pub mod table {
             pub(crate) next_partition_key: Option<String>,
             pub(crate) next_row_key: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The timeout parameter is expressed in seconds."]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
@@ -996,7 +996,7 @@ pub mod table {
         use super::models;
         type Response = models::TableEntityProperties;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) x_ms_version: String,
             pub(crate) data_service_version: String,
@@ -1009,7 +1009,7 @@ pub mod table {
             pub(crate) select: Option<String>,
             pub(crate) filter: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The timeout parameter is expressed in seconds."]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
@@ -1094,7 +1094,7 @@ pub mod table {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) x_ms_version: String,
             pub(crate) data_service_version: String,
@@ -1107,7 +1107,7 @@ pub mod table {
             pub(crate) table_entity_properties: Option<models::TableEntityProperties>,
             pub(crate) if_match: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The timeout parameter is expressed in seconds."]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
@@ -1190,7 +1190,7 @@ pub mod table {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) x_ms_version: String,
             pub(crate) data_service_version: String,
@@ -1203,7 +1203,7 @@ pub mod table {
             pub(crate) table_entity_properties: Option<models::TableEntityProperties>,
             pub(crate) if_match: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The timeout parameter is expressed in seconds."]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
@@ -1286,7 +1286,7 @@ pub mod table {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) x_ms_version: String,
             pub(crate) data_service_version: String,
@@ -1298,7 +1298,7 @@ pub mod table {
             pub(crate) x_ms_client_request_id: Option<String>,
             pub(crate) format: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The timeout parameter is expressed in seconds."]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
@@ -1364,7 +1364,7 @@ pub mod table {
         use super::models;
         type Response = models::SignedIdentifiers;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) x_ms_version: String,
             pub(crate) table: String,
@@ -1372,7 +1372,7 @@ pub mod table {
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The timeout parameter is expressed in seconds."]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
@@ -1432,7 +1432,7 @@ pub mod table {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) x_ms_version: String,
             pub(crate) data_service_version: String,
@@ -1443,7 +1443,7 @@ pub mod table {
             pub(crate) table_entity_properties: Option<models::TableEntityProperties>,
             pub(crate) prefer: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The timeout parameter is expressed in seconds."]
             pub fn timeout(mut self, timeout: i64) -> Self {
                 self.timeout = Some(timeout);
@@ -1525,7 +1525,7 @@ pub mod table {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) x_ms_version: String,
             pub(crate) table: String,
@@ -1534,7 +1534,7 @@ pub mod table {
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The acls for the table."]
             pub fn table_acl(mut self, table_acl: impl Into<models::SignedIdentifiers>) -> Self {
                 self.table_acl = Some(table_acl.into());

@@ -115,18 +115,18 @@ pub mod operations {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "This lists all the available Microsoft Support REST API operations."]
-        pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.0.clone() }
+        pub fn list(&self) -> list::RequestBuilder {
+            list::RequestBuilder { client: self.0.clone() }
         }
     }
     pub mod list {
         use super::models;
         type Response = models::OperationsListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as the continuation token is not part of the response schema"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -172,8 +172,8 @@ pub mod look_up_resource_id {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `look_up_resource_id_request`: Look up resource id request body"]
-        pub fn post(&self, look_up_resource_id_request: impl Into<models::LookUpResourceIdRequest>) -> post::Builder {
-            post::Builder {
+        pub fn post(&self, look_up_resource_id_request: impl Into<models::LookUpResourceIdRequest>) -> post::RequestBuilder {
+            post::RequestBuilder {
                 client: self.0.clone(),
                 look_up_resource_id_request: look_up_resource_id_request.into(),
             }
@@ -183,11 +183,11 @@ pub mod look_up_resource_id {
         use super::models;
         type Response = models::LookUpResourceIdResponse;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) look_up_resource_id_request: models::LookUpResourceIdRequest,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();

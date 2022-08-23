@@ -122,8 +122,8 @@ pub mod registration_definitions {
         #[doc = "Arguments:"]
         #[doc = "* `scope`: Scope of the resource."]
         #[doc = "* `registration_definition_id`: Guid of the registration definition."]
-        pub fn get(&self, scope: impl Into<String>, registration_definition_id: impl Into<String>) -> get::Builder {
-            get::Builder {
+        pub fn get(&self, scope: impl Into<String>, registration_definition_id: impl Into<String>) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 scope: scope.into(),
                 registration_definition_id: registration_definition_id.into(),
@@ -140,8 +140,8 @@ pub mod registration_definitions {
             registration_definition_id: impl Into<String>,
             scope: impl Into<String>,
             request_body: impl Into<models::RegistrationDefinition>,
-        ) -> create_or_update::Builder {
-            create_or_update::Builder {
+        ) -> create_or_update::RequestBuilder {
+            create_or_update::RequestBuilder {
                 client: self.0.clone(),
                 registration_definition_id: registration_definition_id.into(),
                 scope: scope.into(),
@@ -153,8 +153,8 @@ pub mod registration_definitions {
         #[doc = "Arguments:"]
         #[doc = "* `registration_definition_id`: Guid of the registration definition."]
         #[doc = "* `scope`: Scope of the resource."]
-        pub fn delete(&self, registration_definition_id: impl Into<String>, scope: impl Into<String>) -> delete::Builder {
-            delete::Builder {
+        pub fn delete(&self, registration_definition_id: impl Into<String>, scope: impl Into<String>) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 registration_definition_id: registration_definition_id.into(),
                 scope: scope.into(),
@@ -164,8 +164,8 @@ pub mod registration_definitions {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `scope`: Scope of the resource."]
-        pub fn list(&self, scope: impl Into<String>) -> list::Builder {
-            list::Builder {
+        pub fn list(&self, scope: impl Into<String>) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 scope: scope.into(),
             }
@@ -175,12 +175,12 @@ pub mod registration_definitions {
         use super::models;
         type Response = models::RegistrationDefinition;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) scope: String,
             pub(crate) registration_definition_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -229,13 +229,13 @@ pub mod registration_definitions {
             Created201(models::RegistrationDefinition),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) registration_definition_id: String,
             pub(crate) scope: String,
             pub(crate) request_body: models::RegistrationDefinition,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -291,12 +291,12 @@ pub mod registration_definitions {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) registration_definition_id: String,
             pub(crate) scope: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -338,11 +338,11 @@ pub mod registration_definitions {
         use super::models;
         type Response = models::RegistrationDefinitionList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) scope: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -418,8 +418,8 @@ pub mod registration_assignments {
         #[doc = "Arguments:"]
         #[doc = "* `scope`: Scope of the resource."]
         #[doc = "* `registration_assignment_id`: Guid of the registration assignment."]
-        pub fn get(&self, scope: impl Into<String>, registration_assignment_id: impl Into<String>) -> get::Builder {
-            get::Builder {
+        pub fn get(&self, scope: impl Into<String>, registration_assignment_id: impl Into<String>) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 scope: scope.into(),
                 registration_assignment_id: registration_assignment_id.into(),
@@ -437,8 +437,8 @@ pub mod registration_assignments {
             scope: impl Into<String>,
             registration_assignment_id: impl Into<String>,
             request_body: impl Into<models::RegistrationAssignment>,
-        ) -> create_or_update::Builder {
-            create_or_update::Builder {
+        ) -> create_or_update::RequestBuilder {
+            create_or_update::RequestBuilder {
                 client: self.0.clone(),
                 scope: scope.into(),
                 registration_assignment_id: registration_assignment_id.into(),
@@ -450,8 +450,8 @@ pub mod registration_assignments {
         #[doc = "Arguments:"]
         #[doc = "* `scope`: Scope of the resource."]
         #[doc = "* `registration_assignment_id`: Guid of the registration assignment."]
-        pub fn delete(&self, scope: impl Into<String>, registration_assignment_id: impl Into<String>) -> delete::Builder {
-            delete::Builder {
+        pub fn delete(&self, scope: impl Into<String>, registration_assignment_id: impl Into<String>) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 scope: scope.into(),
                 registration_assignment_id: registration_assignment_id.into(),
@@ -461,8 +461,8 @@ pub mod registration_assignments {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `scope`: Scope of the resource."]
-        pub fn list(&self, scope: impl Into<String>) -> list::Builder {
-            list::Builder {
+        pub fn list(&self, scope: impl Into<String>) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 scope: scope.into(),
                 expand_registration_definition: None,
@@ -473,13 +473,13 @@ pub mod registration_assignments {
         use super::models;
         type Response = models::RegistrationAssignment;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) scope: String,
             pub(crate) registration_assignment_id: String,
             pub(crate) expand_registration_definition: Option<bool>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Tells whether to return registration definition details also along with registration assignment details."]
             pub fn expand_registration_definition(mut self, expand_registration_definition: bool) -> Self {
                 self.expand_registration_definition = Some(expand_registration_definition);
@@ -538,13 +538,13 @@ pub mod registration_assignments {
             Created201(models::RegistrationAssignment),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) scope: String,
             pub(crate) registration_assignment_id: String,
             pub(crate) request_body: models::RegistrationAssignment,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -601,12 +601,12 @@ pub mod registration_assignments {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) scope: String,
             pub(crate) registration_assignment_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -650,12 +650,12 @@ pub mod registration_assignments {
         use super::models;
         type Response = models::RegistrationAssignmentList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) scope: String,
             pub(crate) expand_registration_definition: Option<bool>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Tells whether to return registration definition details also along with registration assignment details."]
             pub fn expand_registration_definition(mut self, expand_registration_definition: bool) -> Self {
                 self.expand_registration_definition = Some(expand_registration_definition);
@@ -737,18 +737,18 @@ pub mod operations {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets a list of the operations."]
-        pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.0.clone() }
+        pub fn list(&self) -> list::RequestBuilder {
+            list::RequestBuilder { client: self.0.clone() }
         }
     }
     pub mod list {
         use super::models;
         type Response = models::OperationList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();

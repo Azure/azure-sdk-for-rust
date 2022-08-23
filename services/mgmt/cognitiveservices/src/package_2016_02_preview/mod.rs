@@ -122,8 +122,8 @@ pub mod cognitive_services_accounts {
             resource_group_name: impl Into<String>,
             account_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_properties::Builder {
-            get_properties::Builder {
+        ) -> get_properties::RequestBuilder {
+            get_properties::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 account_name: account_name.into(),
@@ -143,8 +143,8 @@ pub mod cognitive_services_accounts {
             account_name: impl Into<String>,
             parameters: impl Into<models::CognitiveServicesAccountCreateParameters>,
             subscription_id: impl Into<String>,
-        ) -> create::Builder {
-            create::Builder {
+        ) -> create::RequestBuilder {
+            create::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 account_name: account_name.into(),
@@ -165,8 +165,8 @@ pub mod cognitive_services_accounts {
             account_name: impl Into<String>,
             body: impl Into<models::CognitiveServicesAccountUpdateParameters>,
             subscription_id: impl Into<String>,
-        ) -> update::Builder {
-            update::Builder {
+        ) -> update::RequestBuilder {
+            update::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 account_name: account_name.into(),
@@ -185,8 +185,8 @@ pub mod cognitive_services_accounts {
             resource_group_name: impl Into<String>,
             account_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> delete::Builder {
-            delete::Builder {
+        ) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 account_name: account_name.into(),
@@ -202,8 +202,8 @@ pub mod cognitive_services_accounts {
             &self,
             resource_group_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_by_resource_group::Builder {
-            list_by_resource_group::Builder {
+        ) -> list_by_resource_group::RequestBuilder {
+            list_by_resource_group::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 subscription_id: subscription_id.into(),
@@ -213,8 +213,8 @@ pub mod cognitive_services_accounts {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: Azure Subscription ID."]
-        pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
-            list::Builder {
+        pub fn list(&self, subscription_id: impl Into<String>) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
@@ -230,8 +230,8 @@ pub mod cognitive_services_accounts {
             resource_group_name: impl Into<String>,
             account_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_keys::Builder {
-            list_keys::Builder {
+        ) -> list_keys::RequestBuilder {
+            list_keys::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 account_name: account_name.into(),
@@ -251,8 +251,8 @@ pub mod cognitive_services_accounts {
             account_name: impl Into<String>,
             body: impl Into<models::RegenerateKeyParameters>,
             subscription_id: impl Into<String>,
-        ) -> regenerate_key::Builder {
-            regenerate_key::Builder {
+        ) -> regenerate_key::RequestBuilder {
+            regenerate_key::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 account_name: account_name.into(),
@@ -271,8 +271,8 @@ pub mod cognitive_services_accounts {
             resource_group_name: impl Into<String>,
             account_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_skus::Builder {
-            list_skus::Builder {
+        ) -> list_skus::RequestBuilder {
+            list_skus::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 account_name: account_name.into(),
@@ -284,13 +284,13 @@ pub mod cognitive_services_accounts {
         use super::models;
         type Response = models::CognitiveServicesAccount;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) account_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -340,14 +340,14 @@ pub mod cognitive_services_accounts {
             Created201(models::CognitiveServicesAccount),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) account_name: String,
             pub(crate) parameters: models::CognitiveServicesAccountCreateParameters,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -399,14 +399,14 @@ pub mod cognitive_services_accounts {
         use super::models;
         type Response = models::CognitiveServicesAccount;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) account_name: String,
             pub(crate) body: models::CognitiveServicesAccountUpdateParameters,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -457,13 +457,13 @@ pub mod cognitive_services_accounts {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) account_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -506,12 +506,12 @@ pub mod cognitive_services_accounts {
         use super::models;
         type Response = models::CognitiveServicesAccountListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as the continuation token is not part of the response schema"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -557,11 +557,11 @@ pub mod cognitive_services_accounts {
         use super::models;
         type Response = models::CognitiveServicesAccountListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as the continuation token is not part of the response schema"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -606,13 +606,13 @@ pub mod cognitive_services_accounts {
         use super::models;
         type Response = models::CognitiveServicesAccountKeys;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) account_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -659,14 +659,14 @@ pub mod cognitive_services_accounts {
         use super::models;
         type Response = models::CognitiveServicesAccountKeys;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) account_name: String,
             pub(crate) body: models::RegenerateKeyParameters,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -713,13 +713,13 @@ pub mod cognitive_services_accounts {
         use super::models;
         type Response = models::CognitiveServicesAccountEnumerateSkusResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) account_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();

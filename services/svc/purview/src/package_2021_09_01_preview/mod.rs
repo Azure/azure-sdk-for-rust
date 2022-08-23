@@ -140,8 +140,8 @@ pub mod assets {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `sent_share_name`: The name of the sent share"]
-        pub fn list(&self, sent_share_name: impl Into<String>) -> list::Builder {
-            list::Builder {
+        pub fn list(&self, sent_share_name: impl Into<String>) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 sent_share_name: sent_share_name.into(),
                 skip_token: None,
@@ -155,8 +155,8 @@ pub mod assets {
         #[doc = "Arguments:"]
         #[doc = "* `sent_share_name`: The name of the sent share"]
         #[doc = "* `asset_name`: The name of the asset"]
-        pub fn get(&self, sent_share_name: impl Into<String>, asset_name: impl Into<String>) -> get::Builder {
-            get::Builder {
+        pub fn get(&self, sent_share_name: impl Into<String>, asset_name: impl Into<String>) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 sent_share_name: sent_share_name.into(),
                 asset_name: asset_name.into(),
@@ -174,8 +174,8 @@ pub mod assets {
             sent_share_name: impl Into<String>,
             asset_name: impl Into<String>,
             asset: impl Into<models::Asset>,
-        ) -> create::Builder {
-            create::Builder {
+        ) -> create::RequestBuilder {
+            create::RequestBuilder {
                 client: self.0.clone(),
                 sent_share_name: sent_share_name.into(),
                 asset_name: asset_name.into(),
@@ -188,8 +188,8 @@ pub mod assets {
         #[doc = "Arguments:"]
         #[doc = "* `sent_share_name`: The name of the sent share"]
         #[doc = "* `asset_name`: The name of the asset"]
-        pub fn delete(&self, sent_share_name: impl Into<String>, asset_name: impl Into<String>) -> delete::Builder {
-            delete::Builder {
+        pub fn delete(&self, sent_share_name: impl Into<String>, asset_name: impl Into<String>) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 sent_share_name: sent_share_name.into(),
                 asset_name: asset_name.into(),
@@ -200,14 +200,14 @@ pub mod assets {
         use super::models;
         type Response = models::AssetList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) sent_share_name: String,
             pub(crate) skip_token: Option<String>,
             pub(crate) filter: Option<String>,
             pub(crate) orderby: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The continuation token to list the next page"]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());
@@ -298,12 +298,12 @@ pub mod assets {
         use super::models;
         type Response = models::Asset;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) sent_share_name: String,
             pub(crate) asset_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -348,13 +348,13 @@ pub mod assets {
         use super::models;
         type Response = models::Asset;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) sent_share_name: String,
             pub(crate) asset_name: String,
             pub(crate) asset: models::Asset,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -401,12 +401,12 @@ pub mod assets {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) sent_share_name: String,
             pub(crate) asset_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -454,8 +454,8 @@ pub mod asset_mappings {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `received_share_name`: The name of the received share"]
-        pub fn list(&self, received_share_name: impl Into<String>) -> list::Builder {
-            list::Builder {
+        pub fn list(&self, received_share_name: impl Into<String>) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 received_share_name: received_share_name.into(),
                 skip_token: None,
@@ -469,8 +469,8 @@ pub mod asset_mappings {
         #[doc = "Arguments:"]
         #[doc = "* `received_share_name`: The name of the received share"]
         #[doc = "* `asset_mapping_name`: The name of the asset mapping"]
-        pub fn get(&self, received_share_name: impl Into<String>, asset_mapping_name: impl Into<String>) -> get::Builder {
-            get::Builder {
+        pub fn get(&self, received_share_name: impl Into<String>, asset_mapping_name: impl Into<String>) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 received_share_name: received_share_name.into(),
                 asset_mapping_name: asset_mapping_name.into(),
@@ -488,8 +488,8 @@ pub mod asset_mappings {
             received_share_name: impl Into<String>,
             asset_mapping_name: impl Into<String>,
             asset_mapping: impl Into<models::AssetMapping>,
-        ) -> create::Builder {
-            create::Builder {
+        ) -> create::RequestBuilder {
+            create::RequestBuilder {
                 client: self.0.clone(),
                 received_share_name: received_share_name.into(),
                 asset_mapping_name: asset_mapping_name.into(),
@@ -502,8 +502,8 @@ pub mod asset_mappings {
         #[doc = "Arguments:"]
         #[doc = "* `received_share_name`: The name of the received share"]
         #[doc = "* `asset_mapping_name`: The name of the asset mapping"]
-        pub fn delete(&self, received_share_name: impl Into<String>, asset_mapping_name: impl Into<String>) -> delete::Builder {
-            delete::Builder {
+        pub fn delete(&self, received_share_name: impl Into<String>, asset_mapping_name: impl Into<String>) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 received_share_name: received_share_name.into(),
                 asset_mapping_name: asset_mapping_name.into(),
@@ -514,14 +514,14 @@ pub mod asset_mappings {
         use super::models;
         type Response = models::AssetMappingList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) received_share_name: String,
             pub(crate) skip_token: Option<String>,
             pub(crate) filter: Option<String>,
             pub(crate) orderby: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The continuation token to list the next page"]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());
@@ -615,12 +615,12 @@ pub mod asset_mappings {
         use super::models;
         type Response = models::AssetMapping;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) received_share_name: String,
             pub(crate) asset_mapping_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -669,13 +669,13 @@ pub mod asset_mappings {
             Accepted202(models::AssetMapping),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) received_share_name: String,
             pub(crate) asset_mapping_name: String,
             pub(crate) asset_mapping: models::AssetMapping,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -727,12 +727,12 @@ pub mod asset_mappings {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) received_share_name: String,
             pub(crate) asset_mapping_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -777,8 +777,8 @@ pub mod received_invitations {
     impl Client {
         #[doc = "Lists the received invitations."]
         #[doc = "List received invitations"]
-        pub fn list(&self) -> list::Builder {
-            list::Builder {
+        pub fn list(&self) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 skip_token: None,
                 filter: None,
@@ -790,8 +790,8 @@ pub mod received_invitations {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `received_invitation_name`: Name of the received invitation"]
-        pub fn get(&self, received_invitation_name: impl Into<String>) -> get::Builder {
-            get::Builder {
+        pub fn get(&self, received_invitation_name: impl Into<String>) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 received_invitation_name: received_invitation_name.into(),
             }
@@ -806,8 +806,8 @@ pub mod received_invitations {
             &self,
             received_invitation_name: impl Into<String>,
             received_invitation: impl Into<models::ReceivedInvitation>,
-        ) -> reject::Builder {
-            reject::Builder {
+        ) -> reject::RequestBuilder {
+            reject::RequestBuilder {
                 client: self.0.clone(),
                 received_invitation_name: received_invitation_name.into(),
                 received_invitation: received_invitation.into(),
@@ -819,13 +819,13 @@ pub mod received_invitations {
         use super::models;
         type Response = models::ReceivedInvitationList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) skip_token: Option<String>,
             pub(crate) filter: Option<String>,
             pub(crate) orderby: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The continuation token to list the next page"]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());
@@ -915,11 +915,11 @@ pub mod received_invitations {
         use super::models;
         type Response = models::ReceivedInvitation;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) received_invitation_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -963,13 +963,13 @@ pub mod received_invitations {
         use super::models;
         type Response = models::ReceivedInvitation;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) received_invitation_name: String,
             pub(crate) received_invitation: models::ReceivedInvitation,
             pub(crate) repeatability_request_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "If specified, the client directs that the request is repeatable; that is, that the client can make the request multiple times with the same Repeatability-Request-Id and get back an appropriate response without the server executing the request multiple times. The value of the Repeatability-Request-Id is an opaque string representing a client-generated, globally unique for all time, identifier for the request. It is recommended to use version 4 (random) UUIDs."]
             pub fn repeatability_request_id(mut self, repeatability_request_id: impl Into<String>) -> Self {
                 self.repeatability_request_id = Some(repeatability_request_id.into());
@@ -1025,8 +1025,8 @@ pub mod received_shares {
     impl Client {
         #[doc = "Get a list of received shares."]
         #[doc = "List received shares"]
-        pub fn list(&self) -> list::Builder {
-            list::Builder {
+        pub fn list(&self) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 skip_token: None,
                 filter: None,
@@ -1038,8 +1038,8 @@ pub mod received_shares {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `received_share_name`: The name of the received share"]
-        pub fn get(&self, received_share_name: impl Into<String>) -> get::Builder {
-            get::Builder {
+        pub fn get(&self, received_share_name: impl Into<String>) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 received_share_name: received_share_name.into(),
             }
@@ -1050,8 +1050,12 @@ pub mod received_shares {
         #[doc = "Arguments:"]
         #[doc = "* `received_share_name`: The name of the received share"]
         #[doc = "* `received_share`: The received share to create."]
-        pub fn create(&self, received_share_name: impl Into<String>, received_share: impl Into<models::ReceivedShare>) -> create::Builder {
-            create::Builder {
+        pub fn create(
+            &self,
+            received_share_name: impl Into<String>,
+            received_share: impl Into<models::ReceivedShare>,
+        ) -> create::RequestBuilder {
+            create::RequestBuilder {
                 client: self.0.clone(),
                 received_share_name: received_share_name.into(),
                 received_share: received_share.into(),
@@ -1062,8 +1066,8 @@ pub mod received_shares {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `received_share_name`: The name of the received share"]
-        pub fn delete(&self, received_share_name: impl Into<String>) -> delete::Builder {
-            delete::Builder {
+        pub fn delete(&self, received_share_name: impl Into<String>) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 received_share_name: received_share_name.into(),
             }
@@ -1073,13 +1077,13 @@ pub mod received_shares {
         use super::models;
         type Response = models::ReceivedShareList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) skip_token: Option<String>,
             pub(crate) filter: Option<String>,
             pub(crate) orderby: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The continuation token to list the next page"]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());
@@ -1169,11 +1173,11 @@ pub mod received_shares {
         use super::models;
         type Response = models::ReceivedShare;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) received_share_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1214,12 +1218,12 @@ pub mod received_shares {
         use super::models;
         type Response = models::ReceivedShare;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) received_share_name: String,
             pub(crate) received_share: models::ReceivedShare,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1261,11 +1265,11 @@ pub mod received_shares {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) received_share_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -1309,8 +1313,8 @@ pub mod received_assets {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `received_share_name`: The name of the received share"]
-        pub fn list(&self, received_share_name: impl Into<String>) -> list::Builder {
-            list::Builder {
+        pub fn list(&self, received_share_name: impl Into<String>) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 received_share_name: received_share_name.into(),
                 skip_token: None,
@@ -1321,12 +1325,12 @@ pub mod received_assets {
         use super::models;
         type Response = models::ReceivedAssetList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) received_share_name: String,
             pub(crate) skip_token: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The continuation token to list the next page"]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());
@@ -1407,8 +1411,8 @@ pub mod sent_shares {
     impl Client {
         #[doc = "Get list of sent shares in the given Purview account."]
         #[doc = "Get list of sent shares"]
-        pub fn list(&self) -> list::Builder {
-            list::Builder {
+        pub fn list(&self) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 skip_token: None,
                 filter: None,
@@ -1420,8 +1424,8 @@ pub mod sent_shares {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `sent_share_name`: The name of the sent share"]
-        pub fn get(&self, sent_share_name: impl Into<String>) -> get::Builder {
-            get::Builder {
+        pub fn get(&self, sent_share_name: impl Into<String>) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 sent_share_name: sent_share_name.into(),
             }
@@ -1436,8 +1440,8 @@ pub mod sent_shares {
             &self,
             sent_share_name: impl Into<String>,
             sent_share: impl Into<models::SentShare>,
-        ) -> create_or_update::Builder {
-            create_or_update::Builder {
+        ) -> create_or_update::RequestBuilder {
+            create_or_update::RequestBuilder {
                 client: self.0.clone(),
                 sent_share_name: sent_share_name.into(),
                 sent_share: sent_share.into(),
@@ -1448,8 +1452,8 @@ pub mod sent_shares {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `sent_share_name`: The name of the sent share"]
-        pub fn delete(&self, sent_share_name: impl Into<String>) -> delete::Builder {
-            delete::Builder {
+        pub fn delete(&self, sent_share_name: impl Into<String>) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 sent_share_name: sent_share_name.into(),
             }
@@ -1459,13 +1463,13 @@ pub mod sent_shares {
         use super::models;
         type Response = models::SentShareList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) skip_token: Option<String>,
             pub(crate) filter: Option<String>,
             pub(crate) orderby: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The continuation token to list the next page"]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());
@@ -1555,11 +1559,11 @@ pub mod sent_shares {
         use super::models;
         type Response = models::SentShare;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) sent_share_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1603,12 +1607,12 @@ pub mod sent_shares {
             Ok200(models::SentShare),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) sent_share_name: String,
             pub(crate) sent_share: models::SentShare,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1654,11 +1658,11 @@ pub mod sent_shares {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) sent_share_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -1701,8 +1705,8 @@ pub mod accepted_sent_shares {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `sent_share_name`: The name of the sent share"]
-        pub fn list(&self, sent_share_name: impl Into<String>) -> list::Builder {
-            list::Builder {
+        pub fn list(&self, sent_share_name: impl Into<String>) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 sent_share_name: sent_share_name.into(),
                 skip_token: None,
@@ -1714,8 +1718,8 @@ pub mod accepted_sent_shares {
         #[doc = "Arguments:"]
         #[doc = "* `sent_share_name`: The name of the sent share"]
         #[doc = "* `accepted_sent_share_name`: The name of the accepted sent share"]
-        pub fn get(&self, sent_share_name: impl Into<String>, accepted_sent_share_name: impl Into<String>) -> get::Builder {
-            get::Builder {
+        pub fn get(&self, sent_share_name: impl Into<String>, accepted_sent_share_name: impl Into<String>) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 sent_share_name: sent_share_name.into(),
                 accepted_sent_share_name: accepted_sent_share_name.into(),
@@ -1733,8 +1737,8 @@ pub mod accepted_sent_shares {
             sent_share_name: impl Into<String>,
             accepted_sent_share_name: impl Into<String>,
             accepted_sent_share: impl Into<models::AcceptedSentShare>,
-        ) -> reinstate::Builder {
-            reinstate::Builder {
+        ) -> reinstate::RequestBuilder {
+            reinstate::RequestBuilder {
                 client: self.0.clone(),
                 sent_share_name: sent_share_name.into(),
                 accepted_sent_share_name: accepted_sent_share_name.into(),
@@ -1748,8 +1752,8 @@ pub mod accepted_sent_shares {
         #[doc = "Arguments:"]
         #[doc = "* `sent_share_name`: The name of the sent share"]
         #[doc = "* `accepted_sent_share_name`: The name of the accepted sent share"]
-        pub fn revoke(&self, sent_share_name: impl Into<String>, accepted_sent_share_name: impl Into<String>) -> revoke::Builder {
-            revoke::Builder {
+        pub fn revoke(&self, sent_share_name: impl Into<String>, accepted_sent_share_name: impl Into<String>) -> revoke::RequestBuilder {
+            revoke::RequestBuilder {
                 client: self.0.clone(),
                 sent_share_name: sent_share_name.into(),
                 accepted_sent_share_name: accepted_sent_share_name.into(),
@@ -1768,8 +1772,8 @@ pub mod accepted_sent_shares {
             sent_share_name: impl Into<String>,
             accepted_sent_share_name: impl Into<String>,
             accepted_sent_share: impl Into<models::AcceptedSentShare>,
-        ) -> update_expiration::Builder {
-            update_expiration::Builder {
+        ) -> update_expiration::RequestBuilder {
+            update_expiration::RequestBuilder {
                 client: self.0.clone(),
                 sent_share_name: sent_share_name.into(),
                 accepted_sent_share_name: accepted_sent_share_name.into(),
@@ -1782,12 +1786,12 @@ pub mod accepted_sent_shares {
         use super::models;
         type Response = models::AcceptedSentShareList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) sent_share_name: String,
             pub(crate) skip_token: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The continuation token to list the next page"]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());
@@ -1865,12 +1869,12 @@ pub mod accepted_sent_shares {
         use super::models;
         type Response = models::AcceptedSentShare;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) sent_share_name: String,
             pub(crate) accepted_sent_share_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1915,14 +1919,14 @@ pub mod accepted_sent_shares {
         use super::models;
         type Response = models::AcceptedSentShare;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) sent_share_name: String,
             pub(crate) accepted_sent_share_name: String,
             pub(crate) accepted_sent_share: models::AcceptedSentShare,
             pub(crate) repeatability_request_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "If specified, the client directs that the request is repeatable; that is, that the client can make the request multiple times with the same Repeatability-Request-Id and get back an appropriate response without the server executing the request multiple times. The value of the Repeatability-Request-Id is an opaque string representing a client-generated, globally unique for all time, identifier for the request. It is recommended to use version 4 (random) UUIDs."]
             pub fn repeatability_request_id(mut self, repeatability_request_id: impl Into<String>) -> Self {
                 self.repeatability_request_id = Some(repeatability_request_id.into());
@@ -1977,13 +1981,13 @@ pub mod accepted_sent_shares {
         use super::models;
         type Response = models::AcceptedSentShare;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) sent_share_name: String,
             pub(crate) accepted_sent_share_name: String,
             pub(crate) repeatability_request_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "If specified, the client directs that the request is repeatable; that is, that the client can make the request multiple times with the same Repeatability-Request-Id and get back an appropriate response without the server executing the request multiple times. The value of the Repeatability-Request-Id is an opaque string representing a client-generated, globally unique for all time, identifier for the request. It is recommended to use version 4 (random) UUIDs."]
             pub fn repeatability_request_id(mut self, repeatability_request_id: impl Into<String>) -> Self {
                 self.repeatability_request_id = Some(repeatability_request_id.into());
@@ -2038,14 +2042,14 @@ pub mod accepted_sent_shares {
         use super::models;
         type Response = models::AcceptedSentShare;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) sent_share_name: String,
             pub(crate) accepted_sent_share_name: String,
             pub(crate) accepted_sent_share: models::AcceptedSentShare,
             pub(crate) repeatability_request_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "If specified, the client directs that the request is repeatable; that is, that the client can make the request multiple times with the same Repeatability-Request-Id and get back an appropriate response without the server executing the request multiple times. The value of the Repeatability-Request-Id is an opaque string representing a client-generated, globally unique for all time, identifier for the request. It is recommended to use version 4 (random) UUIDs."]
             pub fn repeatability_request_id(mut self, repeatability_request_id: impl Into<String>) -> Self {
                 self.repeatability_request_id = Some(repeatability_request_id.into());
@@ -2106,8 +2110,8 @@ pub mod sent_share_invitations {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `sent_share_name`: The name of the sent share"]
-        pub fn list(&self, sent_share_name: impl Into<String>) -> list::Builder {
-            list::Builder {
+        pub fn list(&self, sent_share_name: impl Into<String>) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 sent_share_name: sent_share_name.into(),
                 skip_token: None,
@@ -2121,8 +2125,8 @@ pub mod sent_share_invitations {
         #[doc = "Arguments:"]
         #[doc = "* `sent_share_name`: The name of the sent share"]
         #[doc = "* `sent_share_invitation_name`: Name of the sent invitation"]
-        pub fn get(&self, sent_share_name: impl Into<String>, sent_share_invitation_name: impl Into<String>) -> get::Builder {
-            get::Builder {
+        pub fn get(&self, sent_share_name: impl Into<String>, sent_share_invitation_name: impl Into<String>) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 sent_share_name: sent_share_name.into(),
                 sent_share_invitation_name: sent_share_invitation_name.into(),
@@ -2140,8 +2144,8 @@ pub mod sent_share_invitations {
             sent_share_name: impl Into<String>,
             sent_share_invitation_name: impl Into<String>,
             sent_share_invitation: impl Into<models::SentShareInvitation>,
-        ) -> create_or_update::Builder {
-            create_or_update::Builder {
+        ) -> create_or_update::RequestBuilder {
+            create_or_update::RequestBuilder {
                 client: self.0.clone(),
                 sent_share_name: sent_share_name.into(),
                 sent_share_invitation_name: sent_share_invitation_name.into(),
@@ -2154,8 +2158,8 @@ pub mod sent_share_invitations {
         #[doc = "Arguments:"]
         #[doc = "* `sent_share_name`: The name of the sent share"]
         #[doc = "* `sent_share_invitation_name`: Name of the sent invitation"]
-        pub fn delete(&self, sent_share_name: impl Into<String>, sent_share_invitation_name: impl Into<String>) -> delete::Builder {
-            delete::Builder {
+        pub fn delete(&self, sent_share_name: impl Into<String>, sent_share_invitation_name: impl Into<String>) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 sent_share_name: sent_share_name.into(),
                 sent_share_invitation_name: sent_share_invitation_name.into(),
@@ -2166,14 +2170,14 @@ pub mod sent_share_invitations {
         use super::models;
         type Response = models::SentShareInvitationList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) sent_share_name: String,
             pub(crate) skip_token: Option<String>,
             pub(crate) filter: Option<String>,
             pub(crate) orderby: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The continuation token to list the next page"]
             pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
                 self.skip_token = Some(skip_token.into());
@@ -2267,12 +2271,12 @@ pub mod sent_share_invitations {
         use super::models;
         type Response = models::SentShareInvitation;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) sent_share_name: String,
             pub(crate) sent_share_invitation_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2321,13 +2325,13 @@ pub mod sent_share_invitations {
             Ok200(models::SentShareInvitation),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) sent_share_name: String,
             pub(crate) sent_share_invitation_name: String,
             pub(crate) sent_share_invitation: models::SentShareInvitation,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2378,12 +2382,12 @@ pub mod sent_share_invitations {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) sent_share_name: String,
             pub(crate) sent_share_invitation_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2430,8 +2434,8 @@ pub mod email_registration {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `tenant_email_registration`: The tenant email registration payload"]
-        pub fn activate(&self, tenant_email_registration: impl Into<models::TenantEmailRegistration>) -> activate::Builder {
-            activate::Builder {
+        pub fn activate(&self, tenant_email_registration: impl Into<models::TenantEmailRegistration>) -> activate::RequestBuilder {
+            activate::RequestBuilder {
                 client: self.0.clone(),
                 tenant_email_registration: tenant_email_registration.into(),
                 repeatability_request_id: None,
@@ -2439,8 +2443,8 @@ pub mod email_registration {
         }
         #[doc = "Registers the tenant and email combination for activation."]
         #[doc = "Register an email for the current tenant"]
-        pub fn register(&self) -> register::Builder {
-            register::Builder {
+        pub fn register(&self) -> register::RequestBuilder {
+            register::RequestBuilder {
                 client: self.0.clone(),
                 repeatability_request_id: None,
             }
@@ -2450,12 +2454,12 @@ pub mod email_registration {
         use super::models;
         type Response = models::TenantEmailRegistration;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) tenant_email_registration: models::TenantEmailRegistration,
             pub(crate) repeatability_request_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "If specified, the client directs that the request is repeatable; that is, that the client can make the request multiple times with the same Repeatability-Request-Id and get back an appropriate response without the server executing the request multiple times. The value of the Repeatability-Request-Id is an opaque string representing a client-generated, globally unique for all time, identifier for the request. It is recommended to use version 4 (random) UUIDs."]
             pub fn repeatability_request_id(mut self, repeatability_request_id: impl Into<String>) -> Self {
                 self.repeatability_request_id = Some(repeatability_request_id.into());
@@ -2504,11 +2508,11 @@ pub mod email_registration {
         use super::models;
         type Response = models::TenantEmailRegistration;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) repeatability_request_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "If specified, the client directs that the request is repeatable; that is, that the client can make the request multiple times with the same Repeatability-Request-Id and get back an appropriate response without the server executing the request multiple times. The value of the Repeatability-Request-Id is an opaque string representing a client-generated, globally unique for all time, identifier for the request. It is recommended to use version 4 (random) UUIDs."]
             pub fn repeatability_request_id(mut self, repeatability_request_id: impl Into<String>) -> Self {
                 self.repeatability_request_id = Some(repeatability_request_id.into());

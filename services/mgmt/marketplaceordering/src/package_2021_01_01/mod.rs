@@ -129,8 +129,8 @@ pub mod marketplace_agreements {
             publisher_id: impl Into<String>,
             offer_id: impl Into<String>,
             plan_id: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 offer_type: offer_type.into(),
@@ -156,8 +156,8 @@ pub mod marketplace_agreements {
             offer_id: impl Into<String>,
             plan_id: impl Into<String>,
             parameters: impl Into<models::AgreementTerms>,
-        ) -> create::Builder {
-            create::Builder {
+        ) -> create::RequestBuilder {
+            create::RequestBuilder {
                 client: self.0.clone(),
                 offer_type: offer_type.into(),
                 subscription_id: subscription_id.into(),
@@ -180,8 +180,8 @@ pub mod marketplace_agreements {
             publisher_id: impl Into<String>,
             offer_id: impl Into<String>,
             plan_id: impl Into<String>,
-        ) -> sign::Builder {
-            sign::Builder {
+        ) -> sign::RequestBuilder {
+            sign::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 publisher_id: publisher_id.into(),
@@ -202,8 +202,8 @@ pub mod marketplace_agreements {
             publisher_id: impl Into<String>,
             offer_id: impl Into<String>,
             plan_id: impl Into<String>,
-        ) -> cancel::Builder {
-            cancel::Builder {
+        ) -> cancel::RequestBuilder {
+            cancel::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 publisher_id: publisher_id.into(),
@@ -224,8 +224,8 @@ pub mod marketplace_agreements {
             publisher_id: impl Into<String>,
             offer_id: impl Into<String>,
             plan_id: impl Into<String>,
-        ) -> get_agreement::Builder {
-            get_agreement::Builder {
+        ) -> get_agreement::RequestBuilder {
+            get_agreement::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 publisher_id: publisher_id.into(),
@@ -237,8 +237,8 @@ pub mod marketplace_agreements {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
-        pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
-            list::Builder {
+        pub fn list(&self, subscription_id: impl Into<String>) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
@@ -248,7 +248,7 @@ pub mod marketplace_agreements {
         use super::models;
         type Response = models::AgreementTerms;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) offer_type: String,
@@ -256,7 +256,7 @@ pub mod marketplace_agreements {
             pub(crate) offer_id: String,
             pub(crate) plan_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -296,7 +296,7 @@ pub mod marketplace_agreements {
         use super::models;
         type Response = models::AgreementTerms;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) offer_type: String,
             pub(crate) subscription_id: String,
@@ -305,7 +305,7 @@ pub mod marketplace_agreements {
             pub(crate) plan_id: String,
             pub(crate) parameters: models::AgreementTerms,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -346,14 +346,14 @@ pub mod marketplace_agreements {
         use super::models;
         type Response = models::AgreementTerms;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) publisher_id: String,
             pub(crate) offer_id: String,
             pub(crate) plan_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -401,14 +401,14 @@ pub mod marketplace_agreements {
         use super::models;
         type Response = models::AgreementTerms;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) publisher_id: String,
             pub(crate) offer_id: String,
             pub(crate) plan_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -456,14 +456,14 @@ pub mod marketplace_agreements {
         use super::models;
         type Response = models::AgreementTerms;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) publisher_id: String,
             pub(crate) offer_id: String,
             pub(crate) plan_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -510,11 +510,11 @@ pub mod marketplace_agreements {
         use super::models;
         type Response = Vec<models::AgreementTerms>;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -560,18 +560,18 @@ pub mod operations {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Lists all of the available Microsoft.MarketplaceOrdering REST API operations."]
-        pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.0.clone() }
+        pub fn list(&self) -> list::RequestBuilder {
+            list::RequestBuilder { client: self.0.clone() }
         }
     }
     pub mod list {
         use super::models;
         type Response = models::OperationListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();

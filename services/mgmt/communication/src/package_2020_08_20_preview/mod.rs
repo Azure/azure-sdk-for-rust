@@ -119,18 +119,18 @@ pub mod operations {
     impl Client {
         #[doc = "List Operations"]
         #[doc = "Lists all of the available REST API operations of the Microsoft.Communication provider."]
-        pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.0.clone() }
+        pub fn list(&self) -> list::RequestBuilder {
+            list::RequestBuilder { client: self.0.clone() }
         }
     }
     pub mod list {
         use super::models;
         type Response = models::OperationList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -203,8 +203,8 @@ pub mod communication_service {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: The ID of the target subscription."]
-        pub fn check_name_availability(&self, subscription_id: impl Into<String>) -> check_name_availability::Builder {
-            check_name_availability::Builder {
+        pub fn check_name_availability(&self, subscription_id: impl Into<String>) -> check_name_availability::RequestBuilder {
+            check_name_availability::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 name_availability_parameters: None,
@@ -222,8 +222,8 @@ pub mod communication_service {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             communication_service_name: impl Into<String>,
-        ) -> link_notification_hub::Builder {
-            link_notification_hub::Builder {
+        ) -> link_notification_hub::RequestBuilder {
+            link_notification_hub::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -236,8 +236,8 @@ pub mod communication_service {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: Gets subscription ID which uniquely identifies the Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
-        pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
-            list_by_subscription::Builder {
+        pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::RequestBuilder {
+            list_by_subscription::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
@@ -252,8 +252,8 @@ pub mod communication_service {
             &self,
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
-        ) -> list_by_resource_group::Builder {
-            list_by_resource_group::Builder {
+        ) -> list_by_resource_group::RequestBuilder {
+            list_by_resource_group::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -271,8 +271,8 @@ pub mod communication_service {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             communication_service_name: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -291,8 +291,8 @@ pub mod communication_service {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             communication_service_name: impl Into<String>,
-        ) -> create_or_update::Builder {
-            create_or_update::Builder {
+        ) -> create_or_update::RequestBuilder {
+            create_or_update::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -312,8 +312,8 @@ pub mod communication_service {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             communication_service_name: impl Into<String>,
-        ) -> update::Builder {
-            update::Builder {
+        ) -> update::RequestBuilder {
+            update::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -333,8 +333,8 @@ pub mod communication_service {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             communication_service_name: impl Into<String>,
-        ) -> delete::Builder {
-            delete::Builder {
+        ) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -353,8 +353,8 @@ pub mod communication_service {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             communication_service_name: impl Into<String>,
-        ) -> list_keys::Builder {
-            list_keys::Builder {
+        ) -> list_keys::RequestBuilder {
+            list_keys::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -373,8 +373,8 @@ pub mod communication_service {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             communication_service_name: impl Into<String>,
-        ) -> regenerate_key::Builder {
-            regenerate_key::Builder {
+        ) -> regenerate_key::RequestBuilder {
+            regenerate_key::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -387,12 +387,12 @@ pub mod communication_service {
         use super::models;
         type Response = models::NameAvailability;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) name_availability_parameters: Option<models::NameAvailabilityParameters>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Parameters supplied to the operation."]
             pub fn name_availability_parameters(
                 mut self,
@@ -449,14 +449,14 @@ pub mod communication_service {
         use super::models;
         type Response = models::LinkedNotificationHub;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) communication_service_name: String,
             pub(crate) link_notification_hub_parameters: Option<models::LinkNotificationHubParameters>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Parameters supplied to the operation."]
             pub fn link_notification_hub_parameters(
                 mut self,
@@ -509,11 +509,11 @@ pub mod communication_service {
         use super::models;
         type Response = models::CommunicationServiceResourceList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -583,12 +583,12 @@ pub mod communication_service {
         use super::models;
         type Response = models::CommunicationServiceResourceList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -659,13 +659,13 @@ pub mod communication_service {
         use super::models;
         type Response = models::CommunicationServiceResource;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) communication_service_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -715,14 +715,14 @@ pub mod communication_service {
             Created201(models::CommunicationServiceResource),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) communication_service_name: String,
             pub(crate) parameters: Option<models::CommunicationServiceResource>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Parameters for the create or update operation"]
             pub fn parameters(mut self, parameters: impl Into<models::CommunicationServiceResource>) -> Self {
                 self.parameters = Some(parameters.into());
@@ -784,14 +784,14 @@ pub mod communication_service {
         use super::models;
         type Response = models::CommunicationServiceResource;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) communication_service_name: String,
             pub(crate) parameters: Option<models::TaggedResource>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Parameters for the update operation"]
             pub fn parameters(mut self, parameters: impl Into<models::TaggedResource>) -> Self {
                 self.parameters = Some(parameters.into());
@@ -852,13 +852,13 @@ pub mod communication_service {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) communication_service_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -903,13 +903,13 @@ pub mod communication_service {
         use super::models;
         type Response = models::CommunicationServiceKeys;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) communication_service_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -960,14 +960,14 @@ pub mod communication_service {
             Created201(models::CommunicationServiceKeys),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) communication_service_name: String,
             pub(crate) parameters: Option<models::RegenerateKeyParameters>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Parameter that describes the Regenerate Key Operation."]
             pub fn parameters(mut self, parameters: impl Into<models::RegenerateKeyParameters>) -> Self {
                 self.parameters = Some(parameters.into());
@@ -1029,8 +1029,8 @@ pub mod operation_statuses {
         #[doc = "Arguments:"]
         #[doc = "* `location`: The Azure region"]
         #[doc = "* `operation_id`: The ID of an ongoing async operation"]
-        pub fn get(&self, location: impl Into<String>, operation_id: impl Into<String>) -> get::Builder {
-            get::Builder {
+        pub fn get(&self, location: impl Into<String>, operation_id: impl Into<String>) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 location: location.into(),
                 operation_id: operation_id.into(),
@@ -1041,12 +1041,12 @@ pub mod operation_statuses {
         use super::models;
         type Response = models::OperationStatus;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) location: String,
             pub(crate) operation_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();

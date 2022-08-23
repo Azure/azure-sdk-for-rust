@@ -158,18 +158,18 @@ pub mod operations {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Lists the operations available from this provider."]
-        pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.0.clone() }
+        pub fn list(&self) -> list::RequestBuilder {
+            list::RequestBuilder { client: self.0.clone() }
         }
     }
     pub mod list {
         use super::models;
         type Response = models::OperationListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -241,8 +241,8 @@ pub mod access_review_history_definitions {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: The ID of the target subscription."]
-        pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
-            list::Builder {
+        pub fn list(&self, subscription_id: impl Into<String>) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 filter: None,
@@ -253,8 +253,8 @@ pub mod access_review_history_definitions {
         #[doc = "Arguments:"]
         #[doc = "* `history_definition_id`: The id of the access review history definition."]
         #[doc = "* `subscription_id`: The ID of the target subscription."]
-        pub fn get_by_id(&self, history_definition_id: impl Into<String>, subscription_id: impl Into<String>) -> get_by_id::Builder {
-            get_by_id::Builder {
+        pub fn get_by_id(&self, history_definition_id: impl Into<String>, subscription_id: impl Into<String>) -> get_by_id::RequestBuilder {
+            get_by_id::RequestBuilder {
                 client: self.0.clone(),
                 history_definition_id: history_definition_id.into(),
                 subscription_id: subscription_id.into(),
@@ -265,12 +265,12 @@ pub mod access_review_history_definitions {
         use super::models;
         type Response = models::AccessReviewHistoryDefinitionListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) filter: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The filter to apply on the operation. Only standard filters on definition name and created date are supported"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -348,12 +348,12 @@ pub mod access_review_history_definitions {
         use super::models;
         type Response = models::AccessReviewHistoryDefinition;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) history_definition_id: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -410,8 +410,8 @@ pub mod access_review_history_definition {
             history_definition_id: impl Into<String>,
             properties: impl Into<models::AccessReviewHistoryDefinitionProperties>,
             subscription_id: impl Into<String>,
-        ) -> create::Builder {
-            create::Builder {
+        ) -> create::RequestBuilder {
+            create::RequestBuilder {
                 client: self.0.clone(),
                 history_definition_id: history_definition_id.into(),
                 properties: properties.into(),
@@ -423,8 +423,12 @@ pub mod access_review_history_definition {
         #[doc = "Arguments:"]
         #[doc = "* `history_definition_id`: The id of the access review history definition."]
         #[doc = "* `subscription_id`: The ID of the target subscription."]
-        pub fn delete_by_id(&self, history_definition_id: impl Into<String>, subscription_id: impl Into<String>) -> delete_by_id::Builder {
-            delete_by_id::Builder {
+        pub fn delete_by_id(
+            &self,
+            history_definition_id: impl Into<String>,
+            subscription_id: impl Into<String>,
+        ) -> delete_by_id::RequestBuilder {
+            delete_by_id::RequestBuilder {
                 client: self.0.clone(),
                 history_definition_id: history_definition_id.into(),
                 subscription_id: subscription_id.into(),
@@ -435,13 +439,13 @@ pub mod access_review_history_definition {
         use super::models;
         type Response = models::AccessReviewHistoryDefinition;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) history_definition_id: String,
             pub(crate) properties: models::AccessReviewHistoryDefinitionProperties,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -491,12 +495,12 @@ pub mod access_review_history_definition {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) history_definition_id: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -550,8 +554,8 @@ pub mod access_review_history_definition_instance {
             history_definition_id: impl Into<String>,
             instance_id: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> generate_download_uri::Builder {
-            generate_download_uri::Builder {
+        ) -> generate_download_uri::RequestBuilder {
+            generate_download_uri::RequestBuilder {
                 client: self.0.clone(),
                 history_definition_id: history_definition_id.into(),
                 instance_id: instance_id.into(),
@@ -563,13 +567,13 @@ pub mod access_review_history_definition_instance {
         use super::models;
         type Response = models::AccessReviewHistoryInstance;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) history_definition_id: String,
             pub(crate) instance_id: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -616,8 +620,8 @@ pub mod access_review_history_definition_instances {
         #[doc = "Arguments:"]
         #[doc = "* `history_definition_id`: The id of the access review history definition."]
         #[doc = "* `subscription_id`: The ID of the target subscription."]
-        pub fn list(&self, history_definition_id: impl Into<String>, subscription_id: impl Into<String>) -> list::Builder {
-            list::Builder {
+        pub fn list(&self, history_definition_id: impl Into<String>, subscription_id: impl Into<String>) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 history_definition_id: history_definition_id.into(),
                 subscription_id: subscription_id.into(),
@@ -628,12 +632,12 @@ pub mod access_review_history_definition_instances {
         use super::models;
         type Response = models::AccessReviewHistoryDefinitionInstanceListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) history_definition_id: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -709,8 +713,8 @@ pub mod access_review_schedule_definitions {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: The ID of the target subscription."]
-        pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
-            list::Builder {
+        pub fn list(&self, subscription_id: impl Into<String>) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 filter: None,
@@ -721,8 +725,12 @@ pub mod access_review_schedule_definitions {
         #[doc = "Arguments:"]
         #[doc = "* `schedule_definition_id`: The id of the access review schedule definition."]
         #[doc = "* `subscription_id`: The ID of the target subscription."]
-        pub fn get_by_id(&self, schedule_definition_id: impl Into<String>, subscription_id: impl Into<String>) -> get_by_id::Builder {
-            get_by_id::Builder {
+        pub fn get_by_id(
+            &self,
+            schedule_definition_id: impl Into<String>,
+            subscription_id: impl Into<String>,
+        ) -> get_by_id::RequestBuilder {
+            get_by_id::RequestBuilder {
                 client: self.0.clone(),
                 schedule_definition_id: schedule_definition_id.into(),
                 subscription_id: subscription_id.into(),
@@ -739,8 +747,8 @@ pub mod access_review_schedule_definitions {
             schedule_definition_id: impl Into<String>,
             properties: impl Into<models::AccessReviewScheduleDefinitionProperties>,
             subscription_id: impl Into<String>,
-        ) -> create_or_update_by_id::Builder {
-            create_or_update_by_id::Builder {
+        ) -> create_or_update_by_id::RequestBuilder {
+            create_or_update_by_id::RequestBuilder {
                 client: self.0.clone(),
                 schedule_definition_id: schedule_definition_id.into(),
                 properties: properties.into(),
@@ -752,8 +760,12 @@ pub mod access_review_schedule_definitions {
         #[doc = "Arguments:"]
         #[doc = "* `schedule_definition_id`: The id of the access review schedule definition."]
         #[doc = "* `subscription_id`: The ID of the target subscription."]
-        pub fn delete_by_id(&self, schedule_definition_id: impl Into<String>, subscription_id: impl Into<String>) -> delete_by_id::Builder {
-            delete_by_id::Builder {
+        pub fn delete_by_id(
+            &self,
+            schedule_definition_id: impl Into<String>,
+            subscription_id: impl Into<String>,
+        ) -> delete_by_id::RequestBuilder {
+            delete_by_id::RequestBuilder {
                 client: self.0.clone(),
                 schedule_definition_id: schedule_definition_id.into(),
                 subscription_id: subscription_id.into(),
@@ -764,8 +776,8 @@ pub mod access_review_schedule_definitions {
         #[doc = "Arguments:"]
         #[doc = "* `schedule_definition_id`: The id of the access review schedule definition."]
         #[doc = "* `subscription_id`: The ID of the target subscription."]
-        pub fn stop(&self, schedule_definition_id: impl Into<String>, subscription_id: impl Into<String>) -> stop::Builder {
-            stop::Builder {
+        pub fn stop(&self, schedule_definition_id: impl Into<String>, subscription_id: impl Into<String>) -> stop::RequestBuilder {
+            stop::RequestBuilder {
                 client: self.0.clone(),
                 schedule_definition_id: schedule_definition_id.into(),
                 subscription_id: subscription_id.into(),
@@ -776,12 +788,12 @@ pub mod access_review_schedule_definitions {
         use super::models;
         type Response = models::AccessReviewScheduleDefinitionListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) filter: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The filter to apply on the operation. Other than standard filters, one custom filter option is supported : 'assignedToMeToReview()'. When one specified $filter=assignedToMeToReview(), only items that are assigned to the calling user to review are returned"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -859,12 +871,12 @@ pub mod access_review_schedule_definitions {
         use super::models;
         type Response = models::AccessReviewScheduleDefinition;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) schedule_definition_id: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -909,13 +921,13 @@ pub mod access_review_schedule_definitions {
         use super::models;
         type Response = models::AccessReviewScheduleDefinition;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) schedule_definition_id: String,
             pub(crate) properties: models::AccessReviewScheduleDefinitionProperties,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -965,12 +977,12 @@ pub mod access_review_schedule_definitions {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) schedule_definition_id: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1012,12 +1024,12 @@ pub mod access_review_schedule_definitions {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) schedule_definition_id: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1065,8 +1077,8 @@ pub mod access_review_instances {
         #[doc = "Arguments:"]
         #[doc = "* `schedule_definition_id`: The id of the access review schedule definition."]
         #[doc = "* `subscription_id`: The ID of the target subscription."]
-        pub fn list(&self, schedule_definition_id: impl Into<String>, subscription_id: impl Into<String>) -> list::Builder {
-            list::Builder {
+        pub fn list(&self, schedule_definition_id: impl Into<String>, subscription_id: impl Into<String>) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 schedule_definition_id: schedule_definition_id.into(),
                 subscription_id: subscription_id.into(),
@@ -1084,8 +1096,8 @@ pub mod access_review_instances {
             schedule_definition_id: impl Into<String>,
             id: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get_by_id::Builder {
-            get_by_id::Builder {
+        ) -> get_by_id::RequestBuilder {
+            get_by_id::RequestBuilder {
                 client: self.0.clone(),
                 schedule_definition_id: schedule_definition_id.into(),
                 id: id.into(),
@@ -1105,8 +1117,8 @@ pub mod access_review_instances {
             id: impl Into<String>,
             properties: impl Into<models::AccessReviewInstanceProperties>,
             subscription_id: impl Into<String>,
-        ) -> create::Builder {
-            create::Builder {
+        ) -> create::RequestBuilder {
+            create::RequestBuilder {
                 client: self.0.clone(),
                 schedule_definition_id: schedule_definition_id.into(),
                 id: id.into(),
@@ -1119,13 +1131,13 @@ pub mod access_review_instances {
         use super::models;
         type Response = models::AccessReviewInstanceListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) schedule_definition_id: String,
             pub(crate) subscription_id: String,
             pub(crate) filter: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The filter to apply on the operation. Other than standard filters, one custom filter option is supported : 'assignedToMeToReview()'. When one specified $filter=assignedToMeToReview(), only items that are assigned to the calling user to review are returned"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -1204,13 +1216,13 @@ pub mod access_review_instances {
         use super::models;
         type Response = models::AccessReviewInstance;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) schedule_definition_id: String,
             pub(crate) id: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1256,14 +1268,14 @@ pub mod access_review_instances {
         use super::models;
         type Response = models::AccessReviewInstance;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) schedule_definition_id: String,
             pub(crate) id: String,
             pub(crate) properties: models::AccessReviewInstanceProperties,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1322,8 +1334,8 @@ pub mod access_review_instance {
             schedule_definition_id: impl Into<String>,
             id: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> stop::Builder {
-            stop::Builder {
+        ) -> stop::RequestBuilder {
+            stop::RequestBuilder {
                 client: self.0.clone(),
                 schedule_definition_id: schedule_definition_id.into(),
                 id: id.into(),
@@ -1341,8 +1353,8 @@ pub mod access_review_instance {
             schedule_definition_id: impl Into<String>,
             id: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> reset_decisions::Builder {
-            reset_decisions::Builder {
+        ) -> reset_decisions::RequestBuilder {
+            reset_decisions::RequestBuilder {
                 client: self.0.clone(),
                 schedule_definition_id: schedule_definition_id.into(),
                 id: id.into(),
@@ -1360,8 +1372,8 @@ pub mod access_review_instance {
             schedule_definition_id: impl Into<String>,
             id: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> apply_decisions::Builder {
-            apply_decisions::Builder {
+        ) -> apply_decisions::RequestBuilder {
+            apply_decisions::RequestBuilder {
                 client: self.0.clone(),
                 schedule_definition_id: schedule_definition_id.into(),
                 id: id.into(),
@@ -1379,8 +1391,8 @@ pub mod access_review_instance {
             schedule_definition_id: impl Into<String>,
             id: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> send_reminders::Builder {
-            send_reminders::Builder {
+        ) -> send_reminders::RequestBuilder {
+            send_reminders::RequestBuilder {
                 client: self.0.clone(),
                 schedule_definition_id: schedule_definition_id.into(),
                 id: id.into(),
@@ -1396,8 +1408,8 @@ pub mod access_review_instance {
             &self,
             schedule_definition_id: impl Into<String>,
             id: impl Into<String>,
-        ) -> accept_recommendations::Builder {
-            accept_recommendations::Builder {
+        ) -> accept_recommendations::RequestBuilder {
+            accept_recommendations::RequestBuilder {
                 client: self.0.clone(),
                 schedule_definition_id: schedule_definition_id.into(),
                 id: id.into(),
@@ -1408,13 +1420,13 @@ pub mod access_review_instance {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) schedule_definition_id: String,
             pub(crate) id: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1457,13 +1469,13 @@ pub mod access_review_instance {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) schedule_definition_id: String,
             pub(crate) id: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1500,13 +1512,13 @@ pub mod access_review_instance {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) schedule_definition_id: String,
             pub(crate) id: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1543,13 +1555,13 @@ pub mod access_review_instance {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) schedule_definition_id: String,
             pub(crate) id: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1586,12 +1598,12 @@ pub mod access_review_instance {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) schedule_definition_id: String,
             pub(crate) id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1645,8 +1657,8 @@ pub mod access_review_instance_decisions {
             schedule_definition_id: impl Into<String>,
             id: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list::Builder {
-            list::Builder {
+        ) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 schedule_definition_id: schedule_definition_id.into(),
                 id: id.into(),
@@ -1659,14 +1671,14 @@ pub mod access_review_instance_decisions {
         use super::models;
         type Response = models::AccessReviewDecisionListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) schedule_definition_id: String,
             pub(crate) id: String,
             pub(crate) subscription_id: String,
             pub(crate) filter: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The filter to apply on the operation. Other than standard filters, one custom filter option is supported : 'assignedToMeToReview()'. When one specified $filter=assignedToMeToReview(), only items that are assigned to the calling user to review are returned"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -1752,8 +1764,8 @@ pub mod access_review_instance_contacted_reviewers {
             schedule_definition_id: impl Into<String>,
             id: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list::Builder {
-            list::Builder {
+        ) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 schedule_definition_id: schedule_definition_id.into(),
                 id: id.into(),
@@ -1765,13 +1777,13 @@ pub mod access_review_instance_contacted_reviewers {
         use super::models;
         type Response = models::AccessReviewContactedReviewerListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) schedule_definition_id: String,
             pub(crate) id: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -1842,8 +1854,8 @@ pub mod access_review_default_settings {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: The ID of the target subscription."]
-        pub fn get(&self, subscription_id: impl Into<String>) -> get::Builder {
-            get::Builder {
+        pub fn get(&self, subscription_id: impl Into<String>) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
@@ -1853,8 +1865,12 @@ pub mod access_review_default_settings {
         #[doc = "Arguments:"]
         #[doc = "* `properties`: Access review schedule settings."]
         #[doc = "* `subscription_id`: The ID of the target subscription."]
-        pub fn put(&self, properties: impl Into<models::AccessReviewScheduleSettings>, subscription_id: impl Into<String>) -> put::Builder {
-            put::Builder {
+        pub fn put(
+            &self,
+            properties: impl Into<models::AccessReviewScheduleSettings>,
+            subscription_id: impl Into<String>,
+        ) -> put::RequestBuilder {
+            put::RequestBuilder {
                 client: self.0.clone(),
                 properties: properties.into(),
                 subscription_id: subscription_id.into(),
@@ -1865,11 +1881,11 @@ pub mod access_review_default_settings {
         use super::models;
         type Response = models::AccessReviewDefaultSettings;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1913,12 +1929,12 @@ pub mod access_review_default_settings {
         use super::models;
         type Response = models::AccessReviewDefaultSettings;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) properties: models::AccessReviewScheduleSettings,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1965,8 +1981,8 @@ pub mod access_review_schedule_definitions_assigned_for_my_approval {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get access review instances assigned for my approval."]
-        pub fn list(&self) -> list::Builder {
-            list::Builder {
+        pub fn list(&self) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 filter: None,
             }
@@ -1976,11 +1992,11 @@ pub mod access_review_schedule_definitions_assigned_for_my_approval {
         use super::models;
         type Response = models::AccessReviewScheduleDefinitionListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) filter: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The filter to apply on the operation. Other than standard filters, one custom filter option is supported : 'assignedToMeToReview()'. When one specified $filter=assignedToMeToReview(), only items that are assigned to the calling user to review are returned"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -2062,8 +2078,8 @@ pub mod access_review_instances_assigned_for_my_approval {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `schedule_definition_id`: The id of the access review schedule definition."]
-        pub fn list(&self, schedule_definition_id: impl Into<String>) -> list::Builder {
-            list::Builder {
+        pub fn list(&self, schedule_definition_id: impl Into<String>) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 schedule_definition_id: schedule_definition_id.into(),
                 filter: None,
@@ -2074,8 +2090,8 @@ pub mod access_review_instances_assigned_for_my_approval {
         #[doc = "Arguments:"]
         #[doc = "* `schedule_definition_id`: The id of the access review schedule definition."]
         #[doc = "* `id`: The id of the access review instance."]
-        pub fn get_by_id(&self, schedule_definition_id: impl Into<String>, id: impl Into<String>) -> get_by_id::Builder {
-            get_by_id::Builder {
+        pub fn get_by_id(&self, schedule_definition_id: impl Into<String>, id: impl Into<String>) -> get_by_id::RequestBuilder {
+            get_by_id::RequestBuilder {
                 client: self.0.clone(),
                 schedule_definition_id: schedule_definition_id.into(),
                 id: id.into(),
@@ -2086,12 +2102,12 @@ pub mod access_review_instances_assigned_for_my_approval {
         use super::models;
         type Response = models::AccessReviewInstanceListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) schedule_definition_id: String,
             pub(crate) filter: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The filter to apply on the operation. Other than standard filters, one custom filter option is supported : 'assignedToMeToReview()'. When one specified $filter=assignedToMeToReview(), only items that are assigned to the calling user to review are returned"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -2169,12 +2185,12 @@ pub mod access_review_instances_assigned_for_my_approval {
         use super::models;
         type Response = models::AccessReviewInstance;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) schedule_definition_id: String,
             pub(crate) id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2225,8 +2241,8 @@ pub mod access_review_instance_my_decisions {
         #[doc = "Arguments:"]
         #[doc = "* `schedule_definition_id`: The id of the access review schedule definition."]
         #[doc = "* `id`: The id of the access review instance."]
-        pub fn list(&self, schedule_definition_id: impl Into<String>, id: impl Into<String>) -> list::Builder {
-            list::Builder {
+        pub fn list(&self, schedule_definition_id: impl Into<String>, id: impl Into<String>) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 schedule_definition_id: schedule_definition_id.into(),
                 id: id.into(),
@@ -2244,8 +2260,8 @@ pub mod access_review_instance_my_decisions {
             schedule_definition_id: impl Into<String>,
             id: impl Into<String>,
             decision_id: impl Into<String>,
-        ) -> get_by_id::Builder {
-            get_by_id::Builder {
+        ) -> get_by_id::RequestBuilder {
+            get_by_id::RequestBuilder {
                 client: self.0.clone(),
                 schedule_definition_id: schedule_definition_id.into(),
                 id: id.into(),
@@ -2265,8 +2281,8 @@ pub mod access_review_instance_my_decisions {
             id: impl Into<String>,
             decision_id: impl Into<String>,
             properties: impl Into<models::AccessReviewDecisionProperties>,
-        ) -> patch::Builder {
-            patch::Builder {
+        ) -> patch::RequestBuilder {
+            patch::RequestBuilder {
                 client: self.0.clone(),
                 schedule_definition_id: schedule_definition_id.into(),
                 id: id.into(),
@@ -2279,13 +2295,13 @@ pub mod access_review_instance_my_decisions {
         use super::models;
         type Response = models::AccessReviewDecisionListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) schedule_definition_id: String,
             pub(crate) id: String,
             pub(crate) filter: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The filter to apply on the operation. Other than standard filters, one custom filter option is supported : 'assignedToMeToReview()'. When one specified $filter=assignedToMeToReview(), only items that are assigned to the calling user to review are returned"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -2364,13 +2380,13 @@ pub mod access_review_instance_my_decisions {
         use super::models;
         type Response = models::AccessReviewDecision;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) schedule_definition_id: String,
             pub(crate) id: String,
             pub(crate) decision_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2416,14 +2432,14 @@ pub mod access_review_instance_my_decisions {
         use super::models;
         type Response = models::AccessReviewDecision;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) schedule_definition_id: String,
             pub(crate) id: String,
             pub(crate) decision_id: String,
             pub(crate) properties: models::AccessReviewDecisionProperties,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2476,8 +2492,8 @@ pub mod tenant_level_access_review_instance_contacted_reviewers {
         #[doc = "Arguments:"]
         #[doc = "* `schedule_definition_id`: The id of the access review schedule definition."]
         #[doc = "* `id`: The id of the access review instance."]
-        pub fn list(&self, schedule_definition_id: impl Into<String>, id: impl Into<String>) -> list::Builder {
-            list::Builder {
+        pub fn list(&self, schedule_definition_id: impl Into<String>, id: impl Into<String>) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 schedule_definition_id: schedule_definition_id.into(),
                 id: id.into(),
@@ -2488,12 +2504,12 @@ pub mod tenant_level_access_review_instance_contacted_reviewers {
         use super::models;
         type Response = models::AccessReviewContactedReviewerListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) schedule_definition_id: String,
             pub(crate) id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();

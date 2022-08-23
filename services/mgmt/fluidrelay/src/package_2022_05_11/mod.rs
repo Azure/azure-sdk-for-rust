@@ -118,18 +118,18 @@ pub mod fluid_relay_operations {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "List all operations provided by Microsoft.FluidRelay."]
-        pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.0.clone() }
+        pub fn list(&self) -> list::RequestBuilder {
+            list::RequestBuilder { client: self.0.clone() }
         }
     }
     pub mod list {
         use super::models;
         type Response = models::OperationListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -208,8 +208,8 @@ pub mod fluid_relay_servers {
             subscription_id: impl Into<String>,
             resource_group: impl Into<String>,
             fluid_relay_server_name: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group: resource_group.into(),
@@ -229,8 +229,8 @@ pub mod fluid_relay_servers {
             resource_group: impl Into<String>,
             fluid_relay_server_name: impl Into<String>,
             resource: impl Into<models::FluidRelayServer>,
-        ) -> create_or_update::Builder {
-            create_or_update::Builder {
+        ) -> create_or_update::RequestBuilder {
+            create_or_update::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group: resource_group.into(),
@@ -251,8 +251,8 @@ pub mod fluid_relay_servers {
             resource_group: impl Into<String>,
             fluid_relay_server_name: impl Into<String>,
             resource: impl Into<models::FluidRelayServerUpdate>,
-        ) -> update::Builder {
-            update::Builder {
+        ) -> update::RequestBuilder {
+            update::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group: resource_group.into(),
@@ -271,8 +271,8 @@ pub mod fluid_relay_servers {
             subscription_id: impl Into<String>,
             resource_group: impl Into<String>,
             fluid_relay_server_name: impl Into<String>,
-        ) -> delete::Builder {
-            delete::Builder {
+        ) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group: resource_group.into(),
@@ -292,8 +292,8 @@ pub mod fluid_relay_servers {
             resource_group: impl Into<String>,
             fluid_relay_server_name: impl Into<String>,
             parameters: impl Into<models::RegenerateKeyRequest>,
-        ) -> regenerate_key::Builder {
-            regenerate_key::Builder {
+        ) -> regenerate_key::RequestBuilder {
+            regenerate_key::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group: resource_group.into(),
@@ -312,8 +312,8 @@ pub mod fluid_relay_servers {
             subscription_id: impl Into<String>,
             resource_group: impl Into<String>,
             fluid_relay_server_name: impl Into<String>,
-        ) -> get_keys::Builder {
-            get_keys::Builder {
+        ) -> get_keys::RequestBuilder {
+            get_keys::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group: resource_group.into(),
@@ -331,8 +331,8 @@ pub mod fluid_relay_servers {
             subscription_id: impl Into<String>,
             resource_group: impl Into<String>,
             fluid_relay_server_name: impl Into<String>,
-        ) -> list_keys::Builder {
-            list_keys::Builder {
+        ) -> list_keys::RequestBuilder {
+            list_keys::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group: resource_group.into(),
@@ -343,8 +343,8 @@ pub mod fluid_relay_servers {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: The subscription id (GUID) for this resource."]
-        pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
-            list_by_subscription::Builder {
+        pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::RequestBuilder {
+            list_by_subscription::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
@@ -358,8 +358,8 @@ pub mod fluid_relay_servers {
             &self,
             subscription_id: impl Into<String>,
             resource_group: impl Into<String>,
-        ) -> list_by_resource_group::Builder {
-            list_by_resource_group::Builder {
+        ) -> list_by_resource_group::RequestBuilder {
+            list_by_resource_group::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group: resource_group.into(),
@@ -370,13 +370,13 @@ pub mod fluid_relay_servers {
         use super::models;
         type Response = models::FluidRelayServer;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group: String,
             pub(crate) fluid_relay_server_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -422,14 +422,14 @@ pub mod fluid_relay_servers {
         use super::models;
         type Response = models::FluidRelayServer;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group: String,
             pub(crate) fluid_relay_server_name: String,
             pub(crate) resource: models::FluidRelayServer,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -476,14 +476,14 @@ pub mod fluid_relay_servers {
         use super::models;
         type Response = models::FluidRelayServer;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group: String,
             pub(crate) fluid_relay_server_name: String,
             pub(crate) resource: models::FluidRelayServerUpdate,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -534,13 +534,13 @@ pub mod fluid_relay_servers {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group: String,
             pub(crate) fluid_relay_server_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -583,14 +583,14 @@ pub mod fluid_relay_servers {
         use super::models;
         type Response = models::FluidRelayServerKeys;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group: String,
             pub(crate) fluid_relay_server_name: String,
             pub(crate) parameters: models::RegenerateKeyRequest,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -637,13 +637,13 @@ pub mod fluid_relay_servers {
         use super::models;
         type Response = models::FluidRelayServerKeys;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group: String,
             pub(crate) fluid_relay_server_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -690,13 +690,13 @@ pub mod fluid_relay_servers {
         use super::models;
         type Response = models::FluidRelayServerKeys;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group: String,
             pub(crate) fluid_relay_server_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -743,11 +743,11 @@ pub mod fluid_relay_servers {
         use super::models;
         type Response = models::FluidRelayServerList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -817,12 +817,12 @@ pub mod fluid_relay_servers {
         use super::models;
         type Response = models::FluidRelayServerList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -907,8 +907,8 @@ pub mod fluid_relay_containers {
             resource_group: impl Into<String>,
             fluid_relay_server_name: impl Into<String>,
             fluid_relay_container_name: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group: resource_group.into(),
@@ -929,8 +929,8 @@ pub mod fluid_relay_containers {
             resource_group: impl Into<String>,
             fluid_relay_server_name: impl Into<String>,
             fluid_relay_container_name: impl Into<String>,
-        ) -> delete::Builder {
-            delete::Builder {
+        ) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group: resource_group.into(),
@@ -949,8 +949,8 @@ pub mod fluid_relay_containers {
             subscription_id: impl Into<String>,
             resource_group: impl Into<String>,
             fluid_relay_server_name: impl Into<String>,
-        ) -> list_by_fluid_relay_servers::Builder {
-            list_by_fluid_relay_servers::Builder {
+        ) -> list_by_fluid_relay_servers::RequestBuilder {
+            list_by_fluid_relay_servers::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group: resource_group.into(),
@@ -962,14 +962,14 @@ pub mod fluid_relay_containers {
         use super::models;
         type Response = models::FluidRelayContainer;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group: String,
             pub(crate) fluid_relay_server_name: String,
             pub(crate) fluid_relay_container_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1013,14 +1013,14 @@ pub mod fluid_relay_containers {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group: String,
             pub(crate) fluid_relay_server_name: String,
             pub(crate) fluid_relay_container_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1057,13 +1057,13 @@ pub mod fluid_relay_containers {
         use super::models;
         type Response = models::FluidRelayContainerList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group: String,
             pub(crate) fluid_relay_server_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();

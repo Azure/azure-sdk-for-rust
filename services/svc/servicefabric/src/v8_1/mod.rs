@@ -134,16 +134,16 @@ impl Client {
 impl Client {
     #[doc = "Get the Service Fabric cluster manifest."]
     #[doc = "Get the Service Fabric cluster manifest. The cluster manifest contains properties of the cluster that include different node types on the cluster,\nsecurity configurations, fault, and upgrade domain topologies, etc.\n\nThese properties are specified as part of the ClusterConfig.JSON file while deploying a stand-alone cluster. However, most of the information in the cluster manifest\nis generated internally by service fabric during cluster deployment in other deployment scenarios (e.g. when using Azure portal).\n\nThe contents of the cluster manifest are for informational purposes only and users are not expected to take a dependency on the format of the file contents or its interpretation."]
-    pub fn get_cluster_manifest(&self) -> get_cluster_manifest::Builder {
-        get_cluster_manifest::Builder {
+    pub fn get_cluster_manifest(&self) -> get_cluster_manifest::RequestBuilder {
+        get_cluster_manifest::RequestBuilder {
             client: self.clone(),
             timeout: None,
         }
     }
     #[doc = "Gets the health of a Service Fabric cluster."]
     #[doc = "Use EventsHealthStateFilter to filter the collection of health events reported on the cluster based on the health state.\nSimilarly, use NodesHealthStateFilter and ApplicationsHealthStateFilter to filter the collection of nodes and applications returned based on their aggregated health state."]
-    pub fn get_cluster_health(&self) -> get_cluster_health::Builder {
-        get_cluster_health::Builder {
+    pub fn get_cluster_health(&self) -> get_cluster_health::RequestBuilder {
+        get_cluster_health::RequestBuilder {
             client: self.clone(),
             nodes_health_state_filter: None,
             applications_health_state_filter: None,
@@ -155,8 +155,8 @@ impl Client {
     }
     #[doc = "Gets the health of a Service Fabric cluster using the specified policy."]
     #[doc = "Use EventsHealthStateFilter to filter the collection of health events reported on the cluster based on the health state.\nSimilarly, use NodesHealthStateFilter and ApplicationsHealthStateFilter to filter the collection of nodes and applications returned based on their aggregated health state.\nUse ClusterHealthPolicies to override the health policies used to evaluate the health."]
-    pub fn get_cluster_health_using_policy(&self) -> get_cluster_health_using_policy::Builder {
-        get_cluster_health_using_policy::Builder {
+    pub fn get_cluster_health_using_policy(&self) -> get_cluster_health_using_policy::RequestBuilder {
+        get_cluster_health_using_policy::RequestBuilder {
             client: self.clone(),
             nodes_health_state_filter: None,
             applications_health_state_filter: None,
@@ -169,8 +169,8 @@ impl Client {
     }
     #[doc = "Gets the health of a Service Fabric cluster using health chunks."]
     #[doc = "Gets the health of a Service Fabric cluster using health chunks. Includes the aggregated health state of the cluster, but none of the cluster entities.\nTo expand the cluster health and get the health state of all or some of the entities, use the POST URI and specify the cluster health chunk query description."]
-    pub fn get_cluster_health_chunk(&self) -> get_cluster_health_chunk::Builder {
-        get_cluster_health_chunk::Builder {
+    pub fn get_cluster_health_chunk(&self) -> get_cluster_health_chunk::RequestBuilder {
+        get_cluster_health_chunk::RequestBuilder {
             client: self.clone(),
             timeout: None,
         }
@@ -179,8 +179,8 @@ impl Client {
     #[doc = "Gets the health of a Service Fabric cluster using health chunks. The health evaluation is done based on the input cluster health chunk query description.\nThe query description allows users to specify health policies for evaluating the cluster and its children.\nUsers can specify very flexible filters to select which cluster entities to return. The selection can be done based on the entities health state and based on the hierarchy.\nThe query can return multi-level children of the entities based on the specified filters. For example, it can return one application with a specified name, and for this application, return\nonly services that are in Error or Warning, and all partitions and replicas for one of these services."]
     pub fn get_cluster_health_chunk_using_policy_and_advanced_filters(
         &self,
-    ) -> get_cluster_health_chunk_using_policy_and_advanced_filters::Builder {
-        get_cluster_health_chunk_using_policy_and_advanced_filters::Builder {
+    ) -> get_cluster_health_chunk_using_policy_and_advanced_filters::RequestBuilder {
+        get_cluster_health_chunk_using_policy_and_advanced_filters::RequestBuilder {
             client: self.clone(),
             cluster_health_chunk_query_description: None,
             timeout: None,
@@ -191,8 +191,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `health_information`: Describes the health information for the health report. This information needs to be present in all of the health reports sent to the health manager."]
-    pub fn report_cluster_health(&self, health_information: impl Into<models::HealthInformation>) -> report_cluster_health::Builder {
-        report_cluster_health::Builder {
+    pub fn report_cluster_health(&self, health_information: impl Into<models::HealthInformation>) -> report_cluster_health::RequestBuilder {
+        report_cluster_health::RequestBuilder {
             client: self.clone(),
             health_information: health_information.into(),
             immediate: None,
@@ -201,8 +201,8 @@ impl Client {
     }
     #[doc = "Gets a list of fabric code versions that are provisioned in a Service Fabric cluster."]
     #[doc = "Gets a list of information about fabric code versions that are provisioned in the cluster. The parameter CodeVersion can be used to optionally filter the output to only that particular version."]
-    pub fn get_provisioned_fabric_code_version_info_list(&self) -> get_provisioned_fabric_code_version_info_list::Builder {
-        get_provisioned_fabric_code_version_info_list::Builder {
+    pub fn get_provisioned_fabric_code_version_info_list(&self) -> get_provisioned_fabric_code_version_info_list::RequestBuilder {
+        get_provisioned_fabric_code_version_info_list::RequestBuilder {
             client: self.clone(),
             code_version: None,
             timeout: None,
@@ -210,8 +210,8 @@ impl Client {
     }
     #[doc = "Gets a list of fabric config versions that are provisioned in a Service Fabric cluster."]
     #[doc = "Gets a list of information about fabric config versions that are provisioned in the cluster. The parameter ConfigVersion can be used to optionally filter the output to only that particular version."]
-    pub fn get_provisioned_fabric_config_version_info_list(&self) -> get_provisioned_fabric_config_version_info_list::Builder {
-        get_provisioned_fabric_config_version_info_list::Builder {
+    pub fn get_provisioned_fabric_config_version_info_list(&self) -> get_provisioned_fabric_config_version_info_list::RequestBuilder {
+        get_provisioned_fabric_config_version_info_list::RequestBuilder {
             client: self.clone(),
             config_version: None,
             timeout: None,
@@ -219,8 +219,8 @@ impl Client {
     }
     #[doc = "Gets the progress of the current cluster upgrade."]
     #[doc = "Gets the current progress of the ongoing cluster upgrade. If no upgrade is currently in progress, get the last state of the previous cluster upgrade."]
-    pub fn get_cluster_upgrade_progress(&self) -> get_cluster_upgrade_progress::Builder {
-        get_cluster_upgrade_progress::Builder {
+    pub fn get_cluster_upgrade_progress(&self) -> get_cluster_upgrade_progress::RequestBuilder {
+        get_cluster_upgrade_progress::RequestBuilder {
             client: self.clone(),
             timeout: None,
         }
@@ -230,8 +230,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `configuration_api_version`: The API version of the Standalone cluster json configuration."]
-    pub fn get_cluster_configuration(&self, configuration_api_version: impl Into<String>) -> get_cluster_configuration::Builder {
-        get_cluster_configuration::Builder {
+    pub fn get_cluster_configuration(&self, configuration_api_version: impl Into<String>) -> get_cluster_configuration::RequestBuilder {
+        get_cluster_configuration::RequestBuilder {
             client: self.clone(),
             configuration_api_version: configuration_api_version.into(),
             timeout: None,
@@ -239,16 +239,16 @@ impl Client {
     }
     #[doc = "Get the cluster configuration upgrade status of a Service Fabric standalone cluster."]
     #[doc = "Get the cluster configuration upgrade status details of a Service Fabric standalone cluster."]
-    pub fn get_cluster_configuration_upgrade_status(&self) -> get_cluster_configuration_upgrade_status::Builder {
-        get_cluster_configuration_upgrade_status::Builder {
+    pub fn get_cluster_configuration_upgrade_status(&self) -> get_cluster_configuration_upgrade_status::RequestBuilder {
+        get_cluster_configuration_upgrade_status::RequestBuilder {
             client: self.clone(),
             timeout: None,
         }
     }
     #[doc = "Get the service state of Service Fabric Upgrade Orchestration Service."]
     #[doc = "Get the service state of Service Fabric Upgrade Orchestration Service. This API is internally used for support purposes."]
-    pub fn get_upgrade_orchestration_service_state(&self) -> get_upgrade_orchestration_service_state::Builder {
-        get_upgrade_orchestration_service_state::Builder {
+    pub fn get_upgrade_orchestration_service_state(&self) -> get_upgrade_orchestration_service_state::RequestBuilder {
+        get_upgrade_orchestration_service_state::RequestBuilder {
             client: self.clone(),
             timeout: None,
         }
@@ -261,8 +261,8 @@ impl Client {
     pub fn set_upgrade_orchestration_service_state(
         &self,
         upgrade_orchestration_service_state: impl Into<models::UpgradeOrchestrationServiceState>,
-    ) -> set_upgrade_orchestration_service_state::Builder {
-        set_upgrade_orchestration_service_state::Builder {
+    ) -> set_upgrade_orchestration_service_state::RequestBuilder {
+        set_upgrade_orchestration_service_state::RequestBuilder {
             client: self.clone(),
             upgrade_orchestration_service_state: upgrade_orchestration_service_state.into(),
             timeout: None,
@@ -276,8 +276,8 @@ impl Client {
     pub fn provision_cluster(
         &self,
         provision_fabric_description: impl Into<models::ProvisionFabricDescription>,
-    ) -> provision_cluster::Builder {
-        provision_cluster::Builder {
+    ) -> provision_cluster::RequestBuilder {
+        provision_cluster::RequestBuilder {
             client: self.clone(),
             provision_fabric_description: provision_fabric_description.into(),
             timeout: None,
@@ -291,8 +291,8 @@ impl Client {
     pub fn unprovision_cluster(
         &self,
         unprovision_fabric_description: impl Into<models::UnprovisionFabricDescription>,
-    ) -> unprovision_cluster::Builder {
-        unprovision_cluster::Builder {
+    ) -> unprovision_cluster::RequestBuilder {
+        unprovision_cluster::RequestBuilder {
             client: self.clone(),
             unprovision_fabric_description: unprovision_fabric_description.into(),
             timeout: None,
@@ -300,8 +300,8 @@ impl Client {
     }
     #[doc = "Roll back the upgrade of a Service Fabric cluster."]
     #[doc = "Roll back the code or configuration upgrade of a Service Fabric cluster."]
-    pub fn rollback_cluster_upgrade(&self) -> rollback_cluster_upgrade::Builder {
-        rollback_cluster_upgrade::Builder {
+    pub fn rollback_cluster_upgrade(&self) -> rollback_cluster_upgrade::RequestBuilder {
+        rollback_cluster_upgrade::RequestBuilder {
             client: self.clone(),
             timeout: None,
         }
@@ -314,8 +314,8 @@ impl Client {
     pub fn resume_cluster_upgrade(
         &self,
         resume_cluster_upgrade_description: impl Into<models::ResumeClusterUpgradeDescription>,
-    ) -> resume_cluster_upgrade::Builder {
-        resume_cluster_upgrade::Builder {
+    ) -> resume_cluster_upgrade::RequestBuilder {
+        resume_cluster_upgrade::RequestBuilder {
             client: self.clone(),
             resume_cluster_upgrade_description: resume_cluster_upgrade_description.into(),
             timeout: None,
@@ -329,8 +329,8 @@ impl Client {
     pub fn start_cluster_upgrade(
         &self,
         start_cluster_upgrade_description: impl Into<models::StartClusterUpgradeDescription>,
-    ) -> start_cluster_upgrade::Builder {
-        start_cluster_upgrade::Builder {
+    ) -> start_cluster_upgrade::RequestBuilder {
+        start_cluster_upgrade::RequestBuilder {
             client: self.clone(),
             start_cluster_upgrade_description: start_cluster_upgrade_description.into(),
             timeout: None,
@@ -344,8 +344,8 @@ impl Client {
     pub fn start_cluster_configuration_upgrade(
         &self,
         cluster_configuration_upgrade_description: impl Into<models::ClusterConfigurationUpgradeDescription>,
-    ) -> start_cluster_configuration_upgrade::Builder {
-        start_cluster_configuration_upgrade::Builder {
+    ) -> start_cluster_configuration_upgrade::RequestBuilder {
+        start_cluster_configuration_upgrade::RequestBuilder {
             client: self.clone(),
             cluster_configuration_upgrade_description: cluster_configuration_upgrade_description.into(),
             timeout: None,
@@ -359,8 +359,8 @@ impl Client {
     pub fn update_cluster_upgrade(
         &self,
         update_cluster_upgrade_description: impl Into<models::UpdateClusterUpgradeDescription>,
-    ) -> update_cluster_upgrade::Builder {
-        update_cluster_upgrade::Builder {
+    ) -> update_cluster_upgrade::RequestBuilder {
+        update_cluster_upgrade::RequestBuilder {
             client: self.clone(),
             update_cluster_upgrade_description: update_cluster_upgrade_description.into(),
             timeout: None,
@@ -368,24 +368,24 @@ impl Client {
     }
     #[doc = "Gets the Azure Active Directory metadata used for secured connection to cluster."]
     #[doc = "Gets the Azure Active Directory metadata used for secured connection to cluster.\nThis API is not supposed to be called separately. It provides information needed to set up an Azure Active Directory secured connection with a Service Fabric cluster."]
-    pub fn get_aad_metadata(&self) -> get_aad_metadata::Builder {
-        get_aad_metadata::Builder {
+    pub fn get_aad_metadata(&self) -> get_aad_metadata::RequestBuilder {
+        get_aad_metadata::RequestBuilder {
             client: self.clone(),
             timeout: None,
         }
     }
     #[doc = "Get the current Service Fabric cluster version."]
     #[doc = "If a cluster upgrade is happening, then this API will return the lowest (older) version of the current and target cluster runtime versions."]
-    pub fn get_cluster_version(&self) -> get_cluster_version::Builder {
-        get_cluster_version::Builder {
+    pub fn get_cluster_version(&self) -> get_cluster_version::RequestBuilder {
+        get_cluster_version::RequestBuilder {
             client: self.clone(),
             timeout: None,
         }
     }
     #[doc = "Gets the load of a Service Fabric cluster."]
     #[doc = "Retrieves the load information of a Service Fabric cluster for all the metrics that have load or capacity defined."]
-    pub fn get_cluster_load(&self) -> get_cluster_load::Builder {
-        get_cluster_load::Builder {
+    pub fn get_cluster_load(&self) -> get_cluster_load::RequestBuilder {
+        get_cluster_load::RequestBuilder {
             client: self.clone(),
             timeout: None,
         }
@@ -398,8 +398,8 @@ impl Client {
     pub fn toggle_verbose_service_placement_health_reporting(
         &self,
         enabled: bool,
-    ) -> toggle_verbose_service_placement_health_reporting::Builder {
-        toggle_verbose_service_placement_health_reporting::Builder {
+    ) -> toggle_verbose_service_placement_health_reporting::RequestBuilder {
+        toggle_verbose_service_placement_health_reporting::RequestBuilder {
             client: self.clone(),
             enabled,
             timeout: None,
@@ -407,8 +407,8 @@ impl Client {
     }
     #[doc = "Gets the list of nodes in the Service Fabric cluster."]
     #[doc = "The response includes the name, status, ID, health, uptime, and other details about the nodes."]
-    pub fn get_node_info_list(&self) -> get_node_info_list::Builder {
-        get_node_info_list::Builder {
+    pub fn get_node_info_list(&self) -> get_node_info_list::RequestBuilder {
+        get_node_info_list::RequestBuilder {
             client: self.clone(),
             continuation_token: None,
             node_status_filter: None,
@@ -421,8 +421,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `node_name`: The name of the node."]
-    pub fn get_node_info(&self, node_name: impl Into<String>) -> get_node_info::Builder {
-        get_node_info::Builder {
+    pub fn get_node_info(&self, node_name: impl Into<String>) -> get_node_info::RequestBuilder {
+        get_node_info::RequestBuilder {
             client: self.clone(),
             node_name: node_name.into(),
             timeout: None,
@@ -433,8 +433,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `node_name`: The name of the node."]
-    pub fn get_node_health(&self, node_name: impl Into<String>) -> get_node_health::Builder {
-        get_node_health::Builder {
+    pub fn get_node_health(&self, node_name: impl Into<String>) -> get_node_health::RequestBuilder {
+        get_node_health::RequestBuilder {
             client: self.clone(),
             node_name: node_name.into(),
             events_health_state_filter: None,
@@ -446,8 +446,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `node_name`: The name of the node."]
-    pub fn get_node_health_using_policy(&self, node_name: impl Into<String>) -> get_node_health_using_policy::Builder {
-        get_node_health_using_policy::Builder {
+    pub fn get_node_health_using_policy(&self, node_name: impl Into<String>) -> get_node_health_using_policy::RequestBuilder {
+        get_node_health_using_policy::RequestBuilder {
             client: self.clone(),
             node_name: node_name.into(),
             events_health_state_filter: None,
@@ -465,8 +465,8 @@ impl Client {
         &self,
         node_name: impl Into<String>,
         health_information: impl Into<models::HealthInformation>,
-    ) -> report_node_health::Builder {
-        report_node_health::Builder {
+    ) -> report_node_health::RequestBuilder {
+        report_node_health::RequestBuilder {
             client: self.clone(),
             node_name: node_name.into(),
             health_information: health_information.into(),
@@ -479,8 +479,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `node_name`: The name of the node."]
-    pub fn get_node_load_info(&self, node_name: impl Into<String>) -> get_node_load_info::Builder {
-        get_node_load_info::Builder {
+    pub fn get_node_load_info(&self, node_name: impl Into<String>) -> get_node_load_info::RequestBuilder {
+        get_node_load_info::RequestBuilder {
             client: self.clone(),
             node_name: node_name.into(),
             timeout: None,
@@ -496,8 +496,8 @@ impl Client {
         &self,
         node_name: impl Into<String>,
         deactivation_intent_description: impl Into<models::DeactivationIntentDescription>,
-    ) -> disable_node::Builder {
-        disable_node::Builder {
+    ) -> disable_node::RequestBuilder {
+        disable_node::RequestBuilder {
             client: self.clone(),
             node_name: node_name.into(),
             deactivation_intent_description: deactivation_intent_description.into(),
@@ -509,8 +509,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `node_name`: The name of the node."]
-    pub fn enable_node(&self, node_name: impl Into<String>) -> enable_node::Builder {
-        enable_node::Builder {
+    pub fn enable_node(&self, node_name: impl Into<String>) -> enable_node::RequestBuilder {
+        enable_node::RequestBuilder {
             client: self.clone(),
             node_name: node_name.into(),
             timeout: None,
@@ -521,8 +521,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `node_name`: The name of the node."]
-    pub fn remove_node_state(&self, node_name: impl Into<String>) -> remove_node_state::Builder {
-        remove_node_state::Builder {
+    pub fn remove_node_state(&self, node_name: impl Into<String>) -> remove_node_state::RequestBuilder {
+        remove_node_state::RequestBuilder {
             client: self.clone(),
             node_name: node_name.into(),
             timeout: None,
@@ -538,8 +538,8 @@ impl Client {
         &self,
         node_name: impl Into<String>,
         restart_node_description: impl Into<models::RestartNodeDescription>,
-    ) -> restart_node::Builder {
-        restart_node::Builder {
+    ) -> restart_node::RequestBuilder {
+        restart_node::RequestBuilder {
             client: self.clone(),
             node_name: node_name.into(),
             restart_node_description: restart_node_description.into(),
@@ -551,8 +551,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `node_name`: The name of the node."]
-    pub fn remove_configuration_overrides(&self, node_name: impl Into<String>) -> remove_configuration_overrides::Builder {
-        remove_configuration_overrides::Builder {
+    pub fn remove_configuration_overrides(&self, node_name: impl Into<String>) -> remove_configuration_overrides::RequestBuilder {
+        remove_configuration_overrides::RequestBuilder {
             client: self.clone(),
             node_name: node_name.into(),
             timeout: None,
@@ -563,8 +563,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `node_name`: The name of the node."]
-    pub fn get_configuration_overrides(&self, node_name: impl Into<String>) -> get_configuration_overrides::Builder {
-        get_configuration_overrides::Builder {
+    pub fn get_configuration_overrides(&self, node_name: impl Into<String>) -> get_configuration_overrides::RequestBuilder {
+        get_configuration_overrides::RequestBuilder {
             client: self.clone(),
             node_name: node_name.into(),
             timeout: None,
@@ -580,8 +580,8 @@ impl Client {
         &self,
         node_name: impl Into<String>,
         config_parameter_override_list: impl Into<models::ConfigParameterOverrideList>,
-    ) -> add_configuration_parameter_overrides::Builder {
-        add_configuration_parameter_overrides::Builder {
+    ) -> add_configuration_parameter_overrides::RequestBuilder {
+        add_configuration_parameter_overrides::RequestBuilder {
             client: self.clone(),
             node_name: node_name.into(),
             config_parameter_override_list: config_parameter_override_list.into(),
@@ -595,8 +595,12 @@ impl Client {
     #[doc = "Arguments:"]
     #[doc = "* `node_name`: The name of the node."]
     #[doc = "* `node_tags`: Description for adding list of node tags."]
-    pub fn remove_node_tags(&self, node_name: impl Into<String>, node_tags: impl Into<models::NodeTagsList>) -> remove_node_tags::Builder {
-        remove_node_tags::Builder {
+    pub fn remove_node_tags(
+        &self,
+        node_name: impl Into<String>,
+        node_tags: impl Into<models::NodeTagsList>,
+    ) -> remove_node_tags::RequestBuilder {
+        remove_node_tags::RequestBuilder {
             client: self.clone(),
             node_name: node_name.into(),
             node_tags: node_tags.into(),
@@ -608,8 +612,8 @@ impl Client {
     #[doc = "Arguments:"]
     #[doc = "* `node_name`: The name of the node."]
     #[doc = "* `node_tags`: Description for adding list of node tags."]
-    pub fn add_node_tags(&self, node_name: impl Into<String>, node_tags: impl Into<models::NodeTagsList>) -> add_node_tags::Builder {
-        add_node_tags::Builder {
+    pub fn add_node_tags(&self, node_name: impl Into<String>, node_tags: impl Into<models::NodeTagsList>) -> add_node_tags::RequestBuilder {
+        add_node_tags::RequestBuilder {
             client: self.clone(),
             node_name: node_name.into(),
             node_tags: node_tags.into(),
@@ -617,8 +621,8 @@ impl Client {
     }
     #[doc = "Gets the list of application types in the Service Fabric cluster."]
     #[doc = "Returns the information about the application types that are provisioned or in the process of being provisioned in the Service Fabric cluster. Each version of an application type is returned as one application type. The response includes the name, version, status, and other details about the application type. This is a paged query, meaning that if not all of the application types fit in a page, one page of results is returned as well as a continuation token, which can be used to get the next page. For example, if there are 10 application types but a page only fits the first three application types, or if max results is set to 3, then three is returned. To access the rest of the results, retrieve subsequent pages by using the returned continuation token in the next query. An empty continuation token is returned if there are no subsequent pages."]
-    pub fn get_application_type_info_list(&self) -> get_application_type_info_list::Builder {
-        get_application_type_info_list::Builder {
+    pub fn get_application_type_info_list(&self) -> get_application_type_info_list::RequestBuilder {
+        get_application_type_info_list::RequestBuilder {
             client: self.clone(),
             application_type_definition_kind_filter: None,
             exclude_application_parameters: None,
@@ -635,8 +639,8 @@ impl Client {
     pub fn get_application_type_info_list_by_name(
         &self,
         application_type_name: impl Into<String>,
-    ) -> get_application_type_info_list_by_name::Builder {
-        get_application_type_info_list_by_name::Builder {
+    ) -> get_application_type_info_list_by_name::RequestBuilder {
+        get_application_type_info_list_by_name::RequestBuilder {
             client: self.clone(),
             application_type_name: application_type_name.into(),
             application_type_version: None,
@@ -654,8 +658,8 @@ impl Client {
     pub fn provision_application_type(
         &self,
         provision_application_type_description_base_required_body_param: impl Into<models::ProvisionApplicationTypeDescriptionBase>,
-    ) -> provision_application_type::Builder {
-        provision_application_type::Builder {
+    ) -> provision_application_type::RequestBuilder {
+        provision_application_type::RequestBuilder {
             client: self.clone(),
             provision_application_type_description_base_required_body_param:
                 provision_application_type_description_base_required_body_param.into(),
@@ -672,8 +676,8 @@ impl Client {
         &self,
         application_type_name: impl Into<String>,
         unprovision_application_type_description_info: impl Into<models::UnprovisionApplicationTypeDescriptionInfo>,
-    ) -> unprovision_application_type::Builder {
-        unprovision_application_type::Builder {
+    ) -> unprovision_application_type::RequestBuilder {
+        unprovision_application_type::RequestBuilder {
             client: self.clone(),
             application_type_name: application_type_name.into(),
             unprovision_application_type_description_info: unprovision_application_type_description_info.into(),
@@ -690,8 +694,8 @@ impl Client {
         &self,
         application_type_name: impl Into<String>,
         application_type_version: impl Into<String>,
-    ) -> get_service_type_info_list::Builder {
-        get_service_type_info_list::Builder {
+    ) -> get_service_type_info_list::RequestBuilder {
+        get_service_type_info_list::RequestBuilder {
             client: self.clone(),
             application_type_name: application_type_name.into(),
             application_type_version: application_type_version.into(),
@@ -710,8 +714,8 @@ impl Client {
         application_type_name: impl Into<String>,
         application_type_version: impl Into<String>,
         service_type_name: impl Into<String>,
-    ) -> get_service_type_info_by_name::Builder {
-        get_service_type_info_by_name::Builder {
+    ) -> get_service_type_info_by_name::RequestBuilder {
+        get_service_type_info_by_name::RequestBuilder {
             client: self.clone(),
             application_type_name: application_type_name.into(),
             application_type_version: application_type_version.into(),
@@ -731,8 +735,8 @@ impl Client {
         application_type_name: impl Into<String>,
         application_type_version: impl Into<String>,
         service_manifest_name: impl Into<String>,
-    ) -> get_service_manifest::Builder {
-        get_service_manifest::Builder {
+    ) -> get_service_manifest::RequestBuilder {
+        get_service_manifest::RequestBuilder {
             client: self.clone(),
             application_type_name: application_type_name.into(),
             application_type_version: application_type_version.into(),
@@ -750,8 +754,8 @@ impl Client {
         &self,
         node_name: impl Into<String>,
         application_id: impl Into<String>,
-    ) -> get_deployed_service_type_info_list::Builder {
-        get_deployed_service_type_info_list::Builder {
+    ) -> get_deployed_service_type_info_list::RequestBuilder {
+        get_deployed_service_type_info_list::RequestBuilder {
             client: self.clone(),
             node_name: node_name.into(),
             application_id: application_id.into(),
@@ -771,8 +775,8 @@ impl Client {
         node_name: impl Into<String>,
         application_id: impl Into<String>,
         service_type_name: impl Into<String>,
-    ) -> get_deployed_service_type_info_by_name::Builder {
-        get_deployed_service_type_info_by_name::Builder {
+    ) -> get_deployed_service_type_info_by_name::RequestBuilder {
+        get_deployed_service_type_info_by_name::RequestBuilder {
             client: self.clone(),
             node_name: node_name.into(),
             application_id: application_id.into(),
@@ -786,8 +790,11 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `application_description`: Description for creating an application."]
-    pub fn create_application(&self, application_description: impl Into<models::ApplicationDescription>) -> create_application::Builder {
-        create_application::Builder {
+    pub fn create_application(
+        &self,
+        application_description: impl Into<models::ApplicationDescription>,
+    ) -> create_application::RequestBuilder {
+        create_application::RequestBuilder {
             client: self.clone(),
             application_description: application_description.into(),
             timeout: None,
@@ -798,8 +805,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `application_id`: The identity of the application. This is typically the full name of the application without the 'fabric:' URI scheme.\nStarting from version 6.0, hierarchical names are delimited with the \"~\" character.\nFor example, if the application name is \"fabric:/myapp/app1\", the application identity would be \"myapp~app1\" in 6.0+ and \"myapp/app1\" in previous versions."]
-    pub fn delete_application(&self, application_id: impl Into<String>) -> delete_application::Builder {
-        delete_application::Builder {
+    pub fn delete_application(&self, application_id: impl Into<String>) -> delete_application::RequestBuilder {
+        delete_application::RequestBuilder {
             client: self.clone(),
             application_id: application_id.into(),
             force_remove: None,
@@ -811,8 +818,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `application_id`: The identity of the application. This is typically the full name of the application without the 'fabric:' URI scheme.\nStarting from version 6.0, hierarchical names are delimited with the \"~\" character.\nFor example, if the application name is \"fabric:/myapp/app1\", the application identity would be \"myapp~app1\" in 6.0+ and \"myapp/app1\" in previous versions."]
-    pub fn get_application_load_info(&self, application_id: impl Into<String>) -> get_application_load_info::Builder {
-        get_application_load_info::Builder {
+    pub fn get_application_load_info(&self, application_id: impl Into<String>) -> get_application_load_info::RequestBuilder {
+        get_application_load_info::RequestBuilder {
             client: self.clone(),
             application_id: application_id.into(),
             timeout: None,
@@ -820,8 +827,8 @@ impl Client {
     }
     #[doc = "Gets the list of applications created in the Service Fabric cluster that match the specified filters."]
     #[doc = "Gets the information about the applications that were created or in the process of being created in the Service Fabric cluster and match the specified filters. The response includes the name, type, status, parameters, and other details about the application. If the applications do not fit in a page, one page of results is returned as well as a continuation token, which can be used to get the next page. Filters ApplicationTypeName and ApplicationDefinitionKindFilter cannot be specified at the same time."]
-    pub fn get_application_info_list(&self) -> get_application_info_list::Builder {
-        get_application_info_list::Builder {
+    pub fn get_application_info_list(&self) -> get_application_info_list::RequestBuilder {
+        get_application_info_list::RequestBuilder {
             client: self.clone(),
             application_definition_kind_filter: None,
             application_type_name: None,
@@ -836,8 +843,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `application_id`: The identity of the application. This is typically the full name of the application without the 'fabric:' URI scheme.\nStarting from version 6.0, hierarchical names are delimited with the \"~\" character.\nFor example, if the application name is \"fabric:/myapp/app1\", the application identity would be \"myapp~app1\" in 6.0+ and \"myapp/app1\" in previous versions."]
-    pub fn get_application_info(&self, application_id: impl Into<String>) -> get_application_info::Builder {
-        get_application_info::Builder {
+    pub fn get_application_info(&self, application_id: impl Into<String>) -> get_application_info::RequestBuilder {
+        get_application_info::RequestBuilder {
             client: self.clone(),
             application_id: application_id.into(),
             exclude_application_parameters: None,
@@ -849,8 +856,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `application_id`: The identity of the application. This is typically the full name of the application without the 'fabric:' URI scheme.\nStarting from version 6.0, hierarchical names are delimited with the \"~\" character.\nFor example, if the application name is \"fabric:/myapp/app1\", the application identity would be \"myapp~app1\" in 6.0+ and \"myapp/app1\" in previous versions."]
-    pub fn get_application_health(&self, application_id: impl Into<String>) -> get_application_health::Builder {
-        get_application_health::Builder {
+    pub fn get_application_health(&self, application_id: impl Into<String>) -> get_application_health::RequestBuilder {
+        get_application_health::RequestBuilder {
             client: self.clone(),
             application_id: application_id.into(),
             events_health_state_filter: None,
@@ -865,8 +872,11 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `application_id`: The identity of the application. This is typically the full name of the application without the 'fabric:' URI scheme.\nStarting from version 6.0, hierarchical names are delimited with the \"~\" character.\nFor example, if the application name is \"fabric:/myapp/app1\", the application identity would be \"myapp~app1\" in 6.0+ and \"myapp/app1\" in previous versions."]
-    pub fn get_application_health_using_policy(&self, application_id: impl Into<String>) -> get_application_health_using_policy::Builder {
-        get_application_health_using_policy::Builder {
+    pub fn get_application_health_using_policy(
+        &self,
+        application_id: impl Into<String>,
+    ) -> get_application_health_using_policy::RequestBuilder {
+        get_application_health_using_policy::RequestBuilder {
             client: self.clone(),
             application_id: application_id.into(),
             events_health_state_filter: None,
@@ -887,8 +897,8 @@ impl Client {
         &self,
         application_id: impl Into<String>,
         health_information: impl Into<models::HealthInformation>,
-    ) -> report_application_health::Builder {
-        report_application_health::Builder {
+    ) -> report_application_health::RequestBuilder {
+        report_application_health::RequestBuilder {
             client: self.clone(),
             application_id: application_id.into(),
             health_information: health_information.into(),
@@ -906,8 +916,8 @@ impl Client {
         &self,
         application_id: impl Into<String>,
         application_upgrade_description: impl Into<models::ApplicationUpgradeDescription>,
-    ) -> start_application_upgrade::Builder {
-        start_application_upgrade::Builder {
+    ) -> start_application_upgrade::RequestBuilder {
+        start_application_upgrade::RequestBuilder {
             client: self.clone(),
             application_id: application_id.into(),
             application_upgrade_description: application_upgrade_description.into(),
@@ -919,8 +929,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `application_id`: The identity of the application. This is typically the full name of the application without the 'fabric:' URI scheme.\nStarting from version 6.0, hierarchical names are delimited with the \"~\" character.\nFor example, if the application name is \"fabric:/myapp/app1\", the application identity would be \"myapp~app1\" in 6.0+ and \"myapp/app1\" in previous versions."]
-    pub fn get_application_upgrade(&self, application_id: impl Into<String>) -> get_application_upgrade::Builder {
-        get_application_upgrade::Builder {
+    pub fn get_application_upgrade(&self, application_id: impl Into<String>) -> get_application_upgrade::RequestBuilder {
+        get_application_upgrade::RequestBuilder {
             client: self.clone(),
             application_id: application_id.into(),
             timeout: None,
@@ -936,8 +946,8 @@ impl Client {
         &self,
         application_id: impl Into<String>,
         application_upgrade_update_description: impl Into<models::ApplicationUpgradeUpdateDescription>,
-    ) -> update_application_upgrade::Builder {
-        update_application_upgrade::Builder {
+    ) -> update_application_upgrade::RequestBuilder {
+        update_application_upgrade::RequestBuilder {
             client: self.clone(),
             application_id: application_id.into(),
             application_upgrade_update_description: application_upgrade_update_description.into(),
@@ -954,8 +964,8 @@ impl Client {
         &self,
         application_id: impl Into<String>,
         application_update_description: impl Into<models::ApplicationUpdateDescription>,
-    ) -> update_application::Builder {
-        update_application::Builder {
+    ) -> update_application::RequestBuilder {
+        update_application::RequestBuilder {
             client: self.clone(),
             application_id: application_id.into(),
             application_update_description: application_update_description.into(),
@@ -972,8 +982,8 @@ impl Client {
         &self,
         application_id: impl Into<String>,
         resume_application_upgrade_description: impl Into<models::ResumeApplicationUpgradeDescription>,
-    ) -> resume_application_upgrade::Builder {
-        resume_application_upgrade::Builder {
+    ) -> resume_application_upgrade::RequestBuilder {
+        resume_application_upgrade::RequestBuilder {
             client: self.clone(),
             application_id: application_id.into(),
             resume_application_upgrade_description: resume_application_upgrade_description.into(),
@@ -985,8 +995,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `application_id`: The identity of the application. This is typically the full name of the application without the 'fabric:' URI scheme.\nStarting from version 6.0, hierarchical names are delimited with the \"~\" character.\nFor example, if the application name is \"fabric:/myapp/app1\", the application identity would be \"myapp~app1\" in 6.0+ and \"myapp/app1\" in previous versions."]
-    pub fn rollback_application_upgrade(&self, application_id: impl Into<String>) -> rollback_application_upgrade::Builder {
-        rollback_application_upgrade::Builder {
+    pub fn rollback_application_upgrade(&self, application_id: impl Into<String>) -> rollback_application_upgrade::RequestBuilder {
+        rollback_application_upgrade::RequestBuilder {
             client: self.clone(),
             application_id: application_id.into(),
             timeout: None,
@@ -997,8 +1007,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `node_name`: The name of the node."]
-    pub fn get_deployed_application_info_list(&self, node_name: impl Into<String>) -> get_deployed_application_info_list::Builder {
-        get_deployed_application_info_list::Builder {
+    pub fn get_deployed_application_info_list(&self, node_name: impl Into<String>) -> get_deployed_application_info_list::RequestBuilder {
+        get_deployed_application_info_list::RequestBuilder {
             client: self.clone(),
             node_name: node_name.into(),
             timeout: None,
@@ -1017,8 +1027,8 @@ impl Client {
         &self,
         node_name: impl Into<String>,
         application_id: impl Into<String>,
-    ) -> get_deployed_application_info::Builder {
-        get_deployed_application_info::Builder {
+    ) -> get_deployed_application_info::RequestBuilder {
+        get_deployed_application_info::RequestBuilder {
             client: self.clone(),
             node_name: node_name.into(),
             application_id: application_id.into(),
@@ -1036,8 +1046,8 @@ impl Client {
         &self,
         node_name: impl Into<String>,
         application_id: impl Into<String>,
-    ) -> get_deployed_application_health::Builder {
-        get_deployed_application_health::Builder {
+    ) -> get_deployed_application_health::RequestBuilder {
+        get_deployed_application_health::RequestBuilder {
             client: self.clone(),
             node_name: node_name.into(),
             application_id: application_id.into(),
@@ -1057,8 +1067,8 @@ impl Client {
         &self,
         node_name: impl Into<String>,
         application_id: impl Into<String>,
-    ) -> get_deployed_application_health_using_policy::Builder {
-        get_deployed_application_health_using_policy::Builder {
+    ) -> get_deployed_application_health_using_policy::RequestBuilder {
+        get_deployed_application_health_using_policy::RequestBuilder {
             client: self.clone(),
             node_name: node_name.into(),
             application_id: application_id.into(),
@@ -1081,8 +1091,8 @@ impl Client {
         node_name: impl Into<String>,
         application_id: impl Into<String>,
         health_information: impl Into<models::HealthInformation>,
-    ) -> report_deployed_application_health::Builder {
-        report_deployed_application_health::Builder {
+    ) -> report_deployed_application_health::RequestBuilder {
+        report_deployed_application_health::RequestBuilder {
             client: self.clone(),
             node_name: node_name.into(),
             application_id: application_id.into(),
@@ -1101,8 +1111,8 @@ impl Client {
         &self,
         application_type_name: impl Into<String>,
         application_type_version: impl Into<String>,
-    ) -> get_application_manifest::Builder {
-        get_application_manifest::Builder {
+    ) -> get_application_manifest::RequestBuilder {
+        get_application_manifest::RequestBuilder {
             client: self.clone(),
             application_type_name: application_type_name.into(),
             application_type_version: application_type_version.into(),
@@ -1114,8 +1124,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `application_id`: The identity of the application. This is typically the full name of the application without the 'fabric:' URI scheme.\nStarting from version 6.0, hierarchical names are delimited with the \"~\" character.\nFor example, if the application name is \"fabric:/myapp/app1\", the application identity would be \"myapp~app1\" in 6.0+ and \"myapp/app1\" in previous versions."]
-    pub fn get_service_info_list(&self, application_id: impl Into<String>) -> get_service_info_list::Builder {
-        get_service_info_list::Builder {
+    pub fn get_service_info_list(&self, application_id: impl Into<String>) -> get_service_info_list::RequestBuilder {
+        get_service_info_list::RequestBuilder {
             client: self.clone(),
             application_id: application_id.into(),
             service_type_name: None,
@@ -1129,8 +1139,8 @@ impl Client {
     #[doc = "Arguments:"]
     #[doc = "* `application_id`: The identity of the application. This is typically the full name of the application without the 'fabric:' URI scheme.\nStarting from version 6.0, hierarchical names are delimited with the \"~\" character.\nFor example, if the application name is \"fabric:/myapp/app1\", the application identity would be \"myapp~app1\" in 6.0+ and \"myapp/app1\" in previous versions."]
     #[doc = "* `service_id`: The identity of the service. This ID is typically the full name of the service without the 'fabric:' URI scheme.\nStarting from version 6.0, hierarchical names are delimited with the \"~\" character.\nFor example, if the service name is \"fabric:/myapp/app1/svc1\", the service identity would be \"myapp~app1~svc1\" in 6.0+ and \"myapp/app1/svc1\" in previous versions."]
-    pub fn get_service_info(&self, application_id: impl Into<String>, service_id: impl Into<String>) -> get_service_info::Builder {
-        get_service_info::Builder {
+    pub fn get_service_info(&self, application_id: impl Into<String>, service_id: impl Into<String>) -> get_service_info::RequestBuilder {
+        get_service_info::RequestBuilder {
             client: self.clone(),
             application_id: application_id.into(),
             service_id: service_id.into(),
@@ -1142,8 +1152,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `service_id`: The identity of the service. This ID is typically the full name of the service without the 'fabric:' URI scheme.\nStarting from version 6.0, hierarchical names are delimited with the \"~\" character.\nFor example, if the service name is \"fabric:/myapp/app1/svc1\", the service identity would be \"myapp~app1~svc1\" in 6.0+ and \"myapp/app1/svc1\" in previous versions."]
-    pub fn get_application_name_info(&self, service_id: impl Into<String>) -> get_application_name_info::Builder {
-        get_application_name_info::Builder {
+    pub fn get_application_name_info(&self, service_id: impl Into<String>) -> get_application_name_info::RequestBuilder {
+        get_application_name_info::RequestBuilder {
             client: self.clone(),
             service_id: service_id.into(),
             timeout: None,
@@ -1159,8 +1169,8 @@ impl Client {
         &self,
         application_id: impl Into<String>,
         service_description: impl Into<models::ServiceDescription>,
-    ) -> create_service::Builder {
-        create_service::Builder {
+    ) -> create_service::RequestBuilder {
+        create_service::RequestBuilder {
             client: self.clone(),
             application_id: application_id.into(),
             service_description: service_description.into(),
@@ -1177,8 +1187,8 @@ impl Client {
         &self,
         application_id: impl Into<String>,
         service_from_template_description: impl Into<models::ServiceFromTemplateDescription>,
-    ) -> create_service_from_template::Builder {
-        create_service_from_template::Builder {
+    ) -> create_service_from_template::RequestBuilder {
+        create_service_from_template::RequestBuilder {
             client: self.clone(),
             application_id: application_id.into(),
             service_from_template_description: service_from_template_description.into(),
@@ -1190,8 +1200,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `service_id`: The identity of the service. This ID is typically the full name of the service without the 'fabric:' URI scheme.\nStarting from version 6.0, hierarchical names are delimited with the \"~\" character.\nFor example, if the service name is \"fabric:/myapp/app1/svc1\", the service identity would be \"myapp~app1~svc1\" in 6.0+ and \"myapp/app1/svc1\" in previous versions."]
-    pub fn delete_service(&self, service_id: impl Into<String>) -> delete_service::Builder {
-        delete_service::Builder {
+    pub fn delete_service(&self, service_id: impl Into<String>) -> delete_service::RequestBuilder {
+        delete_service::RequestBuilder {
             client: self.clone(),
             service_id: service_id.into(),
             force_remove: None,
@@ -1208,8 +1218,8 @@ impl Client {
         &self,
         service_id: impl Into<String>,
         service_update_description: impl Into<models::ServiceUpdateDescription>,
-    ) -> update_service::Builder {
-        update_service::Builder {
+    ) -> update_service::RequestBuilder {
+        update_service::RequestBuilder {
             client: self.clone(),
             service_id: service_id.into(),
             service_update_description: service_update_description.into(),
@@ -1221,8 +1231,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `service_id`: The identity of the service. This ID is typically the full name of the service without the 'fabric:' URI scheme.\nStarting from version 6.0, hierarchical names are delimited with the \"~\" character.\nFor example, if the service name is \"fabric:/myapp/app1/svc1\", the service identity would be \"myapp~app1~svc1\" in 6.0+ and \"myapp/app1/svc1\" in previous versions."]
-    pub fn get_service_description(&self, service_id: impl Into<String>) -> get_service_description::Builder {
-        get_service_description::Builder {
+    pub fn get_service_description(&self, service_id: impl Into<String>) -> get_service_description::RequestBuilder {
+        get_service_description::RequestBuilder {
             client: self.clone(),
             service_id: service_id.into(),
             timeout: None,
@@ -1233,8 +1243,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `service_id`: The identity of the service. This ID is typically the full name of the service without the 'fabric:' URI scheme.\nStarting from version 6.0, hierarchical names are delimited with the \"~\" character.\nFor example, if the service name is \"fabric:/myapp/app1/svc1\", the service identity would be \"myapp~app1~svc1\" in 6.0+ and \"myapp/app1/svc1\" in previous versions."]
-    pub fn get_service_health(&self, service_id: impl Into<String>) -> get_service_health::Builder {
-        get_service_health::Builder {
+    pub fn get_service_health(&self, service_id: impl Into<String>) -> get_service_health::RequestBuilder {
+        get_service_health::RequestBuilder {
             client: self.clone(),
             service_id: service_id.into(),
             events_health_state_filter: None,
@@ -1248,8 +1258,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `service_id`: The identity of the service. This ID is typically the full name of the service without the 'fabric:' URI scheme.\nStarting from version 6.0, hierarchical names are delimited with the \"~\" character.\nFor example, if the service name is \"fabric:/myapp/app1/svc1\", the service identity would be \"myapp~app1~svc1\" in 6.0+ and \"myapp/app1/svc1\" in previous versions."]
-    pub fn get_service_health_using_policy(&self, service_id: impl Into<String>) -> get_service_health_using_policy::Builder {
-        get_service_health_using_policy::Builder {
+    pub fn get_service_health_using_policy(&self, service_id: impl Into<String>) -> get_service_health_using_policy::RequestBuilder {
+        get_service_health_using_policy::RequestBuilder {
             client: self.clone(),
             service_id: service_id.into(),
             events_health_state_filter: None,
@@ -1269,8 +1279,8 @@ impl Client {
         &self,
         service_id: impl Into<String>,
         health_information: impl Into<models::HealthInformation>,
-    ) -> report_service_health::Builder {
-        report_service_health::Builder {
+    ) -> report_service_health::RequestBuilder {
+        report_service_health::RequestBuilder {
             client: self.clone(),
             service_id: service_id.into(),
             health_information: health_information.into(),
@@ -1283,8 +1293,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `service_id`: The identity of the service. This ID is typically the full name of the service without the 'fabric:' URI scheme.\nStarting from version 6.0, hierarchical names are delimited with the \"~\" character.\nFor example, if the service name is \"fabric:/myapp/app1/svc1\", the service identity would be \"myapp~app1~svc1\" in 6.0+ and \"myapp/app1/svc1\" in previous versions."]
-    pub fn resolve_service(&self, service_id: impl Into<String>) -> resolve_service::Builder {
-        resolve_service::Builder {
+    pub fn resolve_service(&self, service_id: impl Into<String>) -> resolve_service::RequestBuilder {
+        resolve_service::RequestBuilder {
             client: self.clone(),
             service_id: service_id.into(),
             partition_key_type: None,
@@ -1298,8 +1308,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `service_id`: The identity of the service. This ID is typically the full name of the service without the 'fabric:' URI scheme.\nStarting from version 6.0, hierarchical names are delimited with the \"~\" character.\nFor example, if the service name is \"fabric:/myapp/app1/svc1\", the service identity would be \"myapp~app1~svc1\" in 6.0+ and \"myapp/app1/svc1\" in previous versions."]
-    pub fn get_unplaced_replica_information(&self, service_id: impl Into<String>) -> get_unplaced_replica_information::Builder {
-        get_unplaced_replica_information::Builder {
+    pub fn get_unplaced_replica_information(&self, service_id: impl Into<String>) -> get_unplaced_replica_information::RequestBuilder {
+        get_unplaced_replica_information::RequestBuilder {
             client: self.clone(),
             service_id: service_id.into(),
             partition_id: None,
@@ -1312,8 +1322,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `metric_name`: Name of the metric based on which to get ordered list of partitions."]
-    pub fn get_loaded_partition_info_list(&self, metric_name: impl Into<String>) -> get_loaded_partition_info_list::Builder {
-        get_loaded_partition_info_list::Builder {
+    pub fn get_loaded_partition_info_list(&self, metric_name: impl Into<String>) -> get_loaded_partition_info_list::RequestBuilder {
+        get_loaded_partition_info_list::RequestBuilder {
             client: self.clone(),
             metric_name: metric_name.into(),
             service_name: None,
@@ -1327,8 +1337,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `service_id`: The identity of the service. This ID is typically the full name of the service without the 'fabric:' URI scheme.\nStarting from version 6.0, hierarchical names are delimited with the \"~\" character.\nFor example, if the service name is \"fabric:/myapp/app1/svc1\", the service identity would be \"myapp~app1~svc1\" in 6.0+ and \"myapp/app1/svc1\" in previous versions."]
-    pub fn get_partition_info_list(&self, service_id: impl Into<String>) -> get_partition_info_list::Builder {
-        get_partition_info_list::Builder {
+    pub fn get_partition_info_list(&self, service_id: impl Into<String>) -> get_partition_info_list::RequestBuilder {
+        get_partition_info_list::RequestBuilder {
             client: self.clone(),
             service_id: service_id.into(),
             continuation_token: None,
@@ -1340,8 +1350,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `partition_id`: The identity of the partition."]
-    pub fn get_partition_info(&self, partition_id: impl Into<String>) -> get_partition_info::Builder {
-        get_partition_info::Builder {
+    pub fn get_partition_info(&self, partition_id: impl Into<String>) -> get_partition_info::RequestBuilder {
+        get_partition_info::RequestBuilder {
             client: self.clone(),
             partition_id: partition_id.into(),
             timeout: None,
@@ -1352,8 +1362,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `partition_id`: The identity of the partition."]
-    pub fn get_service_name_info(&self, partition_id: impl Into<String>) -> get_service_name_info::Builder {
-        get_service_name_info::Builder {
+    pub fn get_service_name_info(&self, partition_id: impl Into<String>) -> get_service_name_info::RequestBuilder {
+        get_service_name_info::RequestBuilder {
             client: self.clone(),
             partition_id: partition_id.into(),
             timeout: None,
@@ -1364,8 +1374,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `partition_id`: The identity of the partition."]
-    pub fn get_partition_health(&self, partition_id: impl Into<String>) -> get_partition_health::Builder {
-        get_partition_health::Builder {
+    pub fn get_partition_health(&self, partition_id: impl Into<String>) -> get_partition_health::RequestBuilder {
+        get_partition_health::RequestBuilder {
             client: self.clone(),
             partition_id: partition_id.into(),
             events_health_state_filter: None,
@@ -1379,8 +1389,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `partition_id`: The identity of the partition."]
-    pub fn get_partition_health_using_policy(&self, partition_id: impl Into<String>) -> get_partition_health_using_policy::Builder {
-        get_partition_health_using_policy::Builder {
+    pub fn get_partition_health_using_policy(&self, partition_id: impl Into<String>) -> get_partition_health_using_policy::RequestBuilder {
+        get_partition_health_using_policy::RequestBuilder {
             client: self.clone(),
             partition_id: partition_id.into(),
             events_health_state_filter: None,
@@ -1400,8 +1410,8 @@ impl Client {
         &self,
         partition_id: impl Into<String>,
         health_information: impl Into<models::HealthInformation>,
-    ) -> report_partition_health::Builder {
-        report_partition_health::Builder {
+    ) -> report_partition_health::RequestBuilder {
+        report_partition_health::RequestBuilder {
             client: self.clone(),
             partition_id: partition_id.into(),
             health_information: health_information.into(),
@@ -1414,8 +1424,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `partition_id`: The identity of the partition."]
-    pub fn get_partition_load_information(&self, partition_id: impl Into<String>) -> get_partition_load_information::Builder {
-        get_partition_load_information::Builder {
+    pub fn get_partition_load_information(&self, partition_id: impl Into<String>) -> get_partition_load_information::RequestBuilder {
+        get_partition_load_information::RequestBuilder {
             client: self.clone(),
             partition_id: partition_id.into(),
             timeout: None,
@@ -1426,8 +1436,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `partition_id`: The identity of the partition."]
-    pub fn reset_partition_load(&self, partition_id: impl Into<String>) -> reset_partition_load::Builder {
-        reset_partition_load::Builder {
+    pub fn reset_partition_load(&self, partition_id: impl Into<String>) -> reset_partition_load::RequestBuilder {
+        reset_partition_load::RequestBuilder {
             client: self.clone(),
             partition_id: partition_id.into(),
             timeout: None,
@@ -1438,8 +1448,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `partition_id`: The identity of the partition."]
-    pub fn recover_partition(&self, partition_id: impl Into<String>) -> recover_partition::Builder {
-        recover_partition::Builder {
+    pub fn recover_partition(&self, partition_id: impl Into<String>) -> recover_partition::RequestBuilder {
+        recover_partition::RequestBuilder {
             client: self.clone(),
             partition_id: partition_id.into(),
             timeout: None,
@@ -1450,8 +1460,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `service_id`: The identity of the service. This ID is typically the full name of the service without the 'fabric:' URI scheme.\nStarting from version 6.0, hierarchical names are delimited with the \"~\" character.\nFor example, if the service name is \"fabric:/myapp/app1/svc1\", the service identity would be \"myapp~app1~svc1\" in 6.0+ and \"myapp/app1/svc1\" in previous versions."]
-    pub fn recover_service_partitions(&self, service_id: impl Into<String>) -> recover_service_partitions::Builder {
-        recover_service_partitions::Builder {
+    pub fn recover_service_partitions(&self, service_id: impl Into<String>) -> recover_service_partitions::RequestBuilder {
+        recover_service_partitions::RequestBuilder {
             client: self.clone(),
             service_id: service_id.into(),
             timeout: None,
@@ -1459,16 +1469,16 @@ impl Client {
     }
     #[doc = "Indicates to the Service Fabric cluster that it should attempt to recover the system services that are currently stuck in quorum loss."]
     #[doc = "Indicates to the Service Fabric cluster that it should attempt to recover the system services that are currently stuck in quorum loss. This operation should only be performed if it is known that the replicas that are down cannot be recovered. Incorrect use of this API can cause potential data loss."]
-    pub fn recover_system_partitions(&self) -> recover_system_partitions::Builder {
-        recover_system_partitions::Builder {
+    pub fn recover_system_partitions(&self) -> recover_system_partitions::RequestBuilder {
+        recover_system_partitions::RequestBuilder {
             client: self.clone(),
             timeout: None,
         }
     }
     #[doc = "Indicates to the Service Fabric cluster that it should attempt to recover any services (including system services) which are currently stuck in quorum loss."]
     #[doc = "This operation should only be performed if it is known that the replicas that are down cannot be recovered. Incorrect use of this API can cause potential data loss."]
-    pub fn recover_all_partitions(&self) -> recover_all_partitions::Builder {
-        recover_all_partitions::Builder {
+    pub fn recover_all_partitions(&self) -> recover_all_partitions::RequestBuilder {
+        recover_all_partitions::RequestBuilder {
             client: self.clone(),
             timeout: None,
         }
@@ -1478,8 +1488,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `partition_id`: The identity of the partition."]
-    pub fn move_primary_replica(&self, partition_id: impl Into<String>) -> move_primary_replica::Builder {
-        move_primary_replica::Builder {
+    pub fn move_primary_replica(&self, partition_id: impl Into<String>) -> move_primary_replica::RequestBuilder {
+        move_primary_replica::RequestBuilder {
             client: self.clone(),
             partition_id: partition_id.into(),
             node_name: None,
@@ -1497,8 +1507,8 @@ impl Client {
         &self,
         partition_id: impl Into<String>,
         current_node_name: impl Into<String>,
-    ) -> move_secondary_replica::Builder {
-        move_secondary_replica::Builder {
+    ) -> move_secondary_replica::RequestBuilder {
+        move_secondary_replica::RequestBuilder {
             client: self.clone(),
             partition_id: partition_id.into(),
             current_node_name: current_node_name.into(),
@@ -1515,8 +1525,8 @@ impl Client {
     pub fn update_partition_load(
         &self,
         partition_metric_load_description_list: impl Into<models::PartitionMetricLoadDescriptionList>,
-    ) -> update_partition_load::Builder {
-        update_partition_load::Builder {
+    ) -> update_partition_load::RequestBuilder {
+        update_partition_load::RequestBuilder {
             client: self.clone(),
             partition_metric_load_description_list: partition_metric_load_description_list.into(),
             continuation_token: None,
@@ -1530,8 +1540,8 @@ impl Client {
     #[doc = "Arguments:"]
     #[doc = "* `service_id`: The identity of the service. This ID is typically the full name of the service without the 'fabric:' URI scheme.\nStarting from version 6.0, hierarchical names are delimited with the \"~\" character.\nFor example, if the service name is \"fabric:/myapp/app1/svc1\", the service identity would be \"myapp~app1~svc1\" in 6.0+ and \"myapp/app1/svc1\" in previous versions."]
     #[doc = "* `partition_id`: The identity of the partition."]
-    pub fn move_instance(&self, service_id: impl Into<String>, partition_id: impl Into<String>) -> move_instance::Builder {
-        move_instance::Builder {
+    pub fn move_instance(&self, service_id: impl Into<String>, partition_id: impl Into<String>) -> move_instance::RequestBuilder {
+        move_instance::RequestBuilder {
             client: self.clone(),
             service_id: service_id.into(),
             partition_id: partition_id.into(),
@@ -1551,8 +1561,8 @@ impl Client {
         &self,
         service_id: impl Into<String>,
         partition_id: impl Into<String>,
-    ) -> move_auxiliary_replica::Builder {
-        move_auxiliary_replica::Builder {
+    ) -> move_auxiliary_replica::RequestBuilder {
+        move_auxiliary_replica::RequestBuilder {
             client: self.clone(),
             service_id: service_id.into(),
             partition_id: partition_id.into(),
@@ -1567,8 +1577,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `repair_task`: Describes the repair task to be created or updated."]
-    pub fn create_repair_task(&self, repair_task: impl Into<models::RepairTask>) -> create_repair_task::Builder {
-        create_repair_task::Builder {
+    pub fn create_repair_task(&self, repair_task: impl Into<models::RepairTask>) -> create_repair_task::RequestBuilder {
+        create_repair_task::RequestBuilder {
             client: self.clone(),
             repair_task: repair_task.into(),
         }
@@ -1581,8 +1591,8 @@ impl Client {
     pub fn cancel_repair_task(
         &self,
         repair_task_cancel_description: impl Into<models::RepairTaskCancelDescription>,
-    ) -> cancel_repair_task::Builder {
-        cancel_repair_task::Builder {
+    ) -> cancel_repair_task::RequestBuilder {
+        cancel_repair_task::RequestBuilder {
             client: self.clone(),
             repair_task_cancel_description: repair_task_cancel_description.into(),
         }
@@ -1595,16 +1605,16 @@ impl Client {
     pub fn delete_repair_task(
         &self,
         repair_task_delete_description: impl Into<models::RepairTaskDeleteDescription>,
-    ) -> delete_repair_task::Builder {
-        delete_repair_task::Builder {
+    ) -> delete_repair_task::RequestBuilder {
+        delete_repair_task::RequestBuilder {
             client: self.clone(),
             repair_task_delete_description: repair_task_delete_description.into(),
         }
     }
     #[doc = "Gets a list of repair tasks matching the given filters."]
     #[doc = "This API supports the Service Fabric platform; it is not meant to be used directly from your code."]
-    pub fn get_repair_task_list(&self) -> get_repair_task_list::Builder {
-        get_repair_task_list::Builder {
+    pub fn get_repair_task_list(&self) -> get_repair_task_list::RequestBuilder {
+        get_repair_task_list::RequestBuilder {
             client: self.clone(),
             task_id_filter: None,
             state_filter: None,
@@ -1619,8 +1629,8 @@ impl Client {
     pub fn force_approve_repair_task(
         &self,
         repair_task_approve_description: impl Into<models::RepairTaskApproveDescription>,
-    ) -> force_approve_repair_task::Builder {
-        force_approve_repair_task::Builder {
+    ) -> force_approve_repair_task::RequestBuilder {
+        force_approve_repair_task::RequestBuilder {
             client: self.clone(),
             repair_task_approve_description: repair_task_approve_description.into(),
         }
@@ -1633,8 +1643,8 @@ impl Client {
     pub fn update_repair_task_health_policy(
         &self,
         repair_task_update_health_policy_description: impl Into<models::RepairTaskUpdateHealthPolicyDescription>,
-    ) -> update_repair_task_health_policy::Builder {
-        update_repair_task_health_policy::Builder {
+    ) -> update_repair_task_health_policy::RequestBuilder {
+        update_repair_task_health_policy::RequestBuilder {
             client: self.clone(),
             repair_task_update_health_policy_description: repair_task_update_health_policy_description.into(),
         }
@@ -1644,8 +1654,11 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `repair_task`: Describes the repair task to be created or updated."]
-    pub fn update_repair_execution_state(&self, repair_task: impl Into<models::RepairTask>) -> update_repair_execution_state::Builder {
-        update_repair_execution_state::Builder {
+    pub fn update_repair_execution_state(
+        &self,
+        repair_task: impl Into<models::RepairTask>,
+    ) -> update_repair_execution_state::RequestBuilder {
+        update_repair_execution_state::RequestBuilder {
             client: self.clone(),
             repair_task: repair_task.into(),
         }
@@ -1655,8 +1668,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `partition_id`: The identity of the partition."]
-    pub fn get_replica_info_list(&self, partition_id: impl Into<String>) -> get_replica_info_list::Builder {
-        get_replica_info_list::Builder {
+    pub fn get_replica_info_list(&self, partition_id: impl Into<String>) -> get_replica_info_list::RequestBuilder {
+        get_replica_info_list::RequestBuilder {
             client: self.clone(),
             partition_id: partition_id.into(),
             continuation_token: None,
@@ -1669,8 +1682,8 @@ impl Client {
     #[doc = "Arguments:"]
     #[doc = "* `partition_id`: The identity of the partition."]
     #[doc = "* `replica_id`: The identifier of the replica."]
-    pub fn get_replica_info(&self, partition_id: impl Into<String>, replica_id: impl Into<String>) -> get_replica_info::Builder {
-        get_replica_info::Builder {
+    pub fn get_replica_info(&self, partition_id: impl Into<String>, replica_id: impl Into<String>) -> get_replica_info::RequestBuilder {
+        get_replica_info::RequestBuilder {
             client: self.clone(),
             partition_id: partition_id.into(),
             replica_id: replica_id.into(),
@@ -1683,8 +1696,8 @@ impl Client {
     #[doc = "Arguments:"]
     #[doc = "* `partition_id`: The identity of the partition."]
     #[doc = "* `replica_id`: The identifier of the replica."]
-    pub fn get_replica_health(&self, partition_id: impl Into<String>, replica_id: impl Into<String>) -> get_replica_health::Builder {
-        get_replica_health::Builder {
+    pub fn get_replica_health(&self, partition_id: impl Into<String>, replica_id: impl Into<String>) -> get_replica_health::RequestBuilder {
+        get_replica_health::RequestBuilder {
             client: self.clone(),
             partition_id: partition_id.into(),
             replica_id: replica_id.into(),
@@ -1702,8 +1715,8 @@ impl Client {
         &self,
         partition_id: impl Into<String>,
         replica_id: impl Into<String>,
-    ) -> get_replica_health_using_policy::Builder {
-        get_replica_health_using_policy::Builder {
+    ) -> get_replica_health_using_policy::RequestBuilder {
+        get_replica_health_using_policy::RequestBuilder {
             client: self.clone(),
             partition_id: partition_id.into(),
             replica_id: replica_id.into(),
@@ -1726,8 +1739,8 @@ impl Client {
         replica_id: impl Into<String>,
         service_kind: impl Into<String>,
         health_information: impl Into<models::HealthInformation>,
-    ) -> report_replica_health::Builder {
-        report_replica_health::Builder {
+    ) -> report_replica_health::RequestBuilder {
+        report_replica_health::RequestBuilder {
             client: self.clone(),
             partition_id: partition_id.into(),
             replica_id: replica_id.into(),
@@ -1747,8 +1760,8 @@ impl Client {
         &self,
         node_name: impl Into<String>,
         application_id: impl Into<String>,
-    ) -> get_deployed_service_replica_info_list::Builder {
-        get_deployed_service_replica_info_list::Builder {
+    ) -> get_deployed_service_replica_info_list::RequestBuilder {
+        get_deployed_service_replica_info_list::RequestBuilder {
             client: self.clone(),
             node_name: node_name.into(),
             application_id: application_id.into(),
@@ -1769,8 +1782,8 @@ impl Client {
         node_name: impl Into<String>,
         partition_id: impl Into<String>,
         replica_id: impl Into<String>,
-    ) -> get_deployed_service_replica_detail_info::Builder {
-        get_deployed_service_replica_detail_info::Builder {
+    ) -> get_deployed_service_replica_detail_info::RequestBuilder {
+        get_deployed_service_replica_detail_info::RequestBuilder {
             client: self.clone(),
             node_name: node_name.into(),
             partition_id: partition_id.into(),
@@ -1788,8 +1801,8 @@ impl Client {
         &self,
         node_name: impl Into<String>,
         partition_id: impl Into<String>,
-    ) -> get_deployed_service_replica_detail_info_by_partition_id::Builder {
-        get_deployed_service_replica_detail_info_by_partition_id::Builder {
+    ) -> get_deployed_service_replica_detail_info_by_partition_id::RequestBuilder {
+        get_deployed_service_replica_detail_info_by_partition_id::RequestBuilder {
             client: self.clone(),
             node_name: node_name.into(),
             partition_id: partition_id.into(),
@@ -1808,8 +1821,8 @@ impl Client {
         node_name: impl Into<String>,
         partition_id: impl Into<String>,
         replica_id: impl Into<String>,
-    ) -> restart_replica::Builder {
-        restart_replica::Builder {
+    ) -> restart_replica::RequestBuilder {
+        restart_replica::RequestBuilder {
             client: self.clone(),
             node_name: node_name.into(),
             partition_id: partition_id.into(),
@@ -1829,8 +1842,8 @@ impl Client {
         node_name: impl Into<String>,
         partition_id: impl Into<String>,
         replica_id: impl Into<String>,
-    ) -> remove_replica::Builder {
-        remove_replica::Builder {
+    ) -> remove_replica::RequestBuilder {
+        remove_replica::RequestBuilder {
             client: self.clone(),
             node_name: node_name.into(),
             partition_id: partition_id.into(),
@@ -1849,8 +1862,8 @@ impl Client {
         &self,
         node_name: impl Into<String>,
         application_id: impl Into<String>,
-    ) -> get_deployed_service_package_info_list::Builder {
-        get_deployed_service_package_info_list::Builder {
+    ) -> get_deployed_service_package_info_list::RequestBuilder {
+        get_deployed_service_package_info_list::RequestBuilder {
             client: self.clone(),
             node_name: node_name.into(),
             application_id: application_id.into(),
@@ -1869,8 +1882,8 @@ impl Client {
         node_name: impl Into<String>,
         application_id: impl Into<String>,
         service_package_name: impl Into<String>,
-    ) -> get_deployed_service_package_info_list_by_name::Builder {
-        get_deployed_service_package_info_list_by_name::Builder {
+    ) -> get_deployed_service_package_info_list_by_name::RequestBuilder {
+        get_deployed_service_package_info_list_by_name::RequestBuilder {
             client: self.clone(),
             node_name: node_name.into(),
             application_id: application_id.into(),
@@ -1890,8 +1903,8 @@ impl Client {
         node_name: impl Into<String>,
         application_id: impl Into<String>,
         service_package_name: impl Into<String>,
-    ) -> get_deployed_service_package_health::Builder {
-        get_deployed_service_package_health::Builder {
+    ) -> get_deployed_service_package_health::RequestBuilder {
+        get_deployed_service_package_health::RequestBuilder {
             client: self.clone(),
             node_name: node_name.into(),
             application_id: application_id.into(),
@@ -1912,8 +1925,8 @@ impl Client {
         node_name: impl Into<String>,
         application_id: impl Into<String>,
         service_package_name: impl Into<String>,
-    ) -> get_deployed_service_package_health_using_policy::Builder {
-        get_deployed_service_package_health_using_policy::Builder {
+    ) -> get_deployed_service_package_health_using_policy::RequestBuilder {
+        get_deployed_service_package_health_using_policy::RequestBuilder {
             client: self.clone(),
             node_name: node_name.into(),
             application_id: application_id.into(),
@@ -1937,8 +1950,8 @@ impl Client {
         application_id: impl Into<String>,
         service_package_name: impl Into<String>,
         health_information: impl Into<models::HealthInformation>,
-    ) -> report_deployed_service_package_health::Builder {
-        report_deployed_service_package_health::Builder {
+    ) -> report_deployed_service_package_health::RequestBuilder {
+        report_deployed_service_package_health::RequestBuilder {
             client: self.clone(),
             node_name: node_name.into(),
             application_id: application_id.into(),
@@ -1958,8 +1971,8 @@ impl Client {
         &self,
         node_name: impl Into<String>,
         deploy_service_package_to_node_description: impl Into<models::DeployServicePackageToNodeDescription>,
-    ) -> deploy_service_package_to_node::Builder {
-        deploy_service_package_to_node::Builder {
+    ) -> deploy_service_package_to_node::RequestBuilder {
+        deploy_service_package_to_node::RequestBuilder {
             client: self.clone(),
             node_name: node_name.into(),
             deploy_service_package_to_node_description: deploy_service_package_to_node_description.into(),
@@ -1976,8 +1989,8 @@ impl Client {
         &self,
         node_name: impl Into<String>,
         application_id: impl Into<String>,
-    ) -> get_deployed_code_package_info_list::Builder {
-        get_deployed_code_package_info_list::Builder {
+    ) -> get_deployed_code_package_info_list::RequestBuilder {
+        get_deployed_code_package_info_list::RequestBuilder {
             client: self.clone(),
             node_name: node_name.into(),
             application_id: application_id.into(),
@@ -1998,8 +2011,8 @@ impl Client {
         node_name: impl Into<String>,
         application_id: impl Into<String>,
         restart_deployed_code_package_description: impl Into<models::RestartDeployedCodePackageDescription>,
-    ) -> restart_deployed_code_package::Builder {
-        restart_deployed_code_package::Builder {
+    ) -> restart_deployed_code_package::RequestBuilder {
+        restart_deployed_code_package::RequestBuilder {
             client: self.clone(),
             node_name: node_name.into(),
             application_id: application_id.into(),
@@ -2021,8 +2034,8 @@ impl Client {
         application_id: impl Into<String>,
         service_manifest_name: impl Into<String>,
         code_package_name: impl Into<String>,
-    ) -> get_container_logs_deployed_on_node::Builder {
-        get_container_logs_deployed_on_node::Builder {
+    ) -> get_container_logs_deployed_on_node::RequestBuilder {
+        get_container_logs_deployed_on_node::RequestBuilder {
             client: self.clone(),
             node_name: node_name.into(),
             application_id: application_id.into(),
@@ -2051,8 +2064,8 @@ impl Client {
         code_package_name: impl Into<String>,
         code_package_instance_id: impl Into<String>,
         container_api_request_body: impl Into<models::ContainerApiRequestBody>,
-    ) -> invoke_container_api::Builder {
-        invoke_container_api::Builder {
+    ) -> invoke_container_api::RequestBuilder {
+        invoke_container_api::RequestBuilder {
             client: self.clone(),
             node_name: node_name.into(),
             application_id: application_id.into(),
@@ -2071,8 +2084,8 @@ impl Client {
     pub fn create_compose_deployment(
         &self,
         create_compose_deployment_description: impl Into<models::CreateComposeDeploymentDescription>,
-    ) -> create_compose_deployment::Builder {
-        create_compose_deployment::Builder {
+    ) -> create_compose_deployment::RequestBuilder {
+        create_compose_deployment::RequestBuilder {
             client: self.clone(),
             create_compose_deployment_description: create_compose_deployment_description.into(),
             timeout: None,
@@ -2083,8 +2096,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `deployment_name`: The identity of the deployment."]
-    pub fn get_compose_deployment_status(&self, deployment_name: impl Into<String>) -> get_compose_deployment_status::Builder {
-        get_compose_deployment_status::Builder {
+    pub fn get_compose_deployment_status(&self, deployment_name: impl Into<String>) -> get_compose_deployment_status::RequestBuilder {
+        get_compose_deployment_status::RequestBuilder {
             client: self.clone(),
             deployment_name: deployment_name.into(),
             timeout: None,
@@ -2092,8 +2105,8 @@ impl Client {
     }
     #[doc = "Gets the list of compose deployments created in the Service Fabric cluster."]
     #[doc = "Gets the status about the compose deployments that were created or in the process of being created in the Service Fabric cluster. The response includes the name, status, and other details about the compose deployments. If the list of deployments do not fit in a page, one page of results is returned as well as a continuation token, which can be used to get the next page."]
-    pub fn get_compose_deployment_status_list(&self) -> get_compose_deployment_status_list::Builder {
-        get_compose_deployment_status_list::Builder {
+    pub fn get_compose_deployment_status_list(&self) -> get_compose_deployment_status_list::RequestBuilder {
+        get_compose_deployment_status_list::RequestBuilder {
             client: self.clone(),
             continuation_token: None,
             max_results: None,
@@ -2108,8 +2121,8 @@ impl Client {
     pub fn get_compose_deployment_upgrade_progress(
         &self,
         deployment_name: impl Into<String>,
-    ) -> get_compose_deployment_upgrade_progress::Builder {
-        get_compose_deployment_upgrade_progress::Builder {
+    ) -> get_compose_deployment_upgrade_progress::RequestBuilder {
+        get_compose_deployment_upgrade_progress::RequestBuilder {
             client: self.clone(),
             deployment_name: deployment_name.into(),
             timeout: None,
@@ -2120,8 +2133,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `deployment_name`: The identity of the deployment."]
-    pub fn remove_compose_deployment(&self, deployment_name: impl Into<String>) -> remove_compose_deployment::Builder {
-        remove_compose_deployment::Builder {
+    pub fn remove_compose_deployment(&self, deployment_name: impl Into<String>) -> remove_compose_deployment::RequestBuilder {
+        remove_compose_deployment::RequestBuilder {
             client: self.clone(),
             deployment_name: deployment_name.into(),
             timeout: None,
@@ -2137,8 +2150,8 @@ impl Client {
         &self,
         deployment_name: impl Into<String>,
         compose_deployment_upgrade_description: impl Into<models::ComposeDeploymentUpgradeDescription>,
-    ) -> start_compose_deployment_upgrade::Builder {
-        start_compose_deployment_upgrade::Builder {
+    ) -> start_compose_deployment_upgrade::RequestBuilder {
+        start_compose_deployment_upgrade::RequestBuilder {
             client: self.clone(),
             deployment_name: deployment_name.into(),
             compose_deployment_upgrade_description: compose_deployment_upgrade_description.into(),
@@ -2153,8 +2166,8 @@ impl Client {
     pub fn start_rollback_compose_deployment_upgrade(
         &self,
         deployment_name: impl Into<String>,
-    ) -> start_rollback_compose_deployment_upgrade::Builder {
-        start_rollback_compose_deployment_upgrade::Builder {
+    ) -> start_rollback_compose_deployment_upgrade::RequestBuilder {
+        start_rollback_compose_deployment_upgrade::RequestBuilder {
             client: self.clone(),
             deployment_name: deployment_name.into(),
             timeout: None,
@@ -2162,8 +2175,8 @@ impl Client {
     }
     #[doc = "Get the status of Chaos."]
     #[doc = "Get the status of Chaos indicating whether or not Chaos is running, the Chaos parameters used for running Chaos and the status of the Chaos Schedule."]
-    pub fn get_chaos(&self) -> get_chaos::Builder {
-        get_chaos::Builder {
+    pub fn get_chaos(&self) -> get_chaos::RequestBuilder {
+        get_chaos::RequestBuilder {
             client: self.clone(),
             timeout: None,
         }
@@ -2173,8 +2186,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `chaos_parameters`: Describes all the parameters to configure a Chaos run."]
-    pub fn start_chaos(&self, chaos_parameters: impl Into<models::ChaosParameters>) -> start_chaos::Builder {
-        start_chaos::Builder {
+    pub fn start_chaos(&self, chaos_parameters: impl Into<models::ChaosParameters>) -> start_chaos::RequestBuilder {
+        start_chaos::RequestBuilder {
             client: self.clone(),
             chaos_parameters: chaos_parameters.into(),
             timeout: None,
@@ -2182,16 +2195,16 @@ impl Client {
     }
     #[doc = "Stops Chaos if it is running in the cluster and put the Chaos Schedule in a stopped state."]
     #[doc = "Stops Chaos from executing new faults. In-flight faults will continue to execute until they are complete. The current Chaos Schedule is put into a stopped state.\nOnce a schedule is stopped, it will stay in the stopped state and not be used to Chaos Schedule new runs of Chaos. A new Chaos Schedule must be set in order to resume scheduling."]
-    pub fn stop_chaos(&self) -> stop_chaos::Builder {
-        stop_chaos::Builder {
+    pub fn stop_chaos(&self) -> stop_chaos::RequestBuilder {
+        stop_chaos::RequestBuilder {
             client: self.clone(),
             timeout: None,
         }
     }
     #[doc = "Gets the next segment of the Chaos events based on the continuation token or the time range."]
     #[doc = "To get the next segment of the Chaos events, you can specify the ContinuationToken. To get the start of a new segment of Chaos events, you can specify the time range\nthrough StartTimeUtc and EndTimeUtc. You cannot specify both the ContinuationToken and the time range in the same call.\nWhen there are more than 100 Chaos events, the Chaos events are returned in multiple segments where a segment contains no more than 100 Chaos events and to get the next segment you make a call to this API with the continuation token."]
-    pub fn get_chaos_events(&self) -> get_chaos_events::Builder {
-        get_chaos_events::Builder {
+    pub fn get_chaos_events(&self) -> get_chaos_events::RequestBuilder {
+        get_chaos_events::RequestBuilder {
             client: self.clone(),
             continuation_token: None,
             start_time_utc: None,
@@ -2202,8 +2215,8 @@ impl Client {
     }
     #[doc = "Get the Chaos Schedule defining when and how to run Chaos."]
     #[doc = "Gets the version of the Chaos Schedule in use and the Chaos Schedule that defines when and how to run Chaos."]
-    pub fn get_chaos_schedule(&self) -> get_chaos_schedule::Builder {
-        get_chaos_schedule::Builder {
+    pub fn get_chaos_schedule(&self) -> get_chaos_schedule::RequestBuilder {
+        get_chaos_schedule::RequestBuilder {
             client: self.clone(),
             timeout: None,
         }
@@ -2213,8 +2226,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `chaos_schedule`: Describes the schedule used by Chaos."]
-    pub fn post_chaos_schedule(&self, chaos_schedule: impl Into<models::ChaosScheduleDescription>) -> post_chaos_schedule::Builder {
-        post_chaos_schedule::Builder {
+    pub fn post_chaos_schedule(&self, chaos_schedule: impl Into<models::ChaosScheduleDescription>) -> post_chaos_schedule::RequestBuilder {
+        post_chaos_schedule::RequestBuilder {
             client: self.clone(),
             chaos_schedule: chaos_schedule.into(),
             timeout: None,
@@ -2225,8 +2238,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `content_path`: Relative path to file or folder in the image store from its root."]
-    pub fn get_image_store_content(&self, content_path: impl Into<String>) -> get_image_store_content::Builder {
-        get_image_store_content::Builder {
+    pub fn get_image_store_content(&self, content_path: impl Into<String>) -> get_image_store_content::RequestBuilder {
+        get_image_store_content::RequestBuilder {
             client: self.clone(),
             content_path: content_path.into(),
             timeout: None,
@@ -2237,8 +2250,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `content_path`: Relative path to file or folder in the image store from its root."]
-    pub fn upload_file(&self, content_path: impl Into<String>) -> upload_file::Builder {
-        upload_file::Builder {
+    pub fn upload_file(&self, content_path: impl Into<String>) -> upload_file::RequestBuilder {
+        upload_file::RequestBuilder {
             client: self.clone(),
             content_path: content_path.into(),
             timeout: None,
@@ -2249,8 +2262,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `content_path`: Relative path to file or folder in the image store from its root."]
-    pub fn delete_image_store_content(&self, content_path: impl Into<String>) -> delete_image_store_content::Builder {
-        delete_image_store_content::Builder {
+    pub fn delete_image_store_content(&self, content_path: impl Into<String>) -> delete_image_store_content::RequestBuilder {
+        delete_image_store_content::RequestBuilder {
             client: self.clone(),
             content_path: content_path.into(),
             timeout: None,
@@ -2258,8 +2271,8 @@ impl Client {
     }
     #[doc = "Gets the content information at the root of the image store."]
     #[doc = "Returns the information about the image store content at the root of the image store."]
-    pub fn get_image_store_root_content(&self) -> get_image_store_root_content::Builder {
-        get_image_store_root_content::Builder {
+    pub fn get_image_store_root_content(&self) -> get_image_store_root_content::RequestBuilder {
+        get_image_store_root_content::RequestBuilder {
             client: self.clone(),
             timeout: None,
         }
@@ -2272,8 +2285,8 @@ impl Client {
     pub fn copy_image_store_content(
         &self,
         image_store_copy_description: impl Into<models::ImageStoreCopyDescription>,
-    ) -> copy_image_store_content::Builder {
-        copy_image_store_content::Builder {
+    ) -> copy_image_store_content::RequestBuilder {
+        copy_image_store_content::RequestBuilder {
             client: self.clone(),
             image_store_copy_description: image_store_copy_description.into(),
             timeout: None,
@@ -2284,8 +2297,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `session_id`: A GUID generated by the user for a file uploading. It identifies an image store upload session which keeps track of all file chunks until it is committed."]
-    pub fn delete_image_store_upload_session(&self, session_id: impl Into<String>) -> delete_image_store_upload_session::Builder {
-        delete_image_store_upload_session::Builder {
+    pub fn delete_image_store_upload_session(&self, session_id: impl Into<String>) -> delete_image_store_upload_session::RequestBuilder {
+        delete_image_store_upload_session::RequestBuilder {
             client: self.clone(),
             session_id: session_id.into(),
             timeout: None,
@@ -2296,8 +2309,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `session_id`: A GUID generated by the user for a file uploading. It identifies an image store upload session which keeps track of all file chunks until it is committed."]
-    pub fn commit_image_store_upload_session(&self, session_id: impl Into<String>) -> commit_image_store_upload_session::Builder {
-        commit_image_store_upload_session::Builder {
+    pub fn commit_image_store_upload_session(&self, session_id: impl Into<String>) -> commit_image_store_upload_session::RequestBuilder {
+        commit_image_store_upload_session::RequestBuilder {
             client: self.clone(),
             session_id: session_id.into(),
             timeout: None,
@@ -2308,8 +2321,11 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `session_id`: A GUID generated by the user for a file uploading. It identifies an image store upload session which keeps track of all file chunks until it is committed."]
-    pub fn get_image_store_upload_session_by_id(&self, session_id: impl Into<String>) -> get_image_store_upload_session_by_id::Builder {
-        get_image_store_upload_session_by_id::Builder {
+    pub fn get_image_store_upload_session_by_id(
+        &self,
+        session_id: impl Into<String>,
+    ) -> get_image_store_upload_session_by_id::RequestBuilder {
+        get_image_store_upload_session_by_id::RequestBuilder {
             client: self.clone(),
             session_id: session_id.into(),
             timeout: None,
@@ -2323,8 +2339,8 @@ impl Client {
     pub fn get_image_store_upload_session_by_path(
         &self,
         content_path: impl Into<String>,
-    ) -> get_image_store_upload_session_by_path::Builder {
-        get_image_store_upload_session_by_path::Builder {
+    ) -> get_image_store_upload_session_by_path::RequestBuilder {
+        get_image_store_upload_session_by_path::RequestBuilder {
             client: self.clone(),
             content_path: content_path.into(),
             timeout: None,
@@ -2342,8 +2358,8 @@ impl Client {
         content_path: impl Into<String>,
         session_id: impl Into<String>,
         content_range: impl Into<String>,
-    ) -> upload_file_chunk::Builder {
-        upload_file_chunk::Builder {
+    ) -> upload_file_chunk::RequestBuilder {
+        upload_file_chunk::RequestBuilder {
             client: self.clone(),
             content_path: content_path.into(),
             session_id: session_id.into(),
@@ -2353,8 +2369,8 @@ impl Client {
     }
     #[doc = "Get the folder size at the root of the image store."]
     #[doc = "Returns the total size of files at the root and children folders in image store."]
-    pub fn get_image_store_root_folder_size(&self) -> get_image_store_root_folder_size::Builder {
-        get_image_store_root_folder_size::Builder {
+    pub fn get_image_store_root_folder_size(&self) -> get_image_store_root_folder_size::RequestBuilder {
+        get_image_store_root_folder_size::RequestBuilder {
             client: self.clone(),
             timeout: None,
         }
@@ -2364,8 +2380,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `content_path`: Relative path to file or folder in the image store from its root."]
-    pub fn get_image_store_folder_size(&self, content_path: impl Into<String>) -> get_image_store_folder_size::Builder {
-        get_image_store_folder_size::Builder {
+    pub fn get_image_store_folder_size(&self, content_path: impl Into<String>) -> get_image_store_folder_size::RequestBuilder {
+        get_image_store_folder_size::RequestBuilder {
             client: self.clone(),
             content_path: content_path.into(),
             timeout: None,
@@ -2373,8 +2389,8 @@ impl Client {
     }
     #[doc = "Gets the overall ImageStore information"]
     #[doc = "Returns information about the primary ImageStore replica, such as disk capacity and available disk space at the node it is on, and several categories of the ImageStore's file system usage."]
-    pub fn get_image_store_info(&self) -> get_image_store_info::Builder {
-        get_image_store_info::Builder {
+    pub fn get_image_store_info(&self) -> get_image_store_info::RequestBuilder {
+        get_image_store_info::RequestBuilder {
             client: self.clone(),
             timeout: None,
         }
@@ -2384,8 +2400,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `command`: The text of the command to be invoked. The content of the command is infrastructure-specific."]
-    pub fn invoke_infrastructure_command(&self, command: impl Into<String>) -> invoke_infrastructure_command::Builder {
-        invoke_infrastructure_command::Builder {
+    pub fn invoke_infrastructure_command(&self, command: impl Into<String>) -> invoke_infrastructure_command::RequestBuilder {
+        invoke_infrastructure_command::RequestBuilder {
             client: self.clone(),
             command: command.into(),
             service_id: None,
@@ -2397,8 +2413,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `command`: The text of the command to be invoked. The content of the command is infrastructure-specific."]
-    pub fn invoke_infrastructure_query(&self, command: impl Into<String>) -> invoke_infrastructure_query::Builder {
-        invoke_infrastructure_query::Builder {
+    pub fn invoke_infrastructure_query(&self, command: impl Into<String>) -> invoke_infrastructure_query::RequestBuilder {
+        invoke_infrastructure_query::RequestBuilder {
             client: self.clone(),
             command: command.into(),
             service_id: None,
@@ -2419,8 +2435,8 @@ impl Client {
         partition_id: impl Into<String>,
         operation_id: impl Into<String>,
         data_loss_mode: impl Into<String>,
-    ) -> start_data_loss::Builder {
-        start_data_loss::Builder {
+    ) -> start_data_loss::RequestBuilder {
+        start_data_loss::RequestBuilder {
             client: self.clone(),
             service_id: service_id.into(),
             partition_id: partition_id.into(),
@@ -2441,8 +2457,8 @@ impl Client {
         service_id: impl Into<String>,
         partition_id: impl Into<String>,
         operation_id: impl Into<String>,
-    ) -> get_data_loss_progress::Builder {
-        get_data_loss_progress::Builder {
+    ) -> get_data_loss_progress::RequestBuilder {
+        get_data_loss_progress::RequestBuilder {
             client: self.clone(),
             service_id: service_id.into(),
             partition_id: partition_id.into(),
@@ -2466,8 +2482,8 @@ impl Client {
         operation_id: impl Into<String>,
         quorum_loss_mode: impl Into<String>,
         quorum_loss_duration: i64,
-    ) -> start_quorum_loss::Builder {
-        start_quorum_loss::Builder {
+    ) -> start_quorum_loss::RequestBuilder {
+        start_quorum_loss::RequestBuilder {
             client: self.clone(),
             service_id: service_id.into(),
             partition_id: partition_id.into(),
@@ -2489,8 +2505,8 @@ impl Client {
         service_id: impl Into<String>,
         partition_id: impl Into<String>,
         operation_id: impl Into<String>,
-    ) -> get_quorum_loss_progress::Builder {
-        get_quorum_loss_progress::Builder {
+    ) -> get_quorum_loss_progress::RequestBuilder {
+        get_quorum_loss_progress::RequestBuilder {
             client: self.clone(),
             service_id: service_id.into(),
             partition_id: partition_id.into(),
@@ -2512,8 +2528,8 @@ impl Client {
         partition_id: impl Into<String>,
         operation_id: impl Into<String>,
         restart_partition_mode: impl Into<String>,
-    ) -> start_partition_restart::Builder {
-        start_partition_restart::Builder {
+    ) -> start_partition_restart::RequestBuilder {
+        start_partition_restart::RequestBuilder {
             client: self.clone(),
             service_id: service_id.into(),
             partition_id: partition_id.into(),
@@ -2534,8 +2550,8 @@ impl Client {
         service_id: impl Into<String>,
         partition_id: impl Into<String>,
         operation_id: impl Into<String>,
-    ) -> get_partition_restart_progress::Builder {
-        get_partition_restart_progress::Builder {
+    ) -> get_partition_restart_progress::RequestBuilder {
+        get_partition_restart_progress::RequestBuilder {
             client: self.clone(),
             service_id: service_id.into(),
             partition_id: partition_id.into(),
@@ -2559,8 +2575,8 @@ impl Client {
         node_transition_type: impl Into<String>,
         node_instance_id: impl Into<String>,
         stop_duration_in_seconds: i32,
-    ) -> start_node_transition::Builder {
-        start_node_transition::Builder {
+    ) -> start_node_transition::RequestBuilder {
+        start_node_transition::RequestBuilder {
             client: self.clone(),
             node_name: node_name.into(),
             operation_id: operation_id.into(),
@@ -2580,8 +2596,8 @@ impl Client {
         &self,
         node_name: impl Into<String>,
         operation_id: impl Into<String>,
-    ) -> get_node_transition_progress::Builder {
-        get_node_transition_progress::Builder {
+    ) -> get_node_transition_progress::RequestBuilder {
+        get_node_transition_progress::RequestBuilder {
             client: self.clone(),
             node_name: node_name.into(),
             operation_id: operation_id.into(),
@@ -2594,8 +2610,8 @@ impl Client {
     #[doc = "Arguments:"]
     #[doc = "* `type_filter`: Used to filter on OperationType for user-induced operations.\n\n- 65535 - select all\n- 1 - select PartitionDataLoss.\n- 2 - select PartitionQuorumLoss.\n- 4 - select PartitionRestart.\n- 8 - select NodeTransition."]
     #[doc = "* `state_filter`: Used to filter on OperationState's for user-induced operations.\n\n- 65535 - select All\n- 1 - select Running\n- 2 - select RollingBack\n- 8 - select Completed\n- 16 - select Faulted\n- 32 - select Cancelled\n- 64 - select ForceCancelled"]
-    pub fn get_fault_operation_list(&self, type_filter: i64, state_filter: i64) -> get_fault_operation_list::Builder {
-        get_fault_operation_list::Builder {
+    pub fn get_fault_operation_list(&self, type_filter: i64, state_filter: i64) -> get_fault_operation_list::RequestBuilder {
+        get_fault_operation_list::RequestBuilder {
             client: self.clone(),
             type_filter,
             state_filter,
@@ -2608,8 +2624,8 @@ impl Client {
     #[doc = "Arguments:"]
     #[doc = "* `operation_id`: A GUID that identifies a call of this API.  This is passed into the corresponding GetProgress API"]
     #[doc = "* `force`: Indicates whether to gracefully roll back and clean up internal system state modified by executing the user-induced operation."]
-    pub fn cancel_operation(&self, operation_id: impl Into<String>, force: bool) -> cancel_operation::Builder {
-        cancel_operation::Builder {
+    pub fn cancel_operation(&self, operation_id: impl Into<String>, force: bool) -> cancel_operation::RequestBuilder {
+        cancel_operation::RequestBuilder {
             client: self.clone(),
             operation_id: operation_id.into(),
             force,
@@ -2624,8 +2640,8 @@ impl Client {
     pub fn create_backup_policy(
         &self,
         backup_policy_description: impl Into<models::BackupPolicyDescription>,
-    ) -> create_backup_policy::Builder {
-        create_backup_policy::Builder {
+    ) -> create_backup_policy::RequestBuilder {
+        create_backup_policy::RequestBuilder {
             client: self.clone(),
             backup_policy_description: backup_policy_description.into(),
             timeout: None,
@@ -2637,8 +2653,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `backup_policy_name`: The name of the backup policy."]
-    pub fn delete_backup_policy(&self, backup_policy_name: impl Into<String>) -> delete_backup_policy::Builder {
-        delete_backup_policy::Builder {
+    pub fn delete_backup_policy(&self, backup_policy_name: impl Into<String>) -> delete_backup_policy::RequestBuilder {
+        delete_backup_policy::RequestBuilder {
             client: self.clone(),
             backup_policy_name: backup_policy_name.into(),
             timeout: None,
@@ -2646,8 +2662,8 @@ impl Client {
     }
     #[doc = "Gets all the backup policies configured."]
     #[doc = "Get a list of all the backup policies configured."]
-    pub fn get_backup_policy_list(&self) -> get_backup_policy_list::Builder {
-        get_backup_policy_list::Builder {
+    pub fn get_backup_policy_list(&self) -> get_backup_policy_list::RequestBuilder {
+        get_backup_policy_list::RequestBuilder {
             client: self.clone(),
             continuation_token: None,
             max_results: None,
@@ -2659,8 +2675,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `backup_policy_name`: The name of the backup policy."]
-    pub fn get_backup_policy_by_name(&self, backup_policy_name: impl Into<String>) -> get_backup_policy_by_name::Builder {
-        get_backup_policy_by_name::Builder {
+    pub fn get_backup_policy_by_name(&self, backup_policy_name: impl Into<String>) -> get_backup_policy_by_name::RequestBuilder {
+        get_backup_policy_by_name::RequestBuilder {
             client: self.clone(),
             backup_policy_name: backup_policy_name.into(),
             timeout: None,
@@ -2674,8 +2690,8 @@ impl Client {
     pub fn get_all_entities_backed_up_by_policy(
         &self,
         backup_policy_name: impl Into<String>,
-    ) -> get_all_entities_backed_up_by_policy::Builder {
-        get_all_entities_backed_up_by_policy::Builder {
+    ) -> get_all_entities_backed_up_by_policy::RequestBuilder {
+        get_all_entities_backed_up_by_policy::RequestBuilder {
             client: self.clone(),
             backup_policy_name: backup_policy_name.into(),
             continuation_token: None,
@@ -2693,8 +2709,8 @@ impl Client {
         &self,
         backup_policy_description: impl Into<models::BackupPolicyDescription>,
         backup_policy_name: impl Into<String>,
-    ) -> update_backup_policy::Builder {
-        update_backup_policy::Builder {
+    ) -> update_backup_policy::RequestBuilder {
+        update_backup_policy::RequestBuilder {
             client: self.clone(),
             backup_policy_description: backup_policy_description.into(),
             backup_policy_name: backup_policy_name.into(),
@@ -2712,8 +2728,8 @@ impl Client {
         &self,
         application_id: impl Into<String>,
         enable_backup_description: impl Into<models::EnableBackupDescription>,
-    ) -> enable_application_backup::Builder {
-        enable_application_backup::Builder {
+    ) -> enable_application_backup::RequestBuilder {
+        enable_application_backup::RequestBuilder {
             client: self.clone(),
             application_id: application_id.into(),
             enable_backup_description: enable_backup_description.into(),
@@ -2725,8 +2741,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `application_id`: The identity of the application. This is typically the full name of the application without the 'fabric:' URI scheme.\nStarting from version 6.0, hierarchical names are delimited with the \"~\" character.\nFor example, if the application name is \"fabric:/myapp/app1\", the application identity would be \"myapp~app1\" in 6.0+ and \"myapp/app1\" in previous versions."]
-    pub fn disable_application_backup(&self, application_id: impl Into<String>) -> disable_application_backup::Builder {
-        disable_application_backup::Builder {
+    pub fn disable_application_backup(&self, application_id: impl Into<String>) -> disable_application_backup::RequestBuilder {
+        disable_application_backup::RequestBuilder {
             client: self.clone(),
             application_id: application_id.into(),
             timeout: None,
@@ -2741,8 +2757,8 @@ impl Client {
     pub fn get_application_backup_configuration_info(
         &self,
         application_id: impl Into<String>,
-    ) -> get_application_backup_configuration_info::Builder {
-        get_application_backup_configuration_info::Builder {
+    ) -> get_application_backup_configuration_info::RequestBuilder {
+        get_application_backup_configuration_info::RequestBuilder {
             client: self.clone(),
             application_id: application_id.into(),
             continuation_token: None,
@@ -2755,8 +2771,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `application_id`: The identity of the application. This is typically the full name of the application without the 'fabric:' URI scheme.\nStarting from version 6.0, hierarchical names are delimited with the \"~\" character.\nFor example, if the application name is \"fabric:/myapp/app1\", the application identity would be \"myapp~app1\" in 6.0+ and \"myapp/app1\" in previous versions."]
-    pub fn get_application_backup_list(&self, application_id: impl Into<String>) -> get_application_backup_list::Builder {
-        get_application_backup_list::Builder {
+    pub fn get_application_backup_list(&self, application_id: impl Into<String>) -> get_application_backup_list::RequestBuilder {
+        get_application_backup_list::RequestBuilder {
             client: self.clone(),
             application_id: application_id.into(),
             timeout: None,
@@ -2772,8 +2788,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `application_id`: The identity of the application. This is typically the full name of the application without the 'fabric:' URI scheme.\nStarting from version 6.0, hierarchical names are delimited with the \"~\" character.\nFor example, if the application name is \"fabric:/myapp/app1\", the application identity would be \"myapp~app1\" in 6.0+ and \"myapp/app1\" in previous versions."]
-    pub fn suspend_application_backup(&self, application_id: impl Into<String>) -> suspend_application_backup::Builder {
-        suspend_application_backup::Builder {
+    pub fn suspend_application_backup(&self, application_id: impl Into<String>) -> suspend_application_backup::RequestBuilder {
+        suspend_application_backup::RequestBuilder {
             client: self.clone(),
             application_id: application_id.into(),
             timeout: None,
@@ -2784,8 +2800,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `application_id`: The identity of the application. This is typically the full name of the application without the 'fabric:' URI scheme.\nStarting from version 6.0, hierarchical names are delimited with the \"~\" character.\nFor example, if the application name is \"fabric:/myapp/app1\", the application identity would be \"myapp~app1\" in 6.0+ and \"myapp/app1\" in previous versions."]
-    pub fn resume_application_backup(&self, application_id: impl Into<String>) -> resume_application_backup::Builder {
-        resume_application_backup::Builder {
+    pub fn resume_application_backup(&self, application_id: impl Into<String>) -> resume_application_backup::RequestBuilder {
+        resume_application_backup::RequestBuilder {
             client: self.clone(),
             application_id: application_id.into(),
             timeout: None,
@@ -2801,8 +2817,8 @@ impl Client {
         &self,
         service_id: impl Into<String>,
         enable_backup_description: impl Into<models::EnableBackupDescription>,
-    ) -> enable_service_backup::Builder {
-        enable_service_backup::Builder {
+    ) -> enable_service_backup::RequestBuilder {
+        enable_service_backup::RequestBuilder {
             client: self.clone(),
             service_id: service_id.into(),
             enable_backup_description: enable_backup_description.into(),
@@ -2814,8 +2830,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `service_id`: The identity of the service. This ID is typically the full name of the service without the 'fabric:' URI scheme.\nStarting from version 6.0, hierarchical names are delimited with the \"~\" character.\nFor example, if the service name is \"fabric:/myapp/app1/svc1\", the service identity would be \"myapp~app1~svc1\" in 6.0+ and \"myapp/app1/svc1\" in previous versions."]
-    pub fn disable_service_backup(&self, service_id: impl Into<String>) -> disable_service_backup::Builder {
-        disable_service_backup::Builder {
+    pub fn disable_service_backup(&self, service_id: impl Into<String>) -> disable_service_backup::RequestBuilder {
+        disable_service_backup::RequestBuilder {
             client: self.clone(),
             service_id: service_id.into(),
             disable_backup_description: None,
@@ -2827,8 +2843,11 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `service_id`: The identity of the service. This ID is typically the full name of the service without the 'fabric:' URI scheme.\nStarting from version 6.0, hierarchical names are delimited with the \"~\" character.\nFor example, if the service name is \"fabric:/myapp/app1/svc1\", the service identity would be \"myapp~app1~svc1\" in 6.0+ and \"myapp/app1/svc1\" in previous versions."]
-    pub fn get_service_backup_configuration_info(&self, service_id: impl Into<String>) -> get_service_backup_configuration_info::Builder {
-        get_service_backup_configuration_info::Builder {
+    pub fn get_service_backup_configuration_info(
+        &self,
+        service_id: impl Into<String>,
+    ) -> get_service_backup_configuration_info::RequestBuilder {
+        get_service_backup_configuration_info::RequestBuilder {
             client: self.clone(),
             service_id: service_id.into(),
             continuation_token: None,
@@ -2841,8 +2860,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `service_id`: The identity of the service. This ID is typically the full name of the service without the 'fabric:' URI scheme.\nStarting from version 6.0, hierarchical names are delimited with the \"~\" character.\nFor example, if the service name is \"fabric:/myapp/app1/svc1\", the service identity would be \"myapp~app1~svc1\" in 6.0+ and \"myapp/app1/svc1\" in previous versions."]
-    pub fn get_service_backup_list(&self, service_id: impl Into<String>) -> get_service_backup_list::Builder {
-        get_service_backup_list::Builder {
+    pub fn get_service_backup_list(&self, service_id: impl Into<String>) -> get_service_backup_list::RequestBuilder {
+        get_service_backup_list::RequestBuilder {
             client: self.clone(),
             service_id: service_id.into(),
             timeout: None,
@@ -2858,8 +2877,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `service_id`: The identity of the service. This ID is typically the full name of the service without the 'fabric:' URI scheme.\nStarting from version 6.0, hierarchical names are delimited with the \"~\" character.\nFor example, if the service name is \"fabric:/myapp/app1/svc1\", the service identity would be \"myapp~app1~svc1\" in 6.0+ and \"myapp/app1/svc1\" in previous versions."]
-    pub fn suspend_service_backup(&self, service_id: impl Into<String>) -> suspend_service_backup::Builder {
-        suspend_service_backup::Builder {
+    pub fn suspend_service_backup(&self, service_id: impl Into<String>) -> suspend_service_backup::RequestBuilder {
+        suspend_service_backup::RequestBuilder {
             client: self.clone(),
             service_id: service_id.into(),
             timeout: None,
@@ -2870,8 +2889,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `service_id`: The identity of the service. This ID is typically the full name of the service without the 'fabric:' URI scheme.\nStarting from version 6.0, hierarchical names are delimited with the \"~\" character.\nFor example, if the service name is \"fabric:/myapp/app1/svc1\", the service identity would be \"myapp~app1~svc1\" in 6.0+ and \"myapp/app1/svc1\" in previous versions."]
-    pub fn resume_service_backup(&self, service_id: impl Into<String>) -> resume_service_backup::Builder {
-        resume_service_backup::Builder {
+    pub fn resume_service_backup(&self, service_id: impl Into<String>) -> resume_service_backup::RequestBuilder {
+        resume_service_backup::RequestBuilder {
             client: self.clone(),
             service_id: service_id.into(),
             timeout: None,
@@ -2887,8 +2906,8 @@ impl Client {
         &self,
         partition_id: impl Into<String>,
         enable_backup_description: impl Into<models::EnableBackupDescription>,
-    ) -> enable_partition_backup::Builder {
-        enable_partition_backup::Builder {
+    ) -> enable_partition_backup::RequestBuilder {
+        enable_partition_backup::RequestBuilder {
             client: self.clone(),
             partition_id: partition_id.into(),
             enable_backup_description: enable_backup_description.into(),
@@ -2900,8 +2919,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `partition_id`: The identity of the partition."]
-    pub fn disable_partition_backup(&self, partition_id: impl Into<String>) -> disable_partition_backup::Builder {
-        disable_partition_backup::Builder {
+    pub fn disable_partition_backup(&self, partition_id: impl Into<String>) -> disable_partition_backup::RequestBuilder {
+        disable_partition_backup::RequestBuilder {
             client: self.clone(),
             partition_id: partition_id.into(),
             disable_backup_description: None,
@@ -2916,8 +2935,8 @@ impl Client {
     pub fn get_partition_backup_configuration_info(
         &self,
         partition_id: impl Into<String>,
-    ) -> get_partition_backup_configuration_info::Builder {
-        get_partition_backup_configuration_info::Builder {
+    ) -> get_partition_backup_configuration_info::RequestBuilder {
+        get_partition_backup_configuration_info::RequestBuilder {
             client: self.clone(),
             partition_id: partition_id.into(),
             timeout: None,
@@ -2928,8 +2947,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `partition_id`: The identity of the partition."]
-    pub fn get_partition_backup_list(&self, partition_id: impl Into<String>) -> get_partition_backup_list::Builder {
-        get_partition_backup_list::Builder {
+    pub fn get_partition_backup_list(&self, partition_id: impl Into<String>) -> get_partition_backup_list::RequestBuilder {
+        get_partition_backup_list::RequestBuilder {
             client: self.clone(),
             partition_id: partition_id.into(),
             timeout: None,
@@ -2943,8 +2962,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `partition_id`: The identity of the partition."]
-    pub fn suspend_partition_backup(&self, partition_id: impl Into<String>) -> suspend_partition_backup::Builder {
-        suspend_partition_backup::Builder {
+    pub fn suspend_partition_backup(&self, partition_id: impl Into<String>) -> suspend_partition_backup::RequestBuilder {
+        suspend_partition_backup::RequestBuilder {
             client: self.clone(),
             partition_id: partition_id.into(),
             timeout: None,
@@ -2955,8 +2974,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `partition_id`: The identity of the partition."]
-    pub fn resume_partition_backup(&self, partition_id: impl Into<String>) -> resume_partition_backup::Builder {
-        resume_partition_backup::Builder {
+    pub fn resume_partition_backup(&self, partition_id: impl Into<String>) -> resume_partition_backup::RequestBuilder {
+        resume_partition_backup::RequestBuilder {
             client: self.clone(),
             partition_id: partition_id.into(),
             timeout: None,
@@ -2967,8 +2986,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `partition_id`: The identity of the partition."]
-    pub fn backup_partition(&self, partition_id: impl Into<String>) -> backup_partition::Builder {
-        backup_partition::Builder {
+    pub fn backup_partition(&self, partition_id: impl Into<String>) -> backup_partition::RequestBuilder {
+        backup_partition::RequestBuilder {
             client: self.clone(),
             partition_id: partition_id.into(),
             backup_partition_description: None,
@@ -2981,8 +3000,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `partition_id`: The identity of the partition."]
-    pub fn get_partition_backup_progress(&self, partition_id: impl Into<String>) -> get_partition_backup_progress::Builder {
-        get_partition_backup_progress::Builder {
+    pub fn get_partition_backup_progress(&self, partition_id: impl Into<String>) -> get_partition_backup_progress::RequestBuilder {
+        get_partition_backup_progress::RequestBuilder {
             client: self.clone(),
             partition_id: partition_id.into(),
             timeout: None,
@@ -2998,8 +3017,8 @@ impl Client {
         &self,
         partition_id: impl Into<String>,
         restore_partition_description: impl Into<models::RestorePartitionDescription>,
-    ) -> restore_partition::Builder {
-        restore_partition::Builder {
+    ) -> restore_partition::RequestBuilder {
+        restore_partition::RequestBuilder {
             client: self.clone(),
             partition_id: partition_id.into(),
             restore_partition_description: restore_partition_description.into(),
@@ -3012,8 +3031,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `partition_id`: The identity of the partition."]
-    pub fn get_partition_restore_progress(&self, partition_id: impl Into<String>) -> get_partition_restore_progress::Builder {
-        get_partition_restore_progress::Builder {
+    pub fn get_partition_restore_progress(&self, partition_id: impl Into<String>) -> get_partition_restore_progress::RequestBuilder {
+        get_partition_restore_progress::RequestBuilder {
             client: self.clone(),
             partition_id: partition_id.into(),
             timeout: None,
@@ -3027,8 +3046,8 @@ impl Client {
     pub fn get_backups_from_backup_location(
         &self,
         get_backup_by_storage_query_description: impl Into<models::GetBackupByStorageQueryDescription>,
-    ) -> get_backups_from_backup_location::Builder {
-        get_backups_from_backup_location::Builder {
+    ) -> get_backups_from_backup_location::RequestBuilder {
+        get_backups_from_backup_location::RequestBuilder {
             client: self.clone(),
             get_backup_by_storage_query_description: get_backup_by_storage_query_description.into(),
             timeout: None,
@@ -3041,8 +3060,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `name_description`: Describes the Service Fabric name to be created."]
-    pub fn create_name(&self, name_description: impl Into<models::NameDescription>) -> create_name::Builder {
-        create_name::Builder {
+    pub fn create_name(&self, name_description: impl Into<models::NameDescription>) -> create_name::RequestBuilder {
+        create_name::RequestBuilder {
             client: self.clone(),
             name_description: name_description.into(),
             timeout: None,
@@ -3053,8 +3072,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `name_id`: The Service Fabric name, without the 'fabric:' URI scheme."]
-    pub fn get_name_exists_info(&self, name_id: impl Into<String>) -> get_name_exists_info::Builder {
-        get_name_exists_info::Builder {
+    pub fn get_name_exists_info(&self, name_id: impl Into<String>) -> get_name_exists_info::RequestBuilder {
+        get_name_exists_info::RequestBuilder {
             client: self.clone(),
             name_id: name_id.into(),
             timeout: None,
@@ -3065,8 +3084,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `name_id`: The Service Fabric name, without the 'fabric:' URI scheme."]
-    pub fn delete_name(&self, name_id: impl Into<String>) -> delete_name::Builder {
-        delete_name::Builder {
+    pub fn delete_name(&self, name_id: impl Into<String>) -> delete_name::RequestBuilder {
+        delete_name::RequestBuilder {
             client: self.clone(),
             name_id: name_id.into(),
             timeout: None,
@@ -3077,8 +3096,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `name_id`: The Service Fabric name, without the 'fabric:' URI scheme."]
-    pub fn get_sub_name_info_list(&self, name_id: impl Into<String>) -> get_sub_name_info_list::Builder {
-        get_sub_name_info_list::Builder {
+    pub fn get_sub_name_info_list(&self, name_id: impl Into<String>) -> get_sub_name_info_list::RequestBuilder {
+        get_sub_name_info_list::RequestBuilder {
             client: self.clone(),
             name_id: name_id.into(),
             recursive: None,
@@ -3091,8 +3110,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `name_id`: The Service Fabric name, without the 'fabric:' URI scheme."]
-    pub fn get_property_info_list(&self, name_id: impl Into<String>) -> get_property_info_list::Builder {
-        get_property_info_list::Builder {
+    pub fn get_property_info_list(&self, name_id: impl Into<String>) -> get_property_info_list::RequestBuilder {
+        get_property_info_list::RequestBuilder {
             client: self.clone(),
             name_id: name_id.into(),
             include_values: None,
@@ -3106,8 +3125,8 @@ impl Client {
     #[doc = "Arguments:"]
     #[doc = "* `name_id`: The Service Fabric name, without the 'fabric:' URI scheme."]
     #[doc = "* `property_name`: Specifies the name of the property to get."]
-    pub fn get_property_info(&self, name_id: impl Into<String>, property_name: impl Into<String>) -> get_property_info::Builder {
-        get_property_info::Builder {
+    pub fn get_property_info(&self, name_id: impl Into<String>, property_name: impl Into<String>) -> get_property_info::RequestBuilder {
+        get_property_info::RequestBuilder {
             client: self.clone(),
             name_id: name_id.into(),
             property_name: property_name.into(),
@@ -3124,8 +3143,8 @@ impl Client {
         &self,
         name_id: impl Into<String>,
         property_description: impl Into<models::PropertyDescription>,
-    ) -> put_property::Builder {
-        put_property::Builder {
+    ) -> put_property::RequestBuilder {
+        put_property::RequestBuilder {
             client: self.clone(),
             name_id: name_id.into(),
             property_description: property_description.into(),
@@ -3138,8 +3157,8 @@ impl Client {
     #[doc = "Arguments:"]
     #[doc = "* `name_id`: The Service Fabric name, without the 'fabric:' URI scheme."]
     #[doc = "* `property_name`: Specifies the name of the property to get."]
-    pub fn delete_property(&self, name_id: impl Into<String>, property_name: impl Into<String>) -> delete_property::Builder {
-        delete_property::Builder {
+    pub fn delete_property(&self, name_id: impl Into<String>, property_name: impl Into<String>) -> delete_property::RequestBuilder {
+        delete_property::RequestBuilder {
             client: self.clone(),
             name_id: name_id.into(),
             property_name: property_name.into(),
@@ -3156,8 +3175,8 @@ impl Client {
         &self,
         name_id: impl Into<String>,
         property_batch_description_list: impl Into<models::PropertyBatchDescriptionList>,
-    ) -> submit_property_batch::Builder {
-        submit_property_batch::Builder {
+    ) -> submit_property_batch::RequestBuilder {
+        submit_property_batch::RequestBuilder {
             client: self.clone(),
             name_id: name_id.into(),
             property_batch_description_list: property_batch_description_list.into(),
@@ -3174,8 +3193,8 @@ impl Client {
         &self,
         start_time_utc: impl Into<String>,
         end_time_utc: impl Into<String>,
-    ) -> get_cluster_event_list::Builder {
-        get_cluster_event_list::Builder {
+    ) -> get_cluster_event_list::RequestBuilder {
+        get_cluster_event_list::RequestBuilder {
             client: self.clone(),
             start_time_utc: start_time_utc.into(),
             end_time_utc: end_time_utc.into(),
@@ -3195,8 +3214,8 @@ impl Client {
         &self,
         start_time_utc: impl Into<String>,
         end_time_utc: impl Into<String>,
-    ) -> get_containers_event_list::Builder {
-        get_containers_event_list::Builder {
+    ) -> get_containers_event_list::RequestBuilder {
+        get_containers_event_list::RequestBuilder {
             client: self.clone(),
             start_time_utc: start_time_utc.into(),
             end_time_utc: end_time_utc.into(),
@@ -3218,8 +3237,8 @@ impl Client {
         node_name: impl Into<String>,
         start_time_utc: impl Into<String>,
         end_time_utc: impl Into<String>,
-    ) -> get_node_event_list::Builder {
-        get_node_event_list::Builder {
+    ) -> get_node_event_list::RequestBuilder {
+        get_node_event_list::RequestBuilder {
             client: self.clone(),
             node_name: node_name.into(),
             start_time_utc: start_time_utc.into(),
@@ -3240,8 +3259,8 @@ impl Client {
         &self,
         start_time_utc: impl Into<String>,
         end_time_utc: impl Into<String>,
-    ) -> get_nodes_event_list::Builder {
-        get_nodes_event_list::Builder {
+    ) -> get_nodes_event_list::RequestBuilder {
+        get_nodes_event_list::RequestBuilder {
             client: self.clone(),
             start_time_utc: start_time_utc.into(),
             end_time_utc: end_time_utc.into(),
@@ -3263,8 +3282,8 @@ impl Client {
         application_id: impl Into<String>,
         start_time_utc: impl Into<String>,
         end_time_utc: impl Into<String>,
-    ) -> get_application_event_list::Builder {
-        get_application_event_list::Builder {
+    ) -> get_application_event_list::RequestBuilder {
+        get_application_event_list::RequestBuilder {
             client: self.clone(),
             application_id: application_id.into(),
             start_time_utc: start_time_utc.into(),
@@ -3285,8 +3304,8 @@ impl Client {
         &self,
         start_time_utc: impl Into<String>,
         end_time_utc: impl Into<String>,
-    ) -> get_applications_event_list::Builder {
-        get_applications_event_list::Builder {
+    ) -> get_applications_event_list::RequestBuilder {
+        get_applications_event_list::RequestBuilder {
             client: self.clone(),
             start_time_utc: start_time_utc.into(),
             end_time_utc: end_time_utc.into(),
@@ -3308,8 +3327,8 @@ impl Client {
         service_id: impl Into<String>,
         start_time_utc: impl Into<String>,
         end_time_utc: impl Into<String>,
-    ) -> get_service_event_list::Builder {
-        get_service_event_list::Builder {
+    ) -> get_service_event_list::RequestBuilder {
+        get_service_event_list::RequestBuilder {
             client: self.clone(),
             service_id: service_id.into(),
             start_time_utc: start_time_utc.into(),
@@ -3330,8 +3349,8 @@ impl Client {
         &self,
         start_time_utc: impl Into<String>,
         end_time_utc: impl Into<String>,
-    ) -> get_services_event_list::Builder {
-        get_services_event_list::Builder {
+    ) -> get_services_event_list::RequestBuilder {
+        get_services_event_list::RequestBuilder {
             client: self.clone(),
             start_time_utc: start_time_utc.into(),
             end_time_utc: end_time_utc.into(),
@@ -3353,8 +3372,8 @@ impl Client {
         partition_id: impl Into<String>,
         start_time_utc: impl Into<String>,
         end_time_utc: impl Into<String>,
-    ) -> get_partition_event_list::Builder {
-        get_partition_event_list::Builder {
+    ) -> get_partition_event_list::RequestBuilder {
+        get_partition_event_list::RequestBuilder {
             client: self.clone(),
             partition_id: partition_id.into(),
             start_time_utc: start_time_utc.into(),
@@ -3375,8 +3394,8 @@ impl Client {
         &self,
         start_time_utc: impl Into<String>,
         end_time_utc: impl Into<String>,
-    ) -> get_partitions_event_list::Builder {
-        get_partitions_event_list::Builder {
+    ) -> get_partitions_event_list::RequestBuilder {
+        get_partitions_event_list::RequestBuilder {
             client: self.clone(),
             start_time_utc: start_time_utc.into(),
             end_time_utc: end_time_utc.into(),
@@ -3400,8 +3419,8 @@ impl Client {
         replica_id: impl Into<String>,
         start_time_utc: impl Into<String>,
         end_time_utc: impl Into<String>,
-    ) -> get_partition_replica_event_list::Builder {
-        get_partition_replica_event_list::Builder {
+    ) -> get_partition_replica_event_list::RequestBuilder {
+        get_partition_replica_event_list::RequestBuilder {
             client: self.clone(),
             partition_id: partition_id.into(),
             replica_id: replica_id.into(),
@@ -3425,8 +3444,8 @@ impl Client {
         partition_id: impl Into<String>,
         start_time_utc: impl Into<String>,
         end_time_utc: impl Into<String>,
-    ) -> get_partition_replicas_event_list::Builder {
-        get_partition_replicas_event_list::Builder {
+    ) -> get_partition_replicas_event_list::RequestBuilder {
+        get_partition_replicas_event_list::RequestBuilder {
             client: self.clone(),
             partition_id: partition_id.into(),
             start_time_utc: start_time_utc.into(),
@@ -3442,8 +3461,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `event_instance_id`: The EventInstanceId."]
-    pub fn get_correlated_event_list(&self, event_instance_id: impl Into<String>) -> get_correlated_event_list::Builder {
-        get_correlated_event_list::Builder {
+    pub fn get_correlated_event_list(&self, event_instance_id: impl Into<String>) -> get_correlated_event_list::RequestBuilder {
+        get_correlated_event_list::RequestBuilder {
             client: self.clone(),
             event_instance_id: event_instance_id.into(),
             timeout: None,
@@ -3454,11 +3473,11 @@ pub mod get_cluster_manifest {
     use super::models;
     type Response = models::ClusterManifest;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -3506,7 +3525,7 @@ pub mod get_cluster_health {
     use super::models;
     type Response = models::ClusterHealth;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) nodes_health_state_filter: Option<i64>,
         pub(crate) applications_health_state_filter: Option<i64>,
@@ -3515,7 +3534,7 @@ pub mod get_cluster_health {
         pub(crate) include_system_application_health_statistics: Option<bool>,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "Allows filtering of the node health state objects returned in the result of cluster health query\nbased on their health state. The possible values for this parameter include integer value of one of the\nfollowing health states. Only nodes that match the filter are returned. All nodes are used to evaluate the aggregated health state.\nIf not specified, all entries are returned.\nThe state values are flag-based enumeration, so the value could be a combination of these values obtained using bitwise 'OR' operator.\nFor example, if the provided value is 6 then health state of nodes with HealthState value of OK (2) and Warning (4) are returned.\n\n- Default - Default value. Matches any HealthState. The value is zero.\n- None - Filter that doesn't match any HealthState value. Used in order to return no results on a given collection of states. The value is 1.\n- Ok - Filter that matches input with HealthState value Ok. The value is 2.\n- Warning - Filter that matches input with HealthState value Warning. The value is 4.\n- Error - Filter that matches input with HealthState value Error. The value is 8.\n- All - Filter that matches input with any HealthState value. The value is 65535."]
         pub fn nodes_health_state_filter(mut self, nodes_health_state_filter: i64) -> Self {
             self.nodes_health_state_filter = Some(nodes_health_state_filter);
@@ -3614,7 +3633,7 @@ pub mod get_cluster_health_using_policy {
     use super::models;
     type Response = models::ClusterHealth;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) nodes_health_state_filter: Option<i64>,
         pub(crate) applications_health_state_filter: Option<i64>,
@@ -3624,7 +3643,7 @@ pub mod get_cluster_health_using_policy {
         pub(crate) cluster_health_policies: Option<models::ClusterHealthPolicies>,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "Allows filtering of the node health state objects returned in the result of cluster health query\nbased on their health state. The possible values for this parameter include integer value of one of the\nfollowing health states. Only nodes that match the filter are returned. All nodes are used to evaluate the aggregated health state.\nIf not specified, all entries are returned.\nThe state values are flag-based enumeration, so the value could be a combination of these values obtained using bitwise 'OR' operator.\nFor example, if the provided value is 6 then health state of nodes with HealthState value of OK (2) and Warning (4) are returned.\n\n- Default - Default value. Matches any HealthState. The value is zero.\n- None - Filter that doesn't match any HealthState value. Used in order to return no results on a given collection of states. The value is 1.\n- Ok - Filter that matches input with HealthState value Ok. The value is 2.\n- Warning - Filter that matches input with HealthState value Warning. The value is 4.\n- Error - Filter that matches input with HealthState value Error. The value is 8.\n- All - Filter that matches input with any HealthState value. The value is 65535."]
         pub fn nodes_health_state_filter(mut self, nodes_health_state_filter: i64) -> Self {
             self.nodes_health_state_filter = Some(nodes_health_state_filter);
@@ -3733,11 +3752,11 @@ pub mod get_cluster_health_chunk {
     use super::models;
     type Response = models::ClusterHealthChunk;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -3785,12 +3804,12 @@ pub mod get_cluster_health_chunk_using_policy_and_advanced_filters {
     use super::models;
     type Response = models::ClusterHealthChunk;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) cluster_health_chunk_query_description: Option<models::ClusterHealthChunkQueryDescription>,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "Describes the cluster and application health policies used to evaluate the cluster health and the filters to select which cluster entities to be returned.\nIf the cluster health policy is present, it is used to evaluate the cluster events and the cluster nodes. If not present, the health evaluation uses the cluster health policy defined in the cluster manifest or the default cluster health policy.\nBy default, each application is evaluated using its specific application health policy, defined in the application manifest, or the default health policy, if no policy is defined in manifest.\nIf the application health policy map is specified, and it has an entry for an application, the specified application health policy\nis used to evaluate the application health.\nUsers can specify very flexible filters to select which cluster entities to include in response. The selection can be done based on the entities health state and based on the hierarchy.\nThe query can return multi-level children of the entities based on the specified filters. For example, it can return one application with a specified name, and for this application, return\nonly services that are in Error or Warning, and all partitions and replicas for one of these services."]
         pub fn cluster_health_chunk_query_description(
             mut self,
@@ -3851,13 +3870,13 @@ pub mod report_cluster_health {
     use super::models;
     type Response = ();
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) health_information: models::HealthInformation,
         pub(crate) immediate: Option<bool>,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "A flag that indicates whether the report should be sent immediately.\nA health report is sent to a Service Fabric gateway Application, which forwards to the health store.\nIf Immediate is set to true, the report is sent immediately from HTTP Gateway to the health store, regardless of the fabric client settings that the HTTP Gateway Application is using.\nThis is useful for critical reports that should be sent as soon as possible.\nDepending on timing and other conditions, sending the report may still fail, for example if the HTTP Gateway is closed or the message doesn't reach the Gateway.\nIf Immediate is set to false, the report is sent based on the health client settings from the HTTP Gateway. Therefore, it will be batched according to the HealthReportSendInterval configuration.\nThis is the recommended setting because it allows the health client to optimize health reporting messages to health store as well as health report processing.\nBy default, reports are not sent immediately."]
         pub fn immediate(mut self, immediate: bool) -> Self {
             self.immediate = Some(immediate);
@@ -3910,12 +3929,12 @@ pub mod get_provisioned_fabric_code_version_info_list {
     use super::models;
     type Response = models::FabricCodeVersionInfoList;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) code_version: Option<String>,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The product version of Service Fabric."]
         pub fn code_version(mut self, code_version: impl Into<String>) -> Self {
             self.code_version = Some(code_version.into());
@@ -3971,12 +3990,12 @@ pub mod get_provisioned_fabric_config_version_info_list {
     use super::models;
     type Response = models::FabricConfigVersionInfoList;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) config_version: Option<String>,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The config version of Service Fabric."]
         pub fn config_version(mut self, config_version: impl Into<String>) -> Self {
             self.config_version = Some(config_version.into());
@@ -4032,11 +4051,11 @@ pub mod get_cluster_upgrade_progress {
     use super::models;
     type Response = models::ClusterUpgradeProgressObject;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -4084,12 +4103,12 @@ pub mod get_cluster_configuration {
     use super::models;
     type Response = models::ClusterConfiguration;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) configuration_api_version: String,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -4141,11 +4160,11 @@ pub mod get_cluster_configuration_upgrade_status {
     use super::models;
     type Response = models::ClusterConfigurationUpgradeStatusInfo;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -4193,11 +4212,11 @@ pub mod get_upgrade_orchestration_service_state {
     use super::models;
     type Response = models::UpgradeOrchestrationServiceState;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -4245,12 +4264,12 @@ pub mod set_upgrade_orchestration_service_state {
     use super::models;
     type Response = models::UpgradeOrchestrationServiceStateSummary;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) upgrade_orchestration_service_state: models::UpgradeOrchestrationServiceState,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -4299,12 +4318,12 @@ pub mod provision_cluster {
     use super::models;
     type Response = ();
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) provision_fabric_description: models::ProvisionFabricDescription,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -4349,12 +4368,12 @@ pub mod unprovision_cluster {
     use super::models;
     type Response = ();
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) unprovision_fabric_description: models::UnprovisionFabricDescription,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -4399,11 +4418,11 @@ pub mod rollback_cluster_upgrade {
     use super::models;
     type Response = ();
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -4448,12 +4467,12 @@ pub mod resume_cluster_upgrade {
     use super::models;
     type Response = ();
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) resume_cluster_upgrade_description: models::ResumeClusterUpgradeDescription,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -4498,12 +4517,12 @@ pub mod start_cluster_upgrade {
     use super::models;
     type Response = ();
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) start_cluster_upgrade_description: models::StartClusterUpgradeDescription,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -4548,12 +4567,12 @@ pub mod start_cluster_configuration_upgrade {
     use super::models;
     type Response = ();
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) cluster_configuration_upgrade_description: models::ClusterConfigurationUpgradeDescription,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -4598,12 +4617,12 @@ pub mod update_cluster_upgrade {
     use super::models;
     type Response = ();
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) update_cluster_upgrade_description: models::UpdateClusterUpgradeDescription,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -4648,11 +4667,11 @@ pub mod get_aad_metadata {
     use super::models;
     type Response = models::AadMetadataObject;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -4700,11 +4719,11 @@ pub mod get_cluster_version {
     use super::models;
     type Response = models::ClusterVersion;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -4752,11 +4771,11 @@ pub mod get_cluster_load {
     use super::models;
     type Response = models::ClusterLoadInfo;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -4804,12 +4823,12 @@ pub mod toggle_verbose_service_placement_health_reporting {
     use super::models;
     type Response = ();
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) enabled: bool,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -4859,14 +4878,14 @@ pub mod get_node_info_list {
     use super::models;
     type Response = models::PagedNodeInfoList;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) continuation_token: Option<String>,
         pub(crate) node_status_filter: Option<String>,
         pub(crate) max_results: Option<i64>,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The continuation token parameter is used to obtain next set of results. A continuation token with a non-empty value is included in the response of the API when the results from the system do not fit in a single response. When this value is passed to the next API call, the API returns next set of results. If there are no further results, then the continuation token does not contain a value. The value of this parameter should not be URL encoded."]
         pub fn continuation_token(mut self, continuation_token: impl Into<String>) -> Self {
             self.continuation_token = Some(continuation_token.into());
@@ -4942,12 +4961,12 @@ pub mod get_node_info {
         NoContent204,
     }
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) node_name: String,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -4996,13 +5015,13 @@ pub mod get_node_health {
     use super::models;
     type Response = models::NodeHealth;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) node_name: String,
         pub(crate) events_health_state_filter: Option<i64>,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "Allows filtering the collection of HealthEvent objects returned based on health state.\nThe possible values for this parameter include integer value of one of the following health states.\nOnly events that match the filter are returned. All events are used to evaluate the aggregated health state.\nIf not specified, all entries are returned. The state values are flag-based enumeration, so the value could be a combination of these values, obtained using the bitwise 'OR' operator. For example, If the provided value is 6 then all of the events with HealthState value of OK (2) and Warning (4) are returned.\n\n- Default - Default value. Matches any HealthState. The value is zero.\n- None - Filter that doesn't match any HealthState value. Used in order to return no results on a given collection of states. The value is 1.\n- Ok - Filter that matches input with HealthState value Ok. The value is 2.\n- Warning - Filter that matches input with HealthState value Warning. The value is 4.\n- Error - Filter that matches input with HealthState value Error. The value is 8.\n- All - Filter that matches input with any HealthState value. The value is 65535."]
         pub fn events_health_state_filter(mut self, events_health_state_filter: i64) -> Self {
             self.events_health_state_filter = Some(events_health_state_filter);
@@ -5060,14 +5079,14 @@ pub mod get_node_health_using_policy {
     use super::models;
     type Response = models::NodeHealth;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) node_name: String,
         pub(crate) events_health_state_filter: Option<i64>,
         pub(crate) cluster_health_policy: Option<models::ClusterHealthPolicy>,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "Allows filtering the collection of HealthEvent objects returned based on health state.\nThe possible values for this parameter include integer value of one of the following health states.\nOnly events that match the filter are returned. All events are used to evaluate the aggregated health state.\nIf not specified, all entries are returned. The state values are flag-based enumeration, so the value could be a combination of these values, obtained using the bitwise 'OR' operator. For example, If the provided value is 6 then all of the events with HealthState value of OK (2) and Warning (4) are returned.\n\n- Default - Default value. Matches any HealthState. The value is zero.\n- None - Filter that doesn't match any HealthState value. Used in order to return no results on a given collection of states. The value is 1.\n- Ok - Filter that matches input with HealthState value Ok. The value is 2.\n- Warning - Filter that matches input with HealthState value Warning. The value is 4.\n- Error - Filter that matches input with HealthState value Error. The value is 8.\n- All - Filter that matches input with any HealthState value. The value is 65535."]
         pub fn events_health_state_filter(mut self, events_health_state_filter: i64) -> Self {
             self.events_health_state_filter = Some(events_health_state_filter);
@@ -5135,14 +5154,14 @@ pub mod report_node_health {
     use super::models;
     type Response = ();
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) node_name: String,
         pub(crate) health_information: models::HealthInformation,
         pub(crate) immediate: Option<bool>,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "A flag that indicates whether the report should be sent immediately.\nA health report is sent to a Service Fabric gateway Application, which forwards to the health store.\nIf Immediate is set to true, the report is sent immediately from HTTP Gateway to the health store, regardless of the fabric client settings that the HTTP Gateway Application is using.\nThis is useful for critical reports that should be sent as soon as possible.\nDepending on timing and other conditions, sending the report may still fail, for example if the HTTP Gateway is closed or the message doesn't reach the Gateway.\nIf Immediate is set to false, the report is sent based on the health client settings from the HTTP Gateway. Therefore, it will be batched according to the HealthReportSendInterval configuration.\nThis is the recommended setting because it allows the health client to optimize health reporting messages to health store as well as health report processing.\nBy default, reports are not sent immediately."]
         pub fn immediate(mut self, immediate: bool) -> Self {
             self.immediate = Some(immediate);
@@ -5195,12 +5214,12 @@ pub mod get_node_load_info {
     use super::models;
     type Response = models::NodeLoadInfo;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) node_name: String,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -5252,13 +5271,13 @@ pub mod disable_node {
     use super::models;
     type Response = ();
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) node_name: String,
         pub(crate) deactivation_intent_description: models::DeactivationIntentDescription,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -5303,12 +5322,12 @@ pub mod enable_node {
     use super::models;
     type Response = ();
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) node_name: String,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -5353,12 +5372,12 @@ pub mod remove_node_state {
     use super::models;
     type Response = ();
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) node_name: String,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -5403,13 +5422,13 @@ pub mod restart_node {
     use super::models;
     type Response = ();
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) node_name: String,
         pub(crate) restart_node_description: models::RestartNodeDescription,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -5454,12 +5473,12 @@ pub mod remove_configuration_overrides {
     use super::models;
     type Response = ();
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) node_name: String,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -5507,12 +5526,12 @@ pub mod get_configuration_overrides {
     use super::models;
     type Response = models::ConfigParameterOverrideList;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) node_name: String,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -5564,14 +5583,14 @@ pub mod add_configuration_parameter_overrides {
     use super::models;
     type Response = ();
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) node_name: String,
         pub(crate) config_parameter_override_list: models::ConfigParameterOverrideList,
         pub(crate) force: Option<bool>,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "Force adding configuration overrides on specified nodes."]
         pub fn force(mut self, force: bool) -> Self {
             self.force = Some(force);
@@ -5628,12 +5647,12 @@ pub mod remove_node_tags {
     use super::models;
     type Response = ();
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) node_name: String,
         pub(crate) node_tags: models::NodeTagsList,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -5670,12 +5689,12 @@ pub mod add_node_tags {
     use super::models;
     type Response = ();
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) node_name: String,
         pub(crate) node_tags: models::NodeTagsList,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -5712,7 +5731,7 @@ pub mod get_application_type_info_list {
     use super::models;
     type Response = models::PagedApplicationTypeInfoList;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) application_type_definition_kind_filter: Option<i64>,
         pub(crate) exclude_application_parameters: Option<bool>,
@@ -5720,7 +5739,7 @@ pub mod get_application_type_info_list {
         pub(crate) max_results: Option<i64>,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "Used to filter on ApplicationTypeDefinitionKind which is the mechanism used to define a Service Fabric application type.\n- Default - Default value, which performs the same function as selecting \"All\". The value is 0.\n- All - Filter that matches input with any ApplicationTypeDefinitionKind value. The value is 65535.\n- ServiceFabricApplicationPackage - Filter that matches input with ApplicationTypeDefinitionKind value ServiceFabricApplicationPackage. The value is 1.\n- Compose - Filter that matches input with ApplicationTypeDefinitionKind value Compose. The value is 2."]
         pub fn application_type_definition_kind_filter(mut self, application_type_definition_kind_filter: i64) -> Self {
             self.application_type_definition_kind_filter = Some(application_type_definition_kind_filter);
@@ -5805,7 +5824,7 @@ pub mod get_application_type_info_list_by_name {
     use super::models;
     type Response = models::PagedApplicationTypeInfoList;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) application_type_name: String,
         pub(crate) application_type_version: Option<String>,
@@ -5814,7 +5833,7 @@ pub mod get_application_type_info_list_by_name {
         pub(crate) max_results: Option<i64>,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The version of the application type."]
         pub fn application_type_version(mut self, application_type_version: impl Into<String>) -> Self {
             self.application_type_version = Some(application_type_version.into());
@@ -5906,12 +5925,12 @@ pub mod provision_application_type {
         Accepted202,
     }
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) provision_application_type_description_base_required_body_param: models::ProvisionApplicationTypeDescriptionBase,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -5961,13 +5980,13 @@ pub mod unprovision_application_type {
         Accepted202,
     }
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) application_type_name: String,
         pub(crate) unprovision_application_type_description_info: models::UnprovisionApplicationTypeDescriptionInfo,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -6017,13 +6036,13 @@ pub mod get_service_type_info_list {
     use super::models;
     type Response = models::ServiceTypeInfoList;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) application_type_name: String,
         pub(crate) application_type_version: String,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -6083,14 +6102,14 @@ pub mod get_service_type_info_by_name {
         NoContent204,
     }
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) application_type_name: String,
         pub(crate) application_type_version: String,
         pub(crate) service_type_name: String,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -6148,14 +6167,14 @@ pub mod get_service_manifest {
     use super::models;
     type Response = models::ServiceTypeManifest;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) application_type_name: String,
         pub(crate) application_type_version: String,
         pub(crate) service_manifest_name: String,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -6215,14 +6234,14 @@ pub mod get_deployed_service_type_info_list {
     use super::models;
     type Response = models::DeployedServiceTypeInfoList;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) node_name: String,
         pub(crate) application_id: String,
         pub(crate) service_manifest_name: Option<String>,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The name of the service manifest to filter the list of deployed service type information. If specified, the response will only contain the information about service types that are defined in this service manifest."]
         pub fn service_manifest_name(mut self, service_manifest_name: impl Into<String>) -> Self {
             self.service_manifest_name = Some(service_manifest_name.into());
@@ -6289,7 +6308,7 @@ pub mod get_deployed_service_type_info_by_name {
         NoContent204,
     }
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) node_name: String,
         pub(crate) application_id: String,
@@ -6297,7 +6316,7 @@ pub mod get_deployed_service_type_info_by_name {
         pub(crate) service_manifest_name: Option<String>,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The name of the service manifest to filter the list of deployed service type information. If specified, the response will only contain the information about service types that are defined in this service manifest."]
         pub fn service_manifest_name(mut self, service_manifest_name: impl Into<String>) -> Self {
             self.service_manifest_name = Some(service_manifest_name.into());
@@ -6362,12 +6381,12 @@ pub mod create_application {
     use super::models;
     type Response = ();
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) application_description: models::ApplicationDescription,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -6412,13 +6431,13 @@ pub mod delete_application {
     use super::models;
     type Response = ();
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) application_id: String,
         pub(crate) force_remove: Option<bool>,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "Remove a Service Fabric application or service forcefully without going through the graceful shutdown sequence. This parameter can be used to forcefully delete an application or service for which delete is timing out due to issues in the service code that prevents graceful close of replicas."]
         pub fn force_remove(mut self, force_remove: bool) -> Self {
             self.force_remove = Some(force_remove);
@@ -6481,12 +6500,12 @@ pub mod get_application_load_info {
         NoContent204,
     }
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) application_id: String,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -6539,7 +6558,7 @@ pub mod get_application_info_list {
     use super::models;
     type Response = models::PagedApplicationInfoList;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) application_definition_kind_filter: Option<i64>,
         pub(crate) application_type_name: Option<String>,
@@ -6548,7 +6567,7 @@ pub mod get_application_info_list {
         pub(crate) max_results: Option<i64>,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "Used to filter on ApplicationDefinitionKind, which is the mechanism used to define a Service Fabric application.\n- Default - Default value, which performs the same function as selecting \"All\". The value is 0.\n- All - Filter that matches input with any ApplicationDefinitionKind value. The value is 65535.\n- ServiceFabricApplicationDescription - Filter that matches input with ApplicationDefinitionKind value ServiceFabricApplicationDescription. The value is 1.\n- Compose - Filter that matches input with ApplicationDefinitionKind value Compose. The value is 2."]
         pub fn application_definition_kind_filter(mut self, application_definition_kind_filter: i64) -> Self {
             self.application_definition_kind_filter = Some(application_definition_kind_filter);
@@ -6646,13 +6665,13 @@ pub mod get_application_info {
         NoContent204,
     }
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) application_id: String,
         pub(crate) exclude_application_parameters: Option<bool>,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The flag that specifies whether application parameters will be excluded from the result."]
         pub fn exclude_application_parameters(mut self, exclude_application_parameters: bool) -> Self {
             self.exclude_application_parameters = Some(exclude_application_parameters);
@@ -6711,7 +6730,7 @@ pub mod get_application_health {
     use super::models;
     type Response = models::ApplicationHealth;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) application_id: String,
         pub(crate) events_health_state_filter: Option<i64>,
@@ -6720,7 +6739,7 @@ pub mod get_application_health {
         pub(crate) exclude_health_statistics: Option<bool>,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "Allows filtering the collection of HealthEvent objects returned based on health state.\nThe possible values for this parameter include integer value of one of the following health states.\nOnly events that match the filter are returned. All events are used to evaluate the aggregated health state.\nIf not specified, all entries are returned. The state values are flag-based enumeration, so the value could be a combination of these values, obtained using the bitwise 'OR' operator. For example, If the provided value is 6 then all of the events with HealthState value of OK (2) and Warning (4) are returned.\n\n- Default - Default value. Matches any HealthState. The value is zero.\n- None - Filter that doesn't match any HealthState value. Used in order to return no results on a given collection of states. The value is 1.\n- Ok - Filter that matches input with HealthState value Ok. The value is 2.\n- Warning - Filter that matches input with HealthState value Warning. The value is 4.\n- Error - Filter that matches input with HealthState value Error. The value is 8.\n- All - Filter that matches input with any HealthState value. The value is 65535."]
         pub fn events_health_state_filter(mut self, events_health_state_filter: i64) -> Self {
             self.events_health_state_filter = Some(events_health_state_filter);
@@ -6813,7 +6832,7 @@ pub mod get_application_health_using_policy {
     use super::models;
     type Response = models::ApplicationHealth;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) application_id: String,
         pub(crate) events_health_state_filter: Option<i64>,
@@ -6823,7 +6842,7 @@ pub mod get_application_health_using_policy {
         pub(crate) application_health_policy: Option<models::ApplicationHealthPolicy>,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "Allows filtering the collection of HealthEvent objects returned based on health state.\nThe possible values for this parameter include integer value of one of the following health states.\nOnly events that match the filter are returned. All events are used to evaluate the aggregated health state.\nIf not specified, all entries are returned. The state values are flag-based enumeration, so the value could be a combination of these values, obtained using the bitwise 'OR' operator. For example, If the provided value is 6 then all of the events with HealthState value of OK (2) and Warning (4) are returned.\n\n- Default - Default value. Matches any HealthState. The value is zero.\n- None - Filter that doesn't match any HealthState value. Used in order to return no results on a given collection of states. The value is 1.\n- Ok - Filter that matches input with HealthState value Ok. The value is 2.\n- Warning - Filter that matches input with HealthState value Warning. The value is 4.\n- Error - Filter that matches input with HealthState value Error. The value is 8.\n- All - Filter that matches input with any HealthState value. The value is 65535."]
         pub fn events_health_state_filter(mut self, events_health_state_filter: i64) -> Self {
             self.events_health_state_filter = Some(events_health_state_filter);
@@ -6926,14 +6945,14 @@ pub mod report_application_health {
     use super::models;
     type Response = ();
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) application_id: String,
         pub(crate) health_information: models::HealthInformation,
         pub(crate) immediate: Option<bool>,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "A flag that indicates whether the report should be sent immediately.\nA health report is sent to a Service Fabric gateway Application, which forwards to the health store.\nIf Immediate is set to true, the report is sent immediately from HTTP Gateway to the health store, regardless of the fabric client settings that the HTTP Gateway Application is using.\nThis is useful for critical reports that should be sent as soon as possible.\nDepending on timing and other conditions, sending the report may still fail, for example if the HTTP Gateway is closed or the message doesn't reach the Gateway.\nIf Immediate is set to false, the report is sent based on the health client settings from the HTTP Gateway. Therefore, it will be batched according to the HealthReportSendInterval configuration.\nThis is the recommended setting because it allows the health client to optimize health reporting messages to health store as well as health report processing.\nBy default, reports are not sent immediately."]
         pub fn immediate(mut self, immediate: bool) -> Self {
             self.immediate = Some(immediate);
@@ -6990,13 +7009,13 @@ pub mod start_application_upgrade {
     use super::models;
     type Response = ();
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) application_id: String,
         pub(crate) application_upgrade_description: models::ApplicationUpgradeDescription,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -7045,12 +7064,12 @@ pub mod get_application_upgrade {
     use super::models;
     type Response = models::ApplicationUpgradeProgressInfo;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) application_id: String,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -7102,13 +7121,13 @@ pub mod update_application_upgrade {
     use super::models;
     type Response = ();
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) application_id: String,
         pub(crate) application_upgrade_update_description: models::ApplicationUpgradeUpdateDescription,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -7157,13 +7176,13 @@ pub mod update_application {
     use super::models;
     type Response = ();
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) application_id: String,
         pub(crate) application_update_description: models::ApplicationUpdateDescription,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -7212,13 +7231,13 @@ pub mod resume_application_upgrade {
     use super::models;
     type Response = ();
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) application_id: String,
         pub(crate) resume_application_upgrade_description: models::ResumeApplicationUpgradeDescription,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -7267,12 +7286,12 @@ pub mod rollback_application_upgrade {
     use super::models;
     type Response = ();
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) application_id: String,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -7321,7 +7340,7 @@ pub mod get_deployed_application_info_list {
     use super::models;
     type Response = models::PagedDeployedApplicationInfoList;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) node_name: String,
         pub(crate) timeout: Option<i64>,
@@ -7329,7 +7348,7 @@ pub mod get_deployed_application_info_list {
         pub(crate) continuation_token: Option<String>,
         pub(crate) max_results: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -7407,14 +7426,14 @@ pub mod get_deployed_application_info {
         NoContent204,
     }
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) node_name: String,
         pub(crate) application_id: String,
         pub(crate) timeout: Option<i64>,
         pub(crate) include_health_state: Option<bool>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -7478,7 +7497,7 @@ pub mod get_deployed_application_health {
     use super::models;
     type Response = models::DeployedApplicationHealth;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) node_name: String,
         pub(crate) application_id: String,
@@ -7487,7 +7506,7 @@ pub mod get_deployed_application_health {
         pub(crate) exclude_health_statistics: Option<bool>,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "Allows filtering the collection of HealthEvent objects returned based on health state.\nThe possible values for this parameter include integer value of one of the following health states.\nOnly events that match the filter are returned. All events are used to evaluate the aggregated health state.\nIf not specified, all entries are returned. The state values are flag-based enumeration, so the value could be a combination of these values, obtained using the bitwise 'OR' operator. For example, If the provided value is 6 then all of the events with HealthState value of OK (2) and Warning (4) are returned.\n\n- Default - Default value. Matches any HealthState. The value is zero.\n- None - Filter that doesn't match any HealthState value. Used in order to return no results on a given collection of states. The value is 1.\n- Ok - Filter that matches input with HealthState value Ok. The value is 2.\n- Warning - Filter that matches input with HealthState value Warning. The value is 4.\n- Error - Filter that matches input with HealthState value Error. The value is 8.\n- All - Filter that matches input with any HealthState value. The value is 65535."]
         pub fn events_health_state_filter(mut self, events_health_state_filter: i64) -> Self {
             self.events_health_state_filter = Some(events_health_state_filter);
@@ -7571,7 +7590,7 @@ pub mod get_deployed_application_health_using_policy {
     use super::models;
     type Response = models::DeployedApplicationHealth;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) node_name: String,
         pub(crate) application_id: String,
@@ -7581,7 +7600,7 @@ pub mod get_deployed_application_health_using_policy {
         pub(crate) exclude_health_statistics: Option<bool>,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "Allows filtering the collection of HealthEvent objects returned based on health state.\nThe possible values for this parameter include integer value of one of the following health states.\nOnly events that match the filter are returned. All events are used to evaluate the aggregated health state.\nIf not specified, all entries are returned. The state values are flag-based enumeration, so the value could be a combination of these values, obtained using the bitwise 'OR' operator. For example, If the provided value is 6 then all of the events with HealthState value of OK (2) and Warning (4) are returned.\n\n- Default - Default value. Matches any HealthState. The value is zero.\n- None - Filter that doesn't match any HealthState value. Used in order to return no results on a given collection of states. The value is 1.\n- Ok - Filter that matches input with HealthState value Ok. The value is 2.\n- Warning - Filter that matches input with HealthState value Warning. The value is 4.\n- Error - Filter that matches input with HealthState value Error. The value is 8.\n- All - Filter that matches input with any HealthState value. The value is 65535."]
         pub fn events_health_state_filter(mut self, events_health_state_filter: i64) -> Self {
             self.events_health_state_filter = Some(events_health_state_filter);
@@ -7675,7 +7694,7 @@ pub mod report_deployed_application_health {
     use super::models;
     type Response = ();
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) node_name: String,
         pub(crate) application_id: String,
@@ -7683,7 +7702,7 @@ pub mod report_deployed_application_health {
         pub(crate) immediate: Option<bool>,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "A flag that indicates whether the report should be sent immediately.\nA health report is sent to a Service Fabric gateway Application, which forwards to the health store.\nIf Immediate is set to true, the report is sent immediately from HTTP Gateway to the health store, regardless of the fabric client settings that the HTTP Gateway Application is using.\nThis is useful for critical reports that should be sent as soon as possible.\nDepending on timing and other conditions, sending the report may still fail, for example if the HTTP Gateway is closed or the message doesn't reach the Gateway.\nIf Immediate is set to false, the report is sent based on the health client settings from the HTTP Gateway. Therefore, it will be batched according to the HealthReportSendInterval configuration.\nThis is the recommended setting because it allows the health client to optimize health reporting messages to health store as well as health report processing.\nBy default, reports are not sent immediately."]
         pub fn immediate(mut self, immediate: bool) -> Self {
             self.immediate = Some(immediate);
@@ -7741,13 +7760,13 @@ pub mod get_application_manifest {
     use super::models;
     type Response = models::ApplicationTypeManifest;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) application_type_name: String,
         pub(crate) application_type_version: String,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -7803,14 +7822,14 @@ pub mod get_service_info_list {
     use super::models;
     type Response = models::PagedServiceInfoList;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) application_id: String,
         pub(crate) service_type_name: Option<String>,
         pub(crate) continuation_token: Option<String>,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The service type name used to filter the services to query for."]
         pub fn service_type_name(mut self, service_type_name: impl Into<String>) -> Self {
             self.service_type_name = Some(service_type_name.into());
@@ -7882,13 +7901,13 @@ pub mod get_service_info {
         NoContent204,
     }
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) application_id: String,
         pub(crate) service_id: String,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -7942,12 +7961,12 @@ pub mod get_application_name_info {
     use super::models;
     type Response = models::ApplicationNameInfo;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) service_id: String,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -7999,13 +8018,13 @@ pub mod create_service {
     use super::models;
     type Response = ();
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) application_id: String,
         pub(crate) service_description: models::ServiceDescription,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -8054,13 +8073,13 @@ pub mod create_service_from_template {
     use super::models;
     type Response = ();
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) application_id: String,
         pub(crate) service_from_template_description: models::ServiceFromTemplateDescription,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -8109,13 +8128,13 @@ pub mod delete_service {
     use super::models;
     type Response = ();
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) service_id: String,
         pub(crate) force_remove: Option<bool>,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "Remove a Service Fabric application or service forcefully without going through the graceful shutdown sequence. This parameter can be used to forcefully delete an application or service for which delete is timing out due to issues in the service code that prevents graceful close of replicas."]
         pub fn force_remove(mut self, force_remove: bool) -> Self {
             self.force_remove = Some(force_remove);
@@ -8170,13 +8189,13 @@ pub mod update_service {
     use super::models;
     type Response = ();
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) service_id: String,
         pub(crate) service_update_description: models::ServiceUpdateDescription,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -8221,12 +8240,12 @@ pub mod get_service_description {
     use super::models;
     type Response = models::ServiceDescription;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) service_id: String,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -8278,7 +8297,7 @@ pub mod get_service_health {
     use super::models;
     type Response = models::ServiceHealth;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) service_id: String,
         pub(crate) events_health_state_filter: Option<i64>,
@@ -8286,7 +8305,7 @@ pub mod get_service_health {
         pub(crate) exclude_health_statistics: Option<bool>,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "Allows filtering the collection of HealthEvent objects returned based on health state.\nThe possible values for this parameter include integer value of one of the following health states.\nOnly events that match the filter are returned. All events are used to evaluate the aggregated health state.\nIf not specified, all entries are returned. The state values are flag-based enumeration, so the value could be a combination of these values, obtained using the bitwise 'OR' operator. For example, If the provided value is 6 then all of the events with HealthState value of OK (2) and Warning (4) are returned.\n\n- Default - Default value. Matches any HealthState. The value is zero.\n- None - Filter that doesn't match any HealthState value. Used in order to return no results on a given collection of states. The value is 1.\n- Ok - Filter that matches input with HealthState value Ok. The value is 2.\n- Warning - Filter that matches input with HealthState value Warning. The value is 4.\n- Error - Filter that matches input with HealthState value Error. The value is 8.\n- All - Filter that matches input with any HealthState value. The value is 65535."]
         pub fn events_health_state_filter(mut self, events_health_state_filter: i64) -> Self {
             self.events_health_state_filter = Some(events_health_state_filter);
@@ -8364,7 +8383,7 @@ pub mod get_service_health_using_policy {
     use super::models;
     type Response = models::ServiceHealth;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) service_id: String,
         pub(crate) events_health_state_filter: Option<i64>,
@@ -8373,7 +8392,7 @@ pub mod get_service_health_using_policy {
         pub(crate) exclude_health_statistics: Option<bool>,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "Allows filtering the collection of HealthEvent objects returned based on health state.\nThe possible values for this parameter include integer value of one of the following health states.\nOnly events that match the filter are returned. All events are used to evaluate the aggregated health state.\nIf not specified, all entries are returned. The state values are flag-based enumeration, so the value could be a combination of these values, obtained using the bitwise 'OR' operator. For example, If the provided value is 6 then all of the events with HealthState value of OK (2) and Warning (4) are returned.\n\n- Default - Default value. Matches any HealthState. The value is zero.\n- None - Filter that doesn't match any HealthState value. Used in order to return no results on a given collection of states. The value is 1.\n- Ok - Filter that matches input with HealthState value Ok. The value is 2.\n- Warning - Filter that matches input with HealthState value Warning. The value is 4.\n- Error - Filter that matches input with HealthState value Error. The value is 8.\n- All - Filter that matches input with any HealthState value. The value is 65535."]
         pub fn events_health_state_filter(mut self, events_health_state_filter: i64) -> Self {
             self.events_health_state_filter = Some(events_health_state_filter);
@@ -8461,14 +8480,14 @@ pub mod report_service_health {
     use super::models;
     type Response = ();
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) service_id: String,
         pub(crate) health_information: models::HealthInformation,
         pub(crate) immediate: Option<bool>,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "A flag that indicates whether the report should be sent immediately.\nA health report is sent to a Service Fabric gateway Application, which forwards to the health store.\nIf Immediate is set to true, the report is sent immediately from HTTP Gateway to the health store, regardless of the fabric client settings that the HTTP Gateway Application is using.\nThis is useful for critical reports that should be sent as soon as possible.\nDepending on timing and other conditions, sending the report may still fail, for example if the HTTP Gateway is closed or the message doesn't reach the Gateway.\nIf Immediate is set to false, the report is sent based on the health client settings from the HTTP Gateway. Therefore, it will be batched according to the HealthReportSendInterval configuration.\nThis is the recommended setting because it allows the health client to optimize health reporting messages to health store as well as health report processing.\nBy default, reports are not sent immediately."]
         pub fn immediate(mut self, immediate: bool) -> Self {
             self.immediate = Some(immediate);
@@ -8521,7 +8540,7 @@ pub mod resolve_service {
     use super::models;
     type Response = models::ResolvedServicePartition;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) service_id: String,
         pub(crate) partition_key_type: Option<i64>,
@@ -8529,7 +8548,7 @@ pub mod resolve_service {
         pub(crate) previous_rsp_version: Option<String>,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "Key type for the partition. This parameter is required if the partition scheme for the service is Int64Range or Named. The possible values are following.\n- None (1) - Indicates that the PartitionKeyValue parameter is not specified. This is valid for the partitions with partitioning scheme as Singleton. This is the default value. The value is 1.\n- Int64Range (2) - Indicates that the PartitionKeyValue parameter is an int64 partition key. This is valid for the partitions with partitioning scheme as Int64Range. The value is 2.\n- Named (3) - Indicates that the PartitionKeyValue parameter is a name of the partition. This is valid for the partitions with partitioning scheme as Named. The value is 3."]
         pub fn partition_key_type(mut self, partition_key_type: i64) -> Self {
             self.partition_key_type = Some(partition_key_type);
@@ -8611,14 +8630,14 @@ pub mod get_unplaced_replica_information {
     use super::models;
     type Response = models::UnplacedReplicaInformation;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) service_id: String,
         pub(crate) partition_id: Option<String>,
         pub(crate) only_query_primaries: Option<bool>,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The identity of the partition."]
         pub fn partition_id(mut self, partition_id: impl Into<String>) -> Self {
             self.partition_id = Some(partition_id.into());
@@ -8688,7 +8707,7 @@ pub mod get_loaded_partition_info_list {
     use super::models;
     type Response = models::LoadedPartitionInformationResultList;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) metric_name: String,
         pub(crate) service_name: Option<String>,
@@ -8696,7 +8715,7 @@ pub mod get_loaded_partition_info_list {
         pub(crate) max_results: Option<i64>,
         pub(crate) continuation_token: Option<String>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The name of a service."]
         pub fn service_name(mut self, service_name: impl Into<String>) -> Self {
             self.service_name = Some(service_name.into());
@@ -8770,13 +8789,13 @@ pub mod get_partition_info_list {
     use super::models;
     type Response = models::PagedServicePartitionInfoList;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) service_id: String,
         pub(crate) continuation_token: Option<String>,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The continuation token parameter is used to obtain next set of results. A continuation token with a non-empty value is included in the response of the API when the results from the system do not fit in a single response. When this value is passed to the next API call, the API returns next set of results. If there are no further results, then the continuation token does not contain a value. The value of this parameter should not be URL encoded."]
         pub fn continuation_token(mut self, continuation_token: impl Into<String>) -> Self {
             self.continuation_token = Some(continuation_token.into());
@@ -8836,12 +8855,12 @@ pub mod get_partition_info {
         NoContent204,
     }
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) partition_id: String,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -8890,12 +8909,12 @@ pub mod get_service_name_info {
     use super::models;
     type Response = models::ServiceNameInfo;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) partition_id: String,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -8947,7 +8966,7 @@ pub mod get_partition_health {
     use super::models;
     type Response = models::PartitionHealth;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) partition_id: String,
         pub(crate) events_health_state_filter: Option<i64>,
@@ -8955,7 +8974,7 @@ pub mod get_partition_health {
         pub(crate) exclude_health_statistics: Option<bool>,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "Allows filtering the collection of HealthEvent objects returned based on health state.\nThe possible values for this parameter include integer value of one of the following health states.\nOnly events that match the filter are returned. All events are used to evaluate the aggregated health state.\nIf not specified, all entries are returned. The state values are flag-based enumeration, so the value could be a combination of these values, obtained using the bitwise 'OR' operator. For example, If the provided value is 6 then all of the events with HealthState value of OK (2) and Warning (4) are returned.\n\n- Default - Default value. Matches any HealthState. The value is zero.\n- None - Filter that doesn't match any HealthState value. Used in order to return no results on a given collection of states. The value is 1.\n- Ok - Filter that matches input with HealthState value Ok. The value is 2.\n- Warning - Filter that matches input with HealthState value Warning. The value is 4.\n- Error - Filter that matches input with HealthState value Error. The value is 8.\n- All - Filter that matches input with any HealthState value. The value is 65535."]
         pub fn events_health_state_filter(mut self, events_health_state_filter: i64) -> Self {
             self.events_health_state_filter = Some(events_health_state_filter);
@@ -9033,7 +9052,7 @@ pub mod get_partition_health_using_policy {
     use super::models;
     type Response = models::PartitionHealth;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) partition_id: String,
         pub(crate) events_health_state_filter: Option<i64>,
@@ -9042,7 +9061,7 @@ pub mod get_partition_health_using_policy {
         pub(crate) exclude_health_statistics: Option<bool>,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "Allows filtering the collection of HealthEvent objects returned based on health state.\nThe possible values for this parameter include integer value of one of the following health states.\nOnly events that match the filter are returned. All events are used to evaluate the aggregated health state.\nIf not specified, all entries are returned. The state values are flag-based enumeration, so the value could be a combination of these values, obtained using the bitwise 'OR' operator. For example, If the provided value is 6 then all of the events with HealthState value of OK (2) and Warning (4) are returned.\n\n- Default - Default value. Matches any HealthState. The value is zero.\n- None - Filter that doesn't match any HealthState value. Used in order to return no results on a given collection of states. The value is 1.\n- Ok - Filter that matches input with HealthState value Ok. The value is 2.\n- Warning - Filter that matches input with HealthState value Warning. The value is 4.\n- Error - Filter that matches input with HealthState value Error. The value is 8.\n- All - Filter that matches input with any HealthState value. The value is 65535."]
         pub fn events_health_state_filter(mut self, events_health_state_filter: i64) -> Self {
             self.events_health_state_filter = Some(events_health_state_filter);
@@ -9130,14 +9149,14 @@ pub mod report_partition_health {
     use super::models;
     type Response = ();
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) partition_id: String,
         pub(crate) health_information: models::HealthInformation,
         pub(crate) immediate: Option<bool>,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "A flag that indicates whether the report should be sent immediately.\nA health report is sent to a Service Fabric gateway Application, which forwards to the health store.\nIf Immediate is set to true, the report is sent immediately from HTTP Gateway to the health store, regardless of the fabric client settings that the HTTP Gateway Application is using.\nThis is useful for critical reports that should be sent as soon as possible.\nDepending on timing and other conditions, sending the report may still fail, for example if the HTTP Gateway is closed or the message doesn't reach the Gateway.\nIf Immediate is set to false, the report is sent based on the health client settings from the HTTP Gateway. Therefore, it will be batched according to the HealthReportSendInterval configuration.\nThis is the recommended setting because it allows the health client to optimize health reporting messages to health store as well as health report processing.\nBy default, reports are not sent immediately."]
         pub fn immediate(mut self, immediate: bool) -> Self {
             self.immediate = Some(immediate);
@@ -9194,12 +9213,12 @@ pub mod get_partition_load_information {
     use super::models;
     type Response = models::PartitionLoadInformation;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) partition_id: String,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -9251,12 +9270,12 @@ pub mod reset_partition_load {
     use super::models;
     type Response = ();
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) partition_id: String,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -9301,12 +9320,12 @@ pub mod recover_partition {
     use super::models;
     type Response = ();
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) partition_id: String,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -9351,12 +9370,12 @@ pub mod recover_service_partitions {
     use super::models;
     type Response = ();
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) service_id: String,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -9405,11 +9424,11 @@ pub mod recover_system_partitions {
     use super::models;
     type Response = ();
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -9454,11 +9473,11 @@ pub mod recover_all_partitions {
     use super::models;
     type Response = ();
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -9503,14 +9522,14 @@ pub mod move_primary_replica {
     use super::models;
     type Response = ();
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) partition_id: String,
         pub(crate) node_name: Option<String>,
         pub(crate) ignore_constraints: Option<bool>,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The name of the node."]
         pub fn node_name(mut self, node_name: impl Into<String>) -> Self {
             self.node_name = Some(node_name.into());
@@ -9577,7 +9596,7 @@ pub mod move_secondary_replica {
     use super::models;
     type Response = ();
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) partition_id: String,
         pub(crate) current_node_name: String,
@@ -9585,7 +9604,7 @@ pub mod move_secondary_replica {
         pub(crate) ignore_constraints: Option<bool>,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The name of the target node for secondary replica or instance move. If not specified, replica or instance is moved to a random node."]
         pub fn new_node_name(mut self, new_node_name: impl Into<String>) -> Self {
             self.new_node_name = Some(new_node_name.into());
@@ -9654,14 +9673,14 @@ pub mod update_partition_load {
     use super::models;
     type Response = models::PagedUpdatePartitionLoadResultList;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) partition_metric_load_description_list: models::PartitionMetricLoadDescriptionList,
         pub(crate) continuation_token: Option<String>,
         pub(crate) max_results: Option<i64>,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The continuation token parameter is used to obtain next set of results. A continuation token with a non-empty value is included in the response of the API when the results from the system do not fit in a single response. When this value is passed to the next API call, the API returns next set of results. If there are no further results, then the continuation token does not contain a value. The value of this parameter should not be URL encoded."]
         pub fn continuation_token(mut self, continuation_token: impl Into<String>) -> Self {
             self.continuation_token = Some(continuation_token.into());
@@ -9726,7 +9745,7 @@ pub mod move_instance {
     use super::models;
     type Response = ();
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) service_id: String,
         pub(crate) partition_id: String,
@@ -9735,7 +9754,7 @@ pub mod move_instance {
         pub(crate) ignore_constraints: Option<bool>,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The name of the source node for instance move. If not specified, instance is moved from a random node."]
         pub fn current_node_name(mut self, current_node_name: impl Into<String>) -> Self {
             self.current_node_name = Some(current_node_name.into());
@@ -9811,7 +9830,7 @@ pub mod move_auxiliary_replica {
     use super::models;
     type Response = ();
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) service_id: String,
         pub(crate) partition_id: String,
@@ -9820,7 +9839,7 @@ pub mod move_auxiliary_replica {
         pub(crate) ignore_constraints: Option<bool>,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The name of the source node for instance move. If not specified, instance is moved from a random node."]
         pub fn current_node_name(mut self, current_node_name: impl Into<String>) -> Self {
             self.current_node_name = Some(current_node_name.into());
@@ -9896,11 +9915,11 @@ pub mod create_repair_task {
     use super::models;
     type Response = models::RepairTaskUpdateInfo;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) repair_task: models::RepairTask,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -9941,11 +9960,11 @@ pub mod cancel_repair_task {
     use super::models;
     type Response = models::RepairTaskUpdateInfo;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) repair_task_cancel_description: models::RepairTaskCancelDescription,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -9986,11 +10005,11 @@ pub mod delete_repair_task {
     use super::models;
     type Response = ();
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) repair_task_delete_description: models::RepairTaskDeleteDescription,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -10027,13 +10046,13 @@ pub mod get_repair_task_list {
     use super::models;
     type Response = models::RepairTaskList;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) task_id_filter: Option<String>,
         pub(crate) state_filter: Option<i64>,
         pub(crate) executor_filter: Option<String>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The repair task ID prefix to be matched."]
         pub fn task_id_filter(mut self, task_id_filter: impl Into<String>) -> Self {
             self.task_id_filter = Some(task_id_filter.into());
@@ -10099,11 +10118,11 @@ pub mod force_approve_repair_task {
     use super::models;
     type Response = models::RepairTaskUpdateInfo;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) repair_task_approve_description: models::RepairTaskApproveDescription,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -10144,11 +10163,11 @@ pub mod update_repair_task_health_policy {
     use super::models;
     type Response = models::RepairTaskUpdateInfo;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) repair_task_update_health_policy_description: models::RepairTaskUpdateHealthPolicyDescription,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -10189,11 +10208,11 @@ pub mod update_repair_execution_state {
     use super::models;
     type Response = models::RepairTaskUpdateInfo;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) repair_task: models::RepairTask,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -10234,13 +10253,13 @@ pub mod get_replica_info_list {
     use super::models;
     type Response = models::PagedReplicaInfoList;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) partition_id: String,
         pub(crate) continuation_token: Option<String>,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The continuation token parameter is used to obtain next set of results. A continuation token with a non-empty value is included in the response of the API when the results from the system do not fit in a single response. When this value is passed to the next API call, the API returns next set of results. If there are no further results, then the continuation token does not contain a value. The value of this parameter should not be URL encoded."]
         pub fn continuation_token(mut self, continuation_token: impl Into<String>) -> Self {
             self.continuation_token = Some(continuation_token.into());
@@ -10304,13 +10323,13 @@ pub mod get_replica_info {
         NoContent204,
     }
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) partition_id: String,
         pub(crate) replica_id: String,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -10364,14 +10383,14 @@ pub mod get_replica_health {
     use super::models;
     type Response = models::ReplicaHealth;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) partition_id: String,
         pub(crate) replica_id: String,
         pub(crate) events_health_state_filter: Option<i64>,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "Allows filtering the collection of HealthEvent objects returned based on health state.\nThe possible values for this parameter include integer value of one of the following health states.\nOnly events that match the filter are returned. All events are used to evaluate the aggregated health state.\nIf not specified, all entries are returned. The state values are flag-based enumeration, so the value could be a combination of these values, obtained using the bitwise 'OR' operator. For example, If the provided value is 6 then all of the events with HealthState value of OK (2) and Warning (4) are returned.\n\n- Default - Default value. Matches any HealthState. The value is zero.\n- None - Filter that doesn't match any HealthState value. Used in order to return no results on a given collection of states. The value is 1.\n- Ok - Filter that matches input with HealthState value Ok. The value is 2.\n- Warning - Filter that matches input with HealthState value Warning. The value is 4.\n- Error - Filter that matches input with HealthState value Error. The value is 8.\n- All - Filter that matches input with any HealthState value. The value is 65535."]
         pub fn events_health_state_filter(mut self, events_health_state_filter: i64) -> Self {
             self.events_health_state_filter = Some(events_health_state_filter);
@@ -10434,7 +10453,7 @@ pub mod get_replica_health_using_policy {
     use super::models;
     type Response = models::ReplicaHealth;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) partition_id: String,
         pub(crate) replica_id: String,
@@ -10442,7 +10461,7 @@ pub mod get_replica_health_using_policy {
         pub(crate) application_health_policy: Option<models::ApplicationHealthPolicy>,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "Allows filtering the collection of HealthEvent objects returned based on health state.\nThe possible values for this parameter include integer value of one of the following health states.\nOnly events that match the filter are returned. All events are used to evaluate the aggregated health state.\nIf not specified, all entries are returned. The state values are flag-based enumeration, so the value could be a combination of these values, obtained using the bitwise 'OR' operator. For example, If the provided value is 6 then all of the events with HealthState value of OK (2) and Warning (4) are returned.\n\n- Default - Default value. Matches any HealthState. The value is zero.\n- None - Filter that doesn't match any HealthState value. Used in order to return no results on a given collection of states. The value is 1.\n- Ok - Filter that matches input with HealthState value Ok. The value is 2.\n- Warning - Filter that matches input with HealthState value Warning. The value is 4.\n- Error - Filter that matches input with HealthState value Error. The value is 8.\n- All - Filter that matches input with any HealthState value. The value is 65535."]
         pub fn events_health_state_filter(mut self, events_health_state_filter: i64) -> Self {
             self.events_health_state_filter = Some(events_health_state_filter);
@@ -10515,7 +10534,7 @@ pub mod report_replica_health {
     use super::models;
     type Response = ();
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) partition_id: String,
         pub(crate) replica_id: String,
@@ -10524,7 +10543,7 @@ pub mod report_replica_health {
         pub(crate) immediate: Option<bool>,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "A flag that indicates whether the report should be sent immediately.\nA health report is sent to a Service Fabric gateway Application, which forwards to the health store.\nIf Immediate is set to true, the report is sent immediately from HTTP Gateway to the health store, regardless of the fabric client settings that the HTTP Gateway Application is using.\nThis is useful for critical reports that should be sent as soon as possible.\nDepending on timing and other conditions, sending the report may still fail, for example if the HTTP Gateway is closed or the message doesn't reach the Gateway.\nIf Immediate is set to false, the report is sent based on the health client settings from the HTTP Gateway. Therefore, it will be batched according to the HealthReportSendInterval configuration.\nThis is the recommended setting because it allows the health client to optimize health reporting messages to health store as well as health report processing.\nBy default, reports are not sent immediately."]
         pub fn immediate(mut self, immediate: bool) -> Self {
             self.immediate = Some(immediate);
@@ -10588,7 +10607,7 @@ pub mod get_deployed_service_replica_info_list {
         NoContent204,
     }
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) node_name: String,
         pub(crate) application_id: String,
@@ -10596,7 +10615,7 @@ pub mod get_deployed_service_replica_info_list {
         pub(crate) service_manifest_name: Option<String>,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The identity of the partition."]
         pub fn partition_id(mut self, partition_id: impl Into<String>) -> Self {
             self.partition_id = Some(partition_id.into());
@@ -10668,14 +10687,14 @@ pub mod get_deployed_service_replica_detail_info {
     use super::models;
     type Response = models::DeployedServiceReplicaDetailInfo;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) node_name: String,
         pub(crate) partition_id: String,
         pub(crate) replica_id: String,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -10729,13 +10748,13 @@ pub mod get_deployed_service_replica_detail_info_by_partition_id {
     use super::models;
     type Response = models::DeployedServiceReplicaDetailInfo;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) node_name: String,
         pub(crate) partition_id: String,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -10788,14 +10807,14 @@ pub mod restart_replica {
     use super::models;
     type Response = ();
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) node_name: String,
         pub(crate) partition_id: String,
         pub(crate) replica_id: String,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -10846,7 +10865,7 @@ pub mod remove_replica {
     use super::models;
     type Response = ();
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) node_name: String,
         pub(crate) partition_id: String,
@@ -10854,7 +10873,7 @@ pub mod remove_replica {
         pub(crate) force_remove: Option<bool>,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "Remove a Service Fabric application or service forcefully without going through the graceful shutdown sequence. This parameter can be used to forcefully delete an application or service for which delete is timing out due to issues in the service code that prevents graceful close of replicas."]
         pub fn force_remove(mut self, force_remove: bool) -> Self {
             self.force_remove = Some(force_remove);
@@ -10915,13 +10934,13 @@ pub mod get_deployed_service_package_info_list {
     use super::models;
     type Response = models::DeployedServicePackageInfoList;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) node_name: String,
         pub(crate) application_id: String,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -10978,14 +10997,14 @@ pub mod get_deployed_service_package_info_list_by_name {
         NoContent204,
     }
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) node_name: String,
         pub(crate) application_id: String,
         pub(crate) service_package_name: String,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -11040,7 +11059,7 @@ pub mod get_deployed_service_package_health {
     use super::models;
     type Response = models::DeployedServicePackageHealth;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) node_name: String,
         pub(crate) application_id: String,
@@ -11048,7 +11067,7 @@ pub mod get_deployed_service_package_health {
         pub(crate) events_health_state_filter: Option<i64>,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "Allows filtering the collection of HealthEvent objects returned based on health state.\nThe possible values for this parameter include integer value of one of the following health states.\nOnly events that match the filter are returned. All events are used to evaluate the aggregated health state.\nIf not specified, all entries are returned. The state values are flag-based enumeration, so the value could be a combination of these values, obtained using the bitwise 'OR' operator. For example, If the provided value is 6 then all of the events with HealthState value of OK (2) and Warning (4) are returned.\n\n- Default - Default value. Matches any HealthState. The value is zero.\n- None - Filter that doesn't match any HealthState value. Used in order to return no results on a given collection of states. The value is 1.\n- Ok - Filter that matches input with HealthState value Ok. The value is 2.\n- Warning - Filter that matches input with HealthState value Warning. The value is 4.\n- Error - Filter that matches input with HealthState value Error. The value is 8.\n- All - Filter that matches input with any HealthState value. The value is 65535."]
         pub fn events_health_state_filter(mut self, events_health_state_filter: i64) -> Self {
             self.events_health_state_filter = Some(events_health_state_filter);
@@ -11112,7 +11131,7 @@ pub mod get_deployed_service_package_health_using_policy {
     use super::models;
     type Response = models::DeployedServicePackageHealth;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) node_name: String,
         pub(crate) application_id: String,
@@ -11121,7 +11140,7 @@ pub mod get_deployed_service_package_health_using_policy {
         pub(crate) application_health_policy: Option<models::ApplicationHealthPolicy>,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "Allows filtering the collection of HealthEvent objects returned based on health state.\nThe possible values for this parameter include integer value of one of the following health states.\nOnly events that match the filter are returned. All events are used to evaluate the aggregated health state.\nIf not specified, all entries are returned. The state values are flag-based enumeration, so the value could be a combination of these values, obtained using the bitwise 'OR' operator. For example, If the provided value is 6 then all of the events with HealthState value of OK (2) and Warning (4) are returned.\n\n- Default - Default value. Matches any HealthState. The value is zero.\n- None - Filter that doesn't match any HealthState value. Used in order to return no results on a given collection of states. The value is 1.\n- Ok - Filter that matches input with HealthState value Ok. The value is 2.\n- Warning - Filter that matches input with HealthState value Warning. The value is 4.\n- Error - Filter that matches input with HealthState value Error. The value is 8.\n- All - Filter that matches input with any HealthState value. The value is 65535."]
         pub fn events_health_state_filter(mut self, events_health_state_filter: i64) -> Self {
             self.events_health_state_filter = Some(events_health_state_filter);
@@ -11195,7 +11214,7 @@ pub mod report_deployed_service_package_health {
     use super::models;
     type Response = ();
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) node_name: String,
         pub(crate) application_id: String,
@@ -11204,7 +11223,7 @@ pub mod report_deployed_service_package_health {
         pub(crate) immediate: Option<bool>,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "A flag that indicates whether the report should be sent immediately.\nA health report is sent to a Service Fabric gateway Application, which forwards to the health store.\nIf Immediate is set to true, the report is sent immediately from HTTP Gateway to the health store, regardless of the fabric client settings that the HTTP Gateway Application is using.\nThis is useful for critical reports that should be sent as soon as possible.\nDepending on timing and other conditions, sending the report may still fail, for example if the HTTP Gateway is closed or the message doesn't reach the Gateway.\nIf Immediate is set to false, the report is sent based on the health client settings from the HTTP Gateway. Therefore, it will be batched according to the HealthReportSendInterval configuration.\nThis is the recommended setting because it allows the health client to optimize health reporting messages to health store as well as health report processing.\nBy default, reports are not sent immediately."]
         pub fn immediate(mut self, immediate: bool) -> Self {
             self.immediate = Some(immediate);
@@ -11263,13 +11282,13 @@ pub mod deploy_service_package_to_node {
     use super::models;
     type Response = ();
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) node_name: String,
         pub(crate) deploy_service_package_to_node_description: models::DeployServicePackageToNodeDescription,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -11318,7 +11337,7 @@ pub mod get_deployed_code_package_info_list {
     use super::models;
     type Response = models::DeployedCodePackageInfoList;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) node_name: String,
         pub(crate) application_id: String,
@@ -11326,7 +11345,7 @@ pub mod get_deployed_code_package_info_list {
         pub(crate) code_package_name: Option<String>,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The name of a service manifest registered as part of an application type in a Service Fabric cluster."]
         pub fn service_manifest_name(mut self, service_manifest_name: impl Into<String>) -> Self {
             self.service_manifest_name = Some(service_manifest_name.into());
@@ -11397,14 +11416,14 @@ pub mod restart_deployed_code_package {
     use super::models;
     type Response = ();
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) node_name: String,
         pub(crate) application_id: String,
         pub(crate) restart_deployed_code_package_description: models::RestartDeployedCodePackageDescription,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -11454,7 +11473,7 @@ pub mod get_container_logs_deployed_on_node {
     use super::models;
     type Response = models::ContainerLogs;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) node_name: String,
         pub(crate) application_id: String,
@@ -11464,7 +11483,7 @@ pub mod get_container_logs_deployed_on_node {
         pub(crate) previous: Option<bool>,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "Number of lines to show from the end of the logs. Default is 100. 'all' to show the complete logs."]
         pub fn tail(mut self, tail: impl Into<String>) -> Self {
             self.tail = Some(tail.into());
@@ -11539,7 +11558,7 @@ pub mod invoke_container_api {
     use super::models;
     type Response = models::ContainerApiResponse;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) node_name: String,
         pub(crate) application_id: String,
@@ -11549,7 +11568,7 @@ pub mod invoke_container_api {
         pub(crate) container_api_request_body: models::ContainerApiRequestBody,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -11613,12 +11632,12 @@ pub mod create_compose_deployment {
     use super::models;
     type Response = ();
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) create_compose_deployment_description: models::CreateComposeDeploymentDescription,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -11663,12 +11682,12 @@ pub mod get_compose_deployment_status {
     use super::models;
     type Response = models::ComposeDeploymentStatusInfo;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) deployment_name: String,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -11716,13 +11735,13 @@ pub mod get_compose_deployment_status_list {
     use super::models;
     type Response = models::PagedComposeDeploymentStatusInfoList;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) continuation_token: Option<String>,
         pub(crate) max_results: Option<i64>,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The continuation token parameter is used to obtain next set of results. A continuation token with a non-empty value is included in the response of the API when the results from the system do not fit in a single response. When this value is passed to the next API call, the API returns next set of results. If there are no further results, then the continuation token does not contain a value. The value of this parameter should not be URL encoded."]
         pub fn continuation_token(mut self, continuation_token: impl Into<String>) -> Self {
             self.continuation_token = Some(continuation_token.into());
@@ -11786,12 +11805,12 @@ pub mod get_compose_deployment_upgrade_progress {
     use super::models;
     type Response = models::ComposeDeploymentUpgradeProgressInfo;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) deployment_name: String,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -11843,12 +11862,12 @@ pub mod remove_compose_deployment {
     use super::models;
     type Response = ();
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) deployment_name: String,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -11897,13 +11916,13 @@ pub mod start_compose_deployment_upgrade {
     use super::models;
     type Response = ();
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) deployment_name: String,
         pub(crate) compose_deployment_upgrade_description: models::ComposeDeploymentUpgradeDescription,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -11952,12 +11971,12 @@ pub mod start_rollback_compose_deployment_upgrade {
     use super::models;
     type Response = ();
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) deployment_name: String,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -12006,11 +12025,11 @@ pub mod get_chaos {
     use super::models;
     type Response = models::Chaos;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -12058,12 +12077,12 @@ pub mod start_chaos {
     use super::models;
     type Response = ();
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) chaos_parameters: models::ChaosParameters,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -12108,11 +12127,11 @@ pub mod stop_chaos {
     use super::models;
     type Response = ();
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -12157,7 +12176,7 @@ pub mod get_chaos_events {
     use super::models;
     type Response = models::ChaosEventsSegment;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) continuation_token: Option<String>,
         pub(crate) start_time_utc: Option<String>,
@@ -12165,7 +12184,7 @@ pub mod get_chaos_events {
         pub(crate) max_results: Option<i64>,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The continuation token parameter is used to obtain next set of results. A continuation token with a non-empty value is included in the response of the API when the results from the system do not fit in a single response. When this value is passed to the next API call, the API returns next set of results. If there are no further results, then the continuation token does not contain a value. The value of this parameter should not be URL encoded."]
         pub fn continuation_token(mut self, continuation_token: impl Into<String>) -> Self {
             self.continuation_token = Some(continuation_token.into());
@@ -12245,11 +12264,11 @@ pub mod get_chaos_schedule {
     use super::models;
     type Response = models::ChaosScheduleDescription;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -12297,12 +12316,12 @@ pub mod post_chaos_schedule {
     use super::models;
     type Response = ();
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) chaos_schedule: models::ChaosScheduleDescription,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -12347,12 +12366,12 @@ pub mod get_image_store_content {
     use super::models;
     type Response = models::ImageStoreContent;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) content_path: String,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -12400,12 +12419,12 @@ pub mod upload_file {
     use super::models;
     type Response = ();
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) content_path: String,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -12449,12 +12468,12 @@ pub mod delete_image_store_content {
     use super::models;
     type Response = ();
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) content_path: String,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -12498,11 +12517,11 @@ pub mod get_image_store_root_content {
     use super::models;
     type Response = models::ImageStoreContent;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -12550,12 +12569,12 @@ pub mod copy_image_store_content {
     use super::models;
     type Response = ();
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) image_store_copy_description: models::ImageStoreCopyDescription,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -12600,12 +12619,12 @@ pub mod delete_image_store_upload_session {
     use super::models;
     type Response = ();
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) session_id: String,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -12651,12 +12670,12 @@ pub mod commit_image_store_upload_session {
     use super::models;
     type Response = ();
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) session_id: String,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -12703,12 +12722,12 @@ pub mod get_image_store_upload_session_by_id {
     use super::models;
     type Response = models::UploadSession;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) session_id: String,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -12758,12 +12777,12 @@ pub mod get_image_store_upload_session_by_path {
     use super::models;
     type Response = models::UploadSession;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) content_path: String,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -12815,14 +12834,14 @@ pub mod upload_file_chunk {
     use super::models;
     type Response = ();
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) content_path: String,
         pub(crate) session_id: String,
         pub(crate) content_range: String,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -12873,11 +12892,11 @@ pub mod get_image_store_root_folder_size {
     use super::models;
     type Response = models::FolderSizeInfo;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -12925,12 +12944,12 @@ pub mod get_image_store_folder_size {
     use super::models;
     type Response = models::FolderSizeInfo;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) content_path: String,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -12982,11 +13001,11 @@ pub mod get_image_store_info {
     use super::models;
     type Response = models::ImageStoreInfo;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -13034,13 +13053,13 @@ pub mod invoke_infrastructure_command {
     use super::models;
     type Response = models::InfrastructureServiceResponse;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) command: String,
         pub(crate) service_id: Option<String>,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The identity of the infrastructure service. This is the full name of the infrastructure service without the 'fabric:' URI scheme. This parameter required only for the cluster that has more than one instance of infrastructure service running."]
         pub fn service_id(mut self, service_id: impl Into<String>) -> Self {
             self.service_id = Some(service_id.into());
@@ -13099,13 +13118,13 @@ pub mod invoke_infrastructure_query {
     use super::models;
     type Response = models::InfrastructureServiceResponse;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) command: String,
         pub(crate) service_id: Option<String>,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The identity of the infrastructure service. This is the full name of the infrastructure service without the 'fabric:' URI scheme. This parameter required only for the cluster that has more than one instance of infrastructure service running."]
         pub fn service_id(mut self, service_id: impl Into<String>) -> Self {
             self.service_id = Some(service_id.into());
@@ -13163,7 +13182,7 @@ pub mod start_data_loss {
     use super::models;
     type Response = ();
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) service_id: String,
         pub(crate) partition_id: String,
@@ -13171,7 +13190,7 @@ pub mod start_data_loss {
         pub(crate) data_loss_mode: String,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -13225,14 +13244,14 @@ pub mod get_data_loss_progress {
     use super::models;
     type Response = models::PartitionDataLossProgress;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) service_id: String,
         pub(crate) partition_id: String,
         pub(crate) operation_id: String,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -13287,7 +13306,7 @@ pub mod start_quorum_loss {
     use super::models;
     type Response = ();
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) service_id: String,
         pub(crate) partition_id: String,
@@ -13296,7 +13315,7 @@ pub mod start_quorum_loss {
         pub(crate) quorum_loss_duration: i64,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -13354,14 +13373,14 @@ pub mod get_quorum_loss_progress {
     use super::models;
     type Response = models::PartitionQuorumLossProgress;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) service_id: String,
         pub(crate) partition_id: String,
         pub(crate) operation_id: String,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -13416,7 +13435,7 @@ pub mod start_partition_restart {
     use super::models;
     type Response = ();
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) service_id: String,
         pub(crate) partition_id: String,
@@ -13424,7 +13443,7 @@ pub mod start_partition_restart {
         pub(crate) restart_partition_mode: String,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -13480,14 +13499,14 @@ pub mod get_partition_restart_progress {
     use super::models;
     type Response = models::PartitionRestartProgress;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) service_id: String,
         pub(crate) partition_id: String,
         pub(crate) operation_id: String,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -13542,7 +13561,7 @@ pub mod start_node_transition {
     use super::models;
     type Response = ();
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) node_name: String,
         pub(crate) operation_id: String,
@@ -13551,7 +13570,7 @@ pub mod start_node_transition {
         pub(crate) stop_duration_in_seconds: i32,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -13612,13 +13631,13 @@ pub mod get_node_transition_progress {
     use super::models;
     type Response = models::NodeTransitionProgress;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) node_name: String,
         pub(crate) operation_id: String,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -13672,13 +13691,13 @@ pub mod get_fault_operation_list {
     use super::models;
     type Response = models::OperationStatusList;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) type_filter: i64,
         pub(crate) state_filter: i64,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -13732,13 +13751,13 @@ pub mod cancel_operation {
     use super::models;
     type Response = ();
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) operation_id: String,
         pub(crate) force: bool,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -13787,13 +13806,13 @@ pub mod create_backup_policy {
     use super::models;
     type Response = ();
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) backup_policy_description: models::BackupPolicyDescription,
         pub(crate) timeout: Option<i64>,
         pub(crate) validate_connection: Option<bool>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -13848,12 +13867,12 @@ pub mod delete_backup_policy {
     use super::models;
     type Response = ();
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) backup_policy_name: String,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -13902,13 +13921,13 @@ pub mod get_backup_policy_list {
     use super::models;
     type Response = models::PagedBackupPolicyDescriptionList;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) continuation_token: Option<String>,
         pub(crate) max_results: Option<i64>,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The continuation token parameter is used to obtain next set of results. A continuation token with a non-empty value is included in the response of the API when the results from the system do not fit in a single response. When this value is passed to the next API call, the API returns next set of results. If there are no further results, then the continuation token does not contain a value. The value of this parameter should not be URL encoded."]
         pub fn continuation_token(mut self, continuation_token: impl Into<String>) -> Self {
             self.continuation_token = Some(continuation_token.into());
@@ -13972,12 +13991,12 @@ pub mod get_backup_policy_by_name {
     use super::models;
     type Response = models::BackupPolicyDescription;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) backup_policy_name: String,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -14029,14 +14048,14 @@ pub mod get_all_entities_backed_up_by_policy {
     use super::models;
     type Response = models::PagedBackupEntityList;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) backup_policy_name: String,
         pub(crate) continuation_token: Option<String>,
         pub(crate) max_results: Option<i64>,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The continuation token parameter is used to obtain next set of results. A continuation token with a non-empty value is included in the response of the API when the results from the system do not fit in a single response. When this value is passed to the next API call, the API returns next set of results. If there are no further results, then the continuation token does not contain a value. The value of this parameter should not be URL encoded."]
         pub fn continuation_token(mut self, continuation_token: impl Into<String>) -> Self {
             self.continuation_token = Some(continuation_token.into());
@@ -14104,14 +14123,14 @@ pub mod update_backup_policy {
     use super::models;
     type Response = ();
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) backup_policy_description: models::BackupPolicyDescription,
         pub(crate) backup_policy_name: String,
         pub(crate) timeout: Option<i64>,
         pub(crate) validate_connection: Option<bool>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -14170,13 +14189,13 @@ pub mod enable_application_backup {
     use super::models;
     type Response = ();
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) application_id: String,
         pub(crate) enable_backup_description: models::EnableBackupDescription,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -14225,13 +14244,13 @@ pub mod disable_application_backup {
     use super::models;
     type Response = ();
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) application_id: String,
         pub(crate) timeout: Option<i64>,
         pub(crate) disable_backup_description: Option<models::DisableBackupDescription>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -14289,14 +14308,14 @@ pub mod get_application_backup_configuration_info {
     use super::models;
     type Response = models::PagedBackupConfigurationInfoList;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) application_id: String,
         pub(crate) continuation_token: Option<String>,
         pub(crate) max_results: Option<i64>,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The continuation token parameter is used to obtain next set of results. A continuation token with a non-empty value is included in the response of the API when the results from the system do not fit in a single response. When this value is passed to the next API call, the API returns next set of results. If there are no further results, then the continuation token does not contain a value. The value of this parameter should not be URL encoded."]
         pub fn continuation_token(mut self, continuation_token: impl Into<String>) -> Self {
             self.continuation_token = Some(continuation_token.into());
@@ -14364,7 +14383,7 @@ pub mod get_application_backup_list {
     use super::models;
     type Response = models::PagedBackupInfoList;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) application_id: String,
         pub(crate) timeout: Option<i64>,
@@ -14374,7 +14393,7 @@ pub mod get_application_backup_list {
         pub(crate) continuation_token: Option<String>,
         pub(crate) max_results: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -14470,12 +14489,12 @@ pub mod suspend_application_backup {
     use super::models;
     type Response = ();
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) application_id: String,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -14524,12 +14543,12 @@ pub mod resume_application_backup {
     use super::models;
     type Response = ();
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) application_id: String,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -14578,13 +14597,13 @@ pub mod enable_service_backup {
     use super::models;
     type Response = ();
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) service_id: String,
         pub(crate) enable_backup_description: models::EnableBackupDescription,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -14629,13 +14648,13 @@ pub mod disable_service_backup {
     use super::models;
     type Response = ();
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) service_id: String,
         pub(crate) disable_backup_description: Option<models::DisableBackupDescription>,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "Specifies the parameters to disable backup for any backup entity."]
         pub fn disable_backup_description(mut self, disable_backup_description: impl Into<models::DisableBackupDescription>) -> Self {
             self.disable_backup_description = Some(disable_backup_description.into());
@@ -14689,14 +14708,14 @@ pub mod get_service_backup_configuration_info {
     use super::models;
     type Response = models::PagedBackupConfigurationInfoList;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) service_id: String,
         pub(crate) continuation_token: Option<String>,
         pub(crate) max_results: Option<i64>,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The continuation token parameter is used to obtain next set of results. A continuation token with a non-empty value is included in the response of the API when the results from the system do not fit in a single response. When this value is passed to the next API call, the API returns next set of results. If there are no further results, then the continuation token does not contain a value. The value of this parameter should not be URL encoded."]
         pub fn continuation_token(mut self, continuation_token: impl Into<String>) -> Self {
             self.continuation_token = Some(continuation_token.into());
@@ -14764,7 +14783,7 @@ pub mod get_service_backup_list {
     use super::models;
     type Response = models::PagedBackupInfoList;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) service_id: String,
         pub(crate) timeout: Option<i64>,
@@ -14774,7 +14793,7 @@ pub mod get_service_backup_list {
         pub(crate) continuation_token: Option<String>,
         pub(crate) max_results: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -14866,12 +14885,12 @@ pub mod suspend_service_backup {
     use super::models;
     type Response = ();
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) service_id: String,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -14916,12 +14935,12 @@ pub mod resume_service_backup {
     use super::models;
     type Response = ();
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) service_id: String,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -14966,13 +14985,13 @@ pub mod enable_partition_backup {
     use super::models;
     type Response = ();
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) partition_id: String,
         pub(crate) enable_backup_description: models::EnableBackupDescription,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -15021,13 +15040,13 @@ pub mod disable_partition_backup {
     use super::models;
     type Response = ();
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) partition_id: String,
         pub(crate) disable_backup_description: Option<models::DisableBackupDescription>,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "Specifies the parameters to disable backup for any backup entity."]
         pub fn disable_backup_description(mut self, disable_backup_description: impl Into<models::DisableBackupDescription>) -> Self {
             self.disable_backup_description = Some(disable_backup_description.into());
@@ -15085,12 +15104,12 @@ pub mod get_partition_backup_configuration_info {
     use super::models;
     type Response = models::PartitionBackupConfigurationInfo;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) partition_id: String,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -15142,7 +15161,7 @@ pub mod get_partition_backup_list {
     use super::models;
     type Response = models::PagedBackupInfoList;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) partition_id: String,
         pub(crate) timeout: Option<i64>,
@@ -15150,7 +15169,7 @@ pub mod get_partition_backup_list {
         pub(crate) start_date_time_filter: Option<time::OffsetDateTime>,
         pub(crate) end_date_time_filter: Option<time::OffsetDateTime>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -15230,12 +15249,12 @@ pub mod suspend_partition_backup {
     use super::models;
     type Response = ();
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) partition_id: String,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -15284,12 +15303,12 @@ pub mod resume_partition_backup {
     use super::models;
     type Response = ();
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) partition_id: String,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -15338,14 +15357,14 @@ pub mod backup_partition {
     use super::models;
     type Response = ();
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) partition_id: String,
         pub(crate) backup_partition_description: Option<models::BackupPartitionDescription>,
         pub(crate) backup_timeout: Option<i64>,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "Describes the parameters to backup the partition now. If not present, backup operation uses default parameters from the backup policy current associated with this partition."]
         pub fn backup_partition_description(mut self, backup_partition_description: impl Into<models::BackupPartitionDescription>) -> Self {
             self.backup_partition_description = Some(backup_partition_description.into());
@@ -15409,12 +15428,12 @@ pub mod get_partition_backup_progress {
     use super::models;
     type Response = models::BackupProgressInfo;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) partition_id: String,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -15466,14 +15485,14 @@ pub mod restore_partition {
     use super::models;
     type Response = ();
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) partition_id: String,
         pub(crate) restore_partition_description: models::RestorePartitionDescription,
         pub(crate) restore_timeout: Option<i64>,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "Specifies the maximum amount of time to wait, in minutes, for the restore operation to complete. Post that, the operation returns back with timeout error. However, in certain corner cases it could be that the restore operation goes through even though it completes with timeout. In case of timeout error, its recommended to invoke this operation again with a greater timeout value. the default value for the same is 10 minutes."]
         pub fn restore_timeout(mut self, restore_timeout: i64) -> Self {
             self.restore_timeout = Some(restore_timeout);
@@ -15528,12 +15547,12 @@ pub mod get_partition_restore_progress {
     use super::models;
     type Response = models::RestoreProgressInfo;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) partition_id: String,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -15585,14 +15604,14 @@ pub mod get_backups_from_backup_location {
     use super::models;
     type Response = models::PagedBackupInfoList;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) get_backup_by_storage_query_description: models::GetBackupByStorageQueryDescription,
         pub(crate) timeout: Option<i64>,
         pub(crate) continuation_token: Option<String>,
         pub(crate) max_results: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -15657,12 +15676,12 @@ pub mod create_name {
     use super::models;
     type Response = ();
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) name_description: models::NameDescription,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -15707,12 +15726,12 @@ pub mod get_name_exists_info {
     use super::models;
     type Response = ();
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) name_id: String,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -15756,12 +15775,12 @@ pub mod delete_name {
     use super::models;
     type Response = ();
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) name_id: String,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -15805,14 +15824,14 @@ pub mod get_sub_name_info_list {
     use super::models;
     type Response = models::PagedSubNameInfoList;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) name_id: String,
         pub(crate) recursive: Option<bool>,
         pub(crate) continuation_token: Option<String>,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "Allows specifying that the search performed should be recursive."]
         pub fn recursive(mut self, recursive: bool) -> Self {
             self.recursive = Some(recursive);
@@ -15876,14 +15895,14 @@ pub mod get_property_info_list {
     use super::models;
     type Response = models::PagedPropertyInfoList;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) name_id: String,
         pub(crate) include_values: Option<bool>,
         pub(crate) continuation_token: Option<String>,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "Allows specifying whether to include the values of the properties returned. True if values should be returned with the metadata; False to return only property metadata."]
         pub fn include_values(mut self, include_values: bool) -> Self {
             self.include_values = Some(include_values);
@@ -15949,13 +15968,13 @@ pub mod get_property_info {
     use super::models;
     type Response = models::PropertyInfo;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) name_id: String,
         pub(crate) property_name: String,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -16005,13 +16024,13 @@ pub mod put_property {
     use super::models;
     type Response = ();
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) name_id: String,
         pub(crate) property_description: models::PropertyDescription,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -16056,13 +16075,13 @@ pub mod delete_property {
     use super::models;
     type Response = ();
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) name_id: String,
         pub(crate) property_name: String,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -16108,13 +16127,13 @@ pub mod submit_property_batch {
     use super::models;
     type Response = models::SuccessfulPropertyBatchInfo;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) name_id: String,
         pub(crate) property_batch_description_list: models::PropertyBatchDescriptionList,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -16167,7 +16186,7 @@ pub mod get_cluster_event_list {
     use super::models;
     type Response = models::ClusterEventList;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) start_time_utc: String,
         pub(crate) end_time_utc: String,
@@ -16176,7 +16195,7 @@ pub mod get_cluster_event_list {
         pub(crate) exclude_analysis_events: Option<bool>,
         pub(crate) skip_correlation_lookup: Option<bool>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -16258,7 +16277,7 @@ pub mod get_containers_event_list {
     use super::models;
     type Response = models::ContainerInstanceEventList;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) start_time_utc: String,
         pub(crate) end_time_utc: String,
@@ -16267,7 +16286,7 @@ pub mod get_containers_event_list {
         pub(crate) exclude_analysis_events: Option<bool>,
         pub(crate) skip_correlation_lookup: Option<bool>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -16349,7 +16368,7 @@ pub mod get_node_event_list {
     use super::models;
     type Response = models::NodeEventList;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) node_name: String,
         pub(crate) start_time_utc: String,
@@ -16359,7 +16378,7 @@ pub mod get_node_event_list {
         pub(crate) exclude_analysis_events: Option<bool>,
         pub(crate) skip_correlation_lookup: Option<bool>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -16445,7 +16464,7 @@ pub mod get_nodes_event_list {
     use super::models;
     type Response = models::NodeEventList;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) start_time_utc: String,
         pub(crate) end_time_utc: String,
@@ -16454,7 +16473,7 @@ pub mod get_nodes_event_list {
         pub(crate) exclude_analysis_events: Option<bool>,
         pub(crate) skip_correlation_lookup: Option<bool>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -16536,7 +16555,7 @@ pub mod get_application_event_list {
     use super::models;
     type Response = models::ApplicationEventList;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) application_id: String,
         pub(crate) start_time_utc: String,
@@ -16546,7 +16565,7 @@ pub mod get_application_event_list {
         pub(crate) exclude_analysis_events: Option<bool>,
         pub(crate) skip_correlation_lookup: Option<bool>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -16632,7 +16651,7 @@ pub mod get_applications_event_list {
     use super::models;
     type Response = models::ApplicationEventList;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) start_time_utc: String,
         pub(crate) end_time_utc: String,
@@ -16641,7 +16660,7 @@ pub mod get_applications_event_list {
         pub(crate) exclude_analysis_events: Option<bool>,
         pub(crate) skip_correlation_lookup: Option<bool>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -16723,7 +16742,7 @@ pub mod get_service_event_list {
     use super::models;
     type Response = models::ServiceEventList;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) service_id: String,
         pub(crate) start_time_utc: String,
@@ -16733,7 +16752,7 @@ pub mod get_service_event_list {
         pub(crate) exclude_analysis_events: Option<bool>,
         pub(crate) skip_correlation_lookup: Option<bool>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -16819,7 +16838,7 @@ pub mod get_services_event_list {
     use super::models;
     type Response = models::ServiceEventList;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) start_time_utc: String,
         pub(crate) end_time_utc: String,
@@ -16828,7 +16847,7 @@ pub mod get_services_event_list {
         pub(crate) exclude_analysis_events: Option<bool>,
         pub(crate) skip_correlation_lookup: Option<bool>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -16910,7 +16929,7 @@ pub mod get_partition_event_list {
     use super::models;
     type Response = models::PartitionEventList;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) partition_id: String,
         pub(crate) start_time_utc: String,
@@ -16920,7 +16939,7 @@ pub mod get_partition_event_list {
         pub(crate) exclude_analysis_events: Option<bool>,
         pub(crate) skip_correlation_lookup: Option<bool>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -17006,7 +17025,7 @@ pub mod get_partitions_event_list {
     use super::models;
     type Response = models::PartitionEventList;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) start_time_utc: String,
         pub(crate) end_time_utc: String,
@@ -17015,7 +17034,7 @@ pub mod get_partitions_event_list {
         pub(crate) exclude_analysis_events: Option<bool>,
         pub(crate) skip_correlation_lookup: Option<bool>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -17097,7 +17116,7 @@ pub mod get_partition_replica_event_list {
     use super::models;
     type Response = models::ReplicaEventList;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) partition_id: String,
         pub(crate) replica_id: String,
@@ -17108,7 +17127,7 @@ pub mod get_partition_replica_event_list {
         pub(crate) exclude_analysis_events: Option<bool>,
         pub(crate) skip_correlation_lookup: Option<bool>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -17195,7 +17214,7 @@ pub mod get_partition_replicas_event_list {
     use super::models;
     type Response = models::ReplicaEventList;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) partition_id: String,
         pub(crate) start_time_utc: String,
@@ -17205,7 +17224,7 @@ pub mod get_partition_replicas_event_list {
         pub(crate) exclude_analysis_events: Option<bool>,
         pub(crate) skip_correlation_lookup: Option<bool>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -17291,12 +17310,12 @@ pub mod get_correlated_event_list {
     use super::models;
     type Response = models::EventList;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) event_instance_id: String,
         pub(crate) timeout: Option<i64>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "The server timeout for performing the operation in seconds. This timeout specifies the time duration that the client is willing to wait for the requested operation to complete. The default value for this parameter is 60 seconds."]
         pub fn timeout(mut self, timeout: i64) -> Self {
             self.timeout = Some(timeout);
@@ -17353,8 +17372,8 @@ pub mod mesh_secret {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `secret_resource_name`: The name of the secret resource."]
-        pub fn get(&self, secret_resource_name: impl Into<String>) -> get::Builder {
-            get::Builder {
+        pub fn get(&self, secret_resource_name: impl Into<String>) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 secret_resource_name: secret_resource_name.into(),
             }
@@ -17369,8 +17388,8 @@ pub mod mesh_secret {
             &self,
             secret_resource_name: impl Into<String>,
             secret_resource_description: impl Into<models::SecretResourceDescription>,
-        ) -> create_or_update::Builder {
-            create_or_update::Builder {
+        ) -> create_or_update::RequestBuilder {
+            create_or_update::RequestBuilder {
                 client: self.0.clone(),
                 secret_resource_name: secret_resource_name.into(),
                 secret_resource_description: secret_resource_description.into(),
@@ -17381,27 +17400,27 @@ pub mod mesh_secret {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `secret_resource_name`: The name of the secret resource."]
-        pub fn delete(&self, secret_resource_name: impl Into<String>) -> delete::Builder {
-            delete::Builder {
+        pub fn delete(&self, secret_resource_name: impl Into<String>) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 secret_resource_name: secret_resource_name.into(),
             }
         }
         #[doc = "Lists all the secret resources."]
         #[doc = "Gets the information about all secret resources in a given resource group. The information include the description and other properties of the Secret."]
-        pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.0.clone() }
+        pub fn list(&self) -> list::RequestBuilder {
+            list::RequestBuilder { client: self.0.clone() }
         }
     }
     pub mod get {
         use super::models;
         type Response = models::SecretResourceDescription;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) secret_resource_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -17450,12 +17469,12 @@ pub mod mesh_secret {
             Accepted202,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) secret_resource_name: String,
             pub(crate) secret_resource_description: models::SecretResourceDescription,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -17511,11 +17530,11 @@ pub mod mesh_secret {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) secret_resource_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -17557,10 +17576,10 @@ pub mod mesh_secret {
         use super::models;
         type Response = models::PagedSecretResourceDescriptionList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -17607,8 +17626,8 @@ pub mod mesh_secret_value {
         #[doc = "Arguments:"]
         #[doc = "* `secret_resource_name`: The name of the secret resource."]
         #[doc = "* `secret_value_resource_name`: The name of the secret resource value which is typically the version identifier for the value."]
-        pub fn get(&self, secret_resource_name: impl Into<String>, secret_value_resource_name: impl Into<String>) -> get::Builder {
-            get::Builder {
+        pub fn get(&self, secret_resource_name: impl Into<String>, secret_value_resource_name: impl Into<String>) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 secret_resource_name: secret_resource_name.into(),
                 secret_value_resource_name: secret_value_resource_name.into(),
@@ -17626,8 +17645,8 @@ pub mod mesh_secret_value {
             secret_resource_name: impl Into<String>,
             secret_value_resource_name: impl Into<String>,
             secret_value_resource_description: impl Into<models::SecretValueResourceDescription>,
-        ) -> add_value::Builder {
-            add_value::Builder {
+        ) -> add_value::RequestBuilder {
+            add_value::RequestBuilder {
                 client: self.0.clone(),
                 secret_resource_name: secret_resource_name.into(),
                 secret_value_resource_name: secret_value_resource_name.into(),
@@ -17640,8 +17659,12 @@ pub mod mesh_secret_value {
         #[doc = "Arguments:"]
         #[doc = "* `secret_resource_name`: The name of the secret resource."]
         #[doc = "* `secret_value_resource_name`: The name of the secret resource value which is typically the version identifier for the value."]
-        pub fn delete(&self, secret_resource_name: impl Into<String>, secret_value_resource_name: impl Into<String>) -> delete::Builder {
-            delete::Builder {
+        pub fn delete(
+            &self,
+            secret_resource_name: impl Into<String>,
+            secret_value_resource_name: impl Into<String>,
+        ) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 secret_resource_name: secret_resource_name.into(),
                 secret_value_resource_name: secret_value_resource_name.into(),
@@ -17652,8 +17675,8 @@ pub mod mesh_secret_value {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `secret_resource_name`: The name of the secret resource."]
-        pub fn list(&self, secret_resource_name: impl Into<String>) -> list::Builder {
-            list::Builder {
+        pub fn list(&self, secret_resource_name: impl Into<String>) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 secret_resource_name: secret_resource_name.into(),
             }
@@ -17664,8 +17687,8 @@ pub mod mesh_secret_value {
         #[doc = "Arguments:"]
         #[doc = "* `secret_resource_name`: The name of the secret resource."]
         #[doc = "* `secret_value_resource_name`: The name of the secret resource value which is typically the version identifier for the value."]
-        pub fn show(&self, secret_resource_name: impl Into<String>, secret_value_resource_name: impl Into<String>) -> show::Builder {
-            show::Builder {
+        pub fn show(&self, secret_resource_name: impl Into<String>, secret_value_resource_name: impl Into<String>) -> show::RequestBuilder {
+            show::RequestBuilder {
                 client: self.0.clone(),
                 secret_resource_name: secret_resource_name.into(),
                 secret_value_resource_name: secret_value_resource_name.into(),
@@ -17676,12 +17699,12 @@ pub mod mesh_secret_value {
         use super::models;
         type Response = models::SecretValueResourceDescription;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) secret_resource_name: String,
             pub(crate) secret_value_resource_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -17731,13 +17754,13 @@ pub mod mesh_secret_value {
             Accepted202,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) secret_resource_name: String,
             pub(crate) secret_value_resource_name: String,
             pub(crate) secret_value_resource_description: models::SecretValueResourceDescription,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -17794,12 +17817,12 @@ pub mod mesh_secret_value {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) secret_resource_name: String,
             pub(crate) secret_value_resource_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -17842,11 +17865,11 @@ pub mod mesh_secret_value {
         use super::models;
         type Response = models::PagedSecretValueResourceDescriptionList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) secret_resource_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -17890,12 +17913,12 @@ pub mod mesh_secret_value {
         use super::models;
         type Response = models::SecretValue;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) secret_resource_name: String,
             pub(crate) secret_value_resource_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -17947,8 +17970,8 @@ pub mod mesh_volume {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `volume_resource_name`: The identity of the volume."]
-        pub fn get(&self, volume_resource_name: impl Into<String>) -> get::Builder {
-            get::Builder {
+        pub fn get(&self, volume_resource_name: impl Into<String>) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 volume_resource_name: volume_resource_name.into(),
             }
@@ -17963,8 +17986,8 @@ pub mod mesh_volume {
             &self,
             volume_resource_name: impl Into<String>,
             volume_resource_description: impl Into<models::VolumeResourceDescription>,
-        ) -> create_or_update::Builder {
-            create_or_update::Builder {
+        ) -> create_or_update::RequestBuilder {
+            create_or_update::RequestBuilder {
                 client: self.0.clone(),
                 volume_resource_name: volume_resource_name.into(),
                 volume_resource_description: volume_resource_description.into(),
@@ -17975,27 +17998,27 @@ pub mod mesh_volume {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `volume_resource_name`: The identity of the volume."]
-        pub fn delete(&self, volume_resource_name: impl Into<String>) -> delete::Builder {
-            delete::Builder {
+        pub fn delete(&self, volume_resource_name: impl Into<String>) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 volume_resource_name: volume_resource_name.into(),
             }
         }
         #[doc = "Lists all the volume resources."]
         #[doc = "Gets the information about all volume resources in a given resource group. The information include the description and other properties of the Volume."]
-        pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.0.clone() }
+        pub fn list(&self) -> list::RequestBuilder {
+            list::RequestBuilder { client: self.0.clone() }
         }
     }
     pub mod get {
         use super::models;
         type Response = models::VolumeResourceDescription;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) volume_resource_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -18044,12 +18067,12 @@ pub mod mesh_volume {
             Accepted202,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) volume_resource_name: String,
             pub(crate) volume_resource_description: models::VolumeResourceDescription,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -18105,11 +18128,11 @@ pub mod mesh_volume {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) volume_resource_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -18151,10 +18174,10 @@ pub mod mesh_volume {
         use super::models;
         type Response = models::PagedVolumeResourceDescriptionList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -18200,8 +18223,8 @@ pub mod mesh_network {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `network_resource_name`: The identity of the network."]
-        pub fn get(&self, network_resource_name: impl Into<String>) -> get::Builder {
-            get::Builder {
+        pub fn get(&self, network_resource_name: impl Into<String>) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 network_resource_name: network_resource_name.into(),
             }
@@ -18216,8 +18239,8 @@ pub mod mesh_network {
             &self,
             network_resource_name: impl Into<String>,
             network_resource_description: impl Into<models::NetworkResourceDescription>,
-        ) -> create_or_update::Builder {
-            create_or_update::Builder {
+        ) -> create_or_update::RequestBuilder {
+            create_or_update::RequestBuilder {
                 client: self.0.clone(),
                 network_resource_name: network_resource_name.into(),
                 network_resource_description: network_resource_description.into(),
@@ -18228,27 +18251,27 @@ pub mod mesh_network {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `network_resource_name`: The identity of the network."]
-        pub fn delete(&self, network_resource_name: impl Into<String>) -> delete::Builder {
-            delete::Builder {
+        pub fn delete(&self, network_resource_name: impl Into<String>) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 network_resource_name: network_resource_name.into(),
             }
         }
         #[doc = "Lists all the network resources."]
         #[doc = "Gets the information about all network resources in a given resource group. The information include the description and other properties of the Network."]
-        pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.0.clone() }
+        pub fn list(&self) -> list::RequestBuilder {
+            list::RequestBuilder { client: self.0.clone() }
         }
     }
     pub mod get {
         use super::models;
         type Response = models::NetworkResourceDescription;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) network_resource_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -18297,12 +18320,12 @@ pub mod mesh_network {
             Accepted202,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) network_resource_name: String,
             pub(crate) network_resource_description: models::NetworkResourceDescription,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -18358,11 +18381,11 @@ pub mod mesh_network {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) network_resource_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -18404,10 +18427,10 @@ pub mod mesh_network {
         use super::models;
         type Response = models::PagedNetworkResourceDescriptionList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -18453,8 +18476,8 @@ pub mod mesh_application {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `application_resource_name`: The identity of the application."]
-        pub fn get(&self, application_resource_name: impl Into<String>) -> get::Builder {
-            get::Builder {
+        pub fn get(&self, application_resource_name: impl Into<String>) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 application_resource_name: application_resource_name.into(),
             }
@@ -18469,8 +18492,8 @@ pub mod mesh_application {
             &self,
             application_resource_name: impl Into<String>,
             application_resource_description: impl Into<models::ApplicationResourceDescription>,
-        ) -> create_or_update::Builder {
-            create_or_update::Builder {
+        ) -> create_or_update::RequestBuilder {
+            create_or_update::RequestBuilder {
                 client: self.0.clone(),
                 application_resource_name: application_resource_name.into(),
                 application_resource_description: application_resource_description.into(),
@@ -18481,24 +18504,24 @@ pub mod mesh_application {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `application_resource_name`: The identity of the application."]
-        pub fn delete(&self, application_resource_name: impl Into<String>) -> delete::Builder {
-            delete::Builder {
+        pub fn delete(&self, application_resource_name: impl Into<String>) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 application_resource_name: application_resource_name.into(),
             }
         }
         #[doc = "Lists all the application resources."]
         #[doc = "Gets the information about all application resources in a given resource group. The information include the description and other properties of the Application."]
-        pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.0.clone() }
+        pub fn list(&self) -> list::RequestBuilder {
+            list::RequestBuilder { client: self.0.clone() }
         }
         #[doc = "Gets the progress of the latest upgrade performed on this application resource."]
         #[doc = "Gets the upgrade progress information about the Application resource with the given name. The information include percentage of completion and other upgrade state information of the Application resource."]
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `application_resource_name`: The identity of the application."]
-        pub fn get_upgrade_progress(&self, application_resource_name: impl Into<String>) -> get_upgrade_progress::Builder {
-            get_upgrade_progress::Builder {
+        pub fn get_upgrade_progress(&self, application_resource_name: impl Into<String>) -> get_upgrade_progress::RequestBuilder {
+            get_upgrade_progress::RequestBuilder {
                 client: self.0.clone(),
                 application_resource_name: application_resource_name.into(),
             }
@@ -18508,11 +18531,11 @@ pub mod mesh_application {
         use super::models;
         type Response = models::ApplicationResourceDescription;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) application_resource_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -18561,12 +18584,12 @@ pub mod mesh_application {
             Accepted202,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) application_resource_name: String,
             pub(crate) application_resource_description: models::ApplicationResourceDescription,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -18622,11 +18645,11 @@ pub mod mesh_application {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) application_resource_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -18668,10 +18691,10 @@ pub mod mesh_application {
         use super::models;
         type Response = models::PagedApplicationResourceDescriptionList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -18711,11 +18734,11 @@ pub mod mesh_application {
         use super::models;
         type Response = models::ApplicationResourceUpgradeProgressInfo;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) application_resource_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -18766,8 +18789,8 @@ pub mod mesh_service {
         #[doc = "Arguments:"]
         #[doc = "* `application_resource_name`: The identity of the application."]
         #[doc = "* `service_resource_name`: The identity of the service."]
-        pub fn get(&self, application_resource_name: impl Into<String>, service_resource_name: impl Into<String>) -> get::Builder {
-            get::Builder {
+        pub fn get(&self, application_resource_name: impl Into<String>, service_resource_name: impl Into<String>) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 application_resource_name: application_resource_name.into(),
                 service_resource_name: service_resource_name.into(),
@@ -18778,8 +18801,8 @@ pub mod mesh_service {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `application_resource_name`: The identity of the application."]
-        pub fn list(&self, application_resource_name: impl Into<String>) -> list::Builder {
-            list::Builder {
+        pub fn list(&self, application_resource_name: impl Into<String>) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 application_resource_name: application_resource_name.into(),
             }
@@ -18789,12 +18812,12 @@ pub mod mesh_service {
         use super::models;
         type Response = models::ServiceResourceDescription;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) application_resource_name: String,
             pub(crate) service_resource_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -18839,11 +18862,11 @@ pub mod mesh_service {
         use super::models;
         type Response = models::PagedServiceResourceDescriptionList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) application_resource_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -18902,8 +18925,8 @@ pub mod mesh_code_package {
             service_resource_name: impl Into<String>,
             replica_name: impl Into<String>,
             code_package_name: impl Into<String>,
-        ) -> get_container_logs::Builder {
-            get_container_logs::Builder {
+        ) -> get_container_logs::RequestBuilder {
+            get_container_logs::RequestBuilder {
                 client: self.0.clone(),
                 application_resource_name: application_resource_name.into(),
                 service_resource_name: service_resource_name.into(),
@@ -18917,7 +18940,7 @@ pub mod mesh_code_package {
         use super::models;
         type Response = models::ContainerLogs;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) application_resource_name: String,
             pub(crate) service_resource_name: String,
@@ -18925,7 +18948,7 @@ pub mod mesh_code_package {
             pub(crate) code_package_name: String,
             pub(crate) tail: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Number of lines to show from the end of the logs. Default is 100. 'all' to show the complete logs."]
             pub fn tail(mut self, tail: impl Into<String>) -> Self {
                 self.tail = Some(tail.into());
@@ -18993,8 +19016,8 @@ pub mod mesh_service_replica {
             application_resource_name: impl Into<String>,
             service_resource_name: impl Into<String>,
             replica_name: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 application_resource_name: application_resource_name.into(),
                 service_resource_name: service_resource_name.into(),
@@ -19007,8 +19030,8 @@ pub mod mesh_service_replica {
         #[doc = "Arguments:"]
         #[doc = "* `application_resource_name`: The identity of the application."]
         #[doc = "* `service_resource_name`: The identity of the service."]
-        pub fn list(&self, application_resource_name: impl Into<String>, service_resource_name: impl Into<String>) -> list::Builder {
-            list::Builder {
+        pub fn list(&self, application_resource_name: impl Into<String>, service_resource_name: impl Into<String>) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 application_resource_name: application_resource_name.into(),
                 service_resource_name: service_resource_name.into(),
@@ -19019,13 +19042,13 @@ pub mod mesh_service_replica {
         use super::models;
         type Response = models::ServiceReplicaDescription;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) application_resource_name: String,
             pub(crate) service_resource_name: String,
             pub(crate) replica_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -19071,12 +19094,12 @@ pub mod mesh_service_replica {
         use super::models;
         type Response = models::PagedServiceReplicaDescriptionList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) application_resource_name: String,
             pub(crate) service_resource_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -19127,8 +19150,8 @@ pub mod mesh_gateway {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `gateway_resource_name`: The identity of the gateway."]
-        pub fn get(&self, gateway_resource_name: impl Into<String>) -> get::Builder {
-            get::Builder {
+        pub fn get(&self, gateway_resource_name: impl Into<String>) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 gateway_resource_name: gateway_resource_name.into(),
             }
@@ -19143,8 +19166,8 @@ pub mod mesh_gateway {
             &self,
             gateway_resource_name: impl Into<String>,
             gateway_resource_description: impl Into<models::GatewayResourceDescription>,
-        ) -> create_or_update::Builder {
-            create_or_update::Builder {
+        ) -> create_or_update::RequestBuilder {
+            create_or_update::RequestBuilder {
                 client: self.0.clone(),
                 gateway_resource_name: gateway_resource_name.into(),
                 gateway_resource_description: gateway_resource_description.into(),
@@ -19155,27 +19178,27 @@ pub mod mesh_gateway {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `gateway_resource_name`: The identity of the gateway."]
-        pub fn delete(&self, gateway_resource_name: impl Into<String>) -> delete::Builder {
-            delete::Builder {
+        pub fn delete(&self, gateway_resource_name: impl Into<String>) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 gateway_resource_name: gateway_resource_name.into(),
             }
         }
         #[doc = "Lists all the gateway resources."]
         #[doc = "Gets the information about all gateway resources in a given resource group. The information include the description and other properties of the Gateway."]
-        pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.0.clone() }
+        pub fn list(&self) -> list::RequestBuilder {
+            list::RequestBuilder { client: self.0.clone() }
         }
     }
     pub mod get {
         use super::models;
         type Response = models::GatewayResourceDescription;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) gateway_resource_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -19224,12 +19247,12 @@ pub mod mesh_gateway {
             Accepted202,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) gateway_resource_name: String,
             pub(crate) gateway_resource_description: models::GatewayResourceDescription,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -19285,11 +19308,11 @@ pub mod mesh_gateway {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) gateway_resource_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -19331,10 +19354,10 @@ pub mod mesh_gateway {
         use super::models;
         type Response = models::PagedGatewayResourceDescriptionList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();

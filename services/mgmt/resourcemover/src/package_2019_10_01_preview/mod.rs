@@ -131,8 +131,8 @@ pub mod move_collections {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             move_collection_name: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -150,8 +150,8 @@ pub mod move_collections {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             move_collection_name: impl Into<String>,
-        ) -> create::Builder {
-            create::Builder {
+        ) -> create::RequestBuilder {
+            create::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -170,8 +170,8 @@ pub mod move_collections {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             move_collection_name: impl Into<String>,
-        ) -> update::Builder {
-            update::Builder {
+        ) -> update::RequestBuilder {
+            update::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -190,8 +190,8 @@ pub mod move_collections {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             move_collection_name: impl Into<String>,
-        ) -> delete::Builder {
-            delete::Builder {
+        ) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -209,8 +209,8 @@ pub mod move_collections {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             move_collection_name: impl Into<String>,
-        ) -> prepare::Builder {
-            prepare::Builder {
+        ) -> prepare::RequestBuilder {
+            prepare::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -229,8 +229,8 @@ pub mod move_collections {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             move_collection_name: impl Into<String>,
-        ) -> initiate_move::Builder {
-            initiate_move::Builder {
+        ) -> initiate_move::RequestBuilder {
+            initiate_move::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -249,8 +249,8 @@ pub mod move_collections {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             move_collection_name: impl Into<String>,
-        ) -> commit::Builder {
-            commit::Builder {
+        ) -> commit::RequestBuilder {
+            commit::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -269,8 +269,8 @@ pub mod move_collections {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             move_collection_name: impl Into<String>,
-        ) -> discard::Builder {
-            discard::Builder {
+        ) -> discard::RequestBuilder {
+            discard::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -289,8 +289,8 @@ pub mod move_collections {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             move_collection_name: impl Into<String>,
-        ) -> resolve_dependencies::Builder {
-            resolve_dependencies::Builder {
+        ) -> resolve_dependencies::RequestBuilder {
+            resolve_dependencies::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -306,8 +306,8 @@ pub mod move_collections {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             move_collection_name: impl Into<String>,
-        ) -> bulk_remove::Builder {
-            bulk_remove::Builder {
+        ) -> bulk_remove::RequestBuilder {
+            bulk_remove::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -323,8 +323,8 @@ pub mod move_collections {
         pub fn list_move_collections_by_subscription(
             &self,
             subscription_id: impl Into<String>,
-        ) -> list_move_collections_by_subscription::Builder {
-            list_move_collections_by_subscription::Builder {
+        ) -> list_move_collections_by_subscription::RequestBuilder {
+            list_move_collections_by_subscription::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
@@ -339,8 +339,8 @@ pub mod move_collections {
             &self,
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
-        ) -> list_move_collections_by_resource_group::Builder {
-            list_move_collections_by_resource_group::Builder {
+        ) -> list_move_collections_by_resource_group::RequestBuilder {
+            list_move_collections_by_resource_group::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -359,8 +359,8 @@ pub mod move_collections {
             resource_group_name: impl Into<String>,
             move_collection_name: impl Into<String>,
             source_id: impl Into<String>,
-        ) -> list_required_for::Builder {
-            list_required_for::Builder {
+        ) -> list_required_for::RequestBuilder {
+            list_required_for::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -373,13 +373,13 @@ pub mod move_collections {
         use super::models;
         type Response = models::MoveCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) move_collection_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -429,14 +429,14 @@ pub mod move_collections {
             Ok200(models::MoveCollection),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) move_collection_name: String,
             pub(crate) body: Option<models::MoveCollection>,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn body(mut self, body: impl Into<models::MoveCollection>) -> Self {
                 self.body = Some(body.into());
                 self
@@ -496,14 +496,14 @@ pub mod move_collections {
         use super::models;
         type Response = models::MoveCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) move_collection_name: String,
             pub(crate) body: Option<models::UpdateMoveCollectionRequest>,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn body(mut self, body: impl Into<models::UpdateMoveCollectionRequest>) -> Self {
                 self.body = Some(body.into());
                 self
@@ -563,13 +563,13 @@ pub mod move_collections {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) move_collection_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -622,14 +622,14 @@ pub mod move_collections {
             Accepted202,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) move_collection_name: String,
             pub(crate) body: Option<models::PrepareRequest>,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn body(mut self, body: impl Into<models::PrepareRequest>) -> Self {
                 self.body = Some(body.into());
                 self
@@ -690,14 +690,14 @@ pub mod move_collections {
             Accepted202,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) move_collection_name: String,
             pub(crate) body: Option<models::ResourceMoveRequest>,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn body(mut self, body: impl Into<models::ResourceMoveRequest>) -> Self {
                 self.body = Some(body.into());
                 self
@@ -758,14 +758,14 @@ pub mod move_collections {
             Accepted202,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) move_collection_name: String,
             pub(crate) body: Option<models::CommitRequest>,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn body(mut self, body: impl Into<models::CommitRequest>) -> Self {
                 self.body = Some(body.into());
                 self
@@ -826,14 +826,14 @@ pub mod move_collections {
             Accepted202,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) move_collection_name: String,
             pub(crate) body: Option<models::DiscardRequest>,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn body(mut self, body: impl Into<models::DiscardRequest>) -> Self {
                 self.body = Some(body.into());
                 self
@@ -894,13 +894,13 @@ pub mod move_collections {
             Accepted202,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) move_collection_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -953,14 +953,14 @@ pub mod move_collections {
             Accepted202,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) move_collection_name: String,
             pub(crate) body: Option<models::BulkRemoveRequest>,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn body(mut self, body: impl Into<models::BulkRemoveRequest>) -> Self {
                 self.body = Some(body.into());
                 self
@@ -1017,11 +1017,11 @@ pub mod move_collections {
         use super::models;
         type Response = models::MoveCollectionResultList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -1091,12 +1091,12 @@ pub mod move_collections {
         use super::models;
         type Response = models::MoveCollectionResultList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -1167,14 +1167,14 @@ pub mod move_collections {
         use super::models;
         type Response = models::RequiredForResourcesCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) move_collection_name: String,
             pub(crate) source_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1234,8 +1234,8 @@ pub mod move_resources {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             move_collection_name: impl Into<String>,
-        ) -> list::Builder {
-            list::Builder {
+        ) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -1256,8 +1256,8 @@ pub mod move_resources {
             resource_group_name: impl Into<String>,
             move_collection_name: impl Into<String>,
             move_resource_name: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -1278,8 +1278,8 @@ pub mod move_resources {
             resource_group_name: impl Into<String>,
             move_collection_name: impl Into<String>,
             move_resource_name: impl Into<String>,
-        ) -> create::Builder {
-            create::Builder {
+        ) -> create::RequestBuilder {
+            create::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -1301,8 +1301,8 @@ pub mod move_resources {
             resource_group_name: impl Into<String>,
             move_collection_name: impl Into<String>,
             move_resource_name: impl Into<String>,
-        ) -> delete::Builder {
-            delete::Builder {
+        ) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -1315,14 +1315,14 @@ pub mod move_resources {
         use super::models;
         type Response = models::MoveResourceCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) move_collection_name: String,
             pub(crate) filter: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The filter to apply on the operation. For example, you can use $filter=Properties/ProvisioningState eq 'Succeeded'."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -1402,14 +1402,14 @@ pub mod move_resources {
         use super::models;
         type Response = models::MoveResource;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) move_collection_name: String,
             pub(crate) move_resource_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1460,7 +1460,7 @@ pub mod move_resources {
             Ok200(models::MoveResource),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -1468,7 +1468,7 @@ pub mod move_resources {
             pub(crate) move_resource_name: String,
             pub(crate) body: Option<models::MoveResource>,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn body(mut self, body: impl Into<models::MoveResource>) -> Self {
                 self.body = Some(body.into());
                 self
@@ -1531,14 +1531,14 @@ pub mod move_resources {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) move_collection_name: String,
             pub(crate) move_resource_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -1600,8 +1600,8 @@ pub mod unresolved_dependencies {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             move_collection_name: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -1616,7 +1616,7 @@ pub mod unresolved_dependencies {
         use super::models;
         type Response = models::UnresolvedDependencyCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -1625,7 +1625,7 @@ pub mod unresolved_dependencies {
             pub(crate) orderby: Option<String>,
             pub(crate) filter: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Defines the dependency level."]
             pub fn dependency_level(mut self, dependency_level: impl Into<String>) -> Self {
                 self.dependency_level = Some(dependency_level.into());
@@ -1722,18 +1722,18 @@ pub mod operations_discovery {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        pub fn get(&self) -> get::Builder {
-            get::Builder { client: self.0.clone() }
+        pub fn get(&self) -> get::RequestBuilder {
+            get::RequestBuilder { client: self.0.clone() }
         }
     }
     pub mod get {
         use super::models;
         type Response = models::OperationsDiscoveryCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();

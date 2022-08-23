@@ -116,18 +116,18 @@ pub mod operations {
     impl Client {
         #[doc = "Gets a list of operations."]
         #[doc = "Returns list of operations."]
-        pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.0.clone() }
+        pub fn list(&self) -> list::RequestBuilder {
+            list::RequestBuilder { client: self.0.clone() }
         }
     }
     pub mod list {
         use super::models;
         type Response = models::OperationListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -170,8 +170,8 @@ impl Client {
     #[doc = "Arguments:"]
     #[doc = "* `subscription_id`: The ID of the target subscription."]
     #[doc = "* `location`: The name of Azure region."]
-    pub fn git_hub_o_auth(&self, subscription_id: impl Into<String>, location: impl Into<String>) -> git_hub_o_auth::Builder {
-        git_hub_o_auth::Builder {
+    pub fn git_hub_o_auth(&self, subscription_id: impl Into<String>, location: impl Into<String>) -> git_hub_o_auth::RequestBuilder {
+        git_hub_o_auth::RequestBuilder {
             client: self.clone(),
             subscription_id: subscription_id.into(),
             location: location.into(),
@@ -191,8 +191,8 @@ impl Client {
         location: impl Into<String>,
         code: impl Into<String>,
         state: impl Into<String>,
-    ) -> git_hub_o_auth_callback::Builder {
-        git_hub_o_auth_callback::Builder {
+    ) -> git_hub_o_auth_callback::RequestBuilder {
+        git_hub_o_auth_callback::RequestBuilder {
             client: self.clone(),
             subscription_id: subscription_id.into(),
             location: location.into(),
@@ -205,8 +205,12 @@ impl Client {
     #[doc = "Arguments:"]
     #[doc = "* `subscription_id`: The ID of the target subscription."]
     #[doc = "* `location`: The name of Azure region."]
-    pub fn list_git_hub_o_auth(&self, subscription_id: impl Into<String>, location: impl Into<String>) -> list_git_hub_o_auth::Builder {
-        list_git_hub_o_auth::Builder {
+    pub fn list_git_hub_o_auth(
+        &self,
+        subscription_id: impl Into<String>,
+        location: impl Into<String>,
+    ) -> list_git_hub_o_auth::RequestBuilder {
+        list_git_hub_o_auth::RequestBuilder {
             client: self.clone(),
             subscription_id: subscription_id.into(),
             location: location.into(),
@@ -217,13 +221,13 @@ pub mod git_hub_o_auth {
     use super::models;
     type Response = models::GitHubOAuthInfoResponse;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) subscription_id: String,
         pub(crate) location: String,
         pub(crate) parameters: Option<models::GitHubOAuthCallRequest>,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn parameters(mut self, parameters: impl Into<models::GitHubOAuthCallRequest>) -> Self {
             self.parameters = Some(parameters.into());
             self
@@ -277,14 +281,14 @@ pub mod git_hub_o_auth_callback {
     use super::models;
     type Response = models::GitHubOAuthResponse;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) subscription_id: String,
         pub(crate) location: String,
         pub(crate) code: String,
         pub(crate) state: String,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -333,12 +337,12 @@ pub mod list_git_hub_o_auth {
     use super::models;
     type Response = models::GitHubOAuthListResponse;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) subscription_id: String,
         pub(crate) location: String,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -387,8 +391,8 @@ pub mod workflow {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: The ID of the target subscription."]
-        pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
-            list::Builder {
+        pub fn list(&self, subscription_id: impl Into<String>) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
@@ -402,8 +406,8 @@ pub mod workflow {
             &self,
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
-        ) -> list_by_resource_group::Builder {
-            list_by_resource_group::Builder {
+        ) -> list_by_resource_group::RequestBuilder {
+            list_by_resource_group::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -421,8 +425,8 @@ pub mod workflow {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             workflow_name: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -441,8 +445,8 @@ pub mod workflow {
             resource_group_name: impl Into<String>,
             workflow_name: impl Into<String>,
             parameters: impl Into<models::Workflow>,
-        ) -> create_or_update::Builder {
-            create_or_update::Builder {
+        ) -> create_or_update::RequestBuilder {
+            create_or_update::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -463,8 +467,8 @@ pub mod workflow {
             resource_group_name: impl Into<String>,
             workflow_name: impl Into<String>,
             parameters: impl Into<models::TagsObject>,
-        ) -> update_tags::Builder {
-            update_tags::Builder {
+        ) -> update_tags::RequestBuilder {
+            update_tags::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -483,8 +487,8 @@ pub mod workflow {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             workflow_name: impl Into<String>,
-        ) -> delete::Builder {
-            delete::Builder {
+        ) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -496,11 +500,11 @@ pub mod workflow {
         use super::models;
         type Response = models::WorkflowListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -570,13 +574,13 @@ pub mod workflow {
         use super::models;
         type Response = models::WorkflowListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) managed_cluster_resource: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The ManagedCluster resource associated with the workflows."]
             pub fn managed_cluster_resource(mut self, managed_cluster_resource: impl Into<String>) -> Self {
                 self.managed_cluster_resource = Some(managed_cluster_resource.into());
@@ -657,13 +661,13 @@ pub mod workflow {
         use super::models;
         type Response = models::Workflow;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) workflow_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -713,14 +717,14 @@ pub mod workflow {
             Created201(models::Workflow),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) workflow_name: String,
             pub(crate) parameters: models::Workflow,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -772,14 +776,14 @@ pub mod workflow {
         use super::models;
         type Response = models::Workflow;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) workflow_name: String,
             pub(crate) parameters: models::TagsObject,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -830,13 +834,13 @@ pub mod workflow {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) workflow_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();

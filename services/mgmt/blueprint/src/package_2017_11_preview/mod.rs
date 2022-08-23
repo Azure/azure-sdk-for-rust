@@ -131,8 +131,8 @@ pub mod blueprints {
         #[doc = "Arguments:"]
         #[doc = "* `management_group_name`: ManagementGroup where blueprint stores."]
         #[doc = "* `blueprint_name`: name of the blueprint."]
-        pub fn get(&self, management_group_name: impl Into<String>, blueprint_name: impl Into<String>) -> get::Builder {
-            get::Builder {
+        pub fn get(&self, management_group_name: impl Into<String>, blueprint_name: impl Into<String>) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 management_group_name: management_group_name.into(),
                 blueprint_name: blueprint_name.into(),
@@ -149,8 +149,8 @@ pub mod blueprints {
             management_group_name: impl Into<String>,
             blueprint_name: impl Into<String>,
             blueprint: impl Into<models::Blueprint>,
-        ) -> create_or_update::Builder {
-            create_or_update::Builder {
+        ) -> create_or_update::RequestBuilder {
+            create_or_update::RequestBuilder {
                 client: self.0.clone(),
                 management_group_name: management_group_name.into(),
                 blueprint_name: blueprint_name.into(),
@@ -162,8 +162,8 @@ pub mod blueprints {
         #[doc = "Arguments:"]
         #[doc = "* `management_group_name`: ManagementGroup where blueprint stores."]
         #[doc = "* `blueprint_name`: name of the blueprint."]
-        pub fn delete(&self, management_group_name: impl Into<String>, blueprint_name: impl Into<String>) -> delete::Builder {
-            delete::Builder {
+        pub fn delete(&self, management_group_name: impl Into<String>, blueprint_name: impl Into<String>) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 management_group_name: management_group_name.into(),
                 blueprint_name: blueprint_name.into(),
@@ -173,8 +173,8 @@ pub mod blueprints {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `management_group_name`: ManagementGroup where blueprint stores."]
-        pub fn list(&self, management_group_name: impl Into<String>) -> list::Builder {
-            list::Builder {
+        pub fn list(&self, management_group_name: impl Into<String>) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 management_group_name: management_group_name.into(),
             }
@@ -184,12 +184,12 @@ pub mod blueprints {
         use super::models;
         type Response = models::Blueprint;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) management_group_name: String,
             pub(crate) blueprint_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -234,13 +234,13 @@ pub mod blueprints {
         use super::models;
         type Response = models::Blueprint;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) management_group_name: String,
             pub(crate) blueprint_name: String,
             pub(crate) blueprint: models::Blueprint,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -290,12 +290,12 @@ pub mod blueprints {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) management_group_name: String,
             pub(crate) blueprint_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -341,11 +341,11 @@ pub mod blueprints {
         use super::models;
         type Response = models::BlueprintList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) management_group_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -427,8 +427,8 @@ pub mod artifacts {
             management_group_name: impl Into<String>,
             blueprint_name: impl Into<String>,
             artifact_name: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 management_group_name: management_group_name.into(),
                 blueprint_name: blueprint_name.into(),
@@ -448,8 +448,8 @@ pub mod artifacts {
             blueprint_name: impl Into<String>,
             artifact_name: impl Into<String>,
             artifact: impl Into<models::Artifact>,
-        ) -> create_or_update::Builder {
-            create_or_update::Builder {
+        ) -> create_or_update::RequestBuilder {
+            create_or_update::RequestBuilder {
                 client: self.0.clone(),
                 management_group_name: management_group_name.into(),
                 blueprint_name: blueprint_name.into(),
@@ -468,8 +468,8 @@ pub mod artifacts {
             management_group_name: impl Into<String>,
             blueprint_name: impl Into<String>,
             artifact_name: impl Into<String>,
-        ) -> delete::Builder {
-            delete::Builder {
+        ) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 management_group_name: management_group_name.into(),
                 blueprint_name: blueprint_name.into(),
@@ -481,8 +481,8 @@ pub mod artifacts {
         #[doc = "Arguments:"]
         #[doc = "* `management_group_name`: ManagementGroup where blueprint stores."]
         #[doc = "* `blueprint_name`: name of the blueprint."]
-        pub fn list(&self, management_group_name: impl Into<String>, blueprint_name: impl Into<String>) -> list::Builder {
-            list::Builder {
+        pub fn list(&self, management_group_name: impl Into<String>, blueprint_name: impl Into<String>) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 management_group_name: management_group_name.into(),
                 blueprint_name: blueprint_name.into(),
@@ -493,13 +493,13 @@ pub mod artifacts {
         use super::models;
         type Response = models::Artifact;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) management_group_name: String,
             pub(crate) blueprint_name: String,
             pub(crate) artifact_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -539,14 +539,14 @@ pub mod artifacts {
         use super::models;
         type Response = models::Artifact;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) management_group_name: String,
             pub(crate) blueprint_name: String,
             pub(crate) artifact_name: String,
             pub(crate) artifact: models::Artifact,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -591,13 +591,13 @@ pub mod artifacts {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) management_group_name: String,
             pub(crate) blueprint_name: String,
             pub(crate) artifact_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -638,12 +638,12 @@ pub mod artifacts {
         use super::models;
         type Response = models::ArtifactList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) management_group_name: String,
             pub(crate) blueprint_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -726,8 +726,8 @@ pub mod published_blueprints {
             management_group_name: impl Into<String>,
             blueprint_name: impl Into<String>,
             version_id: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 management_group_name: management_group_name.into(),
                 blueprint_name: blueprint_name.into(),
@@ -745,8 +745,8 @@ pub mod published_blueprints {
             management_group_name: impl Into<String>,
             blueprint_name: impl Into<String>,
             version_id: impl Into<String>,
-        ) -> create::Builder {
-            create::Builder {
+        ) -> create::RequestBuilder {
+            create::RequestBuilder {
                 client: self.0.clone(),
                 management_group_name: management_group_name.into(),
                 blueprint_name: blueprint_name.into(),
@@ -764,8 +764,8 @@ pub mod published_blueprints {
             management_group_name: impl Into<String>,
             blueprint_name: impl Into<String>,
             version_id: impl Into<String>,
-        ) -> delete::Builder {
-            delete::Builder {
+        ) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 management_group_name: management_group_name.into(),
                 blueprint_name: blueprint_name.into(),
@@ -777,8 +777,8 @@ pub mod published_blueprints {
         #[doc = "Arguments:"]
         #[doc = "* `management_group_name`: ManagementGroup where blueprint stores."]
         #[doc = "* `blueprint_name`: name of the blueprint."]
-        pub fn list(&self, management_group_name: impl Into<String>, blueprint_name: impl Into<String>) -> list::Builder {
-            list::Builder {
+        pub fn list(&self, management_group_name: impl Into<String>, blueprint_name: impl Into<String>) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 management_group_name: management_group_name.into(),
                 blueprint_name: blueprint_name.into(),
@@ -789,13 +789,13 @@ pub mod published_blueprints {
         use super::models;
         type Response = models::PublishedBlueprint;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) management_group_name: String,
             pub(crate) blueprint_name: String,
             pub(crate) version_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -841,13 +841,13 @@ pub mod published_blueprints {
         use super::models;
         type Response = models::PublishedBlueprint;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) management_group_name: String,
             pub(crate) blueprint_name: String,
             pub(crate) version_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -897,13 +897,13 @@ pub mod published_blueprints {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) management_group_name: String,
             pub(crate) blueprint_name: String,
             pub(crate) version_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -950,12 +950,12 @@ pub mod published_blueprints {
         use super::models;
         type Response = models::PublishedBlueprintList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) management_group_name: String,
             pub(crate) blueprint_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -1040,8 +1040,8 @@ pub mod published_artifacts {
             blueprint_name: impl Into<String>,
             version_id: impl Into<String>,
             artifact_name: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 management_group_name: management_group_name.into(),
                 blueprint_name: blueprint_name.into(),
@@ -1060,8 +1060,8 @@ pub mod published_artifacts {
             management_group_name: impl Into<String>,
             blueprint_name: impl Into<String>,
             version_id: impl Into<String>,
-        ) -> list::Builder {
-            list::Builder {
+        ) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 management_group_name: management_group_name.into(),
                 blueprint_name: blueprint_name.into(),
@@ -1073,14 +1073,14 @@ pub mod published_artifacts {
         use super::models;
         type Response = models::Artifact;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) management_group_name: String,
             pub(crate) blueprint_name: String,
             pub(crate) version_id: String,
             pub(crate) artifact_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1120,13 +1120,13 @@ pub mod published_artifacts {
         use super::models;
         type Response = models::ArtifactList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) management_group_name: String,
             pub(crate) blueprint_name: String,
             pub(crate) version_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -1194,18 +1194,18 @@ pub mod operations {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "List all of the available operations the Blueprint resource provider supports."]
-        pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.0.clone() }
+        pub fn list(&self) -> list::RequestBuilder {
+            list::RequestBuilder { client: self.0.clone() }
         }
     }
     pub mod list {
         use super::models;
         type Response = models::ResourceProviderOperationList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1251,8 +1251,8 @@ pub mod assignments {
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: azure subscriptionId, which we assign the blueprint to."]
         #[doc = "* `assignment_name`: name of the assignment."]
-        pub fn get(&self, subscription_id: impl Into<String>, assignment_name: impl Into<String>) -> get::Builder {
-            get::Builder {
+        pub fn get(&self, subscription_id: impl Into<String>, assignment_name: impl Into<String>) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 assignment_name: assignment_name.into(),
@@ -1269,8 +1269,8 @@ pub mod assignments {
             subscription_id: impl Into<String>,
             assignment_name: impl Into<String>,
             assignment: impl Into<models::Assignment>,
-        ) -> create_or_update::Builder {
-            create_or_update::Builder {
+        ) -> create_or_update::RequestBuilder {
+            create_or_update::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 assignment_name: assignment_name.into(),
@@ -1282,8 +1282,8 @@ pub mod assignments {
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: azure subscriptionId, which we assign the blueprint to."]
         #[doc = "* `assignment_name`: name of the assignment."]
-        pub fn delete(&self, subscription_id: impl Into<String>, assignment_name: impl Into<String>) -> delete::Builder {
-            delete::Builder {
+        pub fn delete(&self, subscription_id: impl Into<String>, assignment_name: impl Into<String>) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 assignment_name: assignment_name.into(),
@@ -1293,8 +1293,8 @@ pub mod assignments {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: azure subscriptionId, which we assign the blueprint to."]
-        pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
-            list::Builder {
+        pub fn list(&self, subscription_id: impl Into<String>) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
@@ -1304,12 +1304,12 @@ pub mod assignments {
         use super::models;
         type Response = models::Assignment;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) assignment_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1354,13 +1354,13 @@ pub mod assignments {
         use super::models;
         type Response = models::Assignment;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) assignment_name: String,
             pub(crate) assignment: models::Assignment,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1410,12 +1410,12 @@ pub mod assignments {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) assignment_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1461,11 +1461,11 @@ pub mod assignments {
         use super::models;
         type Response = models::AssignmentList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();

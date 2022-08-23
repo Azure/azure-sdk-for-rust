@@ -106,15 +106,15 @@ impl Client {
 }
 impl Client {
     #[doc = "Tells whether this Docker Registry instance supports Docker Registry HTTP API v2"]
-    pub fn get_docker_registry_v2_support(&self) -> get_docker_registry_v2_support::Builder {
-        get_docker_registry_v2_support::Builder { client: self.clone() }
+    pub fn get_docker_registry_v2_support(&self) -> get_docker_registry_v2_support::RequestBuilder {
+        get_docker_registry_v2_support::RequestBuilder { client: self.clone() }
     }
     #[doc = "Fetch the tags under the repository identified by 'name'"]
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `name`: Name of the image (including the namespace)"]
-    pub fn get_tag_list(&self, name: impl Into<String>) -> get_tag_list::Builder {
-        get_tag_list::Builder {
+    pub fn get_tag_list(&self, name: impl Into<String>) -> get_tag_list::RequestBuilder {
+        get_tag_list::RequestBuilder {
             client: self.clone(),
             name: name.into(),
         }
@@ -124,24 +124,24 @@ impl Client {
     #[doc = "Arguments:"]
     #[doc = "* `name`: Name of the image (including the namespace)"]
     #[doc = "* `reference`: A tag or a digest, pointing to a specific image"]
-    pub fn get_manifest(&self, name: impl Into<String>, reference: impl Into<String>) -> get_manifest::Builder {
-        get_manifest::Builder {
+    pub fn get_manifest(&self, name: impl Into<String>, reference: impl Into<String>) -> get_manifest::RequestBuilder {
+        get_manifest::RequestBuilder {
             client: self.clone(),
             name: name.into(),
             reference: reference.into(),
         }
     }
     #[doc = "List repositories"]
-    pub fn get_repositories(&self) -> get_repositories::Builder {
-        get_repositories::Builder {
+    pub fn get_repositories(&self) -> get_repositories::RequestBuilder {
+        get_repositories::RequestBuilder {
             client: self.clone(),
             last: None,
             n: None,
         }
     }
     #[doc = "List repositories"]
-    pub fn get_acr_repositories(&self) -> get_acr_repositories::Builder {
-        get_acr_repositories::Builder {
+    pub fn get_acr_repositories(&self) -> get_acr_repositories::RequestBuilder {
+        get_acr_repositories::RequestBuilder {
             client: self.clone(),
             last: None,
             n: None,
@@ -151,8 +151,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `name`: Name of the image (including the namespace)"]
-    pub fn get_acr_repository_attributes(&self, name: impl Into<String>) -> get_acr_repository_attributes::Builder {
-        get_acr_repository_attributes::Builder {
+    pub fn get_acr_repository_attributes(&self, name: impl Into<String>) -> get_acr_repository_attributes::RequestBuilder {
+        get_acr_repository_attributes::RequestBuilder {
             client: self.clone(),
             name: name.into(),
         }
@@ -161,8 +161,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `name`: Name of the image (including the namespace)"]
-    pub fn update_acr_repository_attributes(&self, name: impl Into<String>) -> update_acr_repository_attributes::Builder {
-        update_acr_repository_attributes::Builder {
+    pub fn update_acr_repository_attributes(&self, name: impl Into<String>) -> update_acr_repository_attributes::RequestBuilder {
+        update_acr_repository_attributes::RequestBuilder {
             client: self.clone(),
             name: name.into(),
             value: None,
@@ -172,8 +172,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `name`: Name of the image (including the namespace)"]
-    pub fn delete_acr_repository(&self, name: impl Into<String>) -> delete_acr_repository::Builder {
-        delete_acr_repository::Builder {
+    pub fn delete_acr_repository(&self, name: impl Into<String>) -> delete_acr_repository::RequestBuilder {
+        delete_acr_repository::RequestBuilder {
             client: self.clone(),
             name: name.into(),
         }
@@ -182,8 +182,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `name`: Name of the image (including the namespace)"]
-    pub fn get_acr_tags(&self, name: impl Into<String>) -> get_acr_tags::Builder {
-        get_acr_tags::Builder {
+    pub fn get_acr_tags(&self, name: impl Into<String>) -> get_acr_tags::RequestBuilder {
+        get_acr_tags::RequestBuilder {
             client: self.clone(),
             name: name.into(),
             last: None,
@@ -197,8 +197,8 @@ impl Client {
     #[doc = "Arguments:"]
     #[doc = "* `name`: Name of the image (including the namespace)"]
     #[doc = "* `reference`: A tag name of the image"]
-    pub fn get_acr_tag_attributes(&self, name: impl Into<String>, reference: impl Into<String>) -> get_acr_tag_attributes::Builder {
-        get_acr_tag_attributes::Builder {
+    pub fn get_acr_tag_attributes(&self, name: impl Into<String>, reference: impl Into<String>) -> get_acr_tag_attributes::RequestBuilder {
+        get_acr_tag_attributes::RequestBuilder {
             client: self.clone(),
             name: name.into(),
             reference: reference.into(),
@@ -209,8 +209,12 @@ impl Client {
     #[doc = "Arguments:"]
     #[doc = "* `name`: Name of the image (including the namespace)"]
     #[doc = "* `reference`: A tag name of the image"]
-    pub fn update_acr_tag_attributes(&self, name: impl Into<String>, reference: impl Into<String>) -> update_acr_tag_attributes::Builder {
-        update_acr_tag_attributes::Builder {
+    pub fn update_acr_tag_attributes(
+        &self,
+        name: impl Into<String>,
+        reference: impl Into<String>,
+    ) -> update_acr_tag_attributes::RequestBuilder {
+        update_acr_tag_attributes::RequestBuilder {
             client: self.clone(),
             name: name.into(),
             reference: reference.into(),
@@ -222,8 +226,8 @@ impl Client {
     #[doc = "Arguments:"]
     #[doc = "* `name`: Name of the image (including the namespace)"]
     #[doc = "* `reference`: A tag name of the image"]
-    pub fn delete_acr_tag(&self, name: impl Into<String>, reference: impl Into<String>) -> delete_acr_tag::Builder {
-        delete_acr_tag::Builder {
+    pub fn delete_acr_tag(&self, name: impl Into<String>, reference: impl Into<String>) -> delete_acr_tag::RequestBuilder {
+        delete_acr_tag::RequestBuilder {
             client: self.clone(),
             name: name.into(),
             reference: reference.into(),
@@ -233,8 +237,8 @@ impl Client {
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `name`: Name of the image (including the namespace)"]
-    pub fn get_acr_manifests(&self, name: impl Into<String>) -> get_acr_manifests::Builder {
-        get_acr_manifests::Builder {
+    pub fn get_acr_manifests(&self, name: impl Into<String>) -> get_acr_manifests::RequestBuilder {
+        get_acr_manifests::RequestBuilder {
             client: self.clone(),
             name: name.into(),
             last: None,
@@ -251,8 +255,8 @@ impl Client {
         &self,
         name: impl Into<String>,
         reference: impl Into<String>,
-    ) -> get_acr_manifest_attributes::Builder {
-        get_acr_manifest_attributes::Builder {
+    ) -> get_acr_manifest_attributes::RequestBuilder {
+        get_acr_manifest_attributes::RequestBuilder {
             client: self.clone(),
             name: name.into(),
             reference: reference.into(),
@@ -267,8 +271,8 @@ impl Client {
         &self,
         name: impl Into<String>,
         reference: impl Into<String>,
-    ) -> update_acr_manifest_attributes::Builder {
-        update_acr_manifest_attributes::Builder {
+    ) -> update_acr_manifest_attributes::RequestBuilder {
+        update_acr_manifest_attributes::RequestBuilder {
             client: self.clone(),
             name: name.into(),
             reference: reference.into(),
@@ -280,10 +284,10 @@ pub mod get_docker_registry_v2_support {
     use super::models;
     type Response = ();
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -316,11 +320,11 @@ pub mod get_tag_list {
     use super::models;
     type Response = models::RepositoryTags;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) name: String,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -357,12 +361,12 @@ pub mod get_manifest {
     use super::models;
     type Response = models::Manifest;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) name: String,
         pub(crate) reference: String,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -404,12 +408,12 @@ pub mod get_repositories {
     use super::models;
     type Response = models::Repositories;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) last: Option<String>,
         pub(crate) n: Option<String>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "query parameter for the last item in previous query"]
         pub fn last(mut self, last: impl Into<String>) -> Self {
             self.last = Some(last.into());
@@ -462,12 +466,12 @@ pub mod get_acr_repositories {
     use super::models;
     type Response = models::Repositories;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) last: Option<String>,
         pub(crate) n: Option<String>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "query parameter for the last item in previous query"]
         pub fn last(mut self, last: impl Into<String>) -> Self {
             self.last = Some(last.into());
@@ -520,11 +524,11 @@ pub mod get_acr_repository_attributes {
     use super::models;
     type Response = models::RepositoryAttributes;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) name: String,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -561,12 +565,12 @@ pub mod update_acr_repository_attributes {
     use super::models;
     type Response = ();
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) name: String,
         pub(crate) value: Option<models::ChangeableAttributes>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "Repository attribute value"]
         pub fn value(mut self, value: impl Into<models::ChangeableAttributes>) -> Self {
             self.value = Some(value.into());
@@ -609,11 +613,11 @@ pub mod delete_acr_repository {
     use super::models;
     type Response = models::DeletedRepository;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) name: String,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -650,7 +654,7 @@ pub mod get_acr_tags {
     use super::models;
     type Response = models::AcrRepositoryTags;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) name: String,
         pub(crate) last: Option<String>,
@@ -658,7 +662,7 @@ pub mod get_acr_tags {
         pub(crate) orderby: Option<String>,
         pub(crate) digest: Option<String>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "query parameter for the last item in previous query"]
         pub fn last(mut self, last: impl Into<String>) -> Self {
             self.last = Some(last.into());
@@ -727,12 +731,12 @@ pub mod get_acr_tag_attributes {
     use super::models;
     type Response = models::AcrTagAttributes;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) name: String,
         pub(crate) reference: String,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -774,13 +778,13 @@ pub mod update_acr_tag_attributes {
     use super::models;
     type Response = ();
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) name: String,
         pub(crate) reference: String,
         pub(crate) value: Option<models::ChangeableAttributes>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "Changeable attribute value"]
         pub fn value(mut self, value: impl Into<models::ChangeableAttributes>) -> Self {
             self.value = Some(value.into());
@@ -828,12 +832,12 @@ pub mod delete_acr_tag {
     use super::models;
     type Response = ();
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) name: String,
         pub(crate) reference: String,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -871,14 +875,14 @@ pub mod get_acr_manifests {
     use super::models;
     type Response = models::AcrManifests;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) name: String,
         pub(crate) last: Option<String>,
         pub(crate) n: Option<String>,
         pub(crate) orderby: Option<String>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "query parameter for the last item in previous query"]
         pub fn last(mut self, last: impl Into<String>) -> Self {
             self.last = Some(last.into());
@@ -939,12 +943,12 @@ pub mod get_acr_manifest_attributes {
     use super::models;
     type Response = models::AcrManifestAttributes;
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) name: String,
         pub(crate) reference: String,
     }
-    impl Builder {
+    impl RequestBuilder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
@@ -986,13 +990,13 @@ pub mod update_acr_manifest_attributes {
     use super::models;
     type Response = ();
     #[derive(Clone)]
-    pub struct Builder {
+    pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) name: String,
         pub(crate) reference: String,
         pub(crate) value: Option<models::ChangeableAttributes>,
     }
-    impl Builder {
+    impl RequestBuilder {
         #[doc = "Changeable attribute value"]
         pub fn value(mut self, value: impl Into<models::ChangeableAttributes>) -> Self {
             self.value = Some(value.into());

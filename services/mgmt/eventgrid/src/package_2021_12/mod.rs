@@ -153,8 +153,8 @@ pub mod domains {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             domain_name: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -175,8 +175,8 @@ pub mod domains {
             resource_group_name: impl Into<String>,
             domain_name: impl Into<String>,
             domain_info: impl Into<models::Domain>,
-        ) -> create_or_update::Builder {
-            create_or_update::Builder {
+        ) -> create_or_update::RequestBuilder {
+            create_or_update::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -198,8 +198,8 @@ pub mod domains {
             resource_group_name: impl Into<String>,
             domain_name: impl Into<String>,
             domain_update_parameters: impl Into<models::DomainUpdateParameters>,
-        ) -> update::Builder {
-            update::Builder {
+        ) -> update::RequestBuilder {
+            update::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -219,8 +219,8 @@ pub mod domains {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             domain_name: impl Into<String>,
-        ) -> delete::Builder {
-            delete::Builder {
+        ) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -232,8 +232,8 @@ pub mod domains {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
-        pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
-            list_by_subscription::Builder {
+        pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::RequestBuilder {
+            list_by_subscription::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 filter: None,
@@ -250,8 +250,8 @@ pub mod domains {
             &self,
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
-        ) -> list_by_resource_group::Builder {
-            list_by_resource_group::Builder {
+        ) -> list_by_resource_group::RequestBuilder {
+            list_by_resource_group::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -271,8 +271,8 @@ pub mod domains {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             domain_name: impl Into<String>,
-        ) -> list_shared_access_keys::Builder {
-            list_shared_access_keys::Builder {
+        ) -> list_shared_access_keys::RequestBuilder {
+            list_shared_access_keys::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -293,8 +293,8 @@ pub mod domains {
             resource_group_name: impl Into<String>,
             domain_name: impl Into<String>,
             regenerate_key_request: impl Into<models::DomainRegenerateKeyRequest>,
-        ) -> regenerate_key::Builder {
-            regenerate_key::Builder {
+        ) -> regenerate_key::RequestBuilder {
+            regenerate_key::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -307,13 +307,13 @@ pub mod domains {
         use super::models;
         type Response = models::Domain;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) domain_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -359,14 +359,14 @@ pub mod domains {
         use super::models;
         type Response = models::Domain;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) domain_name: String,
             pub(crate) domain_info: models::Domain,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -418,14 +418,14 @@ pub mod domains {
             Created201(models::Domain),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) domain_name: String,
             pub(crate) domain_update_parameters: models::DomainUpdateParameters,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -479,13 +479,13 @@ pub mod domains {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) domain_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -530,13 +530,13 @@ pub mod domains {
         use super::models;
         type Response = models::DomainsListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) filter: Option<String>,
             pub(crate) top: Option<i32>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The query used to filter the search results using OData syntax. Filtering is permitted on the 'name' property only and with limited number of OData operations. These operations are: the 'contains' function as well as the following logical operations: not, and, or, eq (for equal), and ne (for not equal). No arithmetic operations are supported. The following is a valid filter example: $filter=contains(namE, 'PATTERN') and name ne 'PATTERN-1'. The following is not a valid filter example: $filter=location eq 'westus'."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -622,14 +622,14 @@ pub mod domains {
         use super::models;
         type Response = models::DomainsListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) filter: Option<String>,
             pub(crate) top: Option<i32>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The query used to filter the search results using OData syntax. Filtering is permitted on the 'name' property only and with limited number of OData operations. These operations are: the 'contains' function as well as the following logical operations: not, and, or, eq (for equal), and ne (for not equal). No arithmetic operations are supported. The following is a valid filter example: $filter=contains(namE, 'PATTERN') and name ne 'PATTERN-1'. The following is not a valid filter example: $filter=location eq 'westus'."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -716,13 +716,13 @@ pub mod domains {
         use super::models;
         type Response = models::DomainSharedAccessKeys;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) domain_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -769,14 +769,14 @@ pub mod domains {
         use super::models;
         type Response = models::DomainSharedAccessKeys;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) domain_name: String,
             pub(crate) regenerate_key_request: models::DomainRegenerateKeyRequest,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -838,8 +838,8 @@ pub mod domain_topics {
             resource_group_name: impl Into<String>,
             domain_name: impl Into<String>,
             domain_topic_name: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -861,8 +861,8 @@ pub mod domain_topics {
             resource_group_name: impl Into<String>,
             domain_name: impl Into<String>,
             domain_topic_name: impl Into<String>,
-        ) -> create_or_update::Builder {
-            create_or_update::Builder {
+        ) -> create_or_update::RequestBuilder {
+            create_or_update::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -884,8 +884,8 @@ pub mod domain_topics {
             resource_group_name: impl Into<String>,
             domain_name: impl Into<String>,
             domain_topic_name: impl Into<String>,
-        ) -> delete::Builder {
-            delete::Builder {
+        ) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -905,8 +905,8 @@ pub mod domain_topics {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             domain_name: impl Into<String>,
-        ) -> list_by_domain::Builder {
-            list_by_domain::Builder {
+        ) -> list_by_domain::RequestBuilder {
+            list_by_domain::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -920,14 +920,14 @@ pub mod domain_topics {
         use super::models;
         type Response = models::DomainTopic;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) domain_name: String,
             pub(crate) domain_topic_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -974,14 +974,14 @@ pub mod domain_topics {
         use super::models;
         type Response = models::DomainTopic;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) domain_name: String,
             pub(crate) domain_topic_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -1034,14 +1034,14 @@ pub mod domain_topics {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) domain_name: String,
             pub(crate) domain_topic_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -1087,7 +1087,7 @@ pub mod domain_topics {
         use super::models;
         type Response = models::DomainTopicsListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -1095,7 +1095,7 @@ pub mod domain_topics {
             pub(crate) filter: Option<String>,
             pub(crate) top: Option<i32>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The query used to filter the search results using OData syntax. Filtering is permitted on the 'name' property only and with limited number of OData operations. These operations are: the 'contains' function as well as the following logical operations: not, and, or, eq (for equal), and ne (for not equal). No arithmetic operations are supported. The following is a valid filter example: $filter=contains(namE, 'PATTERN') and name ne 'PATTERN-1'. The following is not a valid filter example: $filter=location eq 'westus'."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -1190,8 +1190,8 @@ pub mod event_subscriptions {
         #[doc = "Arguments:"]
         #[doc = "* `scope`: The scope of the event subscription. The scope can be a subscription, or a resource group, or a top level resource belonging to a resource provider namespace, or an EventGrid topic. For example, use '/subscriptions/{subscriptionId}/' for a subscription, '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}' for a resource group, and '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{resourceProviderNamespace}/{resourceType}/{resourceName}' for a resource, and '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.EventGrid/topics/{topicName}' for an EventGrid topic."]
         #[doc = "* `event_subscription_name`: Name of the event subscription."]
-        pub fn get(&self, scope: impl Into<String>, event_subscription_name: impl Into<String>) -> get::Builder {
-            get::Builder {
+        pub fn get(&self, scope: impl Into<String>, event_subscription_name: impl Into<String>) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 scope: scope.into(),
                 event_subscription_name: event_subscription_name.into(),
@@ -1209,8 +1209,8 @@ pub mod event_subscriptions {
             scope: impl Into<String>,
             event_subscription_name: impl Into<String>,
             event_subscription_info: impl Into<models::EventSubscription>,
-        ) -> create_or_update::Builder {
-            create_or_update::Builder {
+        ) -> create_or_update::RequestBuilder {
+            create_or_update::RequestBuilder {
                 client: self.0.clone(),
                 scope: scope.into(),
                 event_subscription_name: event_subscription_name.into(),
@@ -1229,8 +1229,8 @@ pub mod event_subscriptions {
             scope: impl Into<String>,
             event_subscription_name: impl Into<String>,
             event_subscription_update_parameters: impl Into<models::EventSubscriptionUpdateParameters>,
-        ) -> update::Builder {
-            update::Builder {
+        ) -> update::RequestBuilder {
+            update::RequestBuilder {
                 client: self.0.clone(),
                 scope: scope.into(),
                 event_subscription_name: event_subscription_name.into(),
@@ -1243,8 +1243,8 @@ pub mod event_subscriptions {
         #[doc = "Arguments:"]
         #[doc = "* `scope`: The scope of the event subscription. The scope can be a subscription, or a resource group, or a top level resource belonging to a resource provider namespace, or an EventGrid topic. For example, use '/subscriptions/{subscriptionId}/' for a subscription, '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}' for a resource group, and '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{resourceProviderNamespace}/{resourceType}/{resourceName}' for a resource, and '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.EventGrid/topics/{topicName}' for an EventGrid topic."]
         #[doc = "* `event_subscription_name`: Name of the event subscription."]
-        pub fn delete(&self, scope: impl Into<String>, event_subscription_name: impl Into<String>) -> delete::Builder {
-            delete::Builder {
+        pub fn delete(&self, scope: impl Into<String>, event_subscription_name: impl Into<String>) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 scope: scope.into(),
                 event_subscription_name: event_subscription_name.into(),
@@ -1256,8 +1256,8 @@ pub mod event_subscriptions {
         #[doc = "Arguments:"]
         #[doc = "* `scope`: The scope of the event subscription. The scope can be a subscription, or a resource group, or a top level resource belonging to a resource provider namespace, or an EventGrid topic. For example, use '/subscriptions/{subscriptionId}/' for a subscription, '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}' for a resource group, and '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{resourceProviderNamespace}/{resourceType}/{resourceName}' for a resource, and '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.EventGrid/topics/{topicName}' for an EventGrid topic."]
         #[doc = "* `event_subscription_name`: Name of the event subscription."]
-        pub fn get_full_url(&self, scope: impl Into<String>, event_subscription_name: impl Into<String>) -> get_full_url::Builder {
-            get_full_url::Builder {
+        pub fn get_full_url(&self, scope: impl Into<String>, event_subscription_name: impl Into<String>) -> get_full_url::RequestBuilder {
+            get_full_url::RequestBuilder {
                 client: self.0.clone(),
                 scope: scope.into(),
                 event_subscription_name: event_subscription_name.into(),
@@ -1268,8 +1268,8 @@ pub mod event_subscriptions {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
-        pub fn list_global_by_subscription(&self, subscription_id: impl Into<String>) -> list_global_by_subscription::Builder {
-            list_global_by_subscription::Builder {
+        pub fn list_global_by_subscription(&self, subscription_id: impl Into<String>) -> list_global_by_subscription::RequestBuilder {
+            list_global_by_subscription::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 filter: None,
@@ -1286,8 +1286,8 @@ pub mod event_subscriptions {
             &self,
             subscription_id: impl Into<String>,
             topic_type_name: impl Into<String>,
-        ) -> list_global_by_subscription_for_topic_type::Builder {
-            list_global_by_subscription_for_topic_type::Builder {
+        ) -> list_global_by_subscription_for_topic_type::RequestBuilder {
+            list_global_by_subscription_for_topic_type::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 topic_type_name: topic_type_name.into(),
@@ -1305,8 +1305,8 @@ pub mod event_subscriptions {
             &self,
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
-        ) -> list_global_by_resource_group::Builder {
-            list_global_by_resource_group::Builder {
+        ) -> list_global_by_resource_group::RequestBuilder {
+            list_global_by_resource_group::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -1326,8 +1326,8 @@ pub mod event_subscriptions {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             topic_type_name: impl Into<String>,
-        ) -> list_global_by_resource_group_for_topic_type::Builder {
-            list_global_by_resource_group_for_topic_type::Builder {
+        ) -> list_global_by_resource_group_for_topic_type::RequestBuilder {
+            list_global_by_resource_group_for_topic_type::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -1346,8 +1346,8 @@ pub mod event_subscriptions {
             &self,
             subscription_id: impl Into<String>,
             location: impl Into<String>,
-        ) -> list_regional_by_subscription::Builder {
-            list_regional_by_subscription::Builder {
+        ) -> list_regional_by_subscription::RequestBuilder {
+            list_regional_by_subscription::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 location: location.into(),
@@ -1367,8 +1367,8 @@ pub mod event_subscriptions {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             location: impl Into<String>,
-        ) -> list_regional_by_resource_group::Builder {
-            list_regional_by_resource_group::Builder {
+        ) -> list_regional_by_resource_group::RequestBuilder {
+            list_regional_by_resource_group::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -1389,8 +1389,8 @@ pub mod event_subscriptions {
             subscription_id: impl Into<String>,
             location: impl Into<String>,
             topic_type_name: impl Into<String>,
-        ) -> list_regional_by_subscription_for_topic_type::Builder {
-            list_regional_by_subscription_for_topic_type::Builder {
+        ) -> list_regional_by_subscription_for_topic_type::RequestBuilder {
+            list_regional_by_subscription_for_topic_type::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 location: location.into(),
@@ -1413,8 +1413,8 @@ pub mod event_subscriptions {
             resource_group_name: impl Into<String>,
             location: impl Into<String>,
             topic_type_name: impl Into<String>,
-        ) -> list_regional_by_resource_group_for_topic_type::Builder {
-            list_regional_by_resource_group_for_topic_type::Builder {
+        ) -> list_regional_by_resource_group_for_topic_type::RequestBuilder {
+            list_regional_by_resource_group_for_topic_type::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -1440,8 +1440,8 @@ pub mod event_subscriptions {
             provider_namespace: impl Into<String>,
             resource_type_name: impl Into<String>,
             resource_name: impl Into<String>,
-        ) -> list_by_resource::Builder {
-            list_by_resource::Builder {
+        ) -> list_by_resource::RequestBuilder {
+            list_by_resource::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -1466,8 +1466,8 @@ pub mod event_subscriptions {
             resource_group_name: impl Into<String>,
             domain_name: impl Into<String>,
             topic_name: impl Into<String>,
-        ) -> list_by_domain_topic::Builder {
-            list_by_domain_topic::Builder {
+        ) -> list_by_domain_topic::RequestBuilder {
+            list_by_domain_topic::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -1487,8 +1487,8 @@ pub mod event_subscriptions {
             &self,
             scope: impl Into<String>,
             event_subscription_name: impl Into<String>,
-        ) -> get_delivery_attributes::Builder {
-            get_delivery_attributes::Builder {
+        ) -> get_delivery_attributes::RequestBuilder {
+            get_delivery_attributes::RequestBuilder {
                 client: self.0.clone(),
                 scope: scope.into(),
                 event_subscription_name: event_subscription_name.into(),
@@ -1499,12 +1499,12 @@ pub mod event_subscriptions {
         use super::models;
         type Response = models::EventSubscription;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) scope: String,
             pub(crate) event_subscription_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1549,13 +1549,13 @@ pub mod event_subscriptions {
         use super::models;
         type Response = models::EventSubscription;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) scope: String,
             pub(crate) event_subscription_name: String,
             pub(crate) event_subscription_info: models::EventSubscription,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -1602,13 +1602,13 @@ pub mod event_subscriptions {
         use super::models;
         type Response = models::EventSubscription;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) scope: String,
             pub(crate) event_subscription_name: String,
             pub(crate) event_subscription_update_parameters: models::EventSubscriptionUpdateParameters,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -1660,12 +1660,12 @@ pub mod event_subscriptions {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) scope: String,
             pub(crate) event_subscription_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -1709,12 +1709,12 @@ pub mod event_subscriptions {
         use super::models;
         type Response = models::EventSubscriptionFullUrl;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) scope: String,
             pub(crate) event_subscription_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1760,13 +1760,13 @@ pub mod event_subscriptions {
         use super::models;
         type Response = models::EventSubscriptionsListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) filter: Option<String>,
             pub(crate) top: Option<i32>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The query used to filter the search results using OData syntax. Filtering is permitted on the 'name' property only and with limited number of OData operations. These operations are: the 'contains' function as well as the following logical operations: not, and, or, eq (for equal), and ne (for not equal). No arithmetic operations are supported. The following is a valid filter example: $filter=contains(namE, 'PATTERN') and name ne 'PATTERN-1'. The following is not a valid filter example: $filter=location eq 'westus'."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -1852,14 +1852,14 @@ pub mod event_subscriptions {
         use super::models;
         type Response = models::EventSubscriptionsListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) topic_type_name: String,
             pub(crate) filter: Option<String>,
             pub(crate) top: Option<i32>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The query used to filter the search results using OData syntax. Filtering is permitted on the 'name' property only and with limited number of OData operations. These operations are: the 'contains' function as well as the following logical operations: not, and, or, eq (for equal), and ne (for not equal). No arithmetic operations are supported. The following is a valid filter example: $filter=contains(namE, 'PATTERN') and name ne 'PATTERN-1'. The following is not a valid filter example: $filter=location eq 'westus'."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -1946,14 +1946,14 @@ pub mod event_subscriptions {
         use super::models;
         type Response = models::EventSubscriptionsListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) filter: Option<String>,
             pub(crate) top: Option<i32>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The query used to filter the search results using OData syntax. Filtering is permitted on the 'name' property only and with limited number of OData operations. These operations are: the 'contains' function as well as the following logical operations: not, and, or, eq (for equal), and ne (for not equal). No arithmetic operations are supported. The following is a valid filter example: $filter=contains(namE, 'PATTERN') and name ne 'PATTERN-1'. The following is not a valid filter example: $filter=location eq 'westus'."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -2040,7 +2040,7 @@ pub mod event_subscriptions {
         use super::models;
         type Response = models::EventSubscriptionsListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -2048,7 +2048,7 @@ pub mod event_subscriptions {
             pub(crate) filter: Option<String>,
             pub(crate) top: Option<i32>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The query used to filter the search results using OData syntax. Filtering is permitted on the 'name' property only and with limited number of OData operations. These operations are: the 'contains' function as well as the following logical operations: not, and, or, eq (for equal), and ne (for not equal). No arithmetic operations are supported. The following is a valid filter example: $filter=contains(namE, 'PATTERN') and name ne 'PATTERN-1'. The following is not a valid filter example: $filter=location eq 'westus'."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -2136,14 +2136,14 @@ pub mod event_subscriptions {
         use super::models;
         type Response = models::EventSubscriptionsListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) location: String,
             pub(crate) filter: Option<String>,
             pub(crate) top: Option<i32>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The query used to filter the search results using OData syntax. Filtering is permitted on the 'name' property only and with limited number of OData operations. These operations are: the 'contains' function as well as the following logical operations: not, and, or, eq (for equal), and ne (for not equal). No arithmetic operations are supported. The following is a valid filter example: $filter=contains(namE, 'PATTERN') and name ne 'PATTERN-1'. The following is not a valid filter example: $filter=location eq 'westus'."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -2230,7 +2230,7 @@ pub mod event_subscriptions {
         use super::models;
         type Response = models::EventSubscriptionsListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -2238,7 +2238,7 @@ pub mod event_subscriptions {
             pub(crate) filter: Option<String>,
             pub(crate) top: Option<i32>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The query used to filter the search results using OData syntax. Filtering is permitted on the 'name' property only and with limited number of OData operations. These operations are: the 'contains' function as well as the following logical operations: not, and, or, eq (for equal), and ne (for not equal). No arithmetic operations are supported. The following is a valid filter example: $filter=contains(namE, 'PATTERN') and name ne 'PATTERN-1'. The following is not a valid filter example: $filter=location eq 'westus'."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -2326,7 +2326,7 @@ pub mod event_subscriptions {
         use super::models;
         type Response = models::EventSubscriptionsListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) location: String,
@@ -2334,7 +2334,7 @@ pub mod event_subscriptions {
             pub(crate) filter: Option<String>,
             pub(crate) top: Option<i32>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The query used to filter the search results using OData syntax. Filtering is permitted on the 'name' property only and with limited number of OData operations. These operations are: the 'contains' function as well as the following logical operations: not, and, or, eq (for equal), and ne (for not equal). No arithmetic operations are supported. The following is a valid filter example: $filter=contains(namE, 'PATTERN') and name ne 'PATTERN-1'. The following is not a valid filter example: $filter=location eq 'westus'."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -2422,7 +2422,7 @@ pub mod event_subscriptions {
         use super::models;
         type Response = models::EventSubscriptionsListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -2431,7 +2431,7 @@ pub mod event_subscriptions {
             pub(crate) filter: Option<String>,
             pub(crate) top: Option<i32>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The query used to filter the search results using OData syntax. Filtering is permitted on the 'name' property only and with limited number of OData operations. These operations are: the 'contains' function as well as the following logical operations: not, and, or, eq (for equal), and ne (for not equal). No arithmetic operations are supported. The following is a valid filter example: $filter=contains(namE, 'PATTERN') and name ne 'PATTERN-1'. The following is not a valid filter example: $filter=location eq 'westus'."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -2513,7 +2513,7 @@ pub mod event_subscriptions {
         use super::models;
         type Response = models::EventSubscriptionsListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -2523,7 +2523,7 @@ pub mod event_subscriptions {
             pub(crate) filter: Option<String>,
             pub(crate) top: Option<i32>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The query used to filter the search results using OData syntax. Filtering is permitted on the 'name' property only and with limited number of OData operations. These operations are: the 'contains' function as well as the following logical operations: not, and, or, eq (for equal), and ne (for not equal). No arithmetic operations are supported. The following is a valid filter example: $filter=contains(namE, 'PATTERN') and name ne 'PATTERN-1'. The following is not a valid filter example: $filter=location eq 'westus'."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -2613,7 +2613,7 @@ pub mod event_subscriptions {
         use super::models;
         type Response = models::EventSubscriptionsListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -2622,7 +2622,7 @@ pub mod event_subscriptions {
             pub(crate) filter: Option<String>,
             pub(crate) top: Option<i32>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The query used to filter the search results using OData syntax. Filtering is permitted on the 'name' property only and with limited number of OData operations. These operations are: the 'contains' function as well as the following logical operations: not, and, or, eq (for equal), and ne (for not equal). No arithmetic operations are supported. The following is a valid filter example: $filter=contains(namE, 'PATTERN') and name ne 'PATTERN-1'. The following is not a valid filter example: $filter=location eq 'westus'."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -2704,12 +2704,12 @@ pub mod event_subscriptions {
         use super::models;
         type Response = models::DeliveryAttributeListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) scope: String,
             pub(crate) event_subscription_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2770,8 +2770,8 @@ pub mod system_topic_event_subscriptions {
             resource_group_name: impl Into<String>,
             system_topic_name: impl Into<String>,
             event_subscription_name: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -2795,8 +2795,8 @@ pub mod system_topic_event_subscriptions {
             system_topic_name: impl Into<String>,
             event_subscription_name: impl Into<String>,
             event_subscription_info: impl Into<models::EventSubscription>,
-        ) -> create_or_update::Builder {
-            create_or_update::Builder {
+        ) -> create_or_update::RequestBuilder {
+            create_or_update::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -2821,8 +2821,8 @@ pub mod system_topic_event_subscriptions {
             system_topic_name: impl Into<String>,
             event_subscription_name: impl Into<String>,
             event_subscription_update_parameters: impl Into<models::EventSubscriptionUpdateParameters>,
-        ) -> update::Builder {
-            update::Builder {
+        ) -> update::RequestBuilder {
+            update::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -2845,8 +2845,8 @@ pub mod system_topic_event_subscriptions {
             resource_group_name: impl Into<String>,
             system_topic_name: impl Into<String>,
             event_subscription_name: impl Into<String>,
-        ) -> delete::Builder {
-            delete::Builder {
+        ) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -2868,8 +2868,8 @@ pub mod system_topic_event_subscriptions {
             resource_group_name: impl Into<String>,
             system_topic_name: impl Into<String>,
             event_subscription_name: impl Into<String>,
-        ) -> get_full_url::Builder {
-            get_full_url::Builder {
+        ) -> get_full_url::RequestBuilder {
+            get_full_url::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -2889,8 +2889,8 @@ pub mod system_topic_event_subscriptions {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             system_topic_name: impl Into<String>,
-        ) -> list_by_system_topic::Builder {
-            list_by_system_topic::Builder {
+        ) -> list_by_system_topic::RequestBuilder {
+            list_by_system_topic::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -2913,8 +2913,8 @@ pub mod system_topic_event_subscriptions {
             resource_group_name: impl Into<String>,
             system_topic_name: impl Into<String>,
             event_subscription_name: impl Into<String>,
-        ) -> get_delivery_attributes::Builder {
-            get_delivery_attributes::Builder {
+        ) -> get_delivery_attributes::RequestBuilder {
+            get_delivery_attributes::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -2927,14 +2927,14 @@ pub mod system_topic_event_subscriptions {
         use super::models;
         type Response = models::EventSubscription;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) system_topic_name: String,
             pub(crate) event_subscription_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2981,7 +2981,7 @@ pub mod system_topic_event_subscriptions {
         use super::models;
         type Response = models::EventSubscription;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -2989,7 +2989,7 @@ pub mod system_topic_event_subscriptions {
             pub(crate) event_subscription_name: String,
             pub(crate) event_subscription_info: models::EventSubscription,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -3038,7 +3038,7 @@ pub mod system_topic_event_subscriptions {
         use super::models;
         type Response = models::EventSubscription;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -3046,7 +3046,7 @@ pub mod system_topic_event_subscriptions {
             pub(crate) event_subscription_name: String,
             pub(crate) event_subscription_update_parameters: models::EventSubscriptionUpdateParameters,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -3100,14 +3100,14 @@ pub mod system_topic_event_subscriptions {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) system_topic_name: String,
             pub(crate) event_subscription_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -3153,14 +3153,14 @@ pub mod system_topic_event_subscriptions {
         use super::models;
         type Response = models::EventSubscriptionFullUrl;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) system_topic_name: String,
             pub(crate) event_subscription_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -3201,7 +3201,7 @@ pub mod system_topic_event_subscriptions {
         use super::models;
         type Response = models::EventSubscriptionsListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -3209,7 +3209,7 @@ pub mod system_topic_event_subscriptions {
             pub(crate) filter: Option<String>,
             pub(crate) top: Option<i32>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The query used to filter the search results using OData syntax. Filtering is permitted on the 'name' property only and with limited number of OData operations. These operations are: the 'contains' function as well as the following logical operations: not, and, or, eq (for equal), and ne (for not equal). No arithmetic operations are supported. The following is a valid filter example: $filter=contains(namE, 'PATTERN') and name ne 'PATTERN-1'. The following is not a valid filter example: $filter=location eq 'westus'."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -3297,14 +3297,14 @@ pub mod system_topic_event_subscriptions {
         use super::models;
         type Response = models::DeliveryAttributeListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) system_topic_name: String,
             pub(crate) event_subscription_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -3348,18 +3348,18 @@ pub mod operations {
     impl Client {
         #[doc = "List available operations."]
         #[doc = "List the available operations supported by the Microsoft.EventGrid resource provider."]
-        pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.0.clone() }
+        pub fn list(&self) -> list::RequestBuilder {
+            list::RequestBuilder { client: self.0.clone() }
         }
     }
     pub mod list {
         use super::models;
         type Response = models::OperationsListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as the continuation token is not part of the response schema"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -3413,8 +3413,8 @@ pub mod topics {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             topic_name: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -3435,8 +3435,8 @@ pub mod topics {
             resource_group_name: impl Into<String>,
             topic_name: impl Into<String>,
             topic_info: impl Into<models::Topic>,
-        ) -> create_or_update::Builder {
-            create_or_update::Builder {
+        ) -> create_or_update::RequestBuilder {
+            create_or_update::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -3458,8 +3458,8 @@ pub mod topics {
             resource_group_name: impl Into<String>,
             topic_name: impl Into<String>,
             topic_update_parameters: impl Into<models::TopicUpdateParameters>,
-        ) -> update::Builder {
-            update::Builder {
+        ) -> update::RequestBuilder {
+            update::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -3479,8 +3479,8 @@ pub mod topics {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             topic_name: impl Into<String>,
-        ) -> delete::Builder {
-            delete::Builder {
+        ) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -3492,8 +3492,8 @@ pub mod topics {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
-        pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
-            list_by_subscription::Builder {
+        pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::RequestBuilder {
+            list_by_subscription::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 filter: None,
@@ -3510,8 +3510,8 @@ pub mod topics {
             &self,
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
-        ) -> list_by_resource_group::Builder {
-            list_by_resource_group::Builder {
+        ) -> list_by_resource_group::RequestBuilder {
+            list_by_resource_group::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -3531,8 +3531,8 @@ pub mod topics {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             topic_name: impl Into<String>,
-        ) -> list_shared_access_keys::Builder {
-            list_shared_access_keys::Builder {
+        ) -> list_shared_access_keys::RequestBuilder {
+            list_shared_access_keys::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -3553,8 +3553,8 @@ pub mod topics {
             resource_group_name: impl Into<String>,
             topic_name: impl Into<String>,
             regenerate_key_request: impl Into<models::TopicRegenerateKeyRequest>,
-        ) -> regenerate_key::Builder {
-            regenerate_key::Builder {
+        ) -> regenerate_key::RequestBuilder {
+            regenerate_key::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -3578,8 +3578,8 @@ pub mod topics {
             provider_namespace: impl Into<String>,
             resource_type_name: impl Into<String>,
             resource_name: impl Into<String>,
-        ) -> list_event_types::Builder {
-            list_event_types::Builder {
+        ) -> list_event_types::RequestBuilder {
+            list_event_types::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -3593,13 +3593,13 @@ pub mod topics {
         use super::models;
         type Response = models::Topic;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) topic_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -3645,14 +3645,14 @@ pub mod topics {
         use super::models;
         type Response = models::Topic;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) topic_name: String,
             pub(crate) topic_info: models::Topic,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -3704,14 +3704,14 @@ pub mod topics {
             Created201(models::Topic),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) topic_name: String,
             pub(crate) topic_update_parameters: models::TopicUpdateParameters,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -3764,13 +3764,13 @@ pub mod topics {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) topic_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -3814,13 +3814,13 @@ pub mod topics {
         use super::models;
         type Response = models::TopicsListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) filter: Option<String>,
             pub(crate) top: Option<i32>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The query used to filter the search results using OData syntax. Filtering is permitted on the 'name' property only and with limited number of OData operations. These operations are: the 'contains' function as well as the following logical operations: not, and, or, eq (for equal), and ne (for not equal). No arithmetic operations are supported. The following is a valid filter example: $filter=contains(namE, 'PATTERN') and name ne 'PATTERN-1'. The following is not a valid filter example: $filter=location eq 'westus'."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -3906,14 +3906,14 @@ pub mod topics {
         use super::models;
         type Response = models::TopicsListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) filter: Option<String>,
             pub(crate) top: Option<i32>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The query used to filter the search results using OData syntax. Filtering is permitted on the 'name' property only and with limited number of OData operations. These operations are: the 'contains' function as well as the following logical operations: not, and, or, eq (for equal), and ne (for not equal). No arithmetic operations are supported. The following is a valid filter example: $filter=contains(namE, 'PATTERN') and name ne 'PATTERN-1'. The following is not a valid filter example: $filter=location eq 'westus'."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -4000,13 +4000,13 @@ pub mod topics {
         use super::models;
         type Response = models::TopicSharedAccessKeys;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) topic_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -4053,14 +4053,14 @@ pub mod topics {
         use super::models;
         type Response = models::TopicSharedAccessKeys;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) topic_name: String,
             pub(crate) regenerate_key_request: models::TopicRegenerateKeyRequest,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -4108,7 +4108,7 @@ pub mod topics {
         use super::models;
         type Response = models::EventTypesListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -4116,7 +4116,7 @@ pub mod topics {
             pub(crate) resource_type_name: String,
             pub(crate) resource_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as the continuation token is not part of the response schema"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -4182,8 +4182,8 @@ pub mod private_endpoint_connections {
             parent_type: impl Into<String>,
             parent_name: impl Into<String>,
             private_endpoint_connection_name: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -4210,8 +4210,8 @@ pub mod private_endpoint_connections {
             parent_name: impl Into<String>,
             private_endpoint_connection_name: impl Into<String>,
             private_endpoint_connection: impl Into<models::PrivateEndpointConnection>,
-        ) -> update::Builder {
-            update::Builder {
+        ) -> update::RequestBuilder {
+            update::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -4237,8 +4237,8 @@ pub mod private_endpoint_connections {
             parent_type: impl Into<String>,
             parent_name: impl Into<String>,
             private_endpoint_connection_name: impl Into<String>,
-        ) -> delete::Builder {
-            delete::Builder {
+        ) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -4261,8 +4261,8 @@ pub mod private_endpoint_connections {
             resource_group_name: impl Into<String>,
             parent_type: impl Into<String>,
             parent_name: impl Into<String>,
-        ) -> list_by_resource::Builder {
-            list_by_resource::Builder {
+        ) -> list_by_resource::RequestBuilder {
+            list_by_resource::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -4277,7 +4277,7 @@ pub mod private_endpoint_connections {
         use super::models;
         type Response = models::PrivateEndpointConnection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -4285,7 +4285,7 @@ pub mod private_endpoint_connections {
             pub(crate) parent_name: String,
             pub(crate) private_endpoint_connection_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -4337,7 +4337,7 @@ pub mod private_endpoint_connections {
             Created201(models::PrivateEndpointConnection),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -4346,7 +4346,7 @@ pub mod private_endpoint_connections {
             pub(crate) private_endpoint_connection_name: String,
             pub(crate) private_endpoint_connection: models::PrivateEndpointConnection,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -4405,7 +4405,7 @@ pub mod private_endpoint_connections {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -4413,7 +4413,7 @@ pub mod private_endpoint_connections {
             pub(crate) parent_name: String,
             pub(crate) private_endpoint_connection_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -4459,7 +4459,7 @@ pub mod private_endpoint_connections {
         use super::models;
         type Response = models::PrivateEndpointConnectionListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -4468,7 +4468,7 @@ pub mod private_endpoint_connections {
             pub(crate) filter: Option<String>,
             pub(crate) top: Option<i32>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The query used to filter the search results using OData syntax. Filtering is permitted on the 'name' property only and with limited number of OData operations. These operations are: the 'contains' function as well as the following logical operations: not, and, or, eq (for equal), and ne (for not equal). No arithmetic operations are supported. The following is a valid filter example: $filter=contains(namE, 'PATTERN') and name ne 'PATTERN-1'. The following is not a valid filter example: $filter=location eq 'westus'."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -4574,8 +4574,8 @@ pub mod private_link_resources {
             parent_type: impl Into<String>,
             parent_name: impl Into<String>,
             private_link_resource_name: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -4598,8 +4598,8 @@ pub mod private_link_resources {
             resource_group_name: impl Into<String>,
             parent_type: impl Into<String>,
             parent_name: impl Into<String>,
-        ) -> list_by_resource::Builder {
-            list_by_resource::Builder {
+        ) -> list_by_resource::RequestBuilder {
+            list_by_resource::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -4614,7 +4614,7 @@ pub mod private_link_resources {
         use super::models;
         type Response = models::PrivateLinkResource;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -4622,7 +4622,7 @@ pub mod private_link_resources {
             pub(crate) parent_name: String,
             pub(crate) private_link_resource_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -4670,7 +4670,7 @@ pub mod private_link_resources {
         use super::models;
         type Response = models::PrivateLinkResourcesListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -4679,7 +4679,7 @@ pub mod private_link_resources {
             pub(crate) filter: Option<String>,
             pub(crate) top: Option<i32>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The query used to filter the search results using OData syntax. Filtering is permitted on the 'name' property only and with limited number of OData operations. These operations are: the 'contains' function as well as the following logical operations: not, and, or, eq (for equal), and ne (for not equal). No arithmetic operations are supported. The following is a valid filter example: $filter=contains(namE, 'PATTERN') and name ne 'PATTERN-1'. The following is not a valid filter example: $filter=location eq 'westus'."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -4781,8 +4781,8 @@ pub mod system_topics {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             system_topic_name: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -4803,8 +4803,8 @@ pub mod system_topics {
             resource_group_name: impl Into<String>,
             system_topic_name: impl Into<String>,
             system_topic_info: impl Into<models::SystemTopic>,
-        ) -> create_or_update::Builder {
-            create_or_update::Builder {
+        ) -> create_or_update::RequestBuilder {
+            create_or_update::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -4826,8 +4826,8 @@ pub mod system_topics {
             resource_group_name: impl Into<String>,
             system_topic_name: impl Into<String>,
             system_topic_update_parameters: impl Into<models::SystemTopicUpdateParameters>,
-        ) -> update::Builder {
-            update::Builder {
+        ) -> update::RequestBuilder {
+            update::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -4847,8 +4847,8 @@ pub mod system_topics {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             system_topic_name: impl Into<String>,
-        ) -> delete::Builder {
-            delete::Builder {
+        ) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -4860,8 +4860,8 @@ pub mod system_topics {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: Subscription credentials that uniquely identify a Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
-        pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
-            list_by_subscription::Builder {
+        pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::RequestBuilder {
+            list_by_subscription::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 filter: None,
@@ -4878,8 +4878,8 @@ pub mod system_topics {
             &self,
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
-        ) -> list_by_resource_group::Builder {
-            list_by_resource_group::Builder {
+        ) -> list_by_resource_group::RequestBuilder {
+            list_by_resource_group::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -4892,13 +4892,13 @@ pub mod system_topics {
         use super::models;
         type Response = models::SystemTopic;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) system_topic_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -4948,14 +4948,14 @@ pub mod system_topics {
             Created201(models::SystemTopic),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) system_topic_name: String,
             pub(crate) system_topic_info: models::SystemTopic,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -5012,14 +5012,14 @@ pub mod system_topics {
             Created201(models::SystemTopic),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) system_topic_name: String,
             pub(crate) system_topic_update_parameters: models::SystemTopicUpdateParameters,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -5077,13 +5077,13 @@ pub mod system_topics {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) system_topic_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -5128,13 +5128,13 @@ pub mod system_topics {
         use super::models;
         type Response = models::SystemTopicsListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) filter: Option<String>,
             pub(crate) top: Option<i32>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The query used to filter the search results using OData syntax. Filtering is permitted on the 'name' property only and with limited number of OData operations. These operations are: the 'contains' function as well as the following logical operations: not, and, or, eq (for equal), and ne (for not equal). No arithmetic operations are supported. The following is a valid filter example: $filter=contains(namE, 'PATTERN') and name ne 'PATTERN-1'. The following is not a valid filter example: $filter=location eq 'westus'."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -5220,14 +5220,14 @@ pub mod system_topics {
         use super::models;
         type Response = models::SystemTopicsListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) filter: Option<String>,
             pub(crate) top: Option<i32>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The query used to filter the search results using OData syntax. Filtering is permitted on the 'name' property only and with limited number of OData operations. These operations are: the 'contains' function as well as the following logical operations: not, and, or, eq (for equal), and ne (for not equal). No arithmetic operations are supported. The following is a valid filter example: $filter=contains(namE, 'PATTERN') and name ne 'PATTERN-1'. The following is not a valid filter example: $filter=location eq 'westus'."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -5320,8 +5320,8 @@ pub mod extension_topics {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `scope`: The identifier of the resource to which extension topic is queried. The scope can be a subscription, or a resource group, or a top level resource belonging to a resource provider namespace. For example, use '/subscriptions/{subscriptionId}/' for a subscription, '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}' for a resource group, and '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{resourceProviderNamespace}/{resourceType}/{resourceName}' for Azure resource."]
-        pub fn get(&self, scope: impl Into<String>) -> get::Builder {
-            get::Builder {
+        pub fn get(&self, scope: impl Into<String>) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 scope: scope.into(),
             }
@@ -5331,11 +5331,11 @@ pub mod extension_topics {
         use super::models;
         type Response = models::ExtensionTopic;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) scope: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -5382,16 +5382,16 @@ pub mod topic_types {
     impl Client {
         #[doc = "List topic types."]
         #[doc = "List all registered topic types."]
-        pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.0.clone() }
+        pub fn list(&self) -> list::RequestBuilder {
+            list::RequestBuilder { client: self.0.clone() }
         }
         #[doc = "Get a topic type."]
         #[doc = "Get information about a topic type."]
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `topic_type_name`: Name of the topic type."]
-        pub fn get(&self, topic_type_name: impl Into<String>) -> get::Builder {
-            get::Builder {
+        pub fn get(&self, topic_type_name: impl Into<String>) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 topic_type_name: topic_type_name.into(),
             }
@@ -5401,8 +5401,8 @@ pub mod topic_types {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `topic_type_name`: Name of the topic type."]
-        pub fn list_event_types(&self, topic_type_name: impl Into<String>) -> list_event_types::Builder {
-            list_event_types::Builder {
+        pub fn list_event_types(&self, topic_type_name: impl Into<String>) -> list_event_types::RequestBuilder {
+            list_event_types::RequestBuilder {
                 client: self.0.clone(),
                 topic_type_name: topic_type_name.into(),
             }
@@ -5412,10 +5412,10 @@ pub mod topic_types {
         use super::models;
         type Response = models::TopicTypesListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as the continuation token is not part of the response schema"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -5456,11 +5456,11 @@ pub mod topic_types {
         use super::models;
         type Response = models::TopicTypeInfo;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) topic_type_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -5504,11 +5504,11 @@ pub mod topic_types {
         use super::models;
         type Response = models::EventTypesListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) topic_type_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as the continuation token is not part of the response schema"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({

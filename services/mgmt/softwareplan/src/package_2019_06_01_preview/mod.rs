@@ -124,8 +124,8 @@ pub mod software_plan {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: The ID of the target subscription."]
-        pub fn register(&self, subscription_id: impl Into<String>) -> register::Builder {
-            register::Builder {
+        pub fn register(&self, subscription_id: impl Into<String>) -> register::RequestBuilder {
+            register::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
             }
@@ -135,11 +135,11 @@ pub mod software_plan {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -185,8 +185,8 @@ pub mod hybrid_use_benefit {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `scope`: The scope at which the operation is performed. This is limited to Microsoft.Compute/virtualMachines and Microsoft.Compute/hostGroups/hosts for now"]
-        pub fn list(&self, scope: impl Into<String>) -> list::Builder {
-            list::Builder {
+        pub fn list(&self, scope: impl Into<String>) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 scope: scope.into(),
                 filter: None,
@@ -197,8 +197,8 @@ pub mod hybrid_use_benefit {
         #[doc = "Arguments:"]
         #[doc = "* `scope`: The scope at which the operation is performed. This is limited to Microsoft.Compute/virtualMachines and Microsoft.Compute/hostGroups/hosts for now"]
         #[doc = "* `plan_id`: This is a unique identifier for a plan. Should be a guid."]
-        pub fn get(&self, scope: impl Into<String>, plan_id: impl Into<String>) -> get::Builder {
-            get::Builder {
+        pub fn get(&self, scope: impl Into<String>, plan_id: impl Into<String>) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 scope: scope.into(),
                 plan_id: plan_id.into(),
@@ -215,8 +215,8 @@ pub mod hybrid_use_benefit {
             scope: impl Into<String>,
             plan_id: impl Into<String>,
             body: impl Into<models::HybridUseBenefitModel>,
-        ) -> create::Builder {
-            create::Builder {
+        ) -> create::RequestBuilder {
+            create::RequestBuilder {
                 client: self.0.clone(),
                 scope: scope.into(),
                 plan_id: plan_id.into(),
@@ -234,8 +234,8 @@ pub mod hybrid_use_benefit {
             scope: impl Into<String>,
             plan_id: impl Into<String>,
             body: impl Into<models::HybridUseBenefitModel>,
-        ) -> update::Builder {
-            update::Builder {
+        ) -> update::RequestBuilder {
+            update::RequestBuilder {
                 client: self.0.clone(),
                 scope: scope.into(),
                 plan_id: plan_id.into(),
@@ -247,8 +247,8 @@ pub mod hybrid_use_benefit {
         #[doc = "Arguments:"]
         #[doc = "* `scope`: The scope at which the operation is performed. This is limited to Microsoft.Compute/virtualMachines and Microsoft.Compute/hostGroups/hosts for now"]
         #[doc = "* `plan_id`: This is a unique identifier for a plan. Should be a guid."]
-        pub fn delete(&self, scope: impl Into<String>, plan_id: impl Into<String>) -> delete::Builder {
-            delete::Builder {
+        pub fn delete(&self, scope: impl Into<String>, plan_id: impl Into<String>) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 scope: scope.into(),
                 plan_id: plan_id.into(),
@@ -259,12 +259,12 @@ pub mod hybrid_use_benefit {
         use super::models;
         type Response = models::HybridUseBenefitListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) scope: String,
             pub(crate) filter: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Supports applying filter on the type of SKU"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -342,12 +342,12 @@ pub mod hybrid_use_benefit {
         use super::models;
         type Response = models::HybridUseBenefitModel;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) scope: String,
             pub(crate) plan_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -392,13 +392,13 @@ pub mod hybrid_use_benefit {
         use super::models;
         type Response = models::HybridUseBenefitModel;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) scope: String,
             pub(crate) plan_id: String,
             pub(crate) body: models::HybridUseBenefitModel,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -444,13 +444,13 @@ pub mod hybrid_use_benefit {
         use super::models;
         type Response = models::HybridUseBenefitModel;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) scope: String,
             pub(crate) plan_id: String,
             pub(crate) body: models::HybridUseBenefitModel,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -500,12 +500,12 @@ pub mod hybrid_use_benefit {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) scope: String,
             pub(crate) plan_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -553,8 +553,8 @@ pub mod hybrid_use_benefit_revision {
         #[doc = "Arguments:"]
         #[doc = "* `scope`: The scope at which the operation is performed. This is limited to Microsoft.Compute/virtualMachines and Microsoft.Compute/hostGroups/hosts for now"]
         #[doc = "* `plan_id`: This is a unique identifier for a plan. Should be a guid."]
-        pub fn list(&self, scope: impl Into<String>, plan_id: impl Into<String>) -> list::Builder {
-            list::Builder {
+        pub fn list(&self, scope: impl Into<String>, plan_id: impl Into<String>) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 scope: scope.into(),
                 plan_id: plan_id.into(),
@@ -565,12 +565,12 @@ pub mod hybrid_use_benefit_revision {
         use super::models;
         type Response = models::HybridUseBenefitListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) scope: String,
             pub(crate) plan_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -647,8 +647,8 @@ pub mod operations {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `scope`: The scope at which the operation is performed. This is limited to Microsoft.Compute/virtualMachines and Microsoft.Compute/hostGroups/hosts for now"]
-        pub fn list(&self, scope: impl Into<String>) -> list::Builder {
-            list::Builder {
+        pub fn list(&self, scope: impl Into<String>) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 scope: scope.into(),
             }
@@ -658,11 +658,11 @@ pub mod operations {
         use super::models;
         type Response = models::OperationList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) scope: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();

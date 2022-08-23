@@ -130,8 +130,8 @@ pub mod query {
             workspace_name: impl Into<String>,
             query: impl Into<String>,
             api_version: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -157,8 +157,8 @@ pub mod query {
             workspace_name: impl Into<String>,
             body: impl Into<models::QueryBody>,
             api_version: impl Into<String>,
-        ) -> execute::Builder {
-            execute::Builder {
+        ) -> execute::RequestBuilder {
+            execute::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -172,7 +172,7 @@ pub mod query {
         use super::models;
         type Response = models::QueryResults;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -181,7 +181,7 @@ pub mod query {
             pub(crate) api_version: String,
             pub(crate) timespan: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Optional. The timespan over which to query data. This is an ISO8601 time period value.  This timespan is applied in addition to any that are specified in the query expression."]
             pub fn timespan(mut self, timespan: impl Into<String>) -> Self {
                 self.timespan = Some(timespan.into());
@@ -236,7 +236,7 @@ pub mod query {
         use super::models;
         type Response = models::QueryResults;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -244,7 +244,7 @@ pub mod query {
             pub(crate) body: models::QueryBody,
             pub(crate) api_version: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -305,8 +305,8 @@ pub mod metadata {
             resource_group_name: impl Into<String>,
             workspace_name: impl Into<String>,
             api_version: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -328,8 +328,8 @@ pub mod metadata {
             resource_group_name: impl Into<String>,
             workspace_name: impl Into<String>,
             api_version: impl Into<String>,
-        ) -> post::Builder {
-            post::Builder {
+        ) -> post::RequestBuilder {
+            post::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -342,14 +342,14 @@ pub mod metadata {
         use super::models;
         type Response = models::MetadataResults;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) workspace_name: String,
             pub(crate) api_version: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -394,14 +394,14 @@ pub mod metadata {
         use super::models;
         type Response = models::MetadataResults;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) workspace_name: String,
             pub(crate) api_version: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();

@@ -136,8 +136,8 @@ pub mod extensions {
             farm_beats_resource_name: impl Into<String>,
             resource_group_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 extension_id: extension_id.into(),
                 farm_beats_resource_name: farm_beats_resource_name.into(),
@@ -158,8 +158,8 @@ pub mod extensions {
             farm_beats_resource_name: impl Into<String>,
             resource_group_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> create::Builder {
-            create::Builder {
+        ) -> create::RequestBuilder {
+            create::RequestBuilder {
                 client: self.0.clone(),
                 extension_id: extension_id.into(),
                 farm_beats_resource_name: farm_beats_resource_name.into(),
@@ -180,8 +180,8 @@ pub mod extensions {
             farm_beats_resource_name: impl Into<String>,
             resource_group_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> update::Builder {
-            update::Builder {
+        ) -> update::RequestBuilder {
+            update::RequestBuilder {
                 client: self.0.clone(),
                 extension_id: extension_id.into(),
                 farm_beats_resource_name: farm_beats_resource_name.into(),
@@ -202,8 +202,8 @@ pub mod extensions {
             farm_beats_resource_name: impl Into<String>,
             resource_group_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> delete::Builder {
-            delete::Builder {
+        ) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 extension_id: extension_id.into(),
                 farm_beats_resource_name: farm_beats_resource_name.into(),
@@ -222,8 +222,8 @@ pub mod extensions {
             resource_group_name: impl Into<String>,
             subscription_id: impl Into<String>,
             farm_beats_resource_name: impl Into<String>,
-        ) -> list_by_farm_beats::Builder {
-            list_by_farm_beats::Builder {
+        ) -> list_by_farm_beats::RequestBuilder {
+            list_by_farm_beats::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 subscription_id: subscription_id.into(),
@@ -239,14 +239,14 @@ pub mod extensions {
         use super::models;
         type Response = models::Extension;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) extension_id: String,
             pub(crate) farm_beats_resource_name: String,
             pub(crate) resource_group_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -293,14 +293,14 @@ pub mod extensions {
         use super::models;
         type Response = models::Extension;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) extension_id: String,
             pub(crate) farm_beats_resource_name: String,
             pub(crate) resource_group_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -347,14 +347,14 @@ pub mod extensions {
         use super::models;
         type Response = models::Extension;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) extension_id: String,
             pub(crate) farm_beats_resource_name: String,
             pub(crate) resource_group_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -405,14 +405,14 @@ pub mod extensions {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) extension_id: String,
             pub(crate) farm_beats_resource_name: String,
             pub(crate) resource_group_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -456,7 +456,7 @@ pub mod extensions {
         use super::models;
         type Response = models::ExtensionListResponse;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) subscription_id: String,
@@ -466,7 +466,7 @@ pub mod extensions {
             pub(crate) max_page_size: Option<i32>,
             pub(crate) skip_token: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Installed extension ids."]
             pub fn extension_ids(mut self, extension_ids: Vec<String>) -> Self {
                 self.extension_ids = extension_ids;
@@ -578,8 +578,8 @@ pub mod farm_beats_extensions {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get list of farmBeats extension."]
-        pub fn list(&self) -> list::Builder {
-            list::Builder {
+        pub fn list(&self) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 farm_beats_extension_ids: Vec::new(),
                 farm_beats_extension_names: Vec::new(),
@@ -592,8 +592,8 @@ pub mod farm_beats_extensions {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `farm_beats_extension_id`: farmBeatsExtensionId to be queried."]
-        pub fn get(&self, farm_beats_extension_id: impl Into<String>) -> get::Builder {
-            get::Builder {
+        pub fn get(&self, farm_beats_extension_id: impl Into<String>) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 farm_beats_extension_id: farm_beats_extension_id.into(),
             }
@@ -603,7 +603,7 @@ pub mod farm_beats_extensions {
         use super::models;
         type Response = models::FarmBeatsExtensionListResponse;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) farm_beats_extension_ids: Vec<String>,
             pub(crate) farm_beats_extension_names: Vec<String>,
@@ -611,7 +611,7 @@ pub mod farm_beats_extensions {
             pub(crate) publisher_ids: Vec<String>,
             pub(crate) max_page_size: Option<i32>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "FarmBeatsExtension ids."]
             pub fn farm_beats_extension_ids(mut self, farm_beats_extension_ids: Vec<String>) -> Self {
                 self.farm_beats_extension_ids = farm_beats_extension_ids;
@@ -732,11 +732,11 @@ pub mod farm_beats_extensions {
         use super::models;
         type Response = models::FarmBeatsExtension;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) farm_beats_extension_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -792,8 +792,8 @@ pub mod farm_beats_models {
             resource_group_name: impl Into<String>,
             subscription_id: impl Into<String>,
             farm_beats_resource_name: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 subscription_id: subscription_id.into(),
@@ -813,8 +813,8 @@ pub mod farm_beats_models {
             resource_group_name: impl Into<String>,
             subscription_id: impl Into<String>,
             body: impl Into<models::FarmBeats>,
-        ) -> create_or_update::Builder {
-            create_or_update::Builder {
+        ) -> create_or_update::RequestBuilder {
+            create_or_update::RequestBuilder {
                 client: self.0.clone(),
                 farm_beats_resource_name: farm_beats_resource_name.into(),
                 resource_group_name: resource_group_name.into(),
@@ -835,8 +835,8 @@ pub mod farm_beats_models {
             resource_group_name: impl Into<String>,
             subscription_id: impl Into<String>,
             body: impl Into<models::FarmBeatsUpdateRequestModel>,
-        ) -> update::Builder {
-            update::Builder {
+        ) -> update::RequestBuilder {
+            update::RequestBuilder {
                 client: self.0.clone(),
                 farm_beats_resource_name: farm_beats_resource_name.into(),
                 resource_group_name: resource_group_name.into(),
@@ -855,8 +855,8 @@ pub mod farm_beats_models {
             resource_group_name: impl Into<String>,
             subscription_id: impl Into<String>,
             farm_beats_resource_name: impl Into<String>,
-        ) -> delete::Builder {
-            delete::Builder {
+        ) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 subscription_id: subscription_id.into(),
@@ -867,8 +867,8 @@ pub mod farm_beats_models {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: The ID of the target subscription."]
-        pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
-            list_by_subscription::Builder {
+        pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::RequestBuilder {
+            list_by_subscription::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 max_page_size: None,
@@ -884,8 +884,8 @@ pub mod farm_beats_models {
             &self,
             resource_group_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_by_resource_group::Builder {
-            list_by_resource_group::Builder {
+        ) -> list_by_resource_group::RequestBuilder {
+            list_by_resource_group::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 subscription_id: subscription_id.into(),
@@ -898,13 +898,13 @@ pub mod farm_beats_models {
         use super::models;
         type Response = models::FarmBeats;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) subscription_id: String,
             pub(crate) farm_beats_resource_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -954,14 +954,14 @@ pub mod farm_beats_models {
             Created201(models::FarmBeats),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) farm_beats_resource_name: String,
             pub(crate) resource_group_name: String,
             pub(crate) subscription_id: String,
             pub(crate) body: models::FarmBeats,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1013,14 +1013,14 @@ pub mod farm_beats_models {
         use super::models;
         type Response = models::FarmBeats;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) farm_beats_resource_name: String,
             pub(crate) resource_group_name: String,
             pub(crate) subscription_id: String,
             pub(crate) body: models::FarmBeatsUpdateRequestModel,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1071,13 +1071,13 @@ pub mod farm_beats_models {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) subscription_id: String,
             pub(crate) farm_beats_resource_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1120,13 +1120,13 @@ pub mod farm_beats_models {
         use super::models;
         type Response = models::FarmBeatsListResponse;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) max_page_size: Option<i32>,
             pub(crate) skip_token: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Maximum number of items needed (inclusive).\r\nMinimum = 10, Maximum = 1000, Default value = 50."]
             pub fn max_page_size(mut self, max_page_size: i32) -> Self {
                 self.max_page_size = Some(max_page_size);
@@ -1214,14 +1214,14 @@ pub mod farm_beats_models {
         use super::models;
         type Response = models::FarmBeatsListResponse;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) subscription_id: String,
             pub(crate) max_page_size: Option<i32>,
             pub(crate) skip_token: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Maximum number of items needed (inclusive).\r\nMinimum = 10, Maximum = 1000, Default value = 50."]
             pub fn max_page_size(mut self, max_page_size: i32) -> Self {
                 self.max_page_size = Some(max_page_size);
@@ -1320,8 +1320,8 @@ pub mod locations {
             &self,
             subscription_id: impl Into<String>,
             body: impl Into<models::CheckNameAvailabilityRequest>,
-        ) -> check_name_availability::Builder {
-            check_name_availability::Builder {
+        ) -> check_name_availability::RequestBuilder {
+            check_name_availability::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 body: body.into(),
@@ -1332,12 +1332,12 @@ pub mod locations {
         use super::models;
         type Response = models::CheckNameAvailabilityResponse;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) body: models::CheckNameAvailabilityRequest,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1384,18 +1384,18 @@ pub mod operations {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Lists the available operations of Microsoft.AgFoodPlatform resource provider."]
-        pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.0.clone() }
+        pub fn list(&self) -> list::RequestBuilder {
+            list::RequestBuilder { client: self.0.clone() }
         }
     }
     pub mod list {
         use super::models;
         type Response = models::OperationListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();

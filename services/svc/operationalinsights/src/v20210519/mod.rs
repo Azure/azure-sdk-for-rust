@@ -120,8 +120,8 @@ pub mod query {
         #[doc = "Arguments:"]
         #[doc = "* `workspace_id`: ID of the workspace. This is Workspace ID from the Properties blade in the Azure portal."]
         #[doc = "* `query`: The Analytics query. Learn more about the [Analytics query syntax](https://azure.microsoft.com/documentation/articles/app-insights-analytics-reference/)"]
-        pub fn get(&self, workspace_id: impl Into<String>, query: impl Into<String>) -> get::Builder {
-            get::Builder {
+        pub fn get(&self, workspace_id: impl Into<String>, query: impl Into<String>) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 workspace_id: workspace_id.into(),
                 query: query.into(),
@@ -134,8 +134,8 @@ pub mod query {
         #[doc = "Arguments:"]
         #[doc = "* `workspace_id`: ID of the workspace. This is Workspace ID from the Properties blade in the Azure portal."]
         #[doc = "* `body`: The Analytics query. Learn more about the [Analytics query syntax](https://azure.microsoft.com/documentation/articles/app-insights-analytics-reference/)"]
-        pub fn execute(&self, workspace_id: impl Into<String>, body: impl Into<models::QueryBody>) -> execute::Builder {
-            execute::Builder {
+        pub fn execute(&self, workspace_id: impl Into<String>, body: impl Into<models::QueryBody>) -> execute::RequestBuilder {
+            execute::RequestBuilder {
                 client: self.0.clone(),
                 workspace_id: workspace_id.into(),
                 body: body.into(),
@@ -147,8 +147,8 @@ pub mod query {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `body`: The batch request body"]
-        pub fn batch(&self, body: impl Into<models::BatchRequest>) -> batch::Builder {
-            batch::Builder {
+        pub fn batch(&self, body: impl Into<models::BatchRequest>) -> batch::RequestBuilder {
+            batch::RequestBuilder {
                 client: self.0.clone(),
                 body: body.into(),
             }
@@ -158,13 +158,13 @@ pub mod query {
         use super::models;
         type Response = models::QueryResults;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) workspace_id: String,
             pub(crate) query: String,
             pub(crate) timespan: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Optional. The timespan over which to query data. This is an ISO8601 time period value.  This timespan is applied in addition to any that are specified in the query expression."]
             pub fn timespan(mut self, timespan: impl Into<String>) -> Self {
                 self.timespan = Some(timespan.into());
@@ -211,13 +211,13 @@ pub mod query {
         use super::models;
         type Response = models::QueryResults;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) workspace_id: String,
             pub(crate) body: models::QueryBody,
             pub(crate) prefer: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Optional. The prefer header to set server timeout, query statistics and visualization information."]
             pub fn prefer(mut self, prefer: impl Into<String>) -> Self {
                 self.prefer = Some(prefer.into());
@@ -263,11 +263,11 @@ pub mod query {
         use super::models;
         type Response = models::BatchResponse;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) body: models::BatchRequest,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -311,8 +311,8 @@ pub mod metadata {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `workspace_id`: ID of the workspace. This is Workspace ID from the Properties blade in the Azure portal."]
-        pub fn get(&self, workspace_id: impl Into<String>) -> get::Builder {
-            get::Builder {
+        pub fn get(&self, workspace_id: impl Into<String>) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 workspace_id: workspace_id.into(),
             }
@@ -322,8 +322,8 @@ pub mod metadata {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `workspace_id`: ID of the workspace. This is Workspace ID from the Properties blade in the Azure portal."]
-        pub fn post(&self, workspace_id: impl Into<String>) -> post::Builder {
-            post::Builder {
+        pub fn post(&self, workspace_id: impl Into<String>) -> post::RequestBuilder {
+            post::RequestBuilder {
                 client: self.0.clone(),
                 workspace_id: workspace_id.into(),
             }
@@ -333,11 +333,11 @@ pub mod metadata {
         use super::models;
         type Response = models::MetadataResults;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) workspace_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -375,11 +375,11 @@ pub mod metadata {
         use super::models;
         type Response = models::MetadataResults;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) workspace_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();

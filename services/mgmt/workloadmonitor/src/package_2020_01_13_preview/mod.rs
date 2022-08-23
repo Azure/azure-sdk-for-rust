@@ -115,18 +115,18 @@ pub mod operations {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get a list of all available REST API operations."]
-        pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.0.clone() }
+        pub fn list(&self) -> list::RequestBuilder {
+            list::RequestBuilder { client: self.0.clone() }
         }
     }
     pub mod list {
         use super::models;
         type Response = models::OperationList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -211,8 +211,8 @@ pub mod health_monitors {
             provider_name: impl Into<String>,
             resource_collection_name: impl Into<String>,
             resource_name: impl Into<String>,
-        ) -> list::Builder {
-            list::Builder {
+        ) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -240,8 +240,8 @@ pub mod health_monitors {
             resource_collection_name: impl Into<String>,
             resource_name: impl Into<String>,
             monitor_id: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -269,8 +269,8 @@ pub mod health_monitors {
             resource_collection_name: impl Into<String>,
             resource_name: impl Into<String>,
             monitor_id: impl Into<String>,
-        ) -> list_state_changes::Builder {
-            list_state_changes::Builder {
+        ) -> list_state_changes::RequestBuilder {
+            list_state_changes::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -303,8 +303,8 @@ pub mod health_monitors {
             resource_name: impl Into<String>,
             monitor_id: impl Into<String>,
             timestamp_unix: impl Into<String>,
-        ) -> get_state_change::Builder {
-            get_state_change::Builder {
+        ) -> get_state_change::RequestBuilder {
+            get_state_change::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -321,7 +321,7 @@ pub mod health_monitors {
         use super::models;
         type Response = models::HealthMonitorList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -331,7 +331,7 @@ pub mod health_monitors {
             pub(crate) filter: Option<String>,
             pub(crate) expand: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Optionally filter by monitor name. Example: $filter=monitorName eq 'logical-disks|C:|disk-free-space-mb.'"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -421,7 +421,7 @@ pub mod health_monitors {
         use super::models;
         type Response = models::HealthMonitor;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -431,7 +431,7 @@ pub mod health_monitors {
             pub(crate) monitor_id: String,
             pub(crate) expand: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Optionally expand the monitor’s evidence and/or configuration. Example: $expand=evidence,configuration."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());
@@ -488,7 +488,7 @@ pub mod health_monitors {
         use super::models;
         type Response = models::HealthMonitorStateChangeList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -501,7 +501,7 @@ pub mod health_monitors {
             pub(crate) start_timestamp_utc: Option<time::OffsetDateTime>,
             pub(crate) end_timestamp_utc: Option<time::OffsetDateTime>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Optionally filter by heartbeat condition. Example: $filter=isHeartbeat eq false."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -603,7 +603,7 @@ pub mod health_monitors {
         use super::models;
         type Response = models::HealthMonitorStateChange;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -614,7 +614,7 @@ pub mod health_monitors {
             pub(crate) timestamp_unix: String,
             pub(crate) expand: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Optionally expand the monitor’s evidence and/or configuration. Example: $expand=evidence,configuration."]
             pub fn expand(mut self, expand: impl Into<String>) -> Self {
                 self.expand = Some(expand.into());

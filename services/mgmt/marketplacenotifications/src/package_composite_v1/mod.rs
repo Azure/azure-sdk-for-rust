@@ -117,8 +117,8 @@ pub mod notifications {
         #[doc = "Arguments:"]
         #[doc = "* `subscription`: user's subscription id"]
         #[doc = "* `principal_id`: user's principal id"]
-        pub fn list(&self, subscription: impl Into<String>, principal_id: impl Into<String>) -> list::Builder {
-            list::Builder {
+        pub fn list(&self, subscription: impl Into<String>, principal_id: impl Into<String>) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 subscription: subscription.into(),
                 principal_id: principal_id.into(),
@@ -129,12 +129,12 @@ pub mod notifications {
         use super::models;
         type Response = models::NotificationList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription: String,
             pub(crate) principal_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -216,29 +216,29 @@ pub mod notification {
             subscription: impl Into<String>,
             notification: impl Into<String>,
             principal_id: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 subscription: subscription.into(),
                 notification: notification.into(),
                 principal_id: principal_id.into(),
             }
         }
-        pub fn get_operations(&self) -> get_operations::Builder {
-            get_operations::Builder { client: self.0.clone() }
+        pub fn get_operations(&self) -> get_operations::RequestBuilder {
+            get_operations::RequestBuilder { client: self.0.clone() }
         }
     }
     pub mod get {
         use super::models;
         type Response = models::Notification;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription: String,
             pub(crate) notification: String,
             pub(crate) principal_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -285,10 +285,10 @@ pub mod notification {
         use super::models;
         type Response = models::AvailableOperations;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();

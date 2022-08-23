@@ -128,16 +128,16 @@ pub mod data_policy_manifests {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `policy_mode`: The policy mode of the data policy manifest to get."]
-        pub fn get_by_policy_mode(&self, policy_mode: impl Into<String>) -> get_by_policy_mode::Builder {
-            get_by_policy_mode::Builder {
+        pub fn get_by_policy_mode(&self, policy_mode: impl Into<String>) -> get_by_policy_mode::RequestBuilder {
+            get_by_policy_mode::RequestBuilder {
                 client: self.0.clone(),
                 policy_mode: policy_mode.into(),
             }
         }
         #[doc = "Retrieves data policy manifests"]
         #[doc = "This operation retrieves a list of all the data policy manifests that match the optional given $filter. Valid values for $filter are: \"$filter=namespace eq '{0}'\". If $filter is not provided, the unfiltered list includes all data policy manifests for data resource types. If $filter=namespace is provided, the returned list only includes all data policy manifests that have a namespace matching the provided value."]
-        pub fn list(&self) -> list::Builder {
-            list::Builder {
+        pub fn list(&self) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 filter: None,
             }
@@ -147,11 +147,11 @@ pub mod data_policy_manifests {
         use super::models;
         type Response = models::DataPolicyManifest;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) policy_mode: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -195,11 +195,11 @@ pub mod data_policy_manifests {
         use super::models;
         type Response = models::DataPolicyManifestListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) filter: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The filter to apply on the operation. Valid values for $filter are: \"namespace eq '{value}'\". If $filter is not provided, no filtering is performed. If $filter=namespace eq '{value}' is provided, the returned list only includes all data policy manifests that have a namespace matching the provided value."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -283,8 +283,8 @@ pub mod policy_assignments {
         #[doc = "Arguments:"]
         #[doc = "* `scope`: The scope of the policy assignment. Valid scopes are: management group (format: '/providers/Microsoft.Management/managementGroups/{managementGroup}'), subscription (format: '/subscriptions/{subscriptionId}'), resource group (format: '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}', or resource (format: '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{resourceProviderNamespace}/[{parentResourcePath}/]{resourceType}/{resourceName}'"]
         #[doc = "* `policy_assignment_name`: The name of the policy assignment to get."]
-        pub fn get(&self, scope: impl Into<String>, policy_assignment_name: impl Into<String>) -> get::Builder {
-            get::Builder {
+        pub fn get(&self, scope: impl Into<String>, policy_assignment_name: impl Into<String>) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 scope: scope.into(),
                 policy_assignment_name: policy_assignment_name.into(),
@@ -302,8 +302,8 @@ pub mod policy_assignments {
             scope: impl Into<String>,
             policy_assignment_name: impl Into<String>,
             parameters: impl Into<models::PolicyAssignment>,
-        ) -> create::Builder {
-            create::Builder {
+        ) -> create::RequestBuilder {
+            create::RequestBuilder {
                 client: self.0.clone(),
                 scope: scope.into(),
                 policy_assignment_name: policy_assignment_name.into(),
@@ -322,8 +322,8 @@ pub mod policy_assignments {
             scope: impl Into<String>,
             policy_assignment_name: impl Into<String>,
             parameters: impl Into<models::PolicyAssignmentUpdate>,
-        ) -> update::Builder {
-            update::Builder {
+        ) -> update::RequestBuilder {
+            update::RequestBuilder {
                 client: self.0.clone(),
                 scope: scope.into(),
                 policy_assignment_name: policy_assignment_name.into(),
@@ -336,8 +336,8 @@ pub mod policy_assignments {
         #[doc = "Arguments:"]
         #[doc = "* `scope`: The scope of the policy assignment. Valid scopes are: management group (format: '/providers/Microsoft.Management/managementGroups/{managementGroup}'), subscription (format: '/subscriptions/{subscriptionId}'), resource group (format: '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}', or resource (format: '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{resourceProviderNamespace}/[{parentResourcePath}/]{resourceType}/{resourceName}'"]
         #[doc = "* `policy_assignment_name`: The name of the policy assignment to delete."]
-        pub fn delete(&self, scope: impl Into<String>, policy_assignment_name: impl Into<String>) -> delete::Builder {
-            delete::Builder {
+        pub fn delete(&self, scope: impl Into<String>, policy_assignment_name: impl Into<String>) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 scope: scope.into(),
                 policy_assignment_name: policy_assignment_name.into(),
@@ -353,8 +353,8 @@ pub mod policy_assignments {
             &self,
             resource_group_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_for_resource_group::Builder {
-            list_for_resource_group::Builder {
+        ) -> list_for_resource_group::RequestBuilder {
+            list_for_resource_group::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 subscription_id: subscription_id.into(),
@@ -380,8 +380,8 @@ pub mod policy_assignments {
             resource_type: impl Into<String>,
             resource_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_for_resource::Builder {
-            list_for_resource::Builder {
+        ) -> list_for_resource::RequestBuilder {
+            list_for_resource::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 resource_provider_namespace: resource_provider_namespace.into(),
@@ -398,8 +398,8 @@ pub mod policy_assignments {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `management_group_id`: The ID of the management group."]
-        pub fn list_for_management_group(&self, management_group_id: impl Into<String>) -> list_for_management_group::Builder {
-            list_for_management_group::Builder {
+        pub fn list_for_management_group(&self, management_group_id: impl Into<String>) -> list_for_management_group::RequestBuilder {
+            list_for_management_group::RequestBuilder {
                 client: self.0.clone(),
                 management_group_id: management_group_id.into(),
                 filter: None,
@@ -411,8 +411,8 @@ pub mod policy_assignments {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: The ID of the target subscription."]
-        pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
-            list::Builder {
+        pub fn list(&self, subscription_id: impl Into<String>) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 filter: None,
@@ -424,8 +424,8 @@ pub mod policy_assignments {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `policy_assignment_id`: The ID of the policy assignment to get. Use the format '{scope}/providers/Microsoft.Authorization/policyAssignments/{policyAssignmentName}'."]
-        pub fn get_by_id(&self, policy_assignment_id: impl Into<String>) -> get_by_id::Builder {
-            get_by_id::Builder {
+        pub fn get_by_id(&self, policy_assignment_id: impl Into<String>) -> get_by_id::RequestBuilder {
+            get_by_id::RequestBuilder {
                 client: self.0.clone(),
                 policy_assignment_id: policy_assignment_id.into(),
             }
@@ -440,8 +440,8 @@ pub mod policy_assignments {
             &self,
             policy_assignment_id: impl Into<String>,
             parameters: impl Into<models::PolicyAssignment>,
-        ) -> create_by_id::Builder {
-            create_by_id::Builder {
+        ) -> create_by_id::RequestBuilder {
+            create_by_id::RequestBuilder {
                 client: self.0.clone(),
                 policy_assignment_id: policy_assignment_id.into(),
                 parameters: parameters.into(),
@@ -457,8 +457,8 @@ pub mod policy_assignments {
             &self,
             policy_assignment_id: impl Into<String>,
             parameters: impl Into<models::PolicyAssignmentUpdate>,
-        ) -> update_by_id::Builder {
-            update_by_id::Builder {
+        ) -> update_by_id::RequestBuilder {
+            update_by_id::RequestBuilder {
                 client: self.0.clone(),
                 policy_assignment_id: policy_assignment_id.into(),
                 parameters: parameters.into(),
@@ -469,8 +469,8 @@ pub mod policy_assignments {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `policy_assignment_id`: The ID of the policy assignment to delete. Use the format '{scope}/providers/Microsoft.Authorization/policyAssignments/{policyAssignmentName}'."]
-        pub fn delete_by_id(&self, policy_assignment_id: impl Into<String>) -> delete_by_id::Builder {
-            delete_by_id::Builder {
+        pub fn delete_by_id(&self, policy_assignment_id: impl Into<String>) -> delete_by_id::RequestBuilder {
+            delete_by_id::RequestBuilder {
                 client: self.0.clone(),
                 policy_assignment_id: policy_assignment_id.into(),
             }
@@ -480,12 +480,12 @@ pub mod policy_assignments {
         use super::models;
         type Response = models::PolicyAssignment;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) scope: String,
             pub(crate) policy_assignment_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -530,13 +530,13 @@ pub mod policy_assignments {
         use super::models;
         type Response = models::PolicyAssignment;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) scope: String,
             pub(crate) policy_assignment_name: String,
             pub(crate) parameters: models::PolicyAssignment,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -582,13 +582,13 @@ pub mod policy_assignments {
         use super::models;
         type Response = models::PolicyAssignment;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) scope: String,
             pub(crate) policy_assignment_name: String,
             pub(crate) parameters: models::PolicyAssignmentUpdate,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -638,12 +638,12 @@ pub mod policy_assignments {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) scope: String,
             pub(crate) policy_assignment_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -689,14 +689,14 @@ pub mod policy_assignments {
         use super::models;
         type Response = models::PolicyAssignmentListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) subscription_id: String,
             pub(crate) filter: Option<String>,
             pub(crate) top: Option<i32>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The filter to apply on the operation. Valid values for $filter are: 'atScope()', 'atExactScope()' or 'policyDefinitionId eq '{value}''. If $filter is not provided, no filtering is performed. If $filter=atScope() is provided, the returned list only includes all policy assignments that apply to the scope, which is everything in the unfiltered list except those applied to sub scopes contained within the given scope. If $filter=atExactScope() is provided, the returned list only includes all policy assignments that at the given scope. If $filter=policyDefinitionId eq '{value}' is provided, the returned list includes all policy assignments of the policy definition whose id is {value}."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -783,7 +783,7 @@ pub mod policy_assignments {
         use super::models;
         type Response = models::PolicyAssignmentListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) resource_provider_namespace: String,
@@ -794,7 +794,7 @@ pub mod policy_assignments {
             pub(crate) filter: Option<String>,
             pub(crate) top: Option<i32>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The filter to apply on the operation. Valid values for $filter are: 'atScope()', 'atExactScope()' or 'policyDefinitionId eq '{value}''. If $filter is not provided, no filtering is performed. If $filter=atScope() is provided, the returned list only includes all policy assignments that apply to the scope, which is everything in the unfiltered list except those applied to sub scopes contained within the given scope. If $filter=atExactScope() is provided, the returned list only includes all policy assignments that at the given scope. If $filter=policyDefinitionId eq '{value}' is provided, the returned list includes all policy assignments of the policy definition whose id is {value}."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -876,13 +876,13 @@ pub mod policy_assignments {
         use super::models;
         type Response = models::PolicyAssignmentListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) management_group_id: String,
             pub(crate) filter: Option<String>,
             pub(crate) top: Option<i32>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The filter to apply on the operation. Valid values for $filter are: 'atScope()', 'atExactScope()' or 'policyDefinitionId eq '{value}''. If $filter is not provided, no filtering is performed. If $filter=atScope() is provided, the returned list only includes all policy assignments that apply to the scope, which is everything in the unfiltered list except those applied to sub scopes contained within the given scope. If $filter=atExactScope() is provided, the returned list only includes all policy assignments that at the given scope. If $filter=policyDefinitionId eq '{value}' is provided, the returned list includes all policy assignments of the policy definition whose id is {value}."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -968,13 +968,13 @@ pub mod policy_assignments {
         use super::models;
         type Response = models::PolicyAssignmentListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) filter: Option<String>,
             pub(crate) top: Option<i32>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The filter to apply on the operation. Valid values for $filter are: 'atScope()', 'atExactScope()' or 'policyDefinitionId eq '{value}''. If $filter is not provided, no filtering is performed. If $filter=atScope() is provided, the returned list only includes all policy assignments that apply to the scope, which is everything in the unfiltered list except those applied to sub scopes contained within the given scope. If $filter=atExactScope() is provided, the returned list only includes all policy assignments that at the given scope. If $filter=policyDefinitionId eq '{value}' is provided, the returned list includes all policy assignments of the policy definition whose id is {value}."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -1060,11 +1060,11 @@ pub mod policy_assignments {
         use super::models;
         type Response = models::PolicyAssignment;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) policy_assignment_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1104,12 +1104,12 @@ pub mod policy_assignments {
         use super::models;
         type Response = models::PolicyAssignment;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) policy_assignment_id: String,
             pub(crate) parameters: models::PolicyAssignment,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1150,12 +1150,12 @@ pub mod policy_assignments {
         use super::models;
         type Response = models::PolicyAssignment;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) policy_assignment_id: String,
             pub(crate) parameters: models::PolicyAssignmentUpdate,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1200,11 +1200,11 @@ pub mod policy_assignments {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) policy_assignment_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1252,8 +1252,8 @@ pub mod policy_definitions {
         #[doc = "Arguments:"]
         #[doc = "* `policy_definition_name`: The name of the policy definition to get."]
         #[doc = "* `subscription_id`: The ID of the target subscription."]
-        pub fn get(&self, policy_definition_name: impl Into<String>, subscription_id: impl Into<String>) -> get::Builder {
-            get::Builder {
+        pub fn get(&self, policy_definition_name: impl Into<String>, subscription_id: impl Into<String>) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 policy_definition_name: policy_definition_name.into(),
                 subscription_id: subscription_id.into(),
@@ -1271,8 +1271,8 @@ pub mod policy_definitions {
             policy_definition_name: impl Into<String>,
             parameters: impl Into<models::PolicyDefinition>,
             subscription_id: impl Into<String>,
-        ) -> create_or_update::Builder {
-            create_or_update::Builder {
+        ) -> create_or_update::RequestBuilder {
+            create_or_update::RequestBuilder {
                 client: self.0.clone(),
                 policy_definition_name: policy_definition_name.into(),
                 parameters: parameters.into(),
@@ -1285,8 +1285,8 @@ pub mod policy_definitions {
         #[doc = "Arguments:"]
         #[doc = "* `policy_definition_name`: The name of the policy definition to delete."]
         #[doc = "* `subscription_id`: The ID of the target subscription."]
-        pub fn delete(&self, policy_definition_name: impl Into<String>, subscription_id: impl Into<String>) -> delete::Builder {
-            delete::Builder {
+        pub fn delete(&self, policy_definition_name: impl Into<String>, subscription_id: impl Into<String>) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 policy_definition_name: policy_definition_name.into(),
                 subscription_id: subscription_id.into(),
@@ -1297,8 +1297,8 @@ pub mod policy_definitions {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `policy_definition_name`: The name of the built-in policy definition to get."]
-        pub fn get_built_in(&self, policy_definition_name: impl Into<String>) -> get_built_in::Builder {
-            get_built_in::Builder {
+        pub fn get_built_in(&self, policy_definition_name: impl Into<String>) -> get_built_in::RequestBuilder {
+            get_built_in::RequestBuilder {
                 client: self.0.clone(),
                 policy_definition_name: policy_definition_name.into(),
             }
@@ -1313,8 +1313,8 @@ pub mod policy_definitions {
             &self,
             policy_definition_name: impl Into<String>,
             management_group_id: impl Into<String>,
-        ) -> get_at_management_group::Builder {
-            get_at_management_group::Builder {
+        ) -> get_at_management_group::RequestBuilder {
+            get_at_management_group::RequestBuilder {
                 client: self.0.clone(),
                 policy_definition_name: policy_definition_name.into(),
                 management_group_id: management_group_id.into(),
@@ -1332,8 +1332,8 @@ pub mod policy_definitions {
             policy_definition_name: impl Into<String>,
             parameters: impl Into<models::PolicyDefinition>,
             management_group_id: impl Into<String>,
-        ) -> create_or_update_at_management_group::Builder {
-            create_or_update_at_management_group::Builder {
+        ) -> create_or_update_at_management_group::RequestBuilder {
+            create_or_update_at_management_group::RequestBuilder {
                 client: self.0.clone(),
                 policy_definition_name: policy_definition_name.into(),
                 parameters: parameters.into(),
@@ -1350,8 +1350,8 @@ pub mod policy_definitions {
             &self,
             policy_definition_name: impl Into<String>,
             management_group_id: impl Into<String>,
-        ) -> delete_at_management_group::Builder {
-            delete_at_management_group::Builder {
+        ) -> delete_at_management_group::RequestBuilder {
+            delete_at_management_group::RequestBuilder {
                 client: self.0.clone(),
                 policy_definition_name: policy_definition_name.into(),
                 management_group_id: management_group_id.into(),
@@ -1362,8 +1362,8 @@ pub mod policy_definitions {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: The ID of the target subscription."]
-        pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
-            list::Builder {
+        pub fn list(&self, subscription_id: impl Into<String>) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 filter: None,
@@ -1372,8 +1372,8 @@ pub mod policy_definitions {
         }
         #[doc = "Retrieve built-in policy definitions"]
         #[doc = "This operation retrieves a list of all the built-in policy definitions that match the optional given $filter. If $filter='policyType -eq {value}' is provided, the returned list only includes all built-in policy definitions whose type match the {value}. Possible policyType values are NotSpecified, BuiltIn, Custom, and Static. If $filter='category -eq {value}' is provided, the returned list only includes all built-in policy definitions whose category match the {value}."]
-        pub fn list_built_in(&self) -> list_built_in::Builder {
-            list_built_in::Builder {
+        pub fn list_built_in(&self) -> list_built_in::RequestBuilder {
+            list_built_in::RequestBuilder {
                 client: self.0.clone(),
                 filter: None,
                 top: None,
@@ -1384,8 +1384,8 @@ pub mod policy_definitions {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `management_group_id`: The ID of the management group."]
-        pub fn list_by_management_group(&self, management_group_id: impl Into<String>) -> list_by_management_group::Builder {
-            list_by_management_group::Builder {
+        pub fn list_by_management_group(&self, management_group_id: impl Into<String>) -> list_by_management_group::RequestBuilder {
+            list_by_management_group::RequestBuilder {
                 client: self.0.clone(),
                 management_group_id: management_group_id.into(),
                 filter: None,
@@ -1397,12 +1397,12 @@ pub mod policy_definitions {
         use super::models;
         type Response = models::PolicyDefinition;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) policy_definition_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1447,13 +1447,13 @@ pub mod policy_definitions {
         use super::models;
         type Response = models::PolicyDefinition;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) policy_definition_name: String,
             pub(crate) parameters: models::PolicyDefinition,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1503,12 +1503,12 @@ pub mod policy_definitions {
             Ok200,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) policy_definition_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1550,11 +1550,11 @@ pub mod policy_definitions {
         use super::models;
         type Response = models::PolicyDefinition;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) policy_definition_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1598,12 +1598,12 @@ pub mod policy_definitions {
         use super::models;
         type Response = models::PolicyDefinition;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) policy_definition_name: String,
             pub(crate) management_group_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1648,13 +1648,13 @@ pub mod policy_definitions {
         use super::models;
         type Response = models::PolicyDefinition;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) policy_definition_name: String,
             pub(crate) parameters: models::PolicyDefinition,
             pub(crate) management_group_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1704,12 +1704,12 @@ pub mod policy_definitions {
             Ok200,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) policy_definition_name: String,
             pub(crate) management_group_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1751,13 +1751,13 @@ pub mod policy_definitions {
         use super::models;
         type Response = models::PolicyDefinitionListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) filter: Option<String>,
             pub(crate) top: Option<i32>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The filter to apply on the operation. Valid values for $filter are: 'atExactScope()', 'policyType -eq {value}' or 'category eq '{value}''. If $filter is not provided, no filtering is performed. If $filter=atExactScope() is provided, the returned list only includes all policy definitions that at the given scope. If $filter='policyType -eq {value}' is provided, the returned list only includes all policy definitions whose type match the {value}. Possible policyType values are NotSpecified, BuiltIn, Custom, and Static. If $filter='category -eq {value}' is provided, the returned list only includes all policy definitions whose category match the {value}."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -1843,12 +1843,12 @@ pub mod policy_definitions {
         use super::models;
         type Response = models::PolicyDefinitionListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) filter: Option<String>,
             pub(crate) top: Option<i32>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The filter to apply on the operation. Valid values for $filter are: 'atExactScope()', 'policyType -eq {value}' or 'category eq '{value}''. If $filter is not provided, no filtering is performed. If $filter=atExactScope() is provided, the returned list only includes all policy definitions that at the given scope. If $filter='policyType -eq {value}' is provided, the returned list only includes all policy definitions whose type match the {value}. Possible policyType values are NotSpecified, BuiltIn, Custom, and Static. If $filter='category -eq {value}' is provided, the returned list only includes all policy definitions whose category match the {value}."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -1933,13 +1933,13 @@ pub mod policy_definitions {
         use super::models;
         type Response = models::PolicyDefinitionListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) management_group_id: String,
             pub(crate) filter: Option<String>,
             pub(crate) top: Option<i32>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The filter to apply on the operation. Valid values for $filter are: 'atExactScope()', 'policyType -eq {value}' or 'category eq '{value}''. If $filter is not provided, no filtering is performed. If $filter=atExactScope() is provided, the returned list only includes all policy definitions that at the given scope. If $filter='policyType -eq {value}' is provided, the returned list only includes all policy definitions whose type match the {value}. Possible policyType values are NotSpecified, BuiltIn, Custom, and Static. If $filter='category -eq {value}' is provided, the returned list only includes all policy definitions whose category match the {value}."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -2032,8 +2032,8 @@ pub mod policy_set_definitions {
         #[doc = "Arguments:"]
         #[doc = "* `policy_set_definition_name`: The name of the policy set definition to get."]
         #[doc = "* `subscription_id`: The ID of the target subscription."]
-        pub fn get(&self, policy_set_definition_name: impl Into<String>, subscription_id: impl Into<String>) -> get::Builder {
-            get::Builder {
+        pub fn get(&self, policy_set_definition_name: impl Into<String>, subscription_id: impl Into<String>) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 policy_set_definition_name: policy_set_definition_name.into(),
                 subscription_id: subscription_id.into(),
@@ -2051,8 +2051,8 @@ pub mod policy_set_definitions {
             policy_set_definition_name: impl Into<String>,
             parameters: impl Into<models::PolicySetDefinition>,
             subscription_id: impl Into<String>,
-        ) -> create_or_update::Builder {
-            create_or_update::Builder {
+        ) -> create_or_update::RequestBuilder {
+            create_or_update::RequestBuilder {
                 client: self.0.clone(),
                 policy_set_definition_name: policy_set_definition_name.into(),
                 parameters: parameters.into(),
@@ -2065,8 +2065,8 @@ pub mod policy_set_definitions {
         #[doc = "Arguments:"]
         #[doc = "* `policy_set_definition_name`: The name of the policy set definition to delete."]
         #[doc = "* `subscription_id`: The ID of the target subscription."]
-        pub fn delete(&self, policy_set_definition_name: impl Into<String>, subscription_id: impl Into<String>) -> delete::Builder {
-            delete::Builder {
+        pub fn delete(&self, policy_set_definition_name: impl Into<String>, subscription_id: impl Into<String>) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 policy_set_definition_name: policy_set_definition_name.into(),
                 subscription_id: subscription_id.into(),
@@ -2077,8 +2077,8 @@ pub mod policy_set_definitions {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `policy_set_definition_name`: The name of the policy set definition to get."]
-        pub fn get_built_in(&self, policy_set_definition_name: impl Into<String>) -> get_built_in::Builder {
-            get_built_in::Builder {
+        pub fn get_built_in(&self, policy_set_definition_name: impl Into<String>) -> get_built_in::RequestBuilder {
+            get_built_in::RequestBuilder {
                 client: self.0.clone(),
                 policy_set_definition_name: policy_set_definition_name.into(),
             }
@@ -2088,8 +2088,8 @@ pub mod policy_set_definitions {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: The ID of the target subscription."]
-        pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
-            list::Builder {
+        pub fn list(&self, subscription_id: impl Into<String>) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 filter: None,
@@ -2098,8 +2098,8 @@ pub mod policy_set_definitions {
         }
         #[doc = "Retrieves built-in policy set definitions."]
         #[doc = "This operation retrieves a list of all the built-in policy set definitions that match the optional given $filter. If $filter='category -eq {value}' is provided, the returned list only includes all built-in policy set definitions whose category match the {value}."]
-        pub fn list_built_in(&self) -> list_built_in::Builder {
-            list_built_in::Builder {
+        pub fn list_built_in(&self) -> list_built_in::RequestBuilder {
+            list_built_in::RequestBuilder {
                 client: self.0.clone(),
                 filter: None,
                 top: None,
@@ -2115,8 +2115,8 @@ pub mod policy_set_definitions {
             &self,
             policy_set_definition_name: impl Into<String>,
             management_group_id: impl Into<String>,
-        ) -> get_at_management_group::Builder {
-            get_at_management_group::Builder {
+        ) -> get_at_management_group::RequestBuilder {
+            get_at_management_group::RequestBuilder {
                 client: self.0.clone(),
                 policy_set_definition_name: policy_set_definition_name.into(),
                 management_group_id: management_group_id.into(),
@@ -2134,8 +2134,8 @@ pub mod policy_set_definitions {
             policy_set_definition_name: impl Into<String>,
             parameters: impl Into<models::PolicySetDefinition>,
             management_group_id: impl Into<String>,
-        ) -> create_or_update_at_management_group::Builder {
-            create_or_update_at_management_group::Builder {
+        ) -> create_or_update_at_management_group::RequestBuilder {
+            create_or_update_at_management_group::RequestBuilder {
                 client: self.0.clone(),
                 policy_set_definition_name: policy_set_definition_name.into(),
                 parameters: parameters.into(),
@@ -2152,8 +2152,8 @@ pub mod policy_set_definitions {
             &self,
             policy_set_definition_name: impl Into<String>,
             management_group_id: impl Into<String>,
-        ) -> delete_at_management_group::Builder {
-            delete_at_management_group::Builder {
+        ) -> delete_at_management_group::RequestBuilder {
+            delete_at_management_group::RequestBuilder {
                 client: self.0.clone(),
                 policy_set_definition_name: policy_set_definition_name.into(),
                 management_group_id: management_group_id.into(),
@@ -2164,8 +2164,8 @@ pub mod policy_set_definitions {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `management_group_id`: The ID of the management group."]
-        pub fn list_by_management_group(&self, management_group_id: impl Into<String>) -> list_by_management_group::Builder {
-            list_by_management_group::Builder {
+        pub fn list_by_management_group(&self, management_group_id: impl Into<String>) -> list_by_management_group::RequestBuilder {
+            list_by_management_group::RequestBuilder {
                 client: self.0.clone(),
                 management_group_id: management_group_id.into(),
                 filter: None,
@@ -2177,12 +2177,12 @@ pub mod policy_set_definitions {
         use super::models;
         type Response = models::PolicySetDefinition;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) policy_set_definition_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2231,13 +2231,13 @@ pub mod policy_set_definitions {
             Ok200(models::PolicySetDefinition),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) policy_set_definition_name: String,
             pub(crate) parameters: models::PolicySetDefinition,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2292,12 +2292,12 @@ pub mod policy_set_definitions {
             Ok200,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) policy_set_definition_name: String,
             pub(crate) subscription_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2339,11 +2339,11 @@ pub mod policy_set_definitions {
         use super::models;
         type Response = models::PolicySetDefinition;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) policy_set_definition_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2387,13 +2387,13 @@ pub mod policy_set_definitions {
         use super::models;
         type Response = models::PolicySetDefinitionListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) filter: Option<String>,
             pub(crate) top: Option<i32>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The filter to apply on the operation. Valid values for $filter are: 'atExactScope()', 'policyType -eq {value}' or 'category eq '{value}''. If $filter is not provided, no filtering is performed. If $filter=atExactScope() is provided, the returned list only includes all policy set definitions that at the given scope. If $filter='policyType -eq {value}' is provided, the returned list only includes all policy set definitions whose type match the {value}. Possible policyType values are NotSpecified, BuiltIn, Custom, and Static. If $filter='category -eq {value}' is provided, the returned list only includes all policy set definitions whose category match the {value}."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -2479,12 +2479,12 @@ pub mod policy_set_definitions {
         use super::models;
         type Response = models::PolicySetDefinitionListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) filter: Option<String>,
             pub(crate) top: Option<i32>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The filter to apply on the operation. Valid values for $filter are: 'atExactScope()', 'policyType -eq {value}' or 'category eq '{value}''. If $filter is not provided, no filtering is performed. If $filter=atExactScope() is provided, the returned list only includes all policy set definitions that at the given scope. If $filter='policyType -eq {value}' is provided, the returned list only includes all policy set definitions whose type match the {value}. Possible policyType values are NotSpecified, BuiltIn, Custom, and Static. If $filter='category -eq {value}' is provided, the returned list only includes all policy set definitions whose category match the {value}."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -2569,12 +2569,12 @@ pub mod policy_set_definitions {
         use super::models;
         type Response = models::PolicySetDefinition;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) policy_set_definition_name: String,
             pub(crate) management_group_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2618,13 +2618,13 @@ pub mod policy_set_definitions {
             Ok200(models::PolicySetDefinition),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) policy_set_definition_name: String,
             pub(crate) parameters: models::PolicySetDefinition,
             pub(crate) management_group_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2674,12 +2674,12 @@ pub mod policy_set_definitions {
             Ok200,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) policy_set_definition_name: String,
             pub(crate) management_group_id: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2716,13 +2716,13 @@ pub mod policy_set_definitions {
         use super::models;
         type Response = models::PolicySetDefinitionListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) management_group_id: String,
             pub(crate) filter: Option<String>,
             pub(crate) top: Option<i32>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The filter to apply on the operation. Valid values for $filter are: 'atExactScope()', 'policyType -eq {value}' or 'category eq '{value}''. If $filter is not provided, no filtering is performed. If $filter=atExactScope() is provided, the returned list only includes all policy set definitions that at the given scope. If $filter='policyType -eq {value}' is provided, the returned list only includes all policy set definitions whose type match the {value}. Possible policyType values are NotSpecified, BuiltIn, Custom, and Static. If $filter='category -eq {value}' is provided, the returned list only includes all policy set definitions whose category match the {value}."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -2815,8 +2815,8 @@ pub mod policy_exemptions {
         #[doc = "Arguments:"]
         #[doc = "* `scope`: The scope of the policy exemption. Valid scopes are: management group (format: '/providers/Microsoft.Management/managementGroups/{managementGroup}'), subscription (format: '/subscriptions/{subscriptionId}'), resource group (format: '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}', or resource (format: '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{resourceProviderNamespace}/[{parentResourcePath}/]{resourceType}/{resourceName}'"]
         #[doc = "* `policy_exemption_name`: The name of the policy exemption to delete."]
-        pub fn get(&self, scope: impl Into<String>, policy_exemption_name: impl Into<String>) -> get::Builder {
-            get::Builder {
+        pub fn get(&self, scope: impl Into<String>, policy_exemption_name: impl Into<String>) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 scope: scope.into(),
                 policy_exemption_name: policy_exemption_name.into(),
@@ -2834,8 +2834,8 @@ pub mod policy_exemptions {
             scope: impl Into<String>,
             policy_exemption_name: impl Into<String>,
             parameters: impl Into<models::PolicyExemption>,
-        ) -> create_or_update::Builder {
-            create_or_update::Builder {
+        ) -> create_or_update::RequestBuilder {
+            create_or_update::RequestBuilder {
                 client: self.0.clone(),
                 scope: scope.into(),
                 policy_exemption_name: policy_exemption_name.into(),
@@ -2848,8 +2848,8 @@ pub mod policy_exemptions {
         #[doc = "Arguments:"]
         #[doc = "* `scope`: The scope of the policy exemption. Valid scopes are: management group (format: '/providers/Microsoft.Management/managementGroups/{managementGroup}'), subscription (format: '/subscriptions/{subscriptionId}'), resource group (format: '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}', or resource (format: '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{resourceProviderNamespace}/[{parentResourcePath}/]{resourceType}/{resourceName}'"]
         #[doc = "* `policy_exemption_name`: The name of the policy exemption to delete."]
-        pub fn delete(&self, scope: impl Into<String>, policy_exemption_name: impl Into<String>) -> delete::Builder {
-            delete::Builder {
+        pub fn delete(&self, scope: impl Into<String>, policy_exemption_name: impl Into<String>) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 scope: scope.into(),
                 policy_exemption_name: policy_exemption_name.into(),
@@ -2860,8 +2860,8 @@ pub mod policy_exemptions {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: The ID of the target subscription."]
-        pub fn list(&self, subscription_id: impl Into<String>) -> list::Builder {
-            list::Builder {
+        pub fn list(&self, subscription_id: impl Into<String>) -> list::RequestBuilder {
+            list::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 filter: None,
@@ -2877,8 +2877,8 @@ pub mod policy_exemptions {
             &self,
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
-        ) -> list_for_resource_group::Builder {
-            list_for_resource_group::Builder {
+        ) -> list_for_resource_group::RequestBuilder {
+            list_for_resource_group::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -2903,8 +2903,8 @@ pub mod policy_exemptions {
             parent_resource_path: impl Into<String>,
             resource_type: impl Into<String>,
             resource_name: impl Into<String>,
-        ) -> list_for_resource::Builder {
-            list_for_resource::Builder {
+        ) -> list_for_resource::RequestBuilder {
+            list_for_resource::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -2920,8 +2920,8 @@ pub mod policy_exemptions {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `management_group_id`: The ID of the management group."]
-        pub fn list_for_management_group(&self, management_group_id: impl Into<String>) -> list_for_management_group::Builder {
-            list_for_management_group::Builder {
+        pub fn list_for_management_group(&self, management_group_id: impl Into<String>) -> list_for_management_group::RequestBuilder {
+            list_for_management_group::RequestBuilder {
                 client: self.0.clone(),
                 management_group_id: management_group_id.into(),
                 filter: None,
@@ -2932,12 +2932,12 @@ pub mod policy_exemptions {
         use super::models;
         type Response = models::PolicyExemption;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) scope: String,
             pub(crate) policy_exemption_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2986,13 +2986,13 @@ pub mod policy_exemptions {
             Created201(models::PolicyExemption),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) scope: String,
             pub(crate) policy_exemption_name: String,
             pub(crate) parameters: models::PolicyExemption,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -3047,12 +3047,12 @@ pub mod policy_exemptions {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) scope: String,
             pub(crate) policy_exemption_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -3094,12 +3094,12 @@ pub mod policy_exemptions {
         use super::models;
         type Response = models::PolicyExemptionListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) filter: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The filter to apply on the operation. Valid values for $filter are: 'atScope()', 'atExactScope()', 'excludeExpired()' or 'policyAssignmentId eq '{value}''. If $filter is not provided, no filtering is performed. If $filter is not provided, the unfiltered list includes all policy exemptions associated with the scope, including those that apply directly or apply from containing scopes. If $filter=atScope() is provided, the returned list only includes all policy exemptions that apply to the scope, which is everything in the unfiltered list except those applied to sub scopes contained within the given scope. If $filter=atExactScope() is provided, the returned list only includes all policy exemptions that at the given scope. If $filter=excludeExpired() is provided, the returned list only includes all policy exemptions that either haven't expired or didn't set expiration date. If $filter=policyAssignmentId eq '{value}' is provided. the returned list only includes all policy exemptions that are associated with the give policyAssignmentId."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -3177,13 +3177,13 @@ pub mod policy_exemptions {
         use super::models;
         type Response = models::PolicyExemptionListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) filter: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The filter to apply on the operation. Valid values for $filter are: 'atScope()', 'atExactScope()', 'excludeExpired()' or 'policyAssignmentId eq '{value}''. If $filter is not provided, no filtering is performed. If $filter is not provided, the unfiltered list includes all policy exemptions associated with the scope, including those that apply directly or apply from containing scopes. If $filter=atScope() is provided, the returned list only includes all policy exemptions that apply to the scope, which is everything in the unfiltered list except those applied to sub scopes contained within the given scope. If $filter=atExactScope() is provided, the returned list only includes all policy exemptions that at the given scope. If $filter=excludeExpired() is provided, the returned list only includes all policy exemptions that either haven't expired or didn't set expiration date. If $filter=policyAssignmentId eq '{value}' is provided. the returned list only includes all policy exemptions that are associated with the give policyAssignmentId."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -3262,7 +3262,7 @@ pub mod policy_exemptions {
         use super::models;
         type Response = models::PolicyExemptionListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -3272,7 +3272,7 @@ pub mod policy_exemptions {
             pub(crate) resource_name: String,
             pub(crate) filter: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The filter to apply on the operation. Valid values for $filter are: 'atScope()', 'atExactScope()', 'excludeExpired()' or 'policyAssignmentId eq '{value}''. If $filter is not provided, no filtering is performed. If $filter is not provided, the unfiltered list includes all policy exemptions associated with the scope, including those that apply directly or apply from containing scopes. If $filter=atScope() is provided, the returned list only includes all policy exemptions that apply to the scope, which is everything in the unfiltered list except those applied to sub scopes contained within the given scope. If $filter=atExactScope() is provided, the returned list only includes all policy exemptions that at the given scope. If $filter=excludeExpired() is provided, the returned list only includes all policy exemptions that either haven't expired or didn't set expiration date. If $filter=policyAssignmentId eq '{value}' is provided. the returned list only includes all policy exemptions that are associated with the give policyAssignmentId."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
@@ -3346,12 +3346,12 @@ pub mod policy_exemptions {
         use super::models;
         type Response = models::PolicyExemptionListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) management_group_id: String,
             pub(crate) filter: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The filter to apply on the operation. Valid values for $filter are: 'atScope()', 'atExactScope()', 'excludeExpired()' or 'policyAssignmentId eq '{value}''. If $filter is not provided, no filtering is performed. If $filter is not provided, the unfiltered list includes all policy exemptions associated with the scope, including those that apply directly or apply from containing scopes. If $filter=atScope() is provided, the returned list only includes all policy exemptions that apply to the scope, which is everything in the unfiltered list except those applied to sub scopes contained within the given scope. If $filter=atExactScope() is provided, the returned list only includes all policy exemptions that at the given scope. If $filter=excludeExpired() is provided, the returned list only includes all policy exemptions that either haven't expired or didn't set expiration date. If $filter=policyAssignmentId eq '{value}' is provided. the returned list only includes all policy exemptions that are associated with the give policyAssignmentId."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());

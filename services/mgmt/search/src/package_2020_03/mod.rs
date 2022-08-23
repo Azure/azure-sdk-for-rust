@@ -127,18 +127,18 @@ pub mod operations {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Lists all of the available REST API operations of the Microsoft.Search provider."]
-        pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.0.clone() }
+        pub fn list(&self) -> list::RequestBuilder {
+            list::RequestBuilder { client: self.0.clone() }
         }
     }
     pub mod list {
         use super::models;
         type Response = models::OperationListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as the continuation token is not part of the response schema"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -191,8 +191,8 @@ pub mod admin_keys {
             resource_group_name: impl Into<String>,
             search_service_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 search_service_name: search_service_name.into(),
@@ -213,8 +213,8 @@ pub mod admin_keys {
             search_service_name: impl Into<String>,
             key_kind: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> regenerate::Builder {
-            regenerate::Builder {
+        ) -> regenerate::RequestBuilder {
+            regenerate::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 search_service_name: search_service_name.into(),
@@ -228,14 +228,14 @@ pub mod admin_keys {
         use super::models;
         type Response = models::AdminKeyResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) search_service_name: String,
             pub(crate) subscription_id: String,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "A client-generated GUID value that identifies this request. If specified, this will be included in response information as a way to track the request."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
@@ -290,7 +290,7 @@ pub mod admin_keys {
         use super::models;
         type Response = models::AdminKeyResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) search_service_name: String,
@@ -298,7 +298,7 @@ pub mod admin_keys {
             pub(crate) subscription_id: String,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "A client-generated GUID value that identifies this request. If specified, this will be included in response information as a way to track the request."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
@@ -368,8 +368,8 @@ pub mod query_keys {
             search_service_name: impl Into<String>,
             name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> create::Builder {
-            create::Builder {
+        ) -> create::RequestBuilder {
+            create::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 search_service_name: search_service_name.into(),
@@ -389,8 +389,8 @@ pub mod query_keys {
             resource_group_name: impl Into<String>,
             search_service_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_by_search_service::Builder {
-            list_by_search_service::Builder {
+        ) -> list_by_search_service::RequestBuilder {
+            list_by_search_service::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 search_service_name: search_service_name.into(),
@@ -411,8 +411,8 @@ pub mod query_keys {
             search_service_name: impl Into<String>,
             key: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> delete::Builder {
-            delete::Builder {
+        ) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 search_service_name: search_service_name.into(),
@@ -426,7 +426,7 @@ pub mod query_keys {
         use super::models;
         type Response = models::QueryKey;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) search_service_name: String,
@@ -434,7 +434,7 @@ pub mod query_keys {
             pub(crate) subscription_id: String,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "A client-generated GUID value that identifies this request. If specified, this will be included in response information as a way to track the request."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
@@ -490,14 +490,14 @@ pub mod query_keys {
         use super::models;
         type Response = models::ListQueryKeysResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) search_service_name: String,
             pub(crate) subscription_id: String,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "A client-generated GUID value that identifies this request. If specified, this will be included in response information as a way to track the request."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
@@ -582,7 +582,7 @@ pub mod query_keys {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) search_service_name: String,
@@ -590,7 +590,7 @@ pub mod query_keys {
             pub(crate) subscription_id: String,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "A client-generated GUID value that identifies this request. If specified, this will be included in response information as a way to track the request."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
@@ -654,8 +654,8 @@ pub mod services {
             resource_group_name: impl Into<String>,
             search_service_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 search_service_name: search_service_name.into(),
@@ -676,8 +676,8 @@ pub mod services {
             search_service_name: impl Into<String>,
             service: impl Into<models::SearchService>,
             subscription_id: impl Into<String>,
-        ) -> create_or_update::Builder {
-            create_or_update::Builder {
+        ) -> create_or_update::RequestBuilder {
+            create_or_update::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 search_service_name: search_service_name.into(),
@@ -699,8 +699,8 @@ pub mod services {
             search_service_name: impl Into<String>,
             service: impl Into<models::SearchService>,
             subscription_id: impl Into<String>,
-        ) -> update::Builder {
-            update::Builder {
+        ) -> update::RequestBuilder {
+            update::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 search_service_name: search_service_name.into(),
@@ -720,8 +720,8 @@ pub mod services {
             resource_group_name: impl Into<String>,
             search_service_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> delete::Builder {
-            delete::Builder {
+        ) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 search_service_name: search_service_name.into(),
@@ -738,8 +738,8 @@ pub mod services {
             &self,
             resource_group_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> list_by_resource_group::Builder {
-            list_by_resource_group::Builder {
+        ) -> list_by_resource_group::RequestBuilder {
+            list_by_resource_group::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 subscription_id: subscription_id.into(),
@@ -750,8 +750,8 @@ pub mod services {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: The unique identifier for a Microsoft Azure subscription. You can obtain this value from the Azure Resource Manager API or the portal."]
-        pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::Builder {
-            list_by_subscription::Builder {
+        pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::RequestBuilder {
+            list_by_subscription::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 x_ms_client_request_id: None,
@@ -766,8 +766,8 @@ pub mod services {
             &self,
             check_name_availability_input: impl Into<models::CheckNameAvailabilityInput>,
             subscription_id: impl Into<String>,
-        ) -> check_name_availability::Builder {
-            check_name_availability::Builder {
+        ) -> check_name_availability::RequestBuilder {
+            check_name_availability::RequestBuilder {
                 client: self.0.clone(),
                 check_name_availability_input: check_name_availability_input.into(),
                 subscription_id: subscription_id.into(),
@@ -779,14 +779,14 @@ pub mod services {
         use super::models;
         type Response = models::SearchService;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) search_service_name: String,
             pub(crate) subscription_id: String,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "A client-generated GUID value that identifies this request. If specified, this will be included in response information as a way to track the request."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
@@ -844,7 +844,7 @@ pub mod services {
             Created201(models::SearchService),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) search_service_name: String,
@@ -852,7 +852,7 @@ pub mod services {
             pub(crate) subscription_id: String,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "A client-generated GUID value that identifies this request. If specified, this will be included in response information as a way to track the request."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
@@ -913,7 +913,7 @@ pub mod services {
         use super::models;
         type Response = models::SearchService;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) search_service_name: String,
@@ -921,7 +921,7 @@ pub mod services {
             pub(crate) subscription_id: String,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "A client-generated GUID value that identifies this request. If specified, this will be included in response information as a way to track the request."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
@@ -980,14 +980,14 @@ pub mod services {
             NoContent204,
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) search_service_name: String,
             pub(crate) subscription_id: String,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "A client-generated GUID value that identifies this request. If specified, this will be included in response information as a way to track the request."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
@@ -1038,13 +1038,13 @@ pub mod services {
         use super::models;
         type Response = models::SearchServiceListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) subscription_id: String,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "A client-generated GUID value that identifies this request. If specified, this will be included in response information as a way to track the request."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
@@ -1123,12 +1123,12 @@ pub mod services {
         use super::models;
         type Response = models::SearchServiceListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "A client-generated GUID value that identifies this request. If specified, this will be included in response information as a way to track the request."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
@@ -1206,13 +1206,13 @@ pub mod services {
         use super::models;
         type Response = models::CheckNameAvailabilityOutput;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) check_name_availability_input: models::CheckNameAvailabilityInput,
             pub(crate) subscription_id: String,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "A client-generated GUID value that identifies this request. If specified, this will be included in response information as a way to track the request."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
@@ -1277,8 +1277,8 @@ pub mod private_link_resources {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             search_service_name: impl Into<String>,
-        ) -> list_supported::Builder {
-            list_supported::Builder {
+        ) -> list_supported::RequestBuilder {
+            list_supported::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -1291,14 +1291,14 @@ pub mod private_link_resources {
         use super::models;
         type Response = models::PrivateLinkResourcesResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) search_service_name: String,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "A client-generated GUID value that identifies this request. If specified, this will be included in response information as a way to track the request."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
@@ -1367,8 +1367,8 @@ pub mod private_endpoint_connections {
             search_service_name: impl Into<String>,
             private_endpoint_connection_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> get::Builder {
-            get::Builder {
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 search_service_name: search_service_name.into(),
@@ -1392,8 +1392,8 @@ pub mod private_endpoint_connections {
             private_endpoint_connection_name: impl Into<String>,
             private_endpoint_connection: impl Into<models::PrivateEndpointConnection>,
             subscription_id: impl Into<String>,
-        ) -> update::Builder {
-            update::Builder {
+        ) -> update::RequestBuilder {
+            update::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 search_service_name: search_service_name.into(),
@@ -1416,8 +1416,8 @@ pub mod private_endpoint_connections {
             search_service_name: impl Into<String>,
             private_endpoint_connection_name: impl Into<String>,
             subscription_id: impl Into<String>,
-        ) -> delete::Builder {
-            delete::Builder {
+        ) -> delete::RequestBuilder {
+            delete::RequestBuilder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 search_service_name: search_service_name.into(),
@@ -1437,8 +1437,8 @@ pub mod private_endpoint_connections {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             search_service_name: impl Into<String>,
-        ) -> list_by_service::Builder {
-            list_by_service::Builder {
+        ) -> list_by_service::RequestBuilder {
+            list_by_service::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -1451,7 +1451,7 @@ pub mod private_endpoint_connections {
         use super::models;
         type Response = models::PrivateEndpointConnection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) search_service_name: String,
@@ -1459,7 +1459,7 @@ pub mod private_endpoint_connections {
             pub(crate) subscription_id: String,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "A client-generated GUID value that identifies this request. If specified, this will be included in response information as a way to track the request."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
@@ -1507,7 +1507,7 @@ pub mod private_endpoint_connections {
         use super::models;
         type Response = models::PrivateEndpointConnection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) search_service_name: String,
@@ -1516,7 +1516,7 @@ pub mod private_endpoint_connections {
             pub(crate) subscription_id: String,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "A client-generated GUID value that identifies this request. If specified, this will be included in response information as a way to track the request."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
@@ -1565,7 +1565,7 @@ pub mod private_endpoint_connections {
         use super::models;
         type Response = models::PrivateEndpointConnection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) search_service_name: String,
@@ -1573,7 +1573,7 @@ pub mod private_endpoint_connections {
             pub(crate) subscription_id: String,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "A client-generated GUID value that identifies this request. If specified, this will be included in response information as a way to track the request."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
@@ -1621,14 +1621,14 @@ pub mod private_endpoint_connections {
         use super::models;
         type Response = models::PrivateEndpointConnectionListResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) search_service_name: String,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "A client-generated GUID value that identifies this request. If specified, this will be included in response information as a way to track the request."]
             pub fn x_ms_client_request_id(mut self, x_ms_client_request_id: impl Into<String>) -> Self {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());

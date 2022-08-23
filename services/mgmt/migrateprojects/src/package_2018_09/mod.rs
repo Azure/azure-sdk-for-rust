@@ -140,8 +140,8 @@ pub mod database_instances {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             migrate_project_name: impl Into<String>,
-        ) -> enumerate_database_instances::Builder {
-            enumerate_database_instances::Builder {
+        ) -> enumerate_database_instances::RequestBuilder {
+            enumerate_database_instances::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -164,8 +164,8 @@ pub mod database_instances {
             resource_group_name: impl Into<String>,
             migrate_project_name: impl Into<String>,
             database_instance_name: impl Into<String>,
-        ) -> get_database_instance::Builder {
-            get_database_instance::Builder {
+        ) -> get_database_instance::RequestBuilder {
+            get_database_instance::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -179,7 +179,7 @@ pub mod database_instances {
         use super::models;
         type Response = models::DatabaseInstanceCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -188,7 +188,7 @@ pub mod database_instances {
             pub(crate) page_size: Option<i64>,
             pub(crate) accept_language: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The continuation token."]
             pub fn continuation_token(mut self, continuation_token: impl Into<String>) -> Self {
                 self.continuation_token = Some(continuation_token.into());
@@ -258,7 +258,7 @@ pub mod database_instances {
         use super::models;
         type Response = models::DatabaseInstance;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -266,7 +266,7 @@ pub mod database_instances {
             pub(crate) database_instance_name: String,
             pub(crate) accept_language: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Standard request header. Used by service to respond to client in appropriate language."]
             pub fn accept_language(mut self, accept_language: impl Into<String>) -> Self {
                 self.accept_language = Some(accept_language.into());
@@ -333,8 +333,8 @@ pub mod databases {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             migrate_project_name: impl Into<String>,
-        ) -> enumerate_databases::Builder {
-            enumerate_databases::Builder {
+        ) -> enumerate_databases::RequestBuilder {
+            enumerate_databases::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -357,8 +357,8 @@ pub mod databases {
             resource_group_name: impl Into<String>,
             migrate_project_name: impl Into<String>,
             database_name: impl Into<String>,
-        ) -> get_database::Builder {
-            get_database::Builder {
+        ) -> get_database::RequestBuilder {
+            get_database::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -372,7 +372,7 @@ pub mod databases {
         use super::models;
         type Response = models::DatabaseCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -381,7 +381,7 @@ pub mod databases {
             pub(crate) page_size: Option<i64>,
             pub(crate) accept_language: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The continuation token."]
             pub fn continuation_token(mut self, continuation_token: impl Into<String>) -> Self {
                 self.continuation_token = Some(continuation_token.into());
@@ -451,7 +451,7 @@ pub mod databases {
         use super::models;
         type Response = models::Database;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -459,7 +459,7 @@ pub mod databases {
             pub(crate) database_name: String,
             pub(crate) accept_language: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Standard request header. Used by service to respond to client in appropriate language."]
             pub fn accept_language(mut self, accept_language: impl Into<String>) -> Self {
                 self.accept_language = Some(accept_language.into());
@@ -526,8 +526,8 @@ pub mod events {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             migrate_project_name: impl Into<String>,
-        ) -> enumerate_events::Builder {
-            enumerate_events::Builder {
+        ) -> enumerate_events::RequestBuilder {
+            enumerate_events::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -550,8 +550,8 @@ pub mod events {
             resource_group_name: impl Into<String>,
             migrate_project_name: impl Into<String>,
             event_name: impl Into<String>,
-        ) -> get_event::Builder {
-            get_event::Builder {
+        ) -> get_event::RequestBuilder {
+            get_event::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -573,8 +573,8 @@ pub mod events {
             resource_group_name: impl Into<String>,
             migrate_project_name: impl Into<String>,
             event_name: impl Into<String>,
-        ) -> delete_event::Builder {
-            delete_event::Builder {
+        ) -> delete_event::RequestBuilder {
+            delete_event::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -587,7 +587,7 @@ pub mod events {
         use super::models;
         type Response = models::EventCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -596,7 +596,7 @@ pub mod events {
             pub(crate) page_size: Option<i64>,
             pub(crate) accept_language: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The continuation token."]
             pub fn continuation_token(mut self, continuation_token: impl Into<String>) -> Self {
                 self.continuation_token = Some(continuation_token.into());
@@ -666,14 +666,14 @@ pub mod events {
         use super::models;
         type Response = models::MigrateEvent;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) migrate_project_name: String,
             pub(crate) event_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -720,14 +720,14 @@ pub mod events {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) migrate_project_name: String,
             pub(crate) event_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -782,8 +782,8 @@ pub mod machines {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             migrate_project_name: impl Into<String>,
-        ) -> enumerate_machines::Builder {
-            enumerate_machines::Builder {
+        ) -> enumerate_machines::RequestBuilder {
+            enumerate_machines::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -805,8 +805,8 @@ pub mod machines {
             resource_group_name: impl Into<String>,
             migrate_project_name: impl Into<String>,
             machine_name: impl Into<String>,
-        ) -> get_machine::Builder {
-            get_machine::Builder {
+        ) -> get_machine::RequestBuilder {
+            get_machine::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -819,7 +819,7 @@ pub mod machines {
         use super::models;
         type Response = models::MachineCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -827,7 +827,7 @@ pub mod machines {
             pub(crate) continuation_token: Option<String>,
             pub(crate) page_size: Option<i64>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "The continuation token."]
             pub fn continuation_token(mut self, continuation_token: impl Into<String>) -> Self {
                 self.continuation_token = Some(continuation_token.into());
@@ -889,14 +889,14 @@ pub mod machines {
         use super::models;
         type Response = models::Machine;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) migrate_project_name: String,
             pub(crate) machine_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -955,8 +955,8 @@ pub mod migrate_projects {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             migrate_project_name: impl Into<String>,
-        ) -> get_migrate_project::Builder {
-            get_migrate_project::Builder {
+        ) -> get_migrate_project::RequestBuilder {
+            get_migrate_project::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -976,8 +976,8 @@ pub mod migrate_projects {
             resource_group_name: impl Into<String>,
             migrate_project_name: impl Into<String>,
             body: impl Into<models::MigrateProject>,
-        ) -> put_migrate_project::Builder {
-            put_migrate_project::Builder {
+        ) -> put_migrate_project::RequestBuilder {
+            put_migrate_project::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -1000,8 +1000,8 @@ pub mod migrate_projects {
             resource_group_name: impl Into<String>,
             migrate_project_name: impl Into<String>,
             body: impl Into<models::MigrateProject>,
-        ) -> patch_migrate_project::Builder {
-            patch_migrate_project::Builder {
+        ) -> patch_migrate_project::RequestBuilder {
+            patch_migrate_project::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -1022,8 +1022,8 @@ pub mod migrate_projects {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             migrate_project_name: impl Into<String>,
-        ) -> delete_migrate_project::Builder {
-            delete_migrate_project::Builder {
+        ) -> delete_migrate_project::RequestBuilder {
+            delete_migrate_project::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -1044,8 +1044,8 @@ pub mod migrate_projects {
             resource_group_name: impl Into<String>,
             migrate_project_name: impl Into<String>,
             input: impl Into<models::RegisterToolInput>,
-        ) -> register_tool::Builder {
-            register_tool::Builder {
+        ) -> register_tool::RequestBuilder {
+            register_tool::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -1067,8 +1067,8 @@ pub mod migrate_projects {
             resource_group_name: impl Into<String>,
             migrate_project_name: impl Into<String>,
             input: impl Into<models::RefreshSummaryInput>,
-        ) -> refresh_migrate_project_summary::Builder {
-            refresh_migrate_project_summary::Builder {
+        ) -> refresh_migrate_project_summary::RequestBuilder {
+            refresh_migrate_project_summary::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -1081,13 +1081,13 @@ pub mod migrate_projects {
         use super::models;
         type Response = models::MigrateProject;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) migrate_project_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1137,7 +1137,7 @@ pub mod migrate_projects {
             Created201(models::MigrateProject),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -1145,7 +1145,7 @@ pub mod migrate_projects {
             pub(crate) body: models::MigrateProject,
             pub(crate) accept_language: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Standard request header. Used by service to respond to client in appropriate language."]
             pub fn accept_language(mut self, accept_language: impl Into<String>) -> Self {
                 self.accept_language = Some(accept_language.into());
@@ -1205,7 +1205,7 @@ pub mod migrate_projects {
         use super::models;
         type Response = models::MigrateProject;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -1213,7 +1213,7 @@ pub mod migrate_projects {
             pub(crate) body: models::MigrateProject,
             pub(crate) accept_language: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Standard request header. Used by service to respond to client in appropriate language."]
             pub fn accept_language(mut self, accept_language: impl Into<String>) -> Self {
                 self.accept_language = Some(accept_language.into());
@@ -1268,14 +1268,14 @@ pub mod migrate_projects {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) migrate_project_name: String,
             pub(crate) accept_language: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Standard request header. Used by service to respond to client in appropriate language."]
             pub fn accept_language(mut self, accept_language: impl Into<String>) -> Self {
                 self.accept_language = Some(accept_language.into());
@@ -1325,7 +1325,7 @@ pub mod migrate_projects {
         use super::models;
         type Response = models::RegistrationResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -1333,7 +1333,7 @@ pub mod migrate_projects {
             pub(crate) input: models::RegisterToolInput,
             pub(crate) accept_language: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Standard request header. Used by service to respond to client in appropriate language."]
             pub fn accept_language(mut self, accept_language: impl Into<String>) -> Self {
                 self.accept_language = Some(accept_language.into());
@@ -1388,14 +1388,14 @@ pub mod migrate_projects {
         use super::models;
         type Response = models::RefreshSummaryResult;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) migrate_project_name: String,
             pub(crate) input: models::RefreshSummaryInput,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1456,8 +1456,8 @@ pub mod solutions {
             resource_group_name: impl Into<String>,
             migrate_project_name: impl Into<String>,
             solution_name: impl Into<String>,
-        ) -> get_solution::Builder {
-            get_solution::Builder {
+        ) -> get_solution::RequestBuilder {
+            get_solution::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -1480,8 +1480,8 @@ pub mod solutions {
             migrate_project_name: impl Into<String>,
             solution_name: impl Into<String>,
             solution_input: impl Into<models::Solution>,
-        ) -> put_solution::Builder {
-            put_solution::Builder {
+        ) -> put_solution::RequestBuilder {
+            put_solution::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -1506,8 +1506,8 @@ pub mod solutions {
             migrate_project_name: impl Into<String>,
             solution_name: impl Into<String>,
             solution_input: impl Into<models::Solution>,
-        ) -> patch_solution::Builder {
-            patch_solution::Builder {
+        ) -> patch_solution::RequestBuilder {
+            patch_solution::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -1530,8 +1530,8 @@ pub mod solutions {
             resource_group_name: impl Into<String>,
             migrate_project_name: impl Into<String>,
             solution_name: impl Into<String>,
-        ) -> delete_solution::Builder {
-            delete_solution::Builder {
+        ) -> delete_solution::RequestBuilder {
+            delete_solution::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -1551,8 +1551,8 @@ pub mod solutions {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             migrate_project_name: impl Into<String>,
-        ) -> enumerate_solutions::Builder {
-            enumerate_solutions::Builder {
+        ) -> enumerate_solutions::RequestBuilder {
+            enumerate_solutions::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -1572,8 +1572,8 @@ pub mod solutions {
             resource_group_name: impl Into<String>,
             migrate_project_name: impl Into<String>,
             solution_name: impl Into<String>,
-        ) -> get_config::Builder {
-            get_config::Builder {
+        ) -> get_config::RequestBuilder {
+            get_config::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -1594,8 +1594,8 @@ pub mod solutions {
             resource_group_name: impl Into<String>,
             migrate_project_name: impl Into<String>,
             solution_name: impl Into<String>,
-        ) -> cleanup_solution_data::Builder {
-            cleanup_solution_data::Builder {
+        ) -> cleanup_solution_data::RequestBuilder {
+            cleanup_solution_data::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -1608,14 +1608,14 @@ pub mod solutions {
         use super::models;
         type Response = models::Solution;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) migrate_project_name: String,
             pub(crate) solution_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1666,7 +1666,7 @@ pub mod solutions {
             Created201(models::Solution),
         }
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -1674,7 +1674,7 @@ pub mod solutions {
             pub(crate) solution_name: String,
             pub(crate) solution_input: models::Solution,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1727,7 +1727,7 @@ pub mod solutions {
         use super::models;
         type Response = models::Solution;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -1735,7 +1735,7 @@ pub mod solutions {
             pub(crate) solution_name: String,
             pub(crate) solution_input: models::Solution,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1783,7 +1783,7 @@ pub mod solutions {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
@@ -1791,7 +1791,7 @@ pub mod solutions {
             pub(crate) solution_name: String,
             pub(crate) accept_language: Option<String>,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "Standard request header. Used by service to respond to client in appropriate language."]
             pub fn accept_language(mut self, accept_language: impl Into<String>) -> Self {
                 self.accept_language = Some(accept_language.into());
@@ -1842,13 +1842,13 @@ pub mod solutions {
         use super::models;
         type Response = models::SolutionsCollection;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) migrate_project_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1894,14 +1894,14 @@ pub mod solutions {
         use super::models;
         type Response = models::SolutionConfig;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) migrate_project_name: String,
             pub(crate) solution_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1949,14 +1949,14 @@ pub mod solutions {
         use super::models;
         type Response = ();
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) migrate_project_name: String,
             pub(crate) solution_name: String,
         }
-        impl Builder {
+        impl RequestBuilder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2003,18 +2003,18 @@ pub mod operations {
     impl Client {
         #[doc = "Get list of operations supported in the API."]
         #[doc = "Get a list of REST API supported by Microsoft.Migrate provider."]
-        pub fn list(&self) -> list::Builder {
-            list::Builder { client: self.0.clone() }
+        pub fn list(&self) -> list::RequestBuilder {
+            list::RequestBuilder { client: self.0.clone() }
         }
     }
     pub mod list {
         use super::models;
         type Response = models::OperationResultList;
         #[derive(Clone)]
-        pub struct Builder {
+        pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
         }
-        impl Builder {
+        impl RequestBuilder {
             #[doc = "only the first response will be fetched as the continuation token is not part of the response schema"]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
