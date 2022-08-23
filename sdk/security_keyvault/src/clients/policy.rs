@@ -2,7 +2,6 @@ use azure_core::{
     auth::TokenCredential,
     error::{ErrorKind, ResultExt},
     headers::*,
-    prelude::*,
     Context, Policy, PolicyResult, Request,
 };
 use std::sync::Arc;
@@ -53,32 +52,6 @@ impl Policy for AuthorizationPolicy {
             format!("Bearer {}", bearer_token.token.secret()),
         );
 
-        next[0].send(ctx, request, &next[1..]).await
-    }
-}
-
-#[derive(Debug, Clone)]
-pub struct TimeoutPolicy {
-    default_timeout: Option<Timeout>,
-}
-
-impl TimeoutPolicy {
-    pub(crate) fn new(default_timeout: Option<Timeout>) -> Self {
-        Self { default_timeout }
-    }
-}
-
-#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
-#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
-impl Policy for TimeoutPolicy {
-    async fn send(
-        &self,
-        ctx: &Context,
-        request: &mut Request,
-        next: &[Arc<dyn Policy>],
-    ) -> PolicyResult {
-        let timeout = ctx.get::<Timeout>().or(self.default_timeout.as_ref());
-        timeout.append_to_url_query(request.url_mut());
         next[0].send(ctx, request, &next[1..]).await
     }
 }

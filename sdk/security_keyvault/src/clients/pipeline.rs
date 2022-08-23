@@ -1,5 +1,5 @@
-use crate::clients::policy::{AuthorizationPolicy, TimeoutPolicy};
-use azure_core::{auth::TokenCredential, ClientOptions, Pipeline};
+use crate::clients::policy::AuthorizationPolicy;
+use azure_core::{auth::TokenCredential, ClientOptions, Pipeline, TimeoutPolicy};
 use std::sync::Arc;
 
 pub(crate) fn new_pipeline_from_options(
